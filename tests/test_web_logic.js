@@ -18,7 +18,7 @@ global.window = global;
 const s = {};
 new Function("document", "localStorage",
   code + "; this.keywordQueries=keywordQueries; this.rankByFit=rankByFit; this.fitScore=fitScore; this.whyRelevant=whyRelevant; this.esc=esc; this.lu=lu; this.freeText=freeText;" +
-  " this.keep=keep; this.ragRan=ragRan; this.hasDesc=hasDesc; this.descHtml=descHtml; this.tipUrlOk=tipUrlOk; this.clean=clean; this.harmful=harmful; this.harmfulRepo=harmfulRepo; this.prdFeatures=prdFeatures; this.trendingQuery=trendingQuery; this.trendRows=trendRows; this.feedbackUrl=feedbackUrl; this.feedbackPayload=feedbackPayload; this.agoText=agoText; this.cardHtml=cardHtml; this.recentKey=recentKey; this.recentFind=recentFind; this.recentAdd=recentAdd; this.CACHE_V=CACHE_V; this.bm25Scores=bm25Scores; this.repoText=repoText; this.rrfOrder=rrfOrder; this.hybridOrder=hybridOrder; this.confirmQueries=confirmQueries; this.ghQuery=ghQuery;").call(s, document, global.localStorage || {getItem:()=>null,setItem(){},removeItem(){}});
+  " this.keep=keep; this.ragRan=ragRan; this.hasDesc=hasDesc; this.descHtml=descHtml; this.tipUrlOk=tipUrlOk; this.clean=clean; this.harmful=harmful; this.harmfulRepo=harmfulRepo; this.prdFeatures=prdFeatures; this.trendingQuery=trendingQuery; this.trendRows=trendRows; this.feedbackUrl=feedbackUrl; this.feedbackPayload=feedbackPayload; this.agoText=agoText; this.cardHtml=cardHtml; this.recentKey=recentKey; this.recentFind=recentFind; this.recentAdd=recentAdd; this.CACHE_V=CACHE_V; this.bm25Scores=bm25Scores; this.repoText=repoText; this.rrfOrder=rrfOrder; this.hybridOrder=hybridOrder; this.confirmQueries=confirmQueries; this.ghQuery=ghQuery; this.sigTokens=sigTokens;").call(s, document, global.localStorage || {getItem:()=>null,setItem(){},removeItem(){}});
 
 // RS16: iOS excludes macOS
 // RS16: expansions are specific on-topic phrases, never a bare category (live regression: "website" -> "frontend framework"
@@ -172,6 +172,18 @@ assert.strictEqual(xdup.rel, 0, "dup rel drops to the better position found by a
 { const fx = JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures", "qualifier_cases.json"), "utf8"));
   const now = Date.parse(fx.now);
   for (const c of fx.cases) assert.strictEqual(s.ghQuery(c.q, c.max_age_months, c.min_stars, now), c.expect, c.name); }
+// RS29b parity fixture: the page's keep / rankByFit / whyRelevant give the order, matched words and drops scout.py gives
+{ const P = JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures", "parity_items.json"), "utf8"));
+  const raw = x => { const y = Object.assign({}, x); y.pushed_at = new Date(Date.now() - y.pushed_days_ago * 864e5).toISOString().slice(0, 19) + "Z";
+    delete y.pushed_days_ago; return y; };
+  const ex = { license: 0, stale: 0, low: 0, fork: 0, harm: 0 }, seen = {}, qOf = {};
+  const lists = P.lists.map((l, qi) => { const k = s.keep(l.map(raw), P.min_stars, "", ex, seen); k.forEach(r => { qOf[r.name] = P.queries[qi]; }); return k; });
+  const ranked = s.rankByFit(lists, P.prefer_starters);
+  assert.deepStrictEqual(ranked.map(r => r.name), P.expect.order, "web/plugin order parity");
+  const E = P.expect.excluded;
+  assert.deepStrictEqual(ex, { license: E.license, stale: E.stale, low: E.low_stars, fork: E.fork_or_archived, harm: E.harmful });
+  for (const r of ranked) { const h = P.expect.hits[r.name];
+    assert.strictEqual(s.whyRelevant(r, s.sigTokens(qOf[r.name])), h.length ? "Matches: " + h.join(", ") : "", r.name); } }
 console.log("web logic ok");
 
 // RS23: PRD feature extraction (client-side, capped for the rate limit)

@@ -64,6 +64,21 @@ HINT_README = "Follow the Getting started / Installation section of its README"
 KEY = ("Key: stars = how many people bookmarked it (popularity, not quality, and stars can be bought); "
        "last push = last time anyone updated it; license labels are a plain summary, not legal advice.")
 
+# RS18 + RS29b: repo descriptions that offer account takeover, spyware, stealers, cracks, DDoS, cheats or "free premium"
+# generators are always dropped and counted as `harmful`. Same patterns, in the same order, as HARM in web/app.js
+# (tests/fixtures/parity_items.json checks both engines drop the same repos).
+_SVC = r"(whats ?app|instagram|facebook|snapchat|telegram|gmail|tiktok|email|wifi|someone'?s? account)"
+HARM = [re.compile(p, re.I) for p in (
+    r"hack(ing|er)?\s+(of\s+|a\s+|an\s+|the\s+)?" + _SVC, _SVC + r"\s+(account\s+)?(hack|hacking|hacker|cracker)",
+    r"account takeover", r"stalkerware|spyware", r"credential stealer|password stealer|stealer\b", r"\bkeygen|crack(ed)?\b",
+    r"\bddos\b", r"game (cheat|hack)|aimbot|wallhack", r"free (premium|robux|v-?bucks|coins) generator")]
+
+
+def harmful_repo(desc):
+    """RS18: True when a (cleaned) repo description matches one of the harmful-tool patterns."""
+    return any(p.search(desc or "") for p in HARM)
+
+
 _NAME = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+")
 _CTRL = re.compile(r"[\x00-\x1f\x7f-\x9f​-‏  ‪-‮⁦-⁩]")  # RS9: incl. line/para separators
 
@@ -195,12 +210,21 @@ def fit_score(r, prefer_starters=False, floor=0.0):
     return 0.45 * rel + 0.35 * star + 0.20 * free + bonus
 
 
+_PAGE_SPLIT = re.compile(r"[^a-z0-9 +#.]")   # RS29b: the page's tokenizer (sigTokens / whyRelevant), character for character
+
+
+def _page_words(text):
+    return _PAGE_SPLIT.sub(" ", (text or "").lower()).split()
+
+
 def why_relevant(query, name, desc, rel):
-    """RS24: one honest line on why a repo is here — a whole-word keyword match, not an AI judgement."""
+    """RS24: one honest line on why a repo is here — a whole-word keyword match, not an AI judgement.
+    RS29b: the matched words are exactly the page's (same tokenizer, same filler words as hybrid.STOP / the page's STOP);
+    only the wording differs (the page says "Matches: a, b" and shows no line without a match, RS37)."""
     # drop search qualifiers (topic:/language:/is:…) and negated terms (-foo) so we never claim a match on them
     plain = " ".join(t for t in (query or "").split() if ":" not in t and not t.startswith("-"))
-    toks = [w for w in _WORD.findall(plain.lower()) if len(w) > 1]
-    words = set(_WORD.findall((name + " " + desc).lower()))  # match whole words, so "ai" ≠ "email"
+    toks = [w for w in _page_words(plain) if len(w) > 1 and w not in hybrid.STOP]
+    words = set(_page_words(name + " " + desc))  # match whole words, so "ai" ≠ "email"
     hits = []
     for t in toks:
         if t in words and t not in hits:
@@ -271,7 +295,7 @@ def scout(queries, fetcher=fetch, top=20, candidates=40, license_mode="open", ma
     now = now or dt.datetime.now(dt.timezone.utc)
     cutoff = now - dt.timedelta(days=30.44 * max_age_months) if max_age_months > 0 else None
 
-    excluded = {"fork_or_archived": 0, "license": 0, "stale": 0, "low_stars": 0, "duplicate": 0}
+    excluded = {"fork_or_archived": 0, "license": 0, "stale": 0, "low_stars": 0, "harmful": 0, "duplicate": 0}
     seen, by_query = {}, []  # name -> its kept row (or None if the name was seen but filtered out)
     def take(q, items, kept, rel_floor=0, ex=None, why=None):
         ex = excluded if ex is None else ex  # RS42: confirm searches don't add to the user-facing exclusion counts
@@ -304,6 +328,9 @@ def scout(queries, fetcher=fetch, top=20, candidates=40, license_mode="open", ma
                 continue
             if int(it.get("stargazers_count") or 0) < min_stars:  # RS4a
                 ex["low_stars"] += 1
+                continue
+            if harmful_repo(clean(it.get("description"))):  # RS18, RS29b: same drop as the page, after the same filters
+                ex["harmful"] += 1
                 continue
             if is_open:
                 label = spdx

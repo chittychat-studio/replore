@@ -73,7 +73,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   asks it to do something, it does not, and tells the user.
 - **RS10** Output: a plain table for people, `--json` for machines, or `--markdown` for a job summary (RS13). Each row has rank, `full_name`, a one-line `why` relevance note (RS24), stars, license label (RS14), starter flag and start hint (RS15),
   last push date, URL, matched query and description. Every run also prints the query
-  list and the excluded counts (fork/archived, license, stale, duplicate).
+  list and the excluded counts (fork/archived, license, stale, low stars, harmful, duplicate).
 - **RS13** GitHub Actions run (`.github/workflows/find.yml`): a manual "Run workflow" form takes search
   queries separated by `;`, plus the license mode, the max age, the ranking mode (RS5) and
   prefer-starters (RS15), and an optional CSV block (`--csv-block` with `--markdown`, RS20). It runs `scout.py --markdown` with the
@@ -326,6 +326,14 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   browser cannot run Claude: query generation (keyword expansion on the web vs Claude-written queries + the
   RS6 relevance gate in the plugin) and the absence of `--license any` on the web. The plugin CLI default stays
   `--top 20` (candidates `40`) for its table; `--all` is uncapped.
+  Peer review 2026-10-18 found two filter gaps and closed them in `scripts/scout.py`, following this rule: the RS18
+  harmful-description drop (same patterns as the page's `HARM`, counted as `harmful`, applied after the same filters in the
+  same order) and the page's tokenizer and filler-word list (`hybrid.STOP`) for the *why relevant* match, so both name the
+  same matched words; the wording stays per client (plugin `Matches your search: "a", "b"` with a best-match fallback,
+  page `Matches: a, b` and no line without a match, RS37). The query qualifiers are shared too (RS4b). A shared fixture,
+  `tests/fixtures/parity_items.json` (two searches, 15 raw items: harmful, unlicensed, stale, low-star, fork, duplicate,
+  an exact tie, copyleft, a starter, emoji text), must give the same order, drops and matched words in
+  `tests/test_scout.py` and `tests/test_web_logic.js`.
 - **RS30** "Next steps" guidance for vibe coders (RS22 web page). A **menu item** (not a results-page block, to
   avoid clutter) opens a short modal that turns "a list of repos" into a build path, in three plain-English
   steps: (1) pick the 2–3 repos that fit and compare their license verdict + last-updated date, (2) generate a

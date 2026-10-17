@@ -358,6 +358,28 @@ def test_main_exit_codes(monkeypatch, capsys):
     assert "Could not reach GitHub" in err.err and err.out == ""
 
 
+def test_parity_fixture_order_why_and_filters():
+    """RS29b: scout.py ranks, filters and explains the shared fixture exactly as the page does (tests/test_web_logic.js)."""
+    fx = json.loads((ROOT / "tests" / "fixtures" / "parity_items.json").read_text(encoding="utf-8"))
+    now = dt.datetime.now(dt.timezone.utc)
+
+    def raw(x):
+        y = dict(x)
+        y["pushed_at"] = (now - dt.timedelta(days=y.pop("pushed_days_ago"))).strftime("%Y-%m-%dT%H:%M:%SZ")
+        return y
+    pages = iter([[raw(x) for x in lst] for lst in fx["lists"]])
+    res = scout.scout(fx["queries"], fetcher=lambda q, t=None: {"items": next(pages)}, now=now, top=None, candidates=None,
+                      min_stars=fx["min_stars"], max_age_months=fx["max_age_months"], prefer_starters=fx["prefer_starters"])
+    assert [r["full_name"] for r in res["all"]] == fx["expect"]["order"]
+    assert res["excluded"] == fx["expect"]["excluded"]
+    for r in res["all"]:
+        hits = fx["expect"]["hits"][r["full_name"]]
+        assert r["why"] == ("Matches your search: " + ", ".join(f'"{h}"' for h in hits) if hits else
+                            "Top match for your search" if r["rel"] <= 3 else "Related to your search"), r["full_name"]
+    assert scout.harmful_repo("WhatsApp Hacking Learn about ethical hacking of WhatsApp accounts")
+    assert not scout.harmful_repo("A privacy-focused nutrition tracker")
+
+
 def test_emoji_description_prints_on_cp1252_console(monkeypatch):
     """RS48: live crash on Windows: an emoji in a repo description raised UnicodeEncodeError on a cp1252 console."""
     _patch_fetch(monkeypatch, lambda q, token=None: {"items": [repo("a/b", 500, description="Fast 🚀 animations ✨")]})
@@ -382,7 +404,7 @@ def test_main_json(monkeypatch, capsys):
                               "description": "a/b desc", "rel": 0, "why": "Top match for your search",
                               "topics": [], "rank": 1}
     assert data["rank_mode"] == "fit" and data["prefer_starters"] is False
-    assert set(data["excluded"]) == {"fork_or_archived", "license", "stale", "low_stars", "duplicate"}
+    assert set(data["excluded"]) == {"fork_or_archived", "license", "stale", "low_stars", "harmful", "duplicate"}
     assert data["min_stars"] == 50
 
 
