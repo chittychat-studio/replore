@@ -154,8 +154,9 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   learning) and a fill-in prompt template (What I'm building / Platform / Stack / Selling it? / Starting from
   scratch?). The skill reads the same five fields from whatever the user wrote, and asks only for the ones it
   needs per RS1a/RS1b.
-- **RS22** Web page (`web/index.html`, deployed by Cloudflare Pages from `main`, RS40). Static,
-  single file, no external scripts (except Cloudflare Turnstile when the RS34c bot check is on), no build step, no embedded secret (the RS34 fallback key lives only in the
+- **RS22** Web page (`web/index.html` with its code in `web/app.js` and `web/theme.js`, RS49; deployed by Cloudflare
+  Pages from `main`, RS40). Static, no external scripts of its own (except Cloudflare Turnstile when the RS34c bot check
+  is on; the host also injects Cloudflare Web Analytics, RS33), no build step, no embedded secret (the RS34 fallback key lives only in the
   server-side function). It runs the keyword-to-query, filter,
   fit-rank (RS5), license-label (RS14), completely-free (RS20) and starter (RS15) logic in JavaScript,
   mirroring `scripts/scout.py`. It shows clickable example prompts (RS21) that fill the box, and calls the public GitHub search API from the browser (unauthenticated,
@@ -199,7 +200,8 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   solid "✓ In plan" when picked (RS28). Every field comes from the GitHub API response; nothing is invented.
   On wide screens the home demo is larger (art, type and frame) to use its half of the opening section. The plain-English license meaning (e.g. "OK to use in a paid product" / "Completely free?") renders as
   a line on every card at every breakpoint — not only on wide screens — so the core promise is visible on phones.
-  Motion comes from GSAP, loaded from cdnjs at a pinned version as the one external script; every GSAP
+  Motion comes from GSAP 3.12.5, self-hosted as `web/vendor/gsap.min.js` and loaded with `defer` before `app.js` (also
+  `defer`), so it is always defined before the page code runs (peer review 2026-10-18: it was `async`, a race); every GSAP
   use is guarded so the page works fully without it, and all motion is disabled under prefers-reduced-motion.
   Cards are cursor-reactive (a pointer-driven 3D tilt with a light glare, skipped on touch and under reduced
   motion) and the star counts tween up on reveal, all with the already-loaded GSAP and CSS (no extra library).
@@ -207,8 +209,9 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   shown as the results panel's empty state; a current screenshot of the live page (`web/tour.png`) is committed
   under `web/` and shown in the Tour.
   Type follows RS47 (self-hosted Anton / Inter Tight / JetBrains Mono, no external stylesheet) with a full system
-  fallback if a font fails to load; sizes and weights are raised for prominence and legibility. The page defaults to light (`data-theme="light"` on the root); a toggle switches to dark and the choice is
-  remembered in `localStorage` (a per-viewer convenience, wrapped in try/catch). No key or token is ever stored (RS22).
+  fallback if a font fails to load; sizes and weights are raised for prominence and legibility. The page follows the visitor's system setting (`prefers-color-scheme`) until they pick one (peer review 2026-10-18
+  reversed the earlier hard-coded `data-theme="light"`, which made the dark-mode CSS unreachable); a toggle switches theme and the choice is
+  remembered in `localStorage` (a per-viewer convenience, wrapped in try/catch) and restored by `web/theme.js` before first paint. No key or token is ever stored (RS22).
   Each result — web card and script row alike — carries a one-line *why relevant* note derived from the search:
   the user's own matching words if they appear in the repo name/description, else a best-match fallback. It is
   stated as keyword transparency, never as an AI judgement.
@@ -678,6 +681,19 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   `errors="replace"` at start-up when the stream supports it, so a character the console cannot show never ends a run.
   `mcp_server.py` stdout stays pure JSON-RPC. Every test and script reads repo files as UTF-8 explicitly, and CI runs the
   unit tests and Node tests on `windows-latest` as well as Linux.
+
+- **RS49** Security headers (peer review 2026-10-18). `web/_headers` (Cloudflare Pages format) sends, for every path:
+  a Content-Security-Policy (`default-src 'self'`; scripts only from the site, `challenges.cloudflare.com` for Turnstile
+  and `static.cloudflareinsights.com` for the host's analytics beacon, with no `'unsafe-inline'` or `'unsafe-eval'`;
+  connections to the site, `api.github.com`, `api.web3forms.com`, `challenges.cloudflare.com` and
+  `cloudflareinsights.com`; frames only from Turnstile; images from the site, `data:` and GitHub avatars; inline styles
+  allowed; `base-uri 'self'`; forms to the site and Web3Forms; `frame-ancestors 'none'`), HSTS for a year with
+  subdomains, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, and a Permissions-Policy that turns off camera,
+  microphone and geolocation. So that the policy needs no `'unsafe-inline'`, the page has no inline `<script>` and no
+  inline event handler: its code lives in `web/app.js` and `web/theme.js`, and buttons that open a window carry
+  `data-open="<modal id>"`, handled by one delegated listener (saved results are re-keyed, `CACHE_V` 10, so old markup
+  with `onclick` is dropped). A test checks that every host the code fetches or loads is in the policy. Adding a new
+  third-party script or API means updating `_headers` in the same change.
 
 ## RX — Deliberately excluded (v0.1)
 

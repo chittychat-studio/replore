@@ -16,6 +16,11 @@ import scout  # noqa: E402
 NOW = dt.datetime(2026, 10, 12, tzinfo=dt.timezone.utc)
 
 
+def _page():
+    """The whole web page as shipped: markup + its scripts (RS49 moved the code out of index.html into app.js)."""
+    return "\n".join((ROOT / "web" / f).read_text(encoding="utf-8") for f in ("index.html", "theme.js", "app.js"))
+
+
 def repo(name, stars, spdx="MIT", pushed="2026-09-01T00:00:00Z", **kw):
     return {"full_name": name, "stargazers_count": stars, "license": {"spdx_id": spdx} if spdx else None,
             "pushed_at": pushed, "html_url": f"https://github.com/{name}", "description": f"{name} desc",
@@ -598,7 +603,7 @@ def test_workflow_csv_option():
 
 def test_web_page_is_safe_static(monkeypatch):
     """RS22: no embedded secret, no external scripts, uses the public search API, logic mirrors the script."""
-    html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
+    html = _page()
     # no key or token anywhere: the page never asks for, stores, or embeds one
     import re as _re
     assert not _re.search(r"gh[pousr]_[A-Za-z0-9]{20,}", html), "looks like a real token is embedded"
@@ -606,8 +611,12 @@ def test_web_page_is_safe_static(monkeypatch):
     assert 'id="token"' not in html and "findrepo_gh_token" not in html
     assert "models.github" not in html and "Authorization" not in html
     # RS33: no third-party asset requests — GSAP 3.12.5 and the fonts are self-hosted; page degrades without GSAP
-    srcs = _re.findall(r'<script[^>]+src="([^"]+)"', html)
-    assert srcs == ["vendor/gsap.min.js"], srcs
+    index = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
+    srcs = _re.findall(r'<script[^>]+src="([^"]+)"', index)
+    assert srcs == ["theme.js", "vendor/gsap.min.js", "app.js"], srcs   # RS49: no inline script; app.js after GSAP
+    assert '<script src="vendor/gsap.min.js" defer>' in index and '<script src="app.js" defer>' in index   # RS24: GSAP first
+    assert not _re.search(r"<script(?![^>]*src=)[^>]*>", index) and not _re.search(r"\son[a-z]+\s*=", index)
+    assert "<html lang=\"en\">" in index   # RS24: no forced light theme; the system setting applies until the visitor picks one
     gsap = (ROOT / "web" / "vendor" / "gsap.min.js").read_text(encoding="utf-8")
     assert gsap.lstrip("/*! \n").startswith("GSAP 3.12.5") and "standard-licen" in gsap  # pinned, license header kept
     sheets = _re.findall(r'<link[^>]+rel="stylesheet"[^>]+href="([^"]+)"', html)
@@ -739,10 +748,31 @@ def test_web_page_is_safe_static(monkeypatch):
         assert t in html
 
 
+def test_security_headers_and_csp():
+    """RS49: Pages serves CSP + HSTS + framing/permission headers; the CSP allows exactly what the page loads."""
+    hdr = (ROOT / "web" / "_headers").read_text(encoding="utf-8")
+    lines = [l.strip() for l in hdr.splitlines() if l.strip() and not l.lstrip().startswith("#")]
+    assert lines[0] == "/*"
+    h = dict(l.split(": ", 1) for l in lines[1:])
+    assert h["Strict-Transport-Security"] == "max-age=31536000; includeSubDomains" and h["X-Frame-Options"] == "DENY"
+    assert h["Permissions-Policy"] == "camera=(), microphone=(), geolocation=()"
+    csp = {d.split()[0]: d.split()[1:] for d in h["Content-Security-Policy"].split("; ")}
+    assert "'unsafe-inline'" not in csp["script-src"] and "'unsafe-eval'" not in csp["script-src"]
+    assert csp["frame-ancestors"] == ["'none'"] and csp["default-src"] == ["'self'"]
+    app = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
+    fetched = set(re.findall(r'fetch\("https://([a-z0-9.-]+)', app)) | {"api.github.com"}
+    assert {"https://" + x for x in fetched} <= set(csp["connect-src"]), fetched
+    scripts = set(re.findall(r'\.src="https://([a-z0-9.-]+)', app))
+    assert scripts and {"https://" + x for x in scripts} <= set(csp["script-src"]), scripts
+    assert "https://static.cloudflareinsights.com" in csp["script-src"] and "https://cloudflareinsights.com" in csp["connect-src"]
+    assert "https://challenges.cloudflare.com" in csp["frame-src"]
+    assert "web/_headers" in (ROOT / "README.md").read_text(encoding="utf-8")
+
+
 def test_one_official_deploy_and_cardzo_credit():
     """RS22/RS40: Cloudflare Pages is the only deploy (the GitHub Pages copy had no relevance Function); footer credits Cardzo."""
     assert not (ROOT / ".github" / "workflows" / "pages.yml").exists()
-    html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
+    html = _page()
     assert 'href="https://cardzo.co.in" target="_blank" rel="noopener noreferrer"' in html and "Cardzo</a> product" in html
 
 
@@ -786,7 +816,7 @@ def test_workflow_all_group_options():
 
 def test_privacy_notice_matches_what_the_code_does():
     """RS33: the published privacy claims stay true — CI fails if a data flow is added without updating them."""
-    html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
+    html = _page()
     priv = (ROOT / "PRIVACY.md").read_text(encoding="utf-8")
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assert 'id="privacyModal"' in html and "PRIVACY.md" in html and "privacy-note" in html
@@ -821,12 +851,12 @@ def test_empty_description_is_said_plainly():
     assert "No description on GitHub" in txt and "No description on GitHub" in md
     assert "No description on GitHub" not in csv_out
     assert next(r for r in res["candidates"] if r["full_name"] == "openai/math")["description"] == ""
-    html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
+    html = _page()
     assert 'var NO_DESC="No description on GitHub";' in html and scout.NO_DESC == "No description on GitHub"
     assert 'esc(r.desc||"—")' not in html
 def test_about_text_matches_what_the_page_does():
     """RS34, RS16a, RS43: About must not say poor fits are hidden (they move to 'Less likely to fit')."""
-    html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
+    html = _page()
     about = html[html.index('id="aboutModal"'):html.index("</div></div>", html.index('id="aboutModal"'))]
     assert "hides repos" not in about and "Less likely to fit" in about and "Less likely to fit" in html.split('id="aboutModal"')[1]
     assert "specific needs first" in about and "within an hour" in about and "not legal advice" in about
@@ -834,7 +864,7 @@ def test_about_text_matches_what_the_page_does():
 
 def test_rs47_look_and_motion_kit():
     """RS47: owner palette + self-hosted type, masked hero lines, magnets, odometer, trending ring + ticker."""
-    html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
+    html = _page()
     fcss = (ROOT / "web" / "fonts.css").read_text(encoding="utf-8")
     for fam in ("'Anton'", "'Inter Tight'", "'JetBrains Mono'"):
         assert fam in fcss, fam

@@ -1,7 +1,11 @@
 // RS22: exercise the web page's pure logic in Node (no browser, no network).
 const fs = require("fs"), path = require("path"), assert = require("assert");
+// RS49: the page's code lives in web/app.js (no inline script, so the CSP needs no 'unsafe-inline')
 const html = fs.readFileSync(path.join(__dirname, "..", "web", "index.html"), "utf8");
-const code = html.match(/<script>([\s\S]*)<\/script>/)[1].replace('"use strict";', "");
+const code = fs.readFileSync(path.join(__dirname, "..", "web", "app.js"), "utf8").replace('"use strict";', "");
+assert.ok(!/<script(?![^>]*\bsrc=)[^>]*>/i.test(html), "index.html must have no inline <script>");
+assert.ok(!/\son[a-z]+\s*=/i.test(html) && !/javascript:/i.test(html), "no inline event handlers or javascript: URLs in index.html");
+assert.ok(!/\son(click|load|error|input|change|submit)\s*=\s*\\?["']/i.test(code), "no inline handlers in markup built by app.js");
 // fake DOM: elements support the methods the page's load-time code calls (chips, modals, theme, RS21-RS24)
 const el = () => ({value:"",checked:false,textContent:"",innerHTML:"",type:"",className:"",dataset:{},style:{},
                    addEventListener(){}, appendChild(){}, focus(){}, querySelector:()=>el(), querySelectorAll:()=>[],
@@ -183,7 +187,7 @@ console.log("prd ok:", f.join(" | "));
 { const src = fs.readFileSync(path.join(__dirname, "..", "functions", "api", "relevance.js"), "utf8");
   const block = src.match(/EXAMPLE_QUERIES = \[([\s\S]*?)\];/)[1];
   const fnList = [...block.matchAll(/"((?:[^"\\]|\\.)*)"/g)].map(m => m[1]);
-  const pageList = [...html.match(/var EXAMPLES=\[([\s\S]*?)\];/)[1].matchAll(/text:"((?:[^"\\]|\\.)*)"/g)].map(m => m[1]);
+  const pageList = [...code.match(/var EXAMPLES=\[([\s\S]*?)\];/)[1].matchAll(/text:"((?:[^"\\]|\\.)*)"/g)].map(m => m[1]);
   assert.deepStrictEqual(fnList, pageList);
   console.log("example list in sync"); }
 

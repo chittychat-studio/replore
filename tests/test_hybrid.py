@@ -19,7 +19,7 @@ GOLDEN = [2.374521, 0.0, 1.871074]   # the same numbers tests/test_web_logic.js 
 
 def test_bm25_golden_and_stop_parity_with_page():
     assert hybrid.bm25_scores(DESC, DOCS) == GOLDEN
-    html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
+    html = (ROOT / "web" / "app.js").read_text(encoding="utf-8")   # RS49: the page's code lives in app.js
     page_stop = re.search(r'var STOP=new Set\("([^"]+)"', html).group(1).split(" ")
     assert set(page_stop) == hybrid.STOP, "plugin and page must drop the same filler words"
 

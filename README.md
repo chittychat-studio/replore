@@ -56,6 +56,9 @@ A static page at `web/index.html` powers it. It auto-deploys (Cloudflare Pages) 
 2. Push to `main` (the `pages` workflow deploys `web/`), or run the **pages** workflow by hand.
 3. Open the URL the workflow prints.
 
+The page's code is in `web/app.js` (plus `web/theme.js`); its security headers and Content-Security-Policy are in
+`web/_headers` (SPEC RS49), so a new third-party script or API must be added there or the browser blocks it.
+
 It calls the public GitHub search API from the browser (about 10 searches a minute, no login, no key) and runs
 the same filters, ranking and license labels as the plugin. The searches are keyword-based; then a small server-side
 **relevance check** (`functions/api/relevance.js`, SPEC RS34) asks an AI which of the top 30 repos don't fit what you
