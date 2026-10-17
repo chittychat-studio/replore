@@ -104,15 +104,37 @@ def clean(text):
     return re.sub("[\\s,.;:\\-\u2013\u2014]+$", "", cut) + "\u2026"
 
 
-def build_query(q):
-    """RS2: always exclude forks and archived repos."""
-    return f"{q.strip()} fork:false archived:false is:public"
+GH_MAX_QUERY = 256  # GitHub's limit for the whole q string (qualifiers included)
+
+
+def _typed(q, key):
+    """True when the user already wrote this qualifier (also negated, e.g. -stars:), so we never add a second one."""
+    return re.search(r"(?:^|\s)-?" + key + ":", q, re.I) is not None
+
+
+def build_query(q, max_age_months=0, min_stars=0, now=None):
+    """RS2, RS4, RS4b: exclude forks and archived repos, and push the staleness and star filters into the search so
+    GitHub's 1,000-result window and our page of results are spent on repos that can pass. Same rule as the page's
+    ghQuery() (RS29b; shared cases in tests/fixtures/qualifier_cases.json). A qualifier the user typed is left alone;
+    one that would push the query past GitHub's 256 characters is dropped (the client-side filters still apply).
+    No AND/OR/NOT is ever added, so GitHub's limit of 5 operators is untouched."""
+    out = q.strip()
+    quals = [x for k, x in (("fork", "fork:false"), ("archived", "archived:false"), ("is", "is:public")) if not _typed(out, k)]
+    if max_age_months > 0 and not _typed(out, "pushed"):
+        now = now or dt.datetime.now(dt.timezone.utc)
+        quals.append("pushed:>=" + (now - dt.timedelta(days=30.44 * max_age_months)).date().isoformat())
+    if min_stars > 0 and not _typed(out, "stars"):
+        quals.append(f"stars:>={min_stars}")
+    for x in quals:
+        if len(out) + 1 + len(x) <= GH_MAX_QUERY:
+            out += " " + x
+    return out
 
 
 def fetch(query, token=None, timeout=20):
     """RS2, RS7, RS8: one search request; raises ScoutError on any failure."""
     # RS2: best-match (relevance) order seeds fit ranking (RS5); stars stay in each result and still weigh in RS5
-    params = urllib.parse.urlencode({"q": query, "per_page": 30})
+    params = urllib.parse.urlencode({"q": query, "per_page": 100})   # RS4b: one full page, filters already in q
     req = urllib.request.Request(f"{API}?{params}", headers={
         "Accept": "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
@@ -317,7 +339,7 @@ def scout(queries, fetcher=fetch, top=20, candidates=40, license_mode="open", ma
         kept = []
         by_query.append(kept)
         try:
-            data = fetcher(build_query(q), token)
+            data = fetcher(build_query(q, max_age_months, min_stars, now), token)
         except ScoutError as e:  # RS19: name the user's search, never the added qualifiers
             raise ScoutError(f"Search {q!r}: {e}") from None
         items = data.get("items") if isinstance(data, dict) else None  # RS7: malformed response fails closed

@@ -1109,10 +1109,25 @@ function confirmQueries(names){ var out=[], cur="";   // live GitHub check for i
   if(cur) out.push(cur); return out; }
 
 window.__runGen=0;   // search generation: resetAll() and each new search bump it (stale async results are dropped)
-async function search(q){
+// RS2/RS4/RS4b: forks and archived repos out, and the staleness + star filters pushed into the search itself, so
+// GitHub's best matches are repos that can pass. Same rule as scripts/scout.py build_query() (RS29b; shared cases in
+// tests/fixtures/qualifier_cases.json): a qualifier the user typed is left alone; one that would pass GitHub's
+// 256-character limit is dropped (keep() still filters); no AND/OR/NOT is ever added.
+var GH_MAX_QUERY=256;
+function ghTyped(q, key){ return new RegExp("(?:^|\\s)-?"+key+":","i").test(q); }
+function ghQuery(q, maxAgeMonths, minStars, now){
+  var out=String(q||"").trim(), quals=[];
+  [["fork","fork:false"],["archived","archived:false"],["is","is:public"]].forEach(function(p){ if(!ghTyped(out,p[0])) quals.push(p[1]); });
+  if(maxAgeMonths>0 && !ghTyped(out,"pushed"))
+    quals.push("pushed:>="+new Date((now==null?Date.now():now)-maxAgeMonths*30.44*864e5).toISOString().slice(0,10));
+  if(minStars>0 && !ghTyped(out,"stars")) quals.push("stars:>="+minStars);
+  quals.forEach(function(x){ if(out.length+1+x.length<=GH_MAX_QUERY) out+=" "+x; });
+  return out;
+}
+async function search(q, minStars){
   // best-match (relevance) order seeds the fit ranking (RS2/RS5); stars are still in each result and weigh in RS5
-  var url="https://api.github.com/search/repositories?q="+encodeURIComponent(q+" fork:false archived:false is:public")
-    +"&per_page=30";
+  var url="https://api.github.com/search/repositories?q="+encodeURIComponent(minStars==null?ghQuery(q,0,0):ghQuery(q,MAX_AGE_MONTHS,minStars))
+    +"&per_page=100";   // RS4b: one full page; the filters are already in q
   var r=await fetch(url,{headers:{"Accept":"application/vnd.github+json"}});
   var left=parseInt(r.headers.get("x-ratelimit-remaining"),10); window.__ghLeft=isNaN(left)?null:left;   // RS41: searches left this minute
   if(r.status===403||r.status===429) throw new Error("GitHub rate limit reached (10 searches/minute without a token). Wait a minute and try again.");
@@ -1546,7 +1561,7 @@ async function runFeatures(features, minStars, platform, preferStarters, out, st
   var ex2=platform==="ios"?" -topic:macos":"", stack=(document.getElementById("stack").value||"").trim().slice(0,40);
   var excluded={license:0,stale:0,low:0,fork:0,harm:0}, seen={}, groups=[];
   for(var i=0;i<features.length;i++){ think(st,"Searching feature "+(i+1)+"/"+features.length);
-    var items=await search((features[i]+(stack?" "+stack:"")+ex2).trim());
+    var items=await search((features[i]+(stack?" "+stack:"")+ex2).trim(), minStars);
     if(gen!==window.__runGen) return;   // reset or a newer search happened: drop these results
     var kept=keep(items,minStars,platform,excluded,seen);  // shared seen map (RS5 cross-query rel), not a Set
     var floor=kept.reduce(function(m,r){return Math.max(m,r.stars);},0)*STARTER_MIN_SHARE;
@@ -1643,7 +1658,7 @@ async function run(){
     for(var i=0;i<queries.length;i++){
       if(i>0 && window.__ghLeft!=null && window.__ghLeft<=1) break;   // RS41: keep the last call for the next search; fewer expansions, not a failure
       think(st,"Searching GitHub ("+(i+1)+"/"+queries.length+")");
-      var items=await search(queries[i]);
+      var items=await search(queries[i], minStars);
       if(gen!==window.__runGen) return;
       lists.push(keep(items,minStars,platform,excluded,seen)); }
     var ranked=rankByFit(lists,preferStarters), top=ranked.slice(0,60);  // sane upper bound; we no longer cap at 20

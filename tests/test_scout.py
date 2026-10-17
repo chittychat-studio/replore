@@ -223,9 +223,29 @@ def test_top_and_candidates_limits():
 
 
 def test_query_always_excludes_forks_and_archived():
-    """RS2."""
+    """RS2, RS4b: forks/archived out, and the staleness + star filters go into the GitHub query itself."""
     _, f = run([[]])
-    assert f.calls[0][0] == "q0 fork:false archived:false is:public"
+    assert f.calls[0][0] == "q0 fork:false archived:false is:public pushed:>=2024-10-11"
+    _, f = run([[]], min_stars=50, max_age_months=0)
+    assert f.calls[0][0] == "q0 fork:false archived:false is:public stars:>=50"
+
+
+def test_query_qualifiers_match_the_web_page():
+    """RS4b, RS29b: the same inputs give the same q string in scout.py and the page (Node test reads the same file)."""
+    fx = json.loads((ROOT / "tests" / "fixtures" / "qualifier_cases.json").read_text(encoding="utf-8"))
+    now = dt.datetime.fromisoformat(fx["now"].replace("Z", "+00:00"))
+    for c in fx["cases"]:
+        got = scout.build_query(c["q"], c["max_age_months"], c["min_stars"], now)
+        assert got == c["expect"], c["name"]
+        assert len(got) <= scout.GH_MAX_QUERY and not re.search(r"\b(AND|OR|NOT)\b", got)
+
+
+def test_client_filters_still_apply_when_github_ignores_qualifiers():
+    """RS4b: defence in depth: a stale / low-star / forked repo in the reply is still excluded and counted."""
+    res, _ = run([[repo("a/old", 900, pushed="2020-01-01T00:00:00Z"), repo("a/tiny", 3), repo("a/f", 900, fork=True),
+                   repo("a/ok", 900)]], min_stars=50)
+    assert [r["full_name"] for r in res["top"]] == ["a/ok"]
+    assert (res["excluded"]["stale"], res["excluded"]["low_stars"], res["excluded"]["fork_or_archived"]) == (1, 1, 1)
 
 
 def test_forks_archived_disabled_excluded():
@@ -378,7 +398,7 @@ def test_fetch_builds_request_and_maps_errors(monkeypatch):
         return _Resp(b'{"items": []}')
     monkeypatch.setattr(scout.urllib.request, "urlopen", ok)
     assert scout.fetch("gsap fork:false", token="t0k") == {"items": []}
-    assert "per_page=30" in got["url"] and "sort=stars" not in got["url"] and got["auth"] == "Bearer t0k"
+    assert "per_page=100" in got["url"] and "sort=stars" not in got["url"] and got["auth"] == "Bearer t0k"
 
     def http(code, remaining=None):
         def f(req, timeout):
@@ -603,7 +623,7 @@ def test_web_page_is_safe_static(monkeypatch):
         assert host not in html.lower(), host
     # calls the public search API in best-match order (RS2), forks/archived excluded; fit ranking (RS5) re-ranks
     assert "api.github.com/search/repositories" in html
-    assert "fork:false archived:false is:public" in html
+    assert "function ghQuery" in html and '"fork:false"' in html and '"archived:false"' in html and "per_page=100" in html
     assert "sort=stars" not in html  # RS5: best-match seeds fit ranking; stars no longer forced on the fetch
     assert "rankByFit" in html and "fitScore" in html
     assert "whyRelevant" in html and "'Matches: '" in html  # RS24/RS37: a card says why only on a real word match

@@ -15,7 +15,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   what is being built), it asks the user one plain question about the project or task, and runs no search until
   they answer. The question also offers two optional preferences: language or stack, and whether unlicensed repos are OK.
 - **RS2** "All public GitHub" means the GitHub REST search API (`GET /search/repositories`). Each query
-  is sent with `per_page=30` and `fork:false archived:false is:public` added, in GitHub's best-match
+  is sent with `per_page=100` and `fork:false archived:false is:public` added (plus the RS4b filter qualifiers), in GitHub's best-match
   (relevance) order over name, description, topics and README; this seeds the fit ranking (RS5). `sort=stars`
   is no longer forced — stars stay in every result and still weigh in RS5.
   Results from all queries are merged and de-duplicated by `full_name`.
@@ -29,6 +29,16 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
 - **RS4a** Minimum stars: a repo with fewer than `--min-stars` stars (CLI and workflow default 50; 0 turns it
   off) is excluded and counted as `low_stars`. Reason: fit ranking (RS5) gives relevant small repos a real slot, and a
   live "diet app" run put 41- and 48-star repos in the top 3 ahead of one with 2,670.
+- **RS4b** Filters go into the search (peer review 2026-10-18: live "animation library" returned 5 repos, with 13 left
+  out for licence and 12 as stale, because one page of 30 best matches was fetched and filtered afterwards). Each query
+  also carries `pushed:>=YYYY-MM-DD` (today minus the RS4 window, 30.44 days a month, UTC date; omitted when the window is
+  0) and `stars:>=N` (the RS4a floor; omitted at 0), and asks for 100 results. A qualifier the user already typed
+  (`stars:`, `pushed:`, `fork:`, `archived:`, `is:`, negated or not) is not added again. GitHub caps the whole query at
+  256 characters and 5 AND/OR/NOT operators: qualifiers are added in order (fork, archived, is, pushed, stars) only while
+  the query stays within 256 characters, and none of them is an operator. The client-side filters (RS2–RS4a) still run
+  on every reply as a second check and still produce the excluded counts. The page's `ghQuery()` and `build_query()` in
+  `scripts/scout.py` build the identical string (RS29b; shared cases in `tests/fixtures/qualifier_cases.json`, asserted
+  by both test suites). Confirm searches for indexed repos (RS42) and the trending lists (RS35) are unchanged.
 - **RS5** Fit ranking (default `--rank fit`). The aim is to save the user from scrolling hundreds of repos, so
   the top rank is what a builder actually wants: relevant **and** popular **and** free to use. Each candidate
   gets a *fit* score, highest first, blending three signals:

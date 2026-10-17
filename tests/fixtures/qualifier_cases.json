@@ -1,0 +1,75 @@
+{
+  "now": "2026-10-18T12:00:00Z",
+  "cases": [
+    {
+      "name": "default page search",
+      "q": "animation library",
+      "max_age_months": 24,
+      "min_stars": 50,
+      "expect": "animation library fork:false archived:false is:public pushed:>=2024-10-17 stars:>=50"
+    },
+    {
+      "name": "min stars off",
+      "q": "calorie counter",
+      "max_age_months": 24,
+      "min_stars": 0,
+      "expect": "calorie counter fork:false archived:false is:public pushed:>=2024-10-17"
+    },
+    {
+      "name": "staleness off",
+      "q": "calorie counter",
+      "max_age_months": 0,
+      "min_stars": 50,
+      "expect": "calorie counter fork:false archived:false is:public stars:>=50"
+    },
+    {
+      "name": "both off",
+      "q": "calorie counter",
+      "max_age_months": 0,
+      "min_stars": 0,
+      "expect": "calorie counter fork:false archived:false is:public"
+    },
+    {
+      "name": "user typed stars",
+      "q": "react stars:>1000",
+      "max_age_months": 24,
+      "min_stars": 50,
+      "expect": "react stars:>1000 fork:false archived:false is:public pushed:>=2024-10-17"
+    },
+    {
+      "name": "user typed negated pushed",
+      "q": "game engine -pushed:<2020-01-01",
+      "max_age_months": 24,
+      "min_stars": 50,
+      "expect": "game engine -pushed:<2020-01-01 fork:false archived:false is:public stars:>=50"
+    },
+    {
+      "name": "user typed fork",
+      "q": "next.js fork:true",
+      "max_age_months": 24,
+      "min_stars": 50,
+      "expect": "next.js fork:true archived:false is:public pushed:>=2024-10-17 stars:>=50"
+    },
+    {
+      "name": "platform exclusion kept",
+      "q": "swiftui app template -topic:macos",
+      "max_age_months": 24,
+      "min_stars": 50,
+      "expect": "swiftui app template -topic:macos fork:false archived:false is:public pushed:>=2024-10-17 stars:>=50"
+    },
+    {
+      "name": "long query: qualifiers that would pass 256 chars are dropped",
+      "q": "word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word",
+      "max_age_months": 24,
+      "min_stars": 1000,
+      "expect": "word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word fork:false archived:false is:public pushed:>=2024-10-17"
+    },
+    {
+      "name": "200-char query keeps what fits",
+      "q": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "max_age_months": 24,
+      "min_stars": 50,
+      "expect": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx fork:false archived:false is:public pushed:>=2024-10-17"
+    }
+  ]
+}

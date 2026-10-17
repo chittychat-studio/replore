@@ -14,7 +14,7 @@ global.window = global;
 const s = {};
 new Function("document", "localStorage",
   code + "; this.keywordQueries=keywordQueries; this.rankByFit=rankByFit; this.fitScore=fitScore; this.whyRelevant=whyRelevant; this.esc=esc; this.lu=lu; this.freeText=freeText;" +
-  " this.keep=keep; this.ragRan=ragRan; this.hasDesc=hasDesc; this.descHtml=descHtml; this.tipUrlOk=tipUrlOk; this.clean=clean; this.harmful=harmful; this.harmfulRepo=harmfulRepo; this.prdFeatures=prdFeatures; this.trendingQuery=trendingQuery; this.trendRows=trendRows; this.feedbackUrl=feedbackUrl; this.feedbackPayload=feedbackPayload; this.agoText=agoText; this.cardHtml=cardHtml; this.recentKey=recentKey; this.recentFind=recentFind; this.recentAdd=recentAdd; this.CACHE_V=CACHE_V; this.bm25Scores=bm25Scores; this.repoText=repoText; this.rrfOrder=rrfOrder; this.hybridOrder=hybridOrder; this.confirmQueries=confirmQueries;").call(s, document, global.localStorage || {getItem:()=>null,setItem(){},removeItem(){}});
+  " this.keep=keep; this.ragRan=ragRan; this.hasDesc=hasDesc; this.descHtml=descHtml; this.tipUrlOk=tipUrlOk; this.clean=clean; this.harmful=harmful; this.harmfulRepo=harmfulRepo; this.prdFeatures=prdFeatures; this.trendingQuery=trendingQuery; this.trendRows=trendRows; this.feedbackUrl=feedbackUrl; this.feedbackPayload=feedbackPayload; this.agoText=agoText; this.cardHtml=cardHtml; this.recentKey=recentKey; this.recentFind=recentFind; this.recentAdd=recentAdd; this.CACHE_V=CACHE_V; this.bm25Scores=bm25Scores; this.repoText=repoText; this.rrfOrder=rrfOrder; this.hybridOrder=hybridOrder; this.confirmQueries=confirmQueries; this.ghQuery=ghQuery;").call(s, document, global.localStorage || {getItem:()=>null,setItem(){},removeItem(){}});
 
 // RS16: iOS excludes macOS
 // RS16: expansions are specific on-topic phrases, never a bare category (live regression: "website" -> "frontend framework"
@@ -164,6 +164,10 @@ const xdup = L1.find(r => r.name === "x/dup");
 assert.strictEqual(xdup.rel, 1, "first query sees x/dup at index 1");
 s.keep([{full_name:"x/dup",stargazers_count:1000,license:{spdx_id:"MIT"},pushed_at:now,description:"d"}], 50, "", xex, xseen);
 assert.strictEqual(xdup.rel, 0, "dup rel drops to the better position found by a later query");
+// RS4b/RS29b: the page builds exactly the q string scout.py builds (shared cases, asserted in tests/test_scout.py too)
+{ const fx = JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures", "qualifier_cases.json"), "utf8"));
+  const now = Date.parse(fx.now);
+  for (const c of fx.cases) assert.strictEqual(s.ghQuery(c.q, c.max_age_months, c.min_stars, now), c.expect, c.name); }
 console.log("web logic ok");
 
 // RS23: PRD feature extraction (client-side, capped for the rate limit)
