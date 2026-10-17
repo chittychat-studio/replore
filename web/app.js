@@ -741,7 +741,9 @@ function closeModals(){ var any=false, m=document.querySelectorAll(".modal");
 // modal a11y: mark sheets as dialogs, label the × buttons, and trap Tab within the open modal
 (function(){
   var sheets=document.querySelectorAll(".modal .sheet");
-  for(var i=0;i<sheets.length;i++){ sheets[i].setAttribute("role","dialog"); sheets[i].setAttribute("aria-modal","true"); }
+  for(var i=0;i<sheets.length;i++){ sheets[i].setAttribute("role","dialog"); sheets[i].setAttribute("aria-modal","true");
+    var h2=sheets[i].querySelector("h2"), mid=sheets[i].parentNode&&sheets[i].parentNode.id;   // RS46: each dialog is named by its heading
+    if(h2&&mid){ if(!h2.id) h2.id=mid+"Title"; sheets[i].setAttribute("aria-labelledby",h2.id); } }
   var xs=document.querySelectorAll(".modal .x"); for(var j=0;j<xs.length;j++) xs[j].setAttribute("aria-label","Close");
   document.addEventListener("keydown",function(e){ if(e.key!=="Tab") return;
     var open=document.querySelector(".modal.open"); if(!open) return;

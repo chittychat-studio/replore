@@ -544,6 +544,11 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   read a half-typed line. The search placeholder matches its label ("What are you building?"). A footer link is named
   after the window it opens ("About the results"). On the desktop home screen the GitHub credit line sits centred under
   the footer line. Copy is cut to what the visitor needs: no "start shipping", "just", or "the smart version" filler.
+  Peer review 2026-10-18 added: the status line is `role="status" aria-live="polite"` and the results area
+  `aria-live="polite"`; every dialog is named by its heading (`aria-labelledby`); the window close ✕ is a 32px target and
+  the copy buttons at least 24px; the light theme's verdict colours are `--good:#426832` and `--warn:#855816` (5.3:1 and
+  5.1:1 on their tints, were 4.1:1), and the GitHub credit and privacy line are no longer faded (5.0:1, was 3.7:1). A test
+  computes these ratios from the CSS.
 
 - **RS45** Empty descriptions (owner 2026-10-14: "why is this blank"). GitHub gives some repos no description. The
   page and the plugin's text/markdown output say "No description on GitHub" (muted), never "—" and never an invented

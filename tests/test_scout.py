@@ -769,6 +769,33 @@ def test_security_headers_and_csp():
     assert "web/_headers" in (ROOT / "README.md").read_text(encoding="utf-8")
 
 
+def _contrast(a, b):
+    def lum(h):
+        c = [int(h[i:i + 2], 16) / 255 for i in (1, 3, 5)]
+        c = [v / 12.92 if v <= 0.03928 else ((v + 0.055) / 1.055) ** 2.4 for v in c]
+        return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
+    x, y = sorted((lum(a), lum(b)), reverse=True)
+    return (x + 0.05) / (y + 0.05)
+
+
+def test_accessibility_baseline():
+    """RS46: live regions, named dialogs, 24px close/copy targets, >= 4.5:1 verdict tags and footer notes."""
+    index = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
+    app = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
+    assert '<div id="status" class="status" role="status" aria-live="polite">' in index
+    assert '<div id="out" class="results" aria-live="polite">' in index
+    assert 'setAttribute("aria-labelledby",h2.id)' in app
+    heads = re.findall(r'<div class="modal" id="[^"]+"><div class="sheet[^"]*">([\s\S]*?)</h2>', index)
+    assert len(heads) == index.count('<div class="modal"') == 9 and not any('class="modal"' in h for h in heads)   # every dialog has its own heading
+    assert re.search(r"\.x\{[^}]*min-width:32px;min-height:32px", index) and re.search(r"\.cmd \.copy\{[^}]*min-height:26px", index)
+    for theme in (index.split(":root{", 1)[1], index.split(':root[data-theme="dark"]{', 1)[1]):
+        var = lambda n: re.search(r"--" + n + r":(#[0-9a-f]{6})", theme).group(1)
+        assert _contrast(var("good"), var("goodbg")) >= 4.5 and _contrast(var("warn"), var("warnbg")) >= 4.5
+        assert _contrast(var("muted"), var("bg")) >= 4.5
+    for rule in (".gh-credit{", ".privacy-note{"):
+        assert "opacity" not in index.split(rule, 1)[1].split("}", 1)[0], rule
+
+
 def test_one_official_deploy_and_cardzo_credit():
     """RS22/RS40: Cloudflare Pages is the only deploy (the GitHub Pages copy had no relevance Function); footer credits Cardzo."""
     assert not (ROOT / ".github" / "workflows" / "pages.yml").exists()

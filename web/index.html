@@ -21,7 +21,8 @@
   :root{
     /* RS47 owner palette (2026-10-15): steel blue on cool white, from the owner's example page */
     --bg:#f4f6f8; --bg2:#eef2f5; --card:#ffffff; --card-bg:#ffffff; --card-line:#dde3e9; --card-glow:63,111,142; --ink:#1e2a36; --muted:#5f6b78; --line:#dde3e9;
-    --accent:#3f6f8e; --accent-ink:#22374a; --accent2:#5b88a6; --accent-rgb:63,111,142; --tint:#c7d6e2; --deep:#22374a; --btn-grad:linear-gradient(135deg,#3f6f8e,#22374a); --good:#4f7a3c; --warn:#9a661c;
+    --accent:#3f6f8e; --accent-ink:#22374a; --accent2:#5b88a6; --accent-rgb:63,111,142; --tint:#c7d6e2; --deep:#22374a; --btn-grad:linear-gradient(135deg,#3f6f8e,#22374a); --good:#426832; --warn:#855816;   /* RS46: verdict tags >= 4.5:1 on their tints (were 4.1) */
+   
     --warnbg:#f3ead2; --goodbg:#e4ecdc; --offbg:#e9eef2; --shadow:30,42,54;
     --f-display:"Anton",Impact,"Arial Narrow Bold",sans-serif; --f-body:"Inter Tight",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
     --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
@@ -84,7 +85,7 @@
   /* top-down page: big search hero on top, results below */
   .page{max-width:1160px;margin:0 auto;padding:20px 20px 56px;width:100%}
   .hero{max-width:760px;margin:0 auto 14px;text-align:center}
-  .gh-credit{font-size:12px;color:var(--muted);text-align:center;margin:4px auto 0;max-width:780px;opacity:.85}   /* RS44 */
+  .gh-credit{font-size:12px;color:var(--muted);text-align:center;margin:4px auto 0;max-width:780px}   /* RS46: no fade, 5:1 */   /* RS44 */
   .brand-by{white-space:nowrap}
   .hero-pill{display:inline-flex;align-items:center;gap:6px;margin:0 0 12px;padding:5px 12px;border-radius:999px;
     font-size:13px;font-weight:600;letter-spacing:.01em;color:var(--accent-ink);background:rgba(var(--accent-rgb),.08);border:1px solid rgba(var(--accent-rgb),.22)}
@@ -384,7 +385,7 @@
   /* PRD prompt box with a small corner copy icon */
   .prd-prompt{position:relative;margin:10px 0}
   .prd-prompt .copy{position:absolute;top:8px;right:8px;background:var(--card);border:1px solid var(--line);
-    border-radius:8px;padding:5px 9px;font-size:14px;line-height:1;color:var(--accent-ink);cursor:pointer}
+    border-radius:8px;padding:5px 9px;font-size:14px;line-height:1;color:var(--accent-ink);cursor:pointer;min-width:28px;min-height:28px}
   .prd-prompt .copy:hover{border-color:var(--accent)}
   .primary-cta{display:block;text-align:center;margin-top:12px;color:#fff;text-decoration:none;border-radius:10px;
     padding:13px 18px;font-weight:700;background:var(--btn-grad);
@@ -438,7 +439,7 @@
   .group-h span{color:var(--muted);font-weight:500}
   .err{color:var(--warn);font-weight:600}
   .excl{font-size:11.5px;color:var(--muted);margin:14px 4px 4px}
-  .privacy-note{text-align:center;font-size:12.5px;color:var(--muted);margin:18px auto 8px;max-width:680px;line-height:1.45;opacity:.85}
+  .privacy-note{text-align:center;font-size:12.5px;color:var(--muted);margin:18px auto 8px;max-width:680px;line-height:1.45}   /* RS46: no fade (was 3.7:1) */
   .privacy-note .link-btn,.privacy-note a{display:inline-block;padding:4px 2px;min-height:24px}   /* RS46: 24px tap targets */
   /* result-side filter chips + show-more */
   .res-filter{display:flex;flex-wrap:wrap;gap:8px;margin:0 4px 14px}
@@ -622,7 +623,8 @@
   .cmd{position:relative;background:var(--offbg);border:1px solid var(--line);border-radius:10px;padding:12px 60px 12px 12px;margin:10px 0;
     font:12.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;overflow-x:auto}
   .cmd .copy{position:absolute;top:8px;right:8px;background:var(--card);border:1px solid var(--line);border-radius:7px;
-    padding:3px 10px;font:inherit;font-size:11.5px;font-weight:700;color:var(--accent-ink);cursor:pointer;line-height:1.5}
+    padding:3px 10px;font:inherit;font-size:11.5px;font-weight:700;color:var(--accent-ink);cursor:pointer;line-height:1.5;
+    min-width:24px;min-height:26px}   /* RS46: >= 24px target */
   .cmd .copy:hover{border-color:var(--accent)}
   .guide-h{margin:18px 0 2px;font-size:13px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;color:var(--accent-ink)}
   .tabs{display:flex;gap:4px;margin:16px 0 4px;border-bottom:1px solid var(--line)}
@@ -634,7 +636,8 @@
   .guide li{margin:0 0 12px;line-height:1.55;font-size:14.5px}
   .guide li::marker{color:var(--accent-ink);font-weight:700}
   .guide .cmd{margin:6px 0 0}
-  .x{float:right;background:none;border:0;font-size:20px;cursor:pointer;color:var(--muted);line-height:1}
+  .x{float:right;background:none;border:0;font-size:20px;cursor:pointer;color:var(--muted);line-height:1;
+    min-width:32px;min-height:32px;margin:-6px -6px 0 0;display:inline-flex;align-items:center;justify-content:center;border-radius:8px}   /* RS46: >= 24px target */
   .cta-inline{margin-top:12px;background:linear-gradient(135deg,rgba(var(--accent-rgb),.1),transparent);
     border:1px solid var(--accent);border-radius:12px;padding:12px}
 
@@ -735,7 +738,7 @@
 
       <div id="quickpicks" class="quickpicks" aria-label="Quick examples to try"></div>
 
-      <div id="status" class="status"></div>
+      <div id="status" class="status" role="status" aria-live="polite"></div>
       <div id="tsBox" class="ts-box"></div>
     </div>
   </section>
@@ -747,7 +750,7 @@
         <div class="tring" id="tcarTrack" tabindex="0" role="group" aria-roledescription="carousel" aria-label="Rising repos: drag or use the arrow keys to turn"><div class="tring-spin"></div></div>
         <div class="ttape" aria-hidden="true"><div class="run"></div></div>
       </section>
-    <div id="out" class="results"></div>
+    <div id="out" class="results" aria-live="polite"></div>
     <p class="privacy-note">🔒 Nothing you type is stored.
       <button type="button" class="link-btn" data-open="privacyModal">Privacy</button> ·
       <button type="button" class="link-btn" id="tourBtn">Tour</button> ·
