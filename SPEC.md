@@ -395,8 +395,8 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   keyword results. The page learns the site key from
   `GET /api/relevance` and loads Turnstile from `challenges.cloudflare.com` only when a key is set (the one exception
   to RS33's no-third-party-script rule, disclosed in `PRIVACY.md`). Every browser-side wait (config, script, token) has a deadline and a failed load retries on the next search;
-  an interactive challenge gets 90 s. Without the secret the check is off and behaviour
-  is unchanged. **Status:** switched on in production 2026-10-14 (owner created a dedicated "Replore" Turnstile
+  an interactive challenge gets 90 s. Without the secret every POST is refused (RS34g; was: check off), unless the
+  owner sets `ALLOW_NO_TURNSTILE=1` for local or Preview use. **Status:** switched on in production 2026-10-14 (owner created a dedicated "Replore" Turnstile
   widget, Managed mode, hostnames `replore.cardzo.co.in` and `replore.pages.dev`; keys set as Pages variables). A per-IP Cloudflare rate-limiting rule on `/api/relevance` is the owner's dashboard setting, not code.
   Limits of this: an agent driving a real browser slowly can still pass; on the Workers Free plan the worst case of
   abuse is a day of keyword-only results, never a bill. The page shows only the kept repos and puts no note about the
@@ -452,6 +452,21 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   (static dots, no label cycling) under prefers-reduced-motion, is aria-hidden decoration (the label text stays
   readable), stops once removed, and makes no network call.
 
+- **RS34f** Implausible verdicts (peer review 2026-10-18, prompt injection). A reply that drops more than 60% of the
+  repos it was shown is treated as unparseable (`llm_unparseable` / `wai_unparseable`), so nothing is demoted and the
+  visitor gets the plain keyword order (fail open, as for any failed check). Before the prompt is built, any text in a
+  repo description or the query that imitates a verdict (`{"drop":`, `{drop:`, any case and spacing) is cut out, so a
+  description cannot hand the model an answer to copy.
+- **RS34g** Spend gate in code (peer review 2026-10-18: production was safe only because the owner set
+  `TURNSTILE_SECRET`; the code's default was "no bot check"). (1) Fail closed: with no `TURNSTILE_SECRET` every POST is
+  refused 403 `bot_check_failed`, unless the variable `ALLOW_NO_TURNSTILE` is exactly `1` (for `wrangler pages dev` and
+  Preview deployments only, never Production; a configured secret always wins). (2) A best-effort per-IP limit in code: at
+  most 10 POSTs per 10 s per `CF-Connecting-IP`, kept in the isolate's memory (no binding, at most 5,000 addresses);
+  over it the reply is 429 `rate_limited` with `Retry-After`, before the body is read. Each Cloudflare isolate has its
+  own memory, so this only blunts a burst; the WAF rule (RS41) stays the authority. (3) Callers that cannot run
+  Turnstile (the plugin's `--semantic`, `ops/rag_smoke.py`, the live eval) may send the server-held secret `PLUGIN_KEY`
+  (at least 16 characters, compared in constant time) in `X-Replore-Plugin-Key`; it opens both the judge and the
+  semantic route, and is never logged or returned. The page treats 429 like any failed check (keyword results, no note).
 - **RS34e** Relevance-check diagnosis and model choice. Live eval (2026-10-14, production chain): 6/9 queries timed
   out at 7 s, 2/9 returned unparseable output, and the one that ran dropped 4/6 relevant SaaS starters. Fixes: the
   model replies with indices only (`{"drop":[2,5]}`, max 120 tokens — the per-repo reasons were never shown and made
@@ -652,8 +667,10 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
     **Cards** are capped at 100 description characters and 5 topics everywhere (client payload, server, ingester), so all
     vectors sit on one scale. **One confirm search** per run in both clients (rate limit, RS41); indexed repos past it
     are dropped (fail closed).
-    `mode:"semantic"` returns meaning scores and indexed repos only — no AI judge, no Turnstile (it is cheap and the
-    `/api/relevance` path is under the RS41 rate limit). Because it has no bot check it has its own switch, `RAG_PLUGIN=1`,
+    `mode:"semantic"` returns meaning scores and indexed repos only — no AI judge. Since RS34g it sits behind the same gate
+    as the judge: the origin check, the per-IP limit, and either a Turnstile token or the server's shared `PLUGIN_KEY` in
+    `X-Replore-Plugin-Key` (the plugin sends `REPLORE_PLUGIN_KEY` from the user's environment; without it the public
+    plugin's `--semantic` gets 403 and keeps its keyword + BM25 order, RS7). It still has its own switch, `RAG_PLUGIN=1`,
     off by default even when the web switches are on, and answers 404 `semantic_off` until it is set. Known risk when on: a
     script can spend the shared Workers AI allowance (about 1 neuron per call at the card caps); turn it on only with a
     budget alert, and turn it off if the allowance drains. Indexed repos returned to the plugin are not AI-checked by the

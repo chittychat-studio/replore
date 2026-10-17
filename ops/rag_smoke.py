@@ -13,6 +13,7 @@ Without --yes it prints that and stops after step 1. Standard library only. Exit
 """
 import argparse
 import json
+import os
 import re
 import sys
 import urllib.error
@@ -34,8 +35,10 @@ NAME = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+")
 
 def _call(url, body=None, opener=urllib.request.urlopen, timeout=20):
     data = None if body is None else json.dumps(body).encode("utf-8")
-    req = urllib.request.Request(url, data=data, method="GET" if body is None else "POST",
-                                 headers={"Content-Type": "application/json", "User-Agent": "replore-rag-smoke"})
+    headers = {"Content-Type": "application/json", "User-Agent": "replore-rag-smoke"}
+    if body is not None and os.environ.get("REPLORE_PLUGIN_KEY"):   # RS34g: the semantic route needs the plugin key
+        headers["X-Replore-Plugin-Key"] = os.environ["REPLORE_PLUGIN_KEY"]
+    req = urllib.request.Request(url, data=data, method="GET" if body is None else "POST", headers=headers)
     try:
         with opener(req, timeout=timeout) as r:
             return r.status, json.load(r)

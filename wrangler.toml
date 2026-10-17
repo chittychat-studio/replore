@@ -1,6 +1,11 @@
 name = "replore"
 pages_build_output_dir = "web"
 
+# RS34g: the function refuses every AI check unless TURNSTILE_SECRET is set (Pages -> Settings -> Variables and Secrets).
+# For `wrangler pages dev` or a Preview without Turnstile, set ALLOW_NO_TURNSTILE = "1" on that environment only (never
+# Production). Optional secret PLUGIN_KEY (16+ chars) lets the plugin's --semantic, ops/rag_smoke.py and the live eval in.
+# Secrets are set in the dashboard, never in this file.
+
 # RS34a: Workers AI runs the relevance check first (no key); Groq (LLM_API_KEY) is the fallback. On the Workers Free plan it stops at the daily
 # free allocation instead of billing; on Workers Paid, usage past the allocation is billed.
 [ai]

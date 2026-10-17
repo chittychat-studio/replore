@@ -432,7 +432,7 @@ def test_stdlib_only_and_no_model_calls():
                        "hybrid"}, imports   # RS42: hybrid is the local stdlib-only module below
     assert not re.search(r"anthropic|openai|claude", src, re.I)
     hsrc = (ROOT / "scripts" / "hybrid.py").read_text(encoding="utf-8")
-    assert set(re.findall(r"^\s*(?:import|from)\s+([a-zA-Z_]+)", hsrc, re.M)) <= {"json", "math", "re", "urllib", "collections"}
+    assert set(re.findall(r"^\s*(?:import|from)\s+([a-zA-Z_]+)", hsrc, re.M)) <= {"json", "math", "os", "re", "urllib", "collections"}
     assert not re.search(r"anthropic|openai|api_key|Authorization", hsrc, re.I)   # no model key, ever (RS1)
 
 

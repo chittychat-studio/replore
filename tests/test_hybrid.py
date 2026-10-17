@@ -63,6 +63,20 @@ def test_semantic_parses_and_fails_closed():
     assert hybrid.semantic(DESC, rows, opener=down) is None
 
 
+def test_semantic_sends_plugin_key_only_when_set(monkeypatch):
+    """RS34g: the semantic route needs the server's shared key; the plugin sends it only from REPLORE_PLUGIN_KEY."""
+    got = []
+    def cap(req, timeout):
+        got.append(req.get_header("X-replore-plugin-key"))
+        return _Resp(b'{"sim": [0.5]}')
+    rows = [{"full_name": "a/b", "description": "x"}]
+    monkeypatch.delenv("REPLORE_PLUGIN_KEY", raising=False)
+    hybrid.semantic(DESC, rows, opener=cap)
+    monkeypatch.setenv("REPLORE_PLUGIN_KEY", "pk-0123456789abcdef")
+    hybrid.semantic(DESC, rows, opener=cap)
+    assert got == [None, "pk-0123456789abcdef"]
+
+
 def _repo(name, stars, desc):
     return {"full_name": name, "stargazers_count": stars, "license": {"spdx_id": "MIT"}, "pushed_at": "2026-09-01T00:00:00Z",
             "description": desc, "html_url": "https://github.com/" + name, "topics": []}

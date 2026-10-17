@@ -77,7 +77,13 @@ redeploy; optional `LLM_BASE_URL` (any OpenAI-compatible endpoint; default Groq)
 `llama-3.1-8b-instant`). With neither the binding nor the key, the page shows plain keyword results with no note.
 **Bot check (SPEC RS34c, recommended):** in Cloudflare → Turnstile, add a widget for your site's hostname
 (Invisible or Managed), then in the Pages project add the variable `TURNSTILE_SITE_KEY` (public) and the **secret**
-`TURNSTILE_SECRET`, and redeploy. Every AI check then needs a fresh Turnstile token. Also add a rate-limiting rule
+`TURNSTILE_SECRET`, and redeploy. Every AI check then needs a fresh Turnstile token. **Without `TURNSTILE_SECRET` the
+function refuses every AI check (SPEC RS34g, fail closed).** For local `wrangler pages dev` or a Preview deployment
+without Turnstile, set the variable `ALLOW_NO_TURNSTILE` = `1` on that environment only — never on Production. The
+function also limits each IP to 10 checks per 10 seconds in memory (best effort; the WAF rule below is the real limit).
+For callers that can't run Turnstile (the plugin's opt-in `--semantic`, `ops/rag_smoke.py`, the live eval), add a
+**secret** `PLUGIN_KEY` (16+ random characters) and give the same value to that caller as `REPLORE_PLUGIN_KEY` (for the
+`relevance-eval-live` workflow: a repository secret of that name). Also add a rate-limiting rule
 (Security → WAF → Rate limiting rules) on the path `/api/relevance`, per IP. On the Free plan, the worst that
 abuse can do is use up the day's allowance, never bill you.
 **Page-view counts (maintainer, SPEC RS33):** Cloudflare Web Analytics is switched on for the Pages project, so
