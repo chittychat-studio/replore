@@ -942,3 +942,17 @@ def test_rs47_look_and_motion_kit():
     assert 'class="tring"' in html and 'class="ttape"' in html and "TAPE_ICON" in html and "✦</b>" not in html
     assert "f>0.6 ? 0 : -1" in html   # only cards facing the visitor are focusable
 
+
+
+def test_release_hygiene():
+    """RS50: one version, SHA-pinned actions, exact dev pins, no root CLAUDE.md in the plugin."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import mcp_server
+    plugin = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
+    assert plugin["version"] == mcp_server.SERVER_INFO["version"] == "0.3.0"
+    for wf in (ROOT / ".github" / "workflows").glob("*.yml"):
+        for use in re.findall(r"uses:\s*(\S+)", wf.read_text(encoding="utf-8")):
+            assert re.fullmatch(r"[\w.-]+/[\w.-]+@[0-9a-f]{40}", use), (wf.name, use)
+    reqs = [l for l in (ROOT / "requirements-dev.txt").read_text(encoding="utf-8").splitlines() if l and not l.startswith("#")]
+    assert reqs and all(re.fullmatch(r"[A-Za-z0-9_.-]+==[0-9][0-9A-Za-z.]*", l) for l in reqs), reqs
+    assert not (ROOT / "CLAUDE.md").exists() and (ROOT / ".claude" / "CLAUDE.md").exists()

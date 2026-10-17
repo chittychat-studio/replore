@@ -728,6 +728,13 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   with `onclick` is dropped). A test checks that every host the code fetches or loads is in the policy. Adding a new
   third-party script or API means updating `_headers` in the same change.
 
+- **RS50** Release hygiene (peer review 2026-10-18). One version everywhere: `.claude-plugin/plugin.json` `version` equals
+  the MCP server's `SERVER_INFO` version (0.3.0). Every GitHub Action in `.github/workflows/` is pinned to a full commit
+  SHA with the tag as a comment (`@<40 hex>  # v4`), so a moved tag cannot change what CI runs. Dev dependencies are pinned
+  exactly (`pytest==9.1.1`, which supports Python 3.10–3.14). The repo's own Claude Code instructions live in
+  `.claude/CLAUDE.md`, not at the plugin root, where `claude plugin validate` warned that a root `CLAUDE.md` is not loaded
+  as plugin context. A test checks all four.
+
 ## RX — Deliberately excluded (v0.1)
 
 - **RX1** Scraping github.com HTML, or any non-API source.
