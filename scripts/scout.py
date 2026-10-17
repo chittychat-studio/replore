@@ -72,6 +72,17 @@ class ScoutError(Exception):
     """RS7: any failure that must end the run."""
 
 
+def utf8_stdio(*streams):
+    """RS48: a Windows console defaults to cp1252, so an emoji in a repo description crashed the print.
+    Switch the standard streams to UTF-8 (unprintable characters become '?', never an exception)."""
+    for s in streams or (sys.stdout, sys.stderr):
+        if hasattr(s, "reconfigure"):
+            try:
+                s.reconfigure(encoding="utf-8", errors="replace")
+            except (ValueError, OSError):
+                pass  # a stream that can't be switched keeps working as before
+
+
 def _u16(text):
     return len(text.encode("utf-16-le")) // 2
 
@@ -485,6 +496,7 @@ def render_markdown(result):
 
 
 def main(argv=None):
+    utf8_stdio()  # RS48
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("queries", nargs="+")
     p.add_argument("--top", type=int, default=20)

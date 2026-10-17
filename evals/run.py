@@ -73,7 +73,7 @@ def run_hybrid():
 
 
 def main():
-    data = json.loads((Path(__file__).parent / "fit_cases.json").read_text())
+    data = json.loads((Path(__file__).parent / "fit_cases.json").read_text(encoding="utf-8"))
     cases, threshold = data["cases"], data.get("threshold", 1.0)
     passed = 0
     print(f"Replore — fit-ranking eval ({len(cases)} goal cases)\n")

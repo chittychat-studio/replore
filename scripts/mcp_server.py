@@ -168,6 +168,7 @@ def _utf8(stream, **kw):
 def main(stdin=None, stdout=None):
     stdin = stdin or _utf8(sys.stdin)
     stdout = stdout or _utf8(sys.stdout, newline="\n")
+    _utf8(sys.stderr)  # RS48: diagnostics never crash on a cp1252 console either
     for line in stdin:
         line = line.strip()
         if not line:

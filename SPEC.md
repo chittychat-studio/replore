@@ -653,6 +653,13 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   and exits 1 if meaning scores or indexed repos are missing or malformed. Production switches go on only after a clean
   smoke run on a preview.
 
+- **RS48** Runs the same on Windows (peer review 2026-10-18: `scout.py` crashed with UnicodeEncodeError on a cp1252
+  console when a repo description held an emoji, and six unit tests failed on Windows). Every entry point that prints
+  (`scripts/scout.py`, `scripts/mcp_server.py`, `hooks/security_log.py`) switches its standard streams to UTF-8 with
+  `errors="replace"` at start-up when the stream supports it, so a character the console cannot show never ends a run.
+  `mcp_server.py` stdout stays pure JSON-RPC. Every test and script reads repo files as UTF-8 explicitly, and CI runs the
+  unit tests and Node tests on `windows-latest` as well as Linux.
+
 ## RX — Deliberately excluded (v0.1)
 
 - **RX1** Scraping github.com HTML, or any non-API source.

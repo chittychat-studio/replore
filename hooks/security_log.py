@@ -56,13 +56,26 @@ def _log_path():
     if not p or p.lower() in ("0", "off", "false", "no"):
         return None
     if p.lower() in ("1", "on", "true", "yes"):
-        return os.path.join(os.path.expanduser("~"), ".replore", "security.log")
+        # RS48: HOME first, as on Linux/macOS (where expanduser reads it anyway); Windows' expanduser ignores HOME
+        home = os.environ.get("HOME") or os.path.expanduser("~")
+        return os.path.join(home, ".replore", "security.log")
     return p
+
+
+def _utf8_stdio():
+    """RS48: Claude Code sends UTF-8; a Windows pipe defaults to cp1252, which can't decode every byte."""
+    for s in (sys.stdin, sys.stdout, sys.stderr):
+        if hasattr(s, "reconfigure"):
+            try:
+                s.reconfigure(encoding="utf-8", errors="replace")
+            except (ValueError, OSError):
+                pass
 
 
 def main():
     if _log_path() is None:  # opt-in: not enabled, so don't even read the prompt
         return 0
+    _utf8_stdio()
     try:
         raw = sys.stdin.read()
     except Exception:

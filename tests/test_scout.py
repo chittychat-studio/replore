@@ -203,7 +203,7 @@ def test_cli_rank_and_starter_flags(monkeypatch, capsys):
 
 def test_skill_vibe_coder_rules():
     """RS16, RS17, RS14, RS15."""
-    skill = (ROOT / "skills" / "find" / "SKILL.md").read_text()
+    skill = (ROOT / "skills" / "find" / "SKILL.md").read_text(encoding="utf-8")
     assert "-topic:macos" in skill and "--prefer-starters" in skill
     assert "winget install Python.Python.3.12" in skill and "Add python.exe to PATH" in skill
     assert "license_use" in skill and "start_hint" in skill and "stars can be bought" in skill
@@ -211,7 +211,7 @@ def test_skill_vibe_coder_rules():
 
 def test_workflow_passes_rank_and_starters_via_env():
     """RS13, RS5, RS15."""
-    wf = (ROOT / ".github" / "workflows" / "find.yml").read_text()
+    wf = (ROOT / ".github" / "workflows" / "find.yml").read_text(encoding="utf-8")
     assert "RANK: ${{ inputs.rank }}" in wf and "PREFER_STARTERS: ${{ inputs.prefer_starters }}" in wf
     assert '"--rank", os.environ["RANK"]' in wf
 
@@ -333,6 +333,18 @@ def test_main_exit_codes(monkeypatch, capsys):
     assert "Could not reach GitHub" in err.err and err.out == ""
 
 
+def test_emoji_description_prints_on_cp1252_console(monkeypatch):
+    """RS48: live crash on Windows: an emoji in a repo description raised UnicodeEncodeError on a cp1252 console."""
+    _patch_fetch(monkeypatch, lambda q, token=None: {"items": [repo("a/b", 500, description="Fast 🚀 animations ✨")]})
+    for fmt in ([], ["--markdown"], ["--csv"]):
+        buf, err = io.BytesIO(), io.BytesIO()
+        monkeypatch.setattr(sys, "stdout", io.TextIOWrapper(buf, encoding="cp1252"))
+        monkeypatch.setattr(sys, "stderr", io.TextIOWrapper(err, encoding="cp1252"))
+        assert scout.main(fmt + ["x"]) == 0
+        sys.stdout.flush()
+        assert "🚀" in buf.getvalue().decode("utf-8")
+
+
 def test_main_json(monkeypatch, capsys):
     """RS10."""
     _patch_fetch(monkeypatch, lambda q, token=None: {"items": [repo("a/b", 500)]})
@@ -389,26 +401,26 @@ def test_fetch_builds_request_and_maps_errors(monkeypatch):
 
 def test_stdlib_only_and_no_model_calls():
     """RS1, RS11."""
-    src = (ROOT / "scripts" / "scout.py").read_text()
+    src = (ROOT / "scripts" / "scout.py").read_text(encoding="utf-8")
     imports = set(re.findall(r"^\s*(?:import|from)\s+([a-zA-Z_]+)", src, re.M))
     assert imports <= {"argparse", "csv", "datetime", "http", "io", "json", "math", "os", "re", "sys", "urllib",
                        "hybrid"}, imports   # RS42: hybrid is the local stdlib-only module below
     assert not re.search(r"anthropic|openai|claude", src, re.I)
-    hsrc = (ROOT / "scripts" / "hybrid.py").read_text()
+    hsrc = (ROOT / "scripts" / "hybrid.py").read_text(encoding="utf-8")
     assert set(re.findall(r"^\s*(?:import|from)\s+([a-zA-Z_]+)", hsrc, re.M)) <= {"json", "math", "re", "urllib", "collections"}
     assert not re.search(r"anthropic|openai|api_key|Authorization", hsrc, re.I)   # no model key, ever (RS1)
 
 
 def test_skill_calls_real_script():
     """RS1."""
-    skill = (ROOT / "skills" / "find" / "SKILL.md").read_text()
+    skill = (ROOT / "skills" / "find" / "SKILL.md").read_text(encoding="utf-8")
     assert "${CLAUDE_PLUGIN_ROOT}/scripts/scout.py" in skill
     assert (ROOT / "scripts" / "scout.py").exists()
 
 
 def test_skill_asks_for_task_when_no_description():
     """RS1a."""
-    skill = (ROOT / "skills" / "find" / "SKILL.md").read_text()
+    skill = (ROOT / "skills" / "find" / "SKILL.md").read_text(encoding="utf-8")
     front = skill.split("---")[1]
     assert "argument-hint:" in front
     assert "$ARGUMENTS" in skill
@@ -438,7 +450,7 @@ def test_markdown_no_match(monkeypatch, capsys):
 
 def test_workflow_passes_inputs_via_env_only():
     """RS13: workflow inputs never interpolated into the shell script."""
-    wf = (ROOT / ".github" / "workflows" / "find.yml").read_text()
+    wf = (ROOT / ".github" / "workflows" / "find.yml").read_text(encoding="utf-8")
     run_block = wf.split("run: |", 1)[1]
     assert "${{" not in run_block
     assert "workflow_dispatch" in wf and "contents: read" in wf
@@ -476,7 +488,7 @@ def test_error_names_user_query_not_qualifiers():
 
 def test_workflow_fails_on_error_but_not_on_no_match():
     """RS19: live runs showed errors as green because the default shell had no pipefail."""
-    wf = (ROOT / ".github" / "workflows" / "find.yml").read_text()
+    wf = (ROOT / ".github" / "workflows" / "find.yml").read_text(encoding="utf-8")
     step = wf.split("- name: Search GitHub", 1)[1]
     assert "shell: bash" in step
     assert "sys.exit(0 if code == 1 else code)" in step
@@ -485,7 +497,7 @@ def test_workflow_fails_on_error_but_not_on_no_match():
 
 def test_skill_edge_case_rules():
     """RS1b, RS18, RS19."""
-    skill = (ROOT / "skills" / "find" / "SKILL.md").read_text()
+    skill = (ROOT / "skills" / "find" / "SKILL.md").read_text(encoding="utf-8")
     assert "diet app" in skill and "Do not block on a question" in skill
     assert "Do you mean learning security / testing an app you own, or a hackathon project?" in skill
     assert "Only test systems you own or have written permission to test." in skill
@@ -533,7 +545,7 @@ def test_markdown_top_table_then_extra_candidates_and_free_note():
 
 def test_skill_comparison_table_and_prompt_fields():
     """RS20, RS21."""
-    skill = (ROOT / "skills" / "find" / "SKILL.md").read_text()
+    skill = (ROOT / "skills" / "find" / "SKILL.md").read_text(encoding="utf-8")
     for col in ("What it does", "Relevance", "OK in a paid product?", "Completely free?", "How to start"):
         assert col in skill
     assert "up to 20" in skill and "Stop when you have 20" in skill
@@ -543,7 +555,7 @@ def test_skill_comparison_table_and_prompt_fields():
 
 def test_readme_has_prompt_examples_and_template():
     """RS21."""
-    readme = (ROOT / "README.md").read_text()
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "## Example prompts" in readme and "## Prompt template" in readme
     for goal in ("Website", "Mobile app", "AI agent", "Data", "Games", "Learning"):
         assert f"**{goal}" in readme
@@ -560,13 +572,13 @@ def test_csv_block_under_markdown_cannot_break_fence(monkeypatch, capsys):
 
 def test_workflow_csv_option():
     """RS20, RS13."""
-    wf = (ROOT / ".github" / "workflows" / "find.yml").read_text()
+    wf = (ROOT / ".github" / "workflows" / "find.yml").read_text(encoding="utf-8")
     assert "CSV: ${{ inputs.csv }}" in wf and '["--csv-block"] if os.environ["CSV"] == "true"' in wf
 
 
 def test_web_page_is_safe_static(monkeypatch):
     """RS22: no embedded secret, no external scripts, uses the public search API, logic mirrors the script."""
-    html = (ROOT / "web" / "index.html").read_text()
+    html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
     # no key or token anywhere: the page never asks for, stores, or embeds one
     import re as _re
     assert not _re.search(r"gh[pousr]_[A-Za-z0-9]{20,}", html), "looks like a real token is embedded"
@@ -576,11 +588,11 @@ def test_web_page_is_safe_static(monkeypatch):
     # RS33: no third-party asset requests — GSAP 3.12.5 and the fonts are self-hosted; page degrades without GSAP
     srcs = _re.findall(r'<script[^>]+src="([^"]+)"', html)
     assert srcs == ["vendor/gsap.min.js"], srcs
-    gsap = (ROOT / "web" / "vendor" / "gsap.min.js").read_text()
+    gsap = (ROOT / "web" / "vendor" / "gsap.min.js").read_text(encoding="utf-8")
     assert gsap.lstrip("/*! \n").startswith("GSAP 3.12.5") and "standard-licen" in gsap  # pinned, license header kept
     sheets = _re.findall(r'<link[^>]+rel="stylesheet"[^>]+href="([^"]+)"', html)
     assert sheets == ["fonts.css"], sheets
-    fcss = (ROOT / "web" / "fonts.css").read_text()
+    fcss = (ROOT / "web" / "fonts.css").read_text(encoding="utf-8")
     fonts = _re.findall(r"url\((fonts/[^)]+)\)", fcss)
     assert fonts and all((ROOT / "web" / f).exists() for f in fonts), fonts
     assert "http" not in fcss.split("*/", 1)[1]  # no remote font URLs
@@ -710,7 +722,7 @@ def test_web_page_is_safe_static(monkeypatch):
 def test_one_official_deploy_and_cardzo_credit():
     """RS22/RS40: Cloudflare Pages is the only deploy (the GitHub Pages copy had no relevance Function); footer credits Cardzo."""
     assert not (ROOT / ".github" / "workflows" / "pages.yml").exists()
-    html = (ROOT / "web" / "index.html").read_text()
+    html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
     assert 'href="https://cardzo.co.in" target="_blank" rel="noopener noreferrer"' in html and "Cardzo</a> product" in html
 
 
@@ -746,7 +758,7 @@ def test_cli_all_and_group(monkeypatch, capsys):
 
 def test_workflow_all_group_options():
     """RS23."""
-    wf = (ROOT / ".github" / "workflows" / "find.yml").read_text()
+    wf = (ROOT / ".github" / "workflows" / "find.yml").read_text(encoding="utf-8")
     assert "ALL: ${{ inputs.all }}" in wf and "GROUP: ${{ inputs.group }}" in wf
     assert '["--all"] if os.environ["ALL"]' in wf and '["--group"] if os.environ["GROUP"]' in wf
 
@@ -754,9 +766,9 @@ def test_workflow_all_group_options():
 
 def test_privacy_notice_matches_what_the_code_does():
     """RS33: the published privacy claims stay true — CI fails if a data flow is added without updating them."""
-    html = (ROOT / "web" / "index.html").read_text()
-    priv = (ROOT / "PRIVACY.md").read_text()
-    readme = (ROOT / "README.md").read_text()
+    html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
+    priv = (ROOT / "PRIVACY.md").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assert 'id="privacyModal"' in html and "PRIVACY.md" in html and "privacy-note" in html
     assert "PRIVACY.md" in readme and "not legal advice" in priv and "Last updated" in priv
     # "no cookies / no analytics / no tracking" must stay literally true
@@ -771,7 +783,7 @@ def test_privacy_notice_matches_what_the_code_does():
                   "Groq", "Cloudflare Workers AI", "Turnstile", "relevance check", "stores nothing", "Feedback", "chatgpt.com", "gemini.google.com", "Web3Forms", "Stripe"):  # RS34 data flow must be disclosed
         assert named in priv, named
     # the hook really writes only on a match, at most 200 chars, locally
-    hook = (ROOT / "hooks" / "security_log.py").read_text()
+    hook = (ROOT / "hooks" / "security_log.py").read_text(encoding="utf-8")
     assert "if not hits:" in hook and "text[:200]" in hook and "urllib" not in hook
     assert "if _log_path() is None:" in hook  # opt-in: off unless REPLORE_SECURITY_LOG is set (RS25)
 
