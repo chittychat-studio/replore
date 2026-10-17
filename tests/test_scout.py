@@ -579,6 +579,24 @@ def test_csv_output_rows_and_formula_guard(monkeypatch, capsys):
     assert rows[2][7] == scout.FREE_SHARE and len(rows) == 3
 
 
+def test_csv_formula_guard_on_every_text_cell():
+    """RS20: query, why, name, licence label and description all get the guard (=, +, -, @, tab, CR)."""
+    import csv as _csv
+    res, _ = run([[repo("@evil/x", 900, spdx="=HYPERLINK(1)", description="+SUM(A1)"),
+                   repo("ok/y", 800, description="\tTAB"), repo("ok/z", 700, description="\rCR")]],
+                 queries=["-topic:macos ios"], license_mode="any")
+    next(r for r in res["candidates"] if r["full_name"] == "@evil/x")["why"] = "=cmd|' /C calc'!A0"
+    rows = list(_csv.reader(scout.render_csv(res).splitlines()))
+    head = rows[0]
+    cell = dict(zip(head, next(r for r in rows[1:] if r[1].endswith("@evil/x"))))
+    for col in ("repo", "why_relevant", "license", "query", "description"):
+        assert cell[col].startswith("'"), (col, cell[col])
+    assert cell["stars"] == "900" and cell["url"].startswith("https://")
+    # RS9's clean() already turns a leading tab / CR into nothing; the guard still covers them for any other text cell
+    assert all(scout._csv_cell(c + "x") == "'" + c + "x" for c in scout.CSV_FORMULA_START)
+    assert scout._csv_cell("plain") == "plain" and scout._csv_cell(5) == 5
+
+
 def test_markdown_top_table_then_extra_candidates_and_free_note():
     """RS20, RS10: top 20 printed once, the rest under 'More candidates'."""
     res, _ = run([[repo(f"o/r{i}", 1000 - i) for i in range(30)]])

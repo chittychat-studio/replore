@@ -484,17 +484,23 @@ def _desc(r):
     return r["description"] or NO_DESC
 
 
+CSV_FORMULA_START = ("=", "+", "-", "@", "\t", "\r")
+
+
+def _csv_cell(v):
+    """RS20: a text cell that starts like a formula gets a leading ' so Excel / Sheets show it as text, never run it."""
+    return "'" + v if isinstance(v, str) and v.startswith(CSV_FORMULA_START) else v
+
+
 def render_csv(result):
-    """RS20: spreadsheet rows (top + candidates)."""
+    """RS20: spreadsheet rows (top + candidates). Every text cell is formula-guarded: query, why, name, licence, text."""
     buf = io.StringIO()
     w = csv.writer(buf, lineterminator="\n")
     w.writerow(CSV_FIELDS)
     for r in result["candidates"]:
-        desc = r["description"]
-        if desc[:1] in "=+-@":  # keep spreadsheet apps from treating repo text as a formula
-            desc = "'" + desc
-        w.writerow([r["rank"], r["full_name"], r["why"], r["url"], r["stars"], r["license"], r["license_use"], r["free"],
-                    "yes" if r["starter"] else "no", r["start_hint"], r["pushed"], r["query"], desc])
+        w.writerow([_csv_cell(v) for v in (
+            r["rank"], r["full_name"], r["why"], r["url"], r["stars"], r["license"], r["license_use"], r["free"],
+            "yes" if r["starter"] else "no", r["start_hint"], r["pushed"], r["query"], r["description"])])
     return buf.getvalue().rstrip("\n")
 
 

@@ -145,7 +145,10 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   GPL/AGPL family → "Free to use, but you must share your code"; no license → "No: no license". The output says
   this checks the license only: some projects also sell a paid hosted version or paid add-ons, which the plugin does
   not check. `--csv` prints the same rows as CSV (rank, repo, url, stars, license, can_use_in_paid_product,
-  completely_free, starter, how_to_start, last_push, query, description) for Excel or Google Sheets. The skill
+  completely_free, starter, how_to_start, last_push, query, description) for Excel or Google Sheets. Every text cell
+  (repo name, why, licence label, query, description and the rest) that starts with `=`, `+`, `-`, `@`, a tab or a carriage
+  return gets a leading `'`, so a spreadsheet shows it as text and never runs it as a formula (peer review 2026-10-18:
+  only the description was guarded). The skill
   answers with a comparison table of up to 20 repos with these columns: #, Repo, Stars, What it does, Relevance,
   License, OK in a paid product?, Completely free?, Starter?, Last update, How to start. "What it does" is taken
   from the description only. "Relevance" is High/Medium/Low with a short reason; it is the skill's judgment from
