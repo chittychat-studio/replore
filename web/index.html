@@ -937,7 +937,8 @@
 <div class="modal" id="privacyModal"><div class="sheet">
   <button class="x" data-close>&times;</button>
   <h2>Privacy</h2>
-  <p class="mut">Replore has no account, no user database and no visitor analytics, and stores nothing you type.</p>
+  <p class="mut">Replore has no account and no user database, and stores nothing you type. Our host counts page views
+    with Cloudflare Web Analytics, without cookies (see below).</p>
   <ul class="guide">
     <li><b>Your search words</b> go from your browser straight to <b>GitHub</b> (with your IP address) to run the search.</li>
     <li><b>To sort repos by fit</b>, your search words and the list of repos found go through our relevance check (our only
@@ -960,7 +961,14 @@
       same <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">privacy policy</a>.</li>
     <li><b>When the page loads</b>, only Cloudflare (our host) sees your IP address; loading the page doesn't reveal what
       you search (the relevance check above does send your search words to Cloudflare). Fonts and
-      scripts come from this site, not from Google or other CDNs. Searches are never put in the page address.</li>
+      scripts come from this site, not from Google or other CDNs; the only outside scripts are Cloudflare's bot check
+      (above) and page-view counter (below). Searches are never put in the page address.</li>
+    <li><b>Page-view counts:</b> our host runs <b>Cloudflare Web Analytics</b> on this site, a cookieless, privacy-first
+      page-view counter run by Cloudflare and loaded from <code>static.cloudflareinsights.com</code>. It records the page
+      address (your searches are never in it), the referring site, your browser, operating system and device type, your
+      country and how fast the page loaded. It sets no cookie, stores nothing on your device, never sees what you type and
+      gives us only totals. Cloudflare handles it under its
+      <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">privacy policy</a>.</li>
     <li><b>On your device only:</b> your last search, results and filters, so a refresh brings them back. Tap <b>✕</b> in the
       search bar or the Replore logo to delete them.</li>
     <li><b>Uploaded plans</b> are read in your browser and never uploaded; only short feature phrases are searched on GitHub.</li>

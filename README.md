@@ -77,6 +77,11 @@ redeploy; optional `LLM_BASE_URL` (any OpenAI-compatible endpoint; default Groq)
 `TURNSTILE_SECRET`, and redeploy. Every AI check then needs a fresh Turnstile token. Also add a rate-limiting rule
 (Security → WAF → Rate limiting rules) on the path `/api/relevance`, per IP. On the Free plan, the worst that
 abuse can do is use up the day's allowance, never bill you.
+**Page-view counts (maintainer, SPEC RS33):** Cloudflare Web Analytics is switched on for the Pages project, so
+Cloudflare injects its cookieless beacon (`static.cloudflareinsights.com`) into every page; `PRIVACY.md` and the page's
+privacy window say so. To turn it off: Cloudflare dashboard → Workers & Pages → the Replore project → **Web Analytics**
+→ disable; then remove the Web Analytics wording from `PRIVACY.md`, the privacy window and this README, and drop the two
+`cloudflareinsights.com` hosts from `web/_headers`.
 Before adding or switching a provider, check its data-use terms (free tiers intended for prototyping, such as GitHub
 Models, don't qualify) and update `PRIVACY.md`.
 
@@ -188,7 +193,9 @@ python3 -m pytest
 
 ## Privacy
 
-No account, no database, no analytics, nothing stored: the makers of Replore never keep your ideas or searches.
+No account, no database, nothing you type is stored: the makers of Replore never keep your ideas or searches. The web
+page's host counts page views with Cloudflare Web Analytics (cookieless, script from `static.cloudflareinsights.com`;
+it never sees your searches).
 Search words go to GitHub to run the search; on the web page they also pass through a small relevance check to an AI
 provider (Cloudflare Workers AI, with Groq as fallback) that moves off-topic repos to the end of the list. Fonts and scripts are served from the site itself. The plugin never uses
 the relevance check. Details — including what the web page keeps in your browser and the plugin's optional,

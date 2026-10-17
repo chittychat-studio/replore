@@ -334,7 +334,11 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
 
 - **RS33** Privacy notice. `PRIVACY.md` (linked from README and the web page) and a one-line web notice under the
   search bar describe data handling exactly as built — no broader promise. Facts it must state: the maintainers run
-  no server, database, account or analytics and receive no searches; searches go from the user's browser or computer
+  no database or account and keep no searches; the host's **Cloudflare Web Analytics** is on (owner's Pages dashboard
+  setting, found by peer review 2026-10-18 while the copy still said "no visitor analytics"): a cookieless page-view
+  counter whose script Cloudflare injects from `static.cloudflareinsights.com`, recording page address, referrer,
+  browser/OS/device type, country and load timings, never the searches — the notice names it, what it records and
+  Cloudflare's policy, and no copy may claim "no analytics" while it is on; searches go from the user's browser or computer
   to the GitHub API (GitHub sees the words and IP); fonts and the animation library are served from the site itself
   (no third-party font/CDN requests); the page host (Cloudflare Pages) serves the page but never receives searches (they are never put in the URL); the browser keeps
   the last search + results + filters + theme in localStorage until ✕/the logo clears them; an uploaded plan is read
