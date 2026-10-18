@@ -18,7 +18,7 @@ global.window = global;
 const s = {};
 new Function("document", "localStorage",
   code + "; this.keywordQueries=keywordQueries; this.rankByFit=rankByFit; this.fitScore=fitScore; this.whyRelevant=whyRelevant; this.esc=esc; this.lu=lu; this.freeText=freeText;" +
-  " this.keep=keep; this.ragRan=ragRan; this.hasDesc=hasDesc; this.descHtml=descHtml; this.tipUrlOk=tipUrlOk; this.clean=clean; this.harmful=harmful; this.harmfulRepo=harmfulRepo; this.prdFeatures=prdFeatures; this.trendingQuery=trendingQuery; this.trendRows=trendRows; this.feedbackUrl=feedbackUrl; this.feedbackPayload=feedbackPayload; this.agoText=agoText; this.cardHtml=cardHtml; this.recentKey=recentKey; this.recentFind=recentFind; this.recentAdd=recentAdd; this.CACHE_V=CACHE_V; this.bm25Scores=bm25Scores; this.repoText=repoText; this.rrfOrder=rrfOrder; this.hybridOrder=hybridOrder; this.confirmQueries=confirmQueries; this.ghQuery=ghQuery; this.sigTokens=sigTokens;").call(s, document, global.localStorage || {getItem:()=>null,setItem(){},removeItem(){}});
+  " this.keep=keep; this.ragRan=ragRan; this.hasDesc=hasDesc; this.descHtml=descHtml; this.tipUrlOk=tipUrlOk; this.clean=clean; this.harmful=harmful; this.harmfulRepo=harmfulRepo; this.prdFeatures=prdFeatures; this.trendingQuery=trendingQuery; this.trendRows=trendRows; this.feedbackUrl=feedbackUrl; this.feedbackPayload=feedbackPayload; this.agoText=agoText; this.cardHtml=cardHtml; this.recentKey=recentKey; this.recentFind=recentFind; this.recentAdd=recentAdd; this.CACHE_V=CACHE_V; this.bm25Scores=bm25Scores; this.repoText=repoText; this.rrfOrder=rrfOrder; this.hybridOrder=hybridOrder; this.confirmQueries=confirmQueries; this.ghQuery=ghQuery; this.sigTokens=sigTokens; this.resultSummary=resultSummary;").call(s, document, global.localStorage || {getItem:()=>null,setItem(){},removeItem(){}});
 
 // RS16: iOS excludes macOS
 // RS16: expansions are specific on-topic phrases, never a bare category (live regression: "website" -> "frontend framework"
@@ -172,6 +172,11 @@ assert.strictEqual(xdup.rel, 0, "dup rel drops to the better position found by a
 { const fx = JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures", "qualifier_cases.json"), "utf8"));
   const now = Date.parse(fx.now);
   for (const c of fx.cases) assert.strictEqual(s.ghQuery(c.q, c.max_age_months, c.min_stars, now), c.expect, c.name); }
+// RS46: the screen-reader summary is a count or the error line, never the card text
+{ const box = (cards, err) => ({ querySelectorAll: () => ({ length: cards }), querySelector: () => err ? { textContent: err } : null });
+  assert.strictEqual(s.resultSummary(box(22)), "22 results"); assert.strictEqual(s.resultSummary(box(1)), "1 result");
+  assert.strictEqual(s.resultSummary(box(0, "No repository matched.")), "No repository matched.");
+  assert.strictEqual(s.resultSummary(box(0)), ""); }
 // RS5c: tail matches (best-match position >= 20) rank after every head match, exactly as scout.py
 { const mk = (name, stars, rel) => ({ name, stars, spdx: "MIT", starter: false, rel, pushed: "2026-10-01" });
   const head = Array.from({ length: 20 }, (_, i) => mk("head/r" + i, 60, i));

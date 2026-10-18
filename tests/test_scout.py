@@ -833,7 +833,8 @@ def test_accessibility_baseline():
     index = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
     app = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
     assert '<div id="status" class="status" role="status" aria-live="polite">' in index
-    assert '<div id="out" class="results" aria-live="polite">' in index
+    assert '<div id="out" class="results">' in index   # not a live region: 60 cards would be read out whole
+    assert '<p id="srStatus" class="sr-only" role="status" aria-live="polite">' in index and "function resultSummary" in app
     assert 'setAttribute("aria-labelledby",h2.id)' in app
     heads = re.findall(r'<div class="modal" id="[^"]+"><div class="sheet[^"]*">([\s\S]*?)</h2>', index)
     assert len(heads) == index.count('<div class="modal"') == 9 and not any('class="modal"' in h for h in heads)   # every dialog has its own heading

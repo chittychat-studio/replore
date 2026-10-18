@@ -719,6 +719,18 @@ document.getElementById("prd").addEventListener("change",function(e){
 document.getElementById("q").addEventListener("keydown",function(e){
   if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); run(); } });
 
+// RS46: screen readers hear a short "N results" / the error line when #out is re-rendered, never the whole card list
+// (#out itself is not a live region). A visually hidden status keeps the visible status line empty, so the phone
+// layout's "no empty band" rule (RS24) still holds.
+function resultSummary(out){ var n=out.querySelectorAll(".rcard").length;
+  if(n) return n+" result"+(n===1?"":"s");
+  var err=out.querySelector(".err"); return err?String(err.textContent||"").slice(0,160):""; }
+(function(){ var out=document.getElementById("out"), sr=document.getElementById("srStatus"), t=null;
+  if(!out||!sr||!window.MutationObserver) return;
+  new MutationObserver(function(){ clearTimeout(t); t=setTimeout(function(){ var s=resultSummary(out);
+    if(s){ sr.textContent=""; setTimeout(function(){ sr.textContent=s; },50); } },150); }).observe(out,{childList:true});
+})();
+
 // ---- modals ----
 var __lastFocus=null;
 function focusables(el){ return Array.prototype.slice.call(el.querySelectorAll(

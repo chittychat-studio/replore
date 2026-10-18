@@ -41,6 +41,7 @@
   }
   *{box-sizing:border-box}
   [hidden]{display:none!important}
+  .sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
   /* RS24 hero shapes: a few faint circles/hexagons drifting slowly behind the top of the page */
   .bg-shapes{position:absolute;top:0;left:0;right:0;height:640px;overflow:hidden;pointer-events:none;z-index:-1;opacity:.6;
     -webkit-mask-image:linear-gradient(to bottom,#000 35%,transparent 100%);mask-image:linear-gradient(to bottom,#000 35%,transparent 100%)}
@@ -739,6 +740,7 @@
       <div id="quickpicks" class="quickpicks" aria-label="Quick examples to try"></div>
 
       <div id="status" class="status" role="status" aria-live="polite"></div>
+      <p id="srStatus" class="sr-only" role="status" aria-live="polite"></p>   <!-- RS46: short result count for screen readers -->
       <div id="tsBox" class="ts-box"></div>
     </div>
   </section>
@@ -750,7 +752,7 @@
         <div class="tring" id="tcarTrack" tabindex="0" role="group" aria-roledescription="carousel" aria-label="Rising repos: drag or use the arrow keys to turn"><div class="tring-spin"></div></div>
         <div class="ttape" aria-hidden="true"><div class="run"></div></div>
       </section>
-    <div id="out" class="results" aria-live="polite"></div>
+    <div id="out" class="results"></div>
     <p class="privacy-note">🔒 Nothing you type is stored.
       <button type="button" class="link-btn" data-open="privacyModal">Privacy</button> ·
       <button type="button" class="link-btn" id="tourBtn">Tour</button> ·
