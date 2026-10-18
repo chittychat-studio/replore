@@ -265,17 +265,21 @@ export async function verifyTurnstile(request, env, fetchImpl = fetch) {
   } catch { return false; } finally { clearTimeout(timer); }
 }
 
-// RS34g: callers that can't run Turnstile (the plugin's --semantic, ops/rag_smoke.py, the live eval) may instead send the
-// server-held shared secret PLUGIN_KEY in X-Replore-Plugin-Key. Compared in constant time; unset = this path is closed.
-export function pluginKeyOk(request, env) {
-  const want = String(env.PLUGIN_KEY || ""), got = String(request.headers.get("X-Replore-Plugin-Key") || "");
+// RS34g: two server-held keys for callers that can't run Turnstile, each compared in constant time (unset or < 16
+// characters = closed). PLUGIN_KEY (header X-Replore-Plugin-Key) may be handed to plugin users and opens ONLY the cheap
+// semantic route. EVAL_KEY (header X-Replore-Eval-Key) stays in CI / the owner's machine (live eval, ops/rag_smoke.py) and
+// opens the paid judge route as well. A caller with a valid key also skips the per-IP limit (CI runs from one address).
+function keyMatches(want, got) {
+  want = String(want || ""); got = String(got || "");
   if (want.length < 16 || got.length !== want.length) return false;
   let diff = 0;
   for (let i = 0; i < want.length; i++) diff |= want.charCodeAt(i) ^ got.charCodeAt(i);
   return diff === 0;
 }
-export async function botCheck(request, env, fetchImpl = fetch) {
-  return pluginKeyOk(request, env) || verifyTurnstile(request, env, fetchImpl);
+export function pluginKeyOk(request, env) { return keyMatches(env.PLUGIN_KEY, request.headers.get("X-Replore-Plugin-Key")); }
+export function evalKeyOk(request, env) { return keyMatches(env.EVAL_KEY, request.headers.get("X-Replore-Eval-Key")); }
+export async function botCheck(request, env, fetchImpl = fetch, semantic = false) {
+  return evalKeyOk(request, env) || (semantic && pluginKeyOk(request, env)) || verifyTurnstile(request, env, fetchImpl);
 }
 
 // RS34g: best-effort per-IP rate limit, kept in this isolate's memory (no binding). Cloudflare runs many isolates, so
@@ -318,7 +322,8 @@ export async function onRequestPost(context, fetchImpl = fetch) {
 async function handlePost(request, env, fetchImpl, waitUntil) {
   if (!env.LLM_API_KEY && !(env.AI && typeof env.AI.run === "function")) return json(503, { error: "not_configured" });
   if (!sameOrigin(request)) return json(403, { error: "bad_origin" });
-  const wait = rateLimit(request.headers.get("CF-Connecting-IP"));   // RS34g: before the body is read or anything is spent
+  const keyed = evalKeyOk(request, env) || pluginKeyOk(request, env);   // RS34g: valid-key callers skip the per-IP limit
+  const wait = keyed ? 0 : rateLimit(request.headers.get("CF-Connecting-IP"));   // before the body is read or anything is spent
   if (wait) return json(429, { error: "rate_limited", resetsInSec: wait }, {}, { "Retry-After": String(wait) });
   const ct = request.headers.get("Content-Type") || "";
   if (ct.split(";")[0].trim().toLowerCase() !== "application/json") return json(415, { error: "json_only" });
@@ -331,7 +336,7 @@ async function handlePost(request, env, fetchImpl, waitUntil) {
   if (body.mode === "semantic") {   // RS42 plugin opt-in: meaning scores + indexed repos only, no AI judge
     const f = ragFlags(env);
     if (!f.plugin || (!f.rerank && !f.index)) return json(404, { error: "semantic_off" });
-    if (!(await botCheck(request, env, fetchImpl))) return json(403, { error: "bot_check_failed" });   // RS34g: same gate as the judge
+    if (!(await botCheck(request, env, fetchImpl, true))) return json(403, { error: "bot_check_failed" });   // RS34g: plugin key, eval key or Turnstile
     const sem = await semanticScores(body.query, body.repos, env);
     return sem ? json(200, { ...(sem.sim ? { sim: sem.sim } : {}), ...(sem.neighbors ? { neighbors: publicNeighbors(sem.neighbors) } : {}) })
       : json(503, { error: "semantic_unavailable" });

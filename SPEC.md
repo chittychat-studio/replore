@@ -484,9 +484,11 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   most 10 POSTs per 10 s per `CF-Connecting-IP`, kept in the isolate's memory (no binding, at most 5,000 addresses);
   over it the reply is 429 `rate_limited` with `Retry-After`, before the body is read. Each Cloudflare isolate has its
   own memory, so this only blunts a burst; the WAF rule (RS41) stays the authority. (3) Callers that cannot run
-  Turnstile (the plugin's `--semantic`, `ops/rag_smoke.py`, the live eval) may send the server-held secret `PLUGIN_KEY`
-  (at least 16 characters, compared in constant time) in `X-Replore-Plugin-Key`; it opens both the judge and the
-  semantic route, and is never logged or returned. The page treats 429 like any failed check (keyword results, no note).
+  Turnstile may send a server-held secret (at least 16 characters, compared in constant time, never logged or returned).
+  Two keys, split after the second review (one key handed to plugin users must not open the paid judge): `PLUGIN_KEY` in
+  `X-Replore-Plugin-Key` opens only the semantic route (the plugin's `--semantic`); `EVAL_KEY` in `X-Replore-Eval-Key`
+  opens the judge and the semantic route, for the live eval and `ops/rag_smoke.py` (kept in CI as `REPLORE_EVAL_KEY`).
+  A request with a valid key skips the per-IP limit, so a CI run from one address is not throttled. The page treats 429 like any failed check (keyword results, no note).
 - **RS34e** Relevance-check diagnosis and model choice. Live eval (2026-10-14, production chain): 6/9 queries timed
   out at 7 s, 2/9 returned unparseable output, and the one that ran dropped 4/6 relevant SaaS starters. Fixes: the
   model replies with indices only (`{"drop":[2,5]}`, max 120 tokens — the per-repo reasons were never shown and made
@@ -688,8 +690,8 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
     vectors sit on one scale. **One confirm search** per run in both clients (rate limit, RS41); indexed repos past it
     are dropped (fail closed).
     `mode:"semantic"` returns meaning scores and indexed repos only — no AI judge. Since RS34g it sits behind the same gate
-    as the judge: the origin check, the per-IP limit, and either a Turnstile token or the server's shared `PLUGIN_KEY` in
-    `X-Replore-Plugin-Key` (the plugin sends `REPLORE_PLUGIN_KEY` from the user's environment; without it the public
+    as the judge: the origin check, the per-IP limit, and a Turnstile token, the server's `PLUGIN_KEY` in
+    `X-Replore-Plugin-Key` or the CI-only `EVAL_KEY` (the plugin sends `REPLORE_PLUGIN_KEY` from the user's environment; without it the public
     plugin's `--semantic` gets 403 and keeps its keyword + BM25 order, RS7). It still has its own switch, `RAG_PLUGIN=1`,
     off by default even when the web switches are on, and answers 404 `semantic_off` until it is set. Known risk when on: a
     script can spend the shared Workers AI allowance (about 1 neuron per call at the card caps); turn it on only with a

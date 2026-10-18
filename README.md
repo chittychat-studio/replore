@@ -81,9 +81,12 @@ redeploy; optional `LLM_BASE_URL` (any OpenAI-compatible endpoint; default Groq)
 function refuses every AI check (SPEC RS34g, fail closed).** For local `wrangler pages dev` or a Preview deployment
 without Turnstile, set the variable `ALLOW_NO_TURNSTILE` = `1` on that environment only — never on Production. The
 function also limits each IP to 10 checks per 10 seconds in memory (best effort; the WAF rule below is the real limit).
-For callers that can't run Turnstile (the plugin's opt-in `--semantic`, `ops/rag_smoke.py`, the live eval), add a
-**secret** `PLUGIN_KEY` (16+ random characters) and give the same value to that caller as `REPLORE_PLUGIN_KEY` (for the
-`relevance-eval-live` workflow: a repository secret of that name). Also add a rate-limiting rule
+Two optional **secrets** (16+ random characters each) let callers that can't run Turnstile in, and skip the per-IP limit:
+`EVAL_KEY` opens the paid AI check and the meaning route, for the live eval and `ops/rag_smoke.py` only — keep it in CI
+(repository secret `REPLORE_EVAL_KEY` for the `relevance-eval-live` workflow) or on your machine as `REPLORE_EVAL_KEY`, and
+never hand it out. `PLUGIN_KEY` opens only the cheap meaning route (`mode:"semantic"`), so it is the one you may give to
+plugin users, who set it as `REPLORE_PLUGIN_KEY`. **Plugin `--semantic` without `PLUGIN_KEY`:** the server answers 403 and
+the plugin silently keeps its keyword + BM25 order (no error, no meaning scores, no indexed repos). Also add a rate-limiting rule
 (Security → WAF → Rate limiting rules) on the path `/api/relevance`, per IP. On the Free plan, the worst that
 abuse can do is use up the day's allowance, never bill you.
 **Page-view counts (maintainer, SPEC RS33):** Cloudflare Web Analytics is switched on for the Pages project, so

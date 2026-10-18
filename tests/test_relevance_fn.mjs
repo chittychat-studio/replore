@@ -551,18 +551,26 @@ console.log("rag observability ok");
   assert.strictEqual((await quiet(() => mk({ AI, ALLOW_NO_TURNSTILE: "true" }))).status, 403);
   assert.strictEqual((await mk({ AI, ALLOW_NO_TURNSTILE: "1" })).status, 200);
   assert.strictEqual((await quiet(() => mk({ AI, ALLOW_NO_TURNSTILE: "1", TURNSTILE_SECRET: "s" }, {}))).status, 403);
-  // the server-held plugin key opens the gate (live eval / smoke); a short or wrong key does not
+  // server-held keys: a short or wrong key never matches
   const KEY = "pk-live-0123456789abcdef";
   assert.ok(fn.pluginKeyOk(new Request("https://x/", { headers: { "X-Replore-Plugin-Key": KEY } }), { PLUGIN_KEY: KEY }));
   assert.ok(!fn.pluginKeyOk(new Request("https://x/", { headers: { "X-Replore-Plugin-Key": KEY + "x" } }), { PLUGIN_KEY: KEY }));
   assert.ok(!fn.pluginKeyOk(new Request("https://x/", { headers: { "X-Replore-Plugin-Key": "short" } }), { PLUGIN_KEY: "short" }));
   assert.ok(!fn.pluginKeyOk(new Request("https://x/"), {}));
-  assert.strictEqual((await mk({ AI, TURNSTILE_SECRET: "s", PLUGIN_KEY: KEY }, { "X-Replore-Plugin-Key": KEY })).status, 200);
+  // RS34g split: PLUGIN_KEY (may be handed to plugin users) does NOT open the paid judge; EVAL_KEY (CI only) does
+  const EKEY = "ek-ci-0123456789abcdef";
+  aiCalls = 0;
+  assert.strictEqual((await quiet(() => mk({ AI, TURNSTILE_SECRET: "s", PLUGIN_KEY: KEY }, { "X-Replore-Plugin-Key": KEY }))).status, 403);
+  assert.strictEqual(aiCalls, 0, "plugin key spent nothing on the judge");
+  assert.strictEqual((await mk({ AI, TURNSTILE_SECRET: "s", EVAL_KEY: EKEY }, { "X-Replore-Eval-Key": EKEY })).status, 200);
+  assert.strictEqual((await quiet(() => mk({ AI, TURNSTILE_SECRET: "s", EVAL_KEY: EKEY }, { "X-Replore-Plugin-Key": EKEY }))).status, 403, "keys are not interchangeable");
+  assert.ok(fn.evalKeyOk(new Request("https://x/", { headers: { "X-Replore-Eval-Key": EKEY } }), { EVAL_KEY: EKEY }));
   // semantic route: same gate. RAG on + plugin switch on, but no key and no token -> 403, nothing embedded
   const sem = { AI, RAG_RERANK: "1", RAG_PLUGIN: "1" }, body = { mode: "semantic", query: "diet", repos };
   aiCalls = 0;
   r = await quiet(() => mk(sem, {}, body)); assert.strictEqual(r.status, 403); assert.strictEqual(aiCalls, 0);
   r = await quiet(() => mk({ ...sem, PLUGIN_KEY: KEY }, { "X-Replore-Plugin-Key": "wrong-key-0123456789" }, body)); assert.strictEqual(r.status, 403);
+  r = await mk({ ...sem, EVAL_KEY: EKEY }, { "X-Replore-Eval-Key": EKEY }, body); assert.strictEqual(r.status, 200, "smoke test path");
   r = await mk({ ...sem, PLUGIN_KEY: KEY }, { "X-Replore-Plugin-Key": KEY }, body); assert.strictEqual(r.status, 200);
   assert.ok(Array.isArray((await r.json()).sim));
   // rate limit: 10 requests in 10 s per IP pass, the 11th gets 429 with Retry-After; another IP is unaffected
@@ -574,6 +582,10 @@ console.log("rag observability ok");
   assert.ok(+r.headers.get("Retry-After") >= 1 && +r.headers.get("Retry-After") <= 10);
   assert.strictEqual(aiCalls, 10, "the limited request spent nothing");
   assert.strictEqual((await mk(open, { "CF-Connecting-IP": "198.51.100.5" })).status, 200);
+  // a CI run with a valid eval key from the same, already-limited address is not rate limited
+  for (let i = 0; i < 3; i++)
+    assert.strictEqual((await mk({ AI, TURNSTILE_SECRET: "s", EVAL_KEY: EKEY }, { ...ip, "X-Replore-Eval-Key": EKEY })).status, 200);
+  assert.strictEqual((await quiet(() => mk({ AI, TURNSTILE_SECRET: "s", EVAL_KEY: EKEY }, { ...ip, "X-Replore-Eval-Key": "wrong-0123456789abcdef" }))).status, 429);
   // the window slides: after 10 s the same IP is allowed again (pure function, fake clock)
   const store = new Map(), t = 1e12;
   for (let i = 0; i < 10; i++) assert.strictEqual(fn.rateLimit("a", t + i, store), 0);
