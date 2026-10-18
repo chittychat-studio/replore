@@ -27,6 +27,8 @@ API = "https://api.github.com/search/repositories"
 MAX_QUERIES = 4  # RS8: unauthenticated search limit is 10 requests a minute
 MAX_TEXT = 200  # RS9
 MAX_QUERY_CHARS = 200  # RS19: GitHub rejects long queries (HTTP 422)
+PER_PAGE = 50  # RS4b: results asked per search (filters are in the query, so most of them pass)
+REL_SPAN = 20  # RS5: best-match relevance falls from 1 to 0 over the first 20 positions (the goal evals are tuned to this)
 
 # RS3: OSI-approved licenses GitHub commonly detects.
 OPEN_LICENSES = {
@@ -149,7 +151,7 @@ def build_query(q, max_age_months=0, min_stars=0, now=None):
 def fetch(query, token=None, timeout=20):
     """RS2, RS7, RS8: one search request; raises ScoutError on any failure."""
     # RS2: best-match (relevance) order seeds fit ranking (RS5); stars stay in each result and still weigh in RS5
-    params = urllib.parse.urlencode({"q": query, "per_page": 100})   # RS4b: one full page, filters already in q
+    params = urllib.parse.urlencode({"q": query, "per_page": PER_PAGE})   # RS4b: one page, filters already in q
     req = urllib.request.Request(f"{API}?{params}", headers={
         "Accept": "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
@@ -203,7 +205,7 @@ def _freedom(use):
 
 def fit_score(r, prefer_starters=False, floor=0.0):
     """RS5: relevant (0.45) + popular (0.35) + free to use (0.20), with the RS15 starter nudge."""
-    rel = 1 - min(1, (r.get("rel", 0) or 0) / 20)               # best-match position (RS2); top match = 1
+    rel = 1 - min(1, (r.get("rel", 0) or 0) / REL_SPAN)             # best-match position (RS2); top match = 1
     star = min(1, math.log10((r["stars"] or 0) + 1) / 5)        # log-scaled popularity (~100k stars = 1)
     free = _freedom(r["license_use"])
     bonus = 0.08 if (prefer_starters and r["starter"] and r["stars"] >= floor) else 0.0
@@ -236,10 +238,15 @@ def why_relevant(query, name, desc, rel):
     return "Top match for your search" if (rel is not None and rel <= 3) else "Related to your search"
 
 
+def _tail(r):
+    """RS5c: 1 when a repo was found only past GitHub's first REL_SPAN best matches (it would compete on stars alone)."""
+    return 1 if (r.get("rel") or 0) >= REL_SPAN else 0
+
+
 def _order(rows, prefer_starters):
-    """RS5, RS15: one query's own order, by fit."""
+    """RS5, RS15: one query's own order, by fit (tail matches after the head, RS5c)."""
     floor = max((r["stars"] for r in rows), default=0) * STARTER_MIN_SHARE
-    return sorted(rows, key=lambda r: (-fit_score(r, prefer_starters, floor), -r["stars"], -r["_pushed"], r["full_name"]))
+    return sorted(rows, key=lambda r: (_tail(r), -fit_score(r, prefer_starters, floor), -r["stars"], -r["_pushed"], r["full_name"]))
 
 
 def rank(by_query, mode="fit", prefer_starters=False):
@@ -251,7 +258,7 @@ def rank(by_query, mode="fit", prefer_starters=False):
         for rows in by_query:
             floor = max((r["stars"] for r in rows), default=0) * STARTER_MIN_SHARE
             scored += [(fit_score(r, prefer_starters, floor), r) for r in rows]
-        scored.sort(key=lambda t: (-t[0], -t[1]["stars"], -t[1]["_pushed"], t[1]["full_name"]))
+        scored.sort(key=lambda t: (_tail(t[1]), -t[0], -t[1]["stars"], -t[1]["_pushed"], t[1]["full_name"]))   # RS5c
         return [r for _, r in scored]
     if mode == "stars":
         return sorted(allr, key=lambda r: (-r["stars"], -r["_pushed"], r["full_name"]))

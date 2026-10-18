@@ -15,7 +15,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   what is being built), it asks the user one plain question about the project or task, and runs no search until
   they answer. The question also offers two optional preferences: language or stack, and whether unlicensed repos are OK.
 - **RS2** "All public GitHub" means the GitHub REST search API (`GET /search/repositories`). Each query
-  is sent with `per_page=100` and `fork:false archived:false is:public` added (plus the RS4b filter qualifiers), in GitHub's best-match
+  is sent with `per_page=50` and `fork:false archived:false is:public` added (plus the RS4b filter qualifiers), in GitHub's best-match
   (relevance) order over name, description, topics and README; this seeds the fit ranking (RS5). `sort=stars`
   is no longer forced — stars stay in every result and still weigh in RS5.
   Results from all queries are merged and de-duplicated by `full_name`.
@@ -32,7 +32,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
 - **RS4b** Filters go into the search (peer review 2026-10-18: live "animation library" returned 5 repos, with 13 left
   out for licence and 12 as stale, because one page of 30 best matches was fetched and filtered afterwards). Each query
   also carries `pushed:>=YYYY-MM-DD` (today minus the RS4 window, 30.44 days a month, UTC date; omitted when the window is
-  0) and `stars:>=N` (the RS4a floor; omitted at 0), and asks for 100 results. A qualifier the user already typed
+  0) and `stars:>=N` (the RS4a floor; omitted at 0), and asks for 50 results (second review: 100 let weak tail matches in; see RS5c). A qualifier the user already typed
   (`stars:`, `pushed:`, `fork:`, `archived:`, `is:`, negated or not) is not added again. GitHub caps the whole query at
   256 characters and 5 AND/OR/NOT operators: qualifiers are added in order (fork, archived, is, pushed, stars) only while
   the query stays within 256 characters, and none of them is an operator. The client-side filters (RS2–RS4a) still run
@@ -54,6 +54,12 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   `--candidates` (default 40), so the relevance gate (RS6) can drop repos and still have 20 left.
   Goal-based evals (`evals/run.py`, cases in `evals/fit_cases.json`) assert the fit ranking puts the
   relevant-and-popular-and-free repo at #1 across labelled scenarios; they run in CI and must pass.
+- **RS5c** Head before tail (second review 2026-10-18; live: `zensical` at best-match position 32 and `next-sitemap` at
+  39 reached the top 20 over `11ty`/`lume` at 21–29, because relevance is 0 from position 20 on, so deep matches competed
+  on stars alone). Relevance keeps its 20-position span (the RS5 goal evals are tuned to it; spreading it over the whole
+  page let a tangential giant beat an exact match). Instead, a repo whose best position in any search is 20 or later is
+  a *tail* match and ranks after every head match; within each group the RS5 fit order and RS29b tie-breaks apply. The
+  same rule is in `scripts/scout.py` (`_tail`, `REL_SPAN`) and the page (`relTail`, `REL_SPAN`), tested in both.
 - **RS1b** Vague but usable input (e.g. "diet app"): the skill does not block on a question. It searches the
   domain (e.g. `diet tracker app`, `calorie counter`, `meal planner app`), says which platform it assumed or that
   it searched all, and offers one line to narrow it. It asks first only when there is no domain at all

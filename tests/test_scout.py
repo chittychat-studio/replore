@@ -115,6 +115,16 @@ def test_why_relevant_whole_word_and_ignores_qualifiers():
     assert scout.why_relevant("rag chatbot", "me/rag", "a RAG chatbot", 0) == 'Matches your search: "rag", "chatbot"'
 
 
+def test_tail_matches_rank_after_the_head():
+    """RS5c (second review, live: zensical at best-match position 32 beat 11ty/lume at 21-29 on stars alone): a repo found
+    only past GitHub's first 20 best matches ranks after every head match; the page does the same (test_web_logic.js)."""
+    head = [repo(f"head/r{i}", 60) for i in range(20)]
+    res, _ = run([head + [repo("tail/giant", 90000), repo("tail/small", 70)]])
+    names = [r["full_name"] for r in res["all"]]
+    assert names[:20] == [f"head/r{i}" for i in range(20)] and names[20:] == ["tail/giant", "tail/small"]
+    assert scout.PER_PAGE == 50 and scout.REL_SPAN == 20
+
+
 def test_duplicate_keeps_best_relevance_position():
     """RS5: a repo found by two queries is scored under its best (lowest) best-match position, not the first."""
     q1 = [repo(f"q1/r{i}", 1000) for i in range(5)] + [repo("x/dup", 1000)]  # x/dup at rel=5 here
@@ -425,7 +435,7 @@ def test_fetch_builds_request_and_maps_errors(monkeypatch):
         return _Resp(b'{"items": []}')
     monkeypatch.setattr(scout.urllib.request, "urlopen", ok)
     assert scout.fetch("gsap fork:false", token="t0k") == {"items": []}
-    assert "per_page=100" in got["url"] and "sort=stars" not in got["url"] and got["auth"] == "Bearer t0k"
+    assert "per_page=50" in got["url"] and "sort=stars" not in got["url"] and got["auth"] == "Bearer t0k"
 
     def http(code, remaining=None):
         def f(req, timeout):
@@ -672,7 +682,7 @@ def test_web_page_is_safe_static(monkeypatch):
         assert host not in html.lower(), host
     # calls the public search API in best-match order (RS2), forks/archived excluded; fit ranking (RS5) re-ranks
     assert "api.github.com/search/repositories" in html
-    assert "function ghQuery" in html and '"fork:false"' in html and '"archived:false"' in html and "per_page=100" in html
+    assert "function ghQuery" in html and '"fork:false"' in html and '"archived:false"' in html and "per_page=" in html and "PER_PAGE=50" in html
     assert "sort=stars" not in html  # RS5: best-match seeds fit ranking; stars no longer forced on the fetch
     assert "rankByFit" in html and "fitScore" in html
     assert "whyRelevant" in html and "'Matches: '" in html  # RS24/RS37: a card says why only on a real word match

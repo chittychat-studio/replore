@@ -108,7 +108,8 @@ window.__runGen=0;   // search generation: resetAll() and each new search bump i
 // GitHub's best matches are repos that can pass. Same rule as scripts/scout.py build_query() (RS29b; shared cases in
 // tests/fixtures/qualifier_cases.json): a qualifier the user typed is left alone; one that would pass GitHub's
 // 256-character limit is dropped (keep() still filters); no AND/OR/NOT is ever added.
-var GH_MAX_QUERY=256;
+var GH_MAX_QUERY=256, PER_PAGE=50, REL_SPAN=20;   // RS4b page size; RS5 relevance span (same as scout.py)
+function relTail(r){ return (r.rel||0)>=REL_SPAN?1:0; }   // RS5c: found only past the first 20 best matches -> after the head
 function ghTyped(q, key){ return new RegExp("(?:^|\\s)-?"+key+":","i").test(q); }
 function ghQuery(q, maxAgeMonths, minStars, now){
   var out=String(q||"").trim(), quals=[];
@@ -122,7 +123,7 @@ function ghQuery(q, maxAgeMonths, minStars, now){
 async function search(q, minStars){
   // best-match (relevance) order seeds the fit ranking (RS2/RS5); stars are still in each result and weigh in RS5
   var url="https://api.github.com/search/repositories?q="+encodeURIComponent(minStars==null?ghQuery(q,0,0):ghQuery(q,MAX_AGE_MONTHS,minStars))
-    +"&per_page=100";   // RS4b: one full page; the filters are already in q
+    +"&per_page="+PER_PAGE;   // RS4b: one page; the filters are already in q
   var r=await fetch(url,{headers:{"Accept":"application/vnd.github+json"}});
   var left=parseInt(r.headers.get("x-ratelimit-remaining"),10); window.__ghLeft=isNaN(left)?null:left;   // RS41: searches left this minute
   if(r.status===403||r.status===429) throw new Error("GitHub rate limit reached (10 searches/minute without a token). Wait a minute and try again.");
@@ -164,7 +165,7 @@ function keep(items, minStars, platform, excluded, seen){
 // tie-break on most-recent push (ISO date strings sort lexically), matching scout.py's -_pushed before name
 function cmpPushed(a,b){ var x=a.pushed||"", y=b.pushed||""; return x<y?1:(x>y?-1:0); }
 function fitScore(r, preferStarters, floor){
-  var relScore=1-Math.min(1,(r.rel||0)/20);                           // best-match position (RS2); top match = 1
+  var relScore=1-Math.min(1,(r.rel||0)/REL_SPAN);                           // best-match position (RS2); top match = 1
   var starScore=Math.min(1,Math.log10((r.stars||0)+1)/5);             // log-scaled popularity (~100k stars = 1)
   var freeScore=PERMISSIVE.has(r.spdx)?1:(WEAK.has(r.spdx)?0.7:0.45); // permissive > weak copyleft > GPL/AGPL
   var bonus=(preferStarters && r.starter && r.stars>=floor)?0.08:0;   // RS15 starter nudge
@@ -176,7 +177,7 @@ function rankByFit(lists, preferStarters){
     var floor=lists[i].reduce(function(m,r){return Math.max(m,r.stars);},0)*STARTER_MIN_SHARE;
     for(var j=0;j<lists[i].length;j++){ lists[i][j].fit=fitScore(lists[i][j],preferStarters,floor); all.push(lists[i][j]); }
   }
-  all.sort(function(a,b){ return b.fit-a.fit || b.stars-a.stars || cmpPushed(a,b) || a.name.localeCompare(b.name); });
+  all.sort(function(a,b){ return relTail(a)-relTail(b) || b.fit-a.fit || b.stars-a.stars || cmpPushed(a,b) || a.name.localeCompare(b.name); });
   return all;
 }
 
@@ -561,7 +562,7 @@ async function runFeatures(features, minStars, platform, preferStarters, out, st
     var kept=keep(items,minStars,platform,excluded,seen);  // shared seen map (RS5 cross-query rel), not a Set
     var floor=kept.reduce(function(m,r){return Math.max(m,r.stars);},0)*STARTER_MIN_SHARE;
     kept.forEach(function(r){ r.fit=fitScore(r,preferStarters,floor); });
-    kept.sort(function(a,b){ return b.fit-a.fit||b.stars-a.stars||cmpPushed(a,b)||a.name.localeCompare(b.name); });
+    kept.sort(function(a,b){ return relTail(a)-relTail(b)||b.fit-a.fit||b.stars-a.stars||cmpPushed(a,b)||a.name.localeCompare(b.name); });
     groups.push({query:features[i],repos:kept});
   }
   out.innerHTML=renderGrouped(groups,excluded,

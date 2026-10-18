@@ -172,6 +172,11 @@ assert.strictEqual(xdup.rel, 0, "dup rel drops to the better position found by a
 { const fx = JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures", "qualifier_cases.json"), "utf8"));
   const now = Date.parse(fx.now);
   for (const c of fx.cases) assert.strictEqual(s.ghQuery(c.q, c.max_age_months, c.min_stars, now), c.expect, c.name); }
+// RS5c: tail matches (best-match position >= 20) rank after every head match, exactly as scout.py
+{ const mk = (name, stars, rel) => ({ name, stars, spdx: "MIT", starter: false, rel, pushed: "2026-10-01" });
+  const head = Array.from({ length: 20 }, (_, i) => mk("head/r" + i, 60, i));
+  const order = s.rankByFit([head.concat([mk("tail/giant", 90000, 20), mk("tail/small", 70, 21)])], false).map(r => r.name);
+  assert.deepStrictEqual(order.slice(20), ["tail/giant", "tail/small"]); assert.deepStrictEqual(order.slice(0, 20), head.map(r => r.name)); }
 // RS29b parity fixture: the page's keep / rankByFit / whyRelevant give the order, matched words and drops scout.py gives
 { const P = JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures", "parity_items.json"), "utf8"));
   const raw = x => { const y = Object.assign({}, x); y.pushed_at = new Date(Date.now() - y.pushed_days_ago * 864e5).toISOString().slice(0, 19) + "Z";
