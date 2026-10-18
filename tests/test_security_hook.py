@@ -74,6 +74,7 @@ def test_hooks_json_declares_userpromptsubmit():
     # RS25: works without python3 (Windows ships python / py), has a deadline, and never blocks the prompt
     assert "python3" in cmd and "python" in cmd.replace("python3", "") and '"py -3"' in cmd
     assert cmd.rstrip().endswith("exit 0") and h["timeout"] == 10
+    assert "exec " not in cmd   # Python's own exit code (2 = can't open the script) must never become the hook's
 
 
 def _bash():
@@ -97,6 +98,14 @@ def test_hook_command_runs_and_logs(tmp_path):
     log = tmp_path / "sec.log"
     r = _run_hook_cmd({"REPLORE_SECURITY_LOG": str(log)})
     assert r.returncode == 0 and log.exists(), r.stderr
+
+
+def test_hook_command_exits_0_when_python_fails(tmp_path):
+    """RS25 review: logging on but CLAUDE_PLUGIN_ROOT unset -> Python exits 2 (no such script); the hook must still exit 0."""
+    env = {k: v for k, v in os.environ.items() if k != "CLAUDE_PLUGIN_ROOT"}
+    env["REPLORE_SECURITY_LOG"] = str(tmp_path / "x.log")
+    r = subprocess.run([_bash(), "-c", _hook_entry()["command"]], capture_output=True, text=True, env=env, input="{}")
+    assert r.returncode == 0, (r.returncode, r.stderr)
 
 
 def test_hook_command_never_blocks_without_python_or_when_off(tmp_path):
