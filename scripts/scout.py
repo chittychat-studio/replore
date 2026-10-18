@@ -135,7 +135,7 @@ def build_query(q, max_age_months=0, min_stars=0, now=None):
     ghQuery() (RS29b; shared cases in tests/fixtures/qualifier_cases.json). A qualifier the user typed is left alone;
     one that would push the query past GitHub's 256 characters is dropped (the client-side filters still apply).
     No AND/OR/NOT is ever added, so GitHub's limit of 5 operators is untouched."""
-    out = q.strip()
+    out = q.strip().strip("﻿").strip()   # RS29b: like JS trim(), which also removes a byte-order mark
     quals = [x for k, x in (("fork", "fork:false"), ("archived", "archived:false"), ("is", "is:public")) if not _typed(out, k)]
     if max_age_months > 0 and not _typed(out, "pushed"):
         now = now or dt.datetime.now(dt.timezone.utc)
@@ -143,7 +143,7 @@ def build_query(q, max_age_months=0, min_stars=0, now=None):
     if min_stars > 0 and not _typed(out, "stars"):
         quals.append(f"stars:>={min_stars}")
     for x in quals:
-        if len(out) + 1 + len(x) <= GH_MAX_QUERY:
+        if _u16(out) + 1 + len(x) <= GH_MAX_QUERY:   # RS29b: UTF-16 units, as the page's .length counts
             out += " " + x
     return out
 

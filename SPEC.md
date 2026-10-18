@@ -33,9 +33,11 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   out for licence and 12 as stale, because one page of 30 best matches was fetched and filtered afterwards). Each query
   also carries `pushed:>=YYYY-MM-DD` (today minus the RS4 window, 30.44 days a month, UTC date; omitted when the window is
   0) and `stars:>=N` (the RS4a floor; omitted at 0), and asks for 50 results (second review: 100 let weak tail matches in; see RS5c). A qualifier the user already typed
-  (`stars:`, `pushed:`, `fork:`, `archived:`, `is:`, negated or not) is not added again. GitHub caps the whole query at
-  256 characters and 5 AND/OR/NOT operators: qualifiers are added in order (fork, archived, is, pushed, stars) only while
-  the query stays within 256 characters, and none of them is an operator. The client-side filters (RS2–RS4a) still run
+  (`stars:`, `pushed:`, `fork:`, `archived:`, `is:`, negated or not) is not added again. GitHub documents a 256-character
+  limit on the query text (not counting operators or qualifiers) and at most 5 AND/OR/NOT operators; to stay safe we
+  count everything: qualifiers are added in order (fork, archived, is, pushed, stars) only while the whole `q` string
+  stays within 256 UTF-16 code units (what the page's `.length` counts; `scout.py` counts the same way, and trims like
+  JS `trim()`, byte-order mark included), and none of them is an operator. The client-side filters (RS2–RS4a) still run
   on every reply as a second check and still produce the excluded counts. The page's `ghQuery()` and `build_query()` in
   `scripts/scout.py` build the identical string (RS29b; shared cases in `tests/fixtures/qualifier_cases.json`, asserted
   by both test suites). Confirm searches for indexed repos (RS42) and the trending lists (RS35) are unchanged.
