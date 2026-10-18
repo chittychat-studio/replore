@@ -463,11 +463,13 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   (static dots, no label cycling) under prefers-reduced-motion, is aria-hidden decoration (the label text stays
   readable), stops once removed, and makes no network call.
 
-- **RS34f** Implausible verdicts (peer review 2026-10-18, prompt injection). A reply that drops more than 60% of the
-  repos it was shown is treated as unparseable (`llm_unparseable` / `wai_unparseable`), so nothing is demoted and the
-  visitor gets the plain keyword order (fail open, as for any failed check). Before the prompt is built, any text in a
-  repo description or the query that imitates a verdict (`{"drop":`, `{drop:`, any case and spacing) is cut out, so a
-  description cannot hand the model an answer to copy.
+- **RS34f** Verdict-shaped repo text (peer review 2026-10-18, prompt injection). Before the prompt is built, any text in
+  a repo description or the query that imitates a verdict (`{"drop":`, `{drop:`, any case and spacing) is cut out, so a
+  description cannot hand the model an answer to copy. A drop-share cap (ignore verdicts dropping more than 60%) was tried
+  and removed after a second review: in `evals/relevance_set.json` 7 of 11 labelled queries are more than 60% off-topic
+  (four are 100%), so the cap rejected correct verdicts, cost a second paid provider call and was never cached. Any
+  in-range, de-duplicated drop list is accepted, including "drop everything"; a test asserts every labelled verdict in
+  the set parses as a drop list.
 - **RS34g** Spend gate in code (peer review 2026-10-18: production was safe only because the owner set
   `TURNSTILE_SECRET`; the code's default was "no bot check"). (1) Fail closed: with no `TURNSTILE_SECRET` every POST is
   refused 403 `bot_check_failed`, unless the variable `ALLOW_NO_TURNSTILE` is exactly `1` (for `wrangler pages dev` and

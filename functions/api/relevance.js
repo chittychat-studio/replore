@@ -54,9 +54,6 @@ export function buildMessages(query, repos) {
   ];
 }
 
-// RS34f: a verdict that drops more than this share of the list is implausible (a prompt-injected or confused reply):
-// it is treated as unparseable, so nothing is demoted and the visitor sees the plain keyword order (fail open, RS34).
-export const MAX_DROP_SHARE = 0.6;
 
 // Parse the model's reply; anything malformed is ignored (keep everything) rather than trusted.
 export function parseDrops(text, n) {
@@ -72,7 +69,6 @@ export function parseDrops(text, n) {
     if (!Number.isInteger(i) || i < 0 || i >= n || seen.has(i)) continue;
     seen.add(i); drop.push({ i, why: Number.isInteger(raw) ? "" : clean(d && d.why, 120) });
   }
-  if (drop.length > MAX_DROP_SHARE * n) return null;   // RS34f plausibility cap
   return drop;
 }
 
@@ -199,7 +195,7 @@ export async function judgeChain(query, repos, env, fetchImpl = fetch, budgetMs 
 
 // RS34b: answers for the built-in example searches are cached at Cloudflare's edge for a day, so repeat visitors
 // tapping the same quick pick don't spend AI allowance. Only these fixed texts are cached — never what a visitor
-// types — so nothing a user writes is stored. Must match EXAMPLES in web/index.html (tested).
+// types — so nothing a user writes is stored. Must match EXAMPLES in web/app.js (tested).
 export const EXAMPLE_QUERIES = [
   "a portfolio website with smooth scroll animations",
   "landing page for my SaaS in Next.js, I'll sell it",
