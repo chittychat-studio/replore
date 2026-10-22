@@ -14,6 +14,12 @@ const { items } = JSON.parse(readFileSync(new URL("./relevance_set.json", import
 const byQuery = new Map();
 for (const it of items) { if (!byQuery.has(it.query)) byQuery.set(it.query, []); byQuery.get(it.query).push(it); }
 
+// RS34g: keys go only to Replore's own hosts, and a redirect is an error (fetch would carry custom headers along).
+const KEY_HOST = /^https:\/\/(replore\.cardzo\.co\.in|([a-z0-9-]{1,63}\.)?replore\.pages\.dev)\/api\/relevance$/;
+if ((process.env.REPLORE_EVAL_KEY || process.env.RELEVANCE_TURNSTILE_TOKEN) && !KEY_HOST.test(ENDPOINT)) {
+  console.error("Refusing to send a key to " + ENDPOINT + ": use https://replore.cardzo.co.in/api/relevance or a *.replore.pages.dev preview.");
+  process.exit(2);
+}
 const AUTH = { "Content-Type": "application/json", "X-Replore-Diag": "1",
   ...(process.env.REPLORE_EVAL_KEY ? { "X-Replore-Eval-Key": process.env.REPLORE_EVAL_KEY } : {}),
   ...(process.env.RELEVANCE_TURNSTILE_TOKEN ? { "CF-Turnstile-Token": process.env.RELEVANCE_TURNSTILE_TOKEN } : {}) };
@@ -23,7 +29,7 @@ for (const [query, group] of byQuery) {
   const repos = group.map(g => ({ name: g.name, description: g.text, topics: [] }));
   let res, body; const t0 = Date.now();
   try {
-    res = await fetch(ENDPOINT, { method: "POST", headers: AUTH,
+    res = await fetch(ENDPOINT, { method: "POST", headers: AUTH, redirect: "error",
       body: JSON.stringify(model ? { query, repos, model } : { query, repos }) });
     body = await res.json();
   } catch (e) { body = { error: "unreachable: " + e.message }; res = { ok: false, status: 0 }; }

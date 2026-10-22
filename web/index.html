@@ -491,18 +491,24 @@
   .privacy-note{text-align:center;font-size:12.5px;color:var(--muted);margin:18px auto 8px;max-width:680px;line-height:1.45}   /* RS46: no fade (was 3.7:1) */
   .privacy-note .link-btn,.privacy-note a{display:inline-block;padding:4px 2px;min-height:24px}   /* RS46: 24px tap targets */
   /* result-side filter chips + show-more */
-  .res-filter{display:flex;flex-wrap:wrap;gap:8px;margin:0 4px 14px}
+  .res-filter{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 4px 14px}
   .rfilter,.rsel{background:var(--offbg);border:1px solid var(--line);border-radius:999px;padding:7px 13px;font:inherit;
     font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;transition:border-color .18s,color .18s,background .18s}
   .rfilter:hover,.rsel:hover{border-color:var(--accent);color:var(--accent-ink)}
   .rsel{margin-left:auto}
   .ts-box:empty{display:none} .ts-box{margin:6px 0}
   .rsel.on{border-color:var(--accent);color:var(--accent-ink)}
-  .rfilter.on{background:var(--btn-grad);border-color:transparent;color:#fff}
-  .trend-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:0 4px 8px}
-  .trend-tab{background:var(--offbg);border:1px solid var(--line);border-radius:999px;padding:8px 14px;font:inherit;
-    font-size:13.5px;font-weight:700;color:var(--ink);cursor:pointer}
-  .trend-tab.on{background:var(--ink);color:var(--bg);border-color:transparent}
+  .rfilter.on{background:color-mix(in srgb,var(--accent) 14%,transparent);border-color:var(--accent);color:var(--accent-ink)}
+  .rfilter .rf-on{display:none} .rfilter.on .rf-on{display:inline}   /* RS29d: a check marks a switch that is on */
+  /* RS29d: Trending's list switcher is a segmented control at the start of the filter row */
+  .trend-tabs{display:inline-flex;gap:2px;padding:3px;background:var(--offbg);border:1px solid var(--line);border-radius:999px}
+  .trend-tab{background:transparent;border:0;border-radius:999px;padding:6px 13px;font:inherit;
+    font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;min-height:30px}
+  .trend-tab:hover{color:var(--ink)}
+  .trend-tab.on{background:var(--ink);color:var(--bg)}
+  .rf-sep{width:1px;height:22px;background:var(--line);margin:0 2px}
+  .trend-note{margin:-6px 4px 14px}
+  @media (max-width:520px){ .rf-sep{display:none} .res-filter .trend-tabs{flex:1 1 100%;justify-content:space-between} .res-filter .trend-tab{flex:1} }
   /* RS36 thinking orb pill */
   .think{display:inline-flex;align-items:center;gap:14px;padding:10px 24px 10px 12px;border-radius:999px;
     background:var(--card);border:1px solid var(--line);box-shadow:0 10px 28px -16px rgba(0,0,0,.35);vertical-align:middle}
@@ -1064,6 +1070,6 @@
   <p class="mut rag-only" style="margin-top:12px" hidden><b>Hybrid search:</b> repos are ranked by your words and by what you mean, so "voice notes" also finds "speech-to-text". Repos our index finds that the word search missed are checked on GitHub before you see them.</p>
 </div></div>
 
-<script src="app.js?v=ba85a50669" defer></script>
+<script src="app.js?v=d562109ab8" defer></script>
 </body>
 </html>

@@ -722,8 +722,9 @@ def test_web_page_is_safe_static(monkeypatch):
     assert "Generate plan" in html and "Build it with your AI agent" in html
     # RS27a: similar-repo requires text and is narrowed by it (no silent drop); "find similar" alone is blocked
     assert "RS27a" in html and "· matching" in html and "Add a few words too" in html
-    # RS29: a persistent "Clear filter" button appears when a non-All filter is active
-    assert 'id="resClearBtn"' in html and "Clear filter" in html
+    # RS29d: two on/off filters, no "All" chip; an empty filtered set still offers "Clear filter"
+    assert "function resFlags" in html and 'aria-pressed="false"' in html and '["all","All"]' not in html
+    assert 'id="resClear"' in html and "Clear filter" in html
     # search-bar ✕ resets everything (text, similar repo, filters, picks, results) — shared with the logo
     assert 'id="clearQ"' in html and "function resetAll" in html and 'addEventListener("click",resetAll)' in html
     # light/dark toggle (RS24)
@@ -974,6 +975,13 @@ def test_release_hygiene():
     reqs = [l for l in (ROOT / "requirements-dev.txt").read_text(encoding="utf-8").splitlines() if l and not l.startswith("#")]
     assert reqs and all(re.fullmatch(r"[A-Za-z0-9_.-]+==[0-9][0-9A-Za-z.]*", l) for l in reqs), reqs
     assert not (ROOT / "CLAUDE.md").exists() and (ROOT / ".claude" / "CLAUDE.md").exists()
+    # the `protect main` ruleset requires a check named `ci`: a job of that name that waits for every test job,
+    # always runs (skipped would count as passing) and fails unless they all succeeded
+    ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8").replace("\r\n", "\n")
+    job = re.search(r"^  ci:\n((?:    .*\n|\s*\n)+)", ci + "\n", re.M)
+    assert job, "ci.yml needs a job named ci (the required status check)"
+    body = job.group(1)
+    assert "needs: test" in body and "if: always()" in body and 'needs.test.result }}" = "success"' in body, body
 
 
 def test_script_urls_carry_the_current_file_hash():
@@ -1035,3 +1043,14 @@ def test_link_preview_tags_and_image():
     assert (ROOT / "docs" / "banner.png").read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
     assert "](docs/banner.png)" in (ROOT / "README.md").read_text(encoding="utf-8")
     assert (ROOT / "ops" / "share" / "card.html").exists()
+
+
+def test_harm_filter_shared_cases():
+    """RS18, RS29b: piracy/attack tools are dropped; ordinary repos that merely say 'crack', 'ddos' or 'keygen' are kept.
+    The same file is checked against web/app.js in tests/test_web_logic.js."""
+    fx = json.loads((ROOT / "tests" / "fixtures" / "harm_cases.json").read_text(encoding="utf-8"))
+    assert [d for d in fx["harmful"] if not scout.harmful_repo(d)] == []
+    assert [d for d in fx["fine"] if scout.harmful_repo(d)] == []
+    js = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
+    for p in scout.HARM[2:]:   # the first two are built from the service list; the rest must be character-identical
+        assert "/" + p.pattern + "/i" in js, p.pattern
