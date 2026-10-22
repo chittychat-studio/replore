@@ -1,5 +1,7 @@
 # Replore
 
+![Replore: the repo scout for vibe coders. Find it before you build it.](docs/banner.png)
+
 **The repo scout for vibe coders. Find it before you build it.**
 
 A repo finder for your AI coding agent — a one-command plugin for **Claude Code**, and an MCP server for
