@@ -1,0 +1,56 @@
+<template>
+  <style>
+    @font-face { font-family: "Anton"; src: url("assets/fonts/anton-latin.woff2") format("woff2"); }
+    @font-face { font-family: "Inter Tight"; font-weight: 100 900; src: url("assets/fonts/intertight-latin.woff2") format("woff2"); }
+    @font-face { font-family: "JetBrains Mono"; font-weight: 500; src: url("assets/fonts/jbmono-latin-500.woff2") format("woff2"); }
+    #root { position: absolute; inset: 0; overflow: hidden; background: #f4f6f8; font-family: "Inter Tight", sans-serif; }
+    #se-page { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+    .rp { position: absolute; inset: 0; background: #f4f6f8; color: #1e2a36; }
+    .rp-head { position: absolute; left: 96px; top: 44px; display: flex; align-items: center; gap: 16px; }
+    .rp-head b { font: 400 46px "Anton", sans-serif; color: #22374a; }
+    .rp-pill { position: absolute; left: 0; right: 0; top: 230px; text-align: center; }
+    .rp-pill span { font: 500 24px "JetBrains Mono", monospace; letter-spacing: 0.08em; color: #22374a; border: 2px solid #c7d6e2; border-radius: 999px; padding: 8px 22px; }
+    .rp-h { position: absolute; left: 0; right: 0; top: 300px; text-align: center; font: 400 112px/1.02 "Anton", sans-serif; color: #22374a; }
+    .rp-h em { font-style: normal; color: #3f6f8e; }
+    .rp-box { position: absolute; left: 410px; top: 590px; width: 1100px; height: 112px; background: #fff; border: 2px solid #dde3e9; border-radius: 20px; }
+    .rp-ph { position: absolute; left: 34px; top: 34px; font-size: 36px; color: #8a97a4; }
+    #se-q { position: absolute; left: 34px; top: 33px; font-size: 36px; font-weight: 600; color: #1e2a36; white-space: nowrap; }
+    #se-caret { display: inline-block; width: 3px; height: 40px; background: #3f6f8e; vertical-align: -6px; margin-left: 2px; }
+    #se-go { position: absolute; left: 1308px; top: 606px; width: 186px; height: 80px; background: #22374a; color: #fff; border-radius: 14px;
+      font-weight: 700; font-size: 34px; line-height: 80px; text-align: center; z-index: 3; }
+    #se-go span { display: inline-block; }
+    #se-cursor { position: absolute; left: 0; top: 0; z-index: 4; }
+  </style>
+  <div data-hf-id="hf-jrqz" id="root" data-composition-id="search" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-9eg3" id="se-page">
+      <div data-hf-id="hf-4j5y" class="rp">
+        <div data-hf-id="hf-rtvl" class="rp-head"><svg data-hf-id="hf-2nyy" width="54" height="54" viewBox="0 0 32 32"><circle data-hf-id="hf-1sso" cx="16" cy="16" r="12.5" fill="none" stroke="#3f6f8e" stroke-width="2.6"/><path data-hf-id="hf-80vb" d="M21.8 10.2 L17.4 17.4 L10.2 21.8 L14.6 14.6 Z" fill="#22374a"/><circle data-hf-id="hf-c52r" cx="16" cy="16" r="1.9" fill="#fff" stroke="#22374a" stroke-width="1.4"/></svg><b data-hf-id="hf-oq7o">Replore</b></div>
+        <div data-hf-id="hf-dw5q" class="rp-pill"><span data-hf-id="hf-g82z">THE REPO SCOUT FOR VIBE CODERS</span></div>
+        <div data-hf-id="hf-0sh5" class="rp-h">Describe it.<br data-hf-id="hf-x5px"><em data-hf-id="hf-l7v8">Get repos that fit.</em></div>
+        <div data-hf-id="hf-6gha" class="rp-box"><div data-hf-id="hf-usls" class="rp-ph" id="se-ph">What are you building?</div><div data-hf-id="hf-1lkb" id="se-q"><span data-hf-id="hf-2ixp" id="se-txt"></span><i data-hf-id="hf-lj8b" id="se-caret"></i></div></div>
+      </div>
+    </div>
+    <div data-hf-id="hf-ixy0" id="se-go"><span data-hf-id="hf-h6dk">Find &rarr;</span></div>
+    <svg data-hf-id="hf-z2sa" id="se-cursor" width="40" height="52" viewBox="0 0 20 26"><path data-hf-id="hf-bvxg" d="M2 2 L2 21 L7 16.5 L10.5 24 L14 22.5 L10.6 15 L17 15 Z" fill="#1e2a36" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>
+  </div>
+  <script>
+    (function () {
+      var tl = gsap.timeline({ paused: true });
+      var Q = "a chatbot that answers questions from my PDFs", txt = document.getElementById("se-txt"), q = { n: 0 };
+      tl.fromTo("#se-page", { scale: 1.08, transformOrigin: "960px 518px" }, { scale: 1, duration: 0.4, ease: "expo.out" }, 0);
+      tl.fromTo("#se-go", { scale: 1.08, x: (1401 - 960) * 0.08, y: (646 - 518) * 0.08 }, { scale: 1, x: 0, y: 0, duration: 0.4, ease: "expo.out" }, 0);
+      tl.fromTo("#se-ph", { opacity: 1 }, { opacity: 0, duration: 0.05 }, 0.4);
+      tl.fromTo(q, { n: 0 }, { n: Q.length, duration: Q.length * 0.034, ease: "none", onUpdate: function () { txt.textContent = Q.slice(0, Math.round(q.n)); } }, 0.4);
+      // the cursor travels to Find and clicks
+      tl.fromTo("#se-cursor", { x: 1500, y: 920 }, { x: 1420, y: 652, duration: 0.6, ease: "power2.inOut" }, 2.0);
+      tl.to("#se-go", { scale: 0.94, duration: 0.08, ease: "power2.in" }, 2.88);
+      tl.to("#se-go", { scale: 1, duration: 0.12, ease: "power2.out" }, 2.96);
+      tl.to("#se-cursor", { opacity: 0, duration: 0.1 }, 3.0);
+      // zoom through the button: its fill becomes the night map
+      tl.to("#se-go span", { opacity: 0, duration: 0.1 }, 3.0);
+      tl.to("#se-go", { x: 960 - 1401, y: 540 - 646, scale: 18, borderRadius: 1, backgroundColor: "#1f3549", duration: 0.65, ease: "power3.in" }, 3.1);
+      tl.to("#se-page", { scale: 1.12, filter: "blur(8px)", duration: 0.65, ease: "power3.in" }, 3.05);
+      window.__timelines["search"] = tl;
+    })();
+  </script>
+</template>

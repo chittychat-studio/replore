@@ -940,6 +940,14 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
 
 ## RX — Deliberately excluded (v0.1)
 
+- **RS64** Explainer video (owner 2026-10-23). A 52 s, 16:9 HyperFrames project in `video/explainer/` (storylines A + C
+  mixed: "11:40 pm, then the scout"). Her desk is one Google Flow 3D still with the real chat and Replore screens warped
+  onto the laptop; the scout is an original 3D bot (white shell, black visor, arc eyes, navy satchel, brass magnifier),
+  generated in Flow (stills and Veo clips) and cut out from chroma green. Kept clearly distinct from Sony's Astro Bot.
+  Shows only real data: the PDF-chatbot search's real top three (kotaemon, pdfGPT, pdftochat) and their licences.
+  No contour lines anywhere (owner rejected them twice); a plain dark-blue lit studio floor instead. The rendered MP4 is
+  not committed (`renders/` is ignored); rebuild it with the HyperFrames CLI. Sound effects are bundled Pixabay files
+  (licence in `assets/sfx/CREDITS.md`); no music bed yet.
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
 - **RX3** Ranking by forks, trending or download counts. (Relevance, stars and license-freedom are the only
