@@ -764,6 +764,11 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   library only) rewrites the stamps; a test fails when a stamp doesn't match its file, so a code change can't ship
   without one. The query string changes nothing for the CSP (RS49), which matches on origin only.
 
+- **RS53** Tagline (owner decision 2026-10-22). Replore is described as **"the repo scout for vibe coders"** with the
+  line **"Find it before you build it."** It is not called an agent: it finds and explains repos and never writes code
+  into the user's project (RX4). Used in the page `<title>`, its meta description, the hero pill (replacing "AI-powered
+  repo finder"), the hero subline, the top of the README, and the plugin and marketplace descriptions.
+
 ## RX — Deliberately excluded (v0.1)
 
 - **RX1** Scraping github.com HTML, or any non-API source.

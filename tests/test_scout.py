@@ -758,7 +758,7 @@ def test_web_page_is_safe_static(monkeypatch):
     # RS28g: a long prompt never hides Claude/ChatGPT; they switch to copy-then-open
     assert 'linkMode(openLink, tooLong ? "https://claude.ai/new" : url, tooLong)' in html
     assert 'openLink.setAttribute("hidden"' not in html and 'gpt.setAttribute("hidden"' not in html
-    assert 'class="hero-pill"' in html and "AI-powered repo finder" in html   # RS29c owner wording
+    assert 'class="hero-pill"' in html and "The repo scout for vibe coders" in html and "Find it before you build it" in html   # RS53 owner tagline
     # RS34: the page does run an AI relevance check, so no copy may claim otherwise
     for stale in ("There is no AI in this page", "For AI-written searches, a relevance check", "runs a semantic relevance check"):
         assert stale not in html, stale
