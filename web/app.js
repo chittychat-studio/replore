@@ -1606,8 +1606,12 @@ document.getElementById("tourBtn").addEventListener("click",function(){ openModa
     r.innerHTML='<span></span><span aria-hidden="true"></span>'; r.firstChild.textContent=label; r.lastChild.textContent=label;
     b.replaceChild(r,t); });
   if(!G||reduce) return;
-  var lines=document.querySelectorAll("#heroTitle .in");
-  if(lines.length) G.from(lines,{yPercent:115,rotateX:-80,opacity:0,duration:1.6,ease:"expo.out",stagger:.12,delay:.1});
+  // RS65: the title reveals word by word, each word sharpening from a soft blur (the h2 keeps its aria-label)
+  var lines=document.querySelectorAll("#heroTitle .in"), words=[];
+  [].forEach.call(lines,function(ln){ var parts=ln.textContent.split(" ");
+    ln.textContent=""; parts.forEach(function(w,i){ var sp=document.createElement("span"); sp.className="hw"; sp.textContent=w;
+      ln.appendChild(sp); words.push(sp); if(i<parts.length-1) ln.appendChild(document.createTextNode(" ")); }); });
+  if(words.length) G.from(words,{opacity:0,y:18,filter:"blur(10px)",duration:.9,ease:"expo.out",stagger:.11,delay:.15,clearProps:"filter"});
   if(!fine) return;
   document.querySelectorAll("[data-magnet]").forEach(function(el){
     var xTo=G.quickTo(el,"x",{duration:.9,ease:"elastic.out(1,0.35)"}), yTo=G.quickTo(el,"y",{duration:.9,ease:"elastic.out(1,0.35)"});
