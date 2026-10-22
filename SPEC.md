@@ -889,6 +889,19 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   with no port. The workflow checks the endpoint with an anchored regex; `evals/relevance_live.mjs` refuses other
   hosts and treats a redirect as an error; `ops/rag_smoke.py` omits the key for other hosts and never follows redirects.
 
+- **RS60** The scout's map (owner 2026-10-23: "use threejs"; a hero with meaning, not decoration). A WebGL contour
+  landscape behind the hero, matching the banner's topographic map (RS57), drawn with **three.js** (MIT) 0.186.1
+  (published 2026-09-24). Only the parts used are shipped: `ops/hero-map/three-entry.js` is bundled, tree-shaken and
+  minified with esbuild 0.28.2 into `web/vendor/three-0.186.1-hero.min.js` (~132 KB compressed instead of ~420 KB for
+  the whole library), with three.js's licence kept at the end of the file; `ops/hero-map/build.md` has the command.
+  `web/hero-map.js` (a stamped module, RS52) loads it after the page is idle. Motion carries meaning: each keystroke
+  in the search box sends a ripple across the map, and while a search runs a lit route traces across it; the camera
+  follows the pointer slightly. Smoothing is time-based, so slow devices look the same, only less fluid. It is
+  skipped on data-saver, devices reporting under 4 GB of memory and browsers without WebGL2; "reduce motion" gets one
+  still frame with no ripples or route; it renders at most 1.5 device pixels per CSS pixel, pauses in hidden tabs and
+  off-screen, and fades out and stops once results show. Light and dark colours follow the theme toggle. Four
+  backdrop circles and blobs are hidden while it runs. No new host, CSP unchanged. Simplex noise: Ashima Arts (MIT).
+
 ## RX — Deliberately excluded (v0.1)
 
 - **RX1** Scraping github.com HTML, or any non-API source.

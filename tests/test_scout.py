@@ -668,7 +668,7 @@ def test_web_page_is_safe_static(monkeypatch):
     index = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
     srcs = _re.findall(r'<script[^>]+src="([^"]+)"', index)
     srcs = [s.split("?v=")[0] for s in srcs]   # RS52: app.js / theme.js carry a ?v=<hash> stamp
-    assert srcs == ["theme.js", "vendor/gsap.min.js", "app.js"], srcs   # RS49: no inline script; app.js after GSAP
+    assert srcs == ["theme.js", "vendor/gsap.min.js", "app.js", "hero-map.js"], srcs   # RS49: no inline script; app.js after GSAP; RS60 last
     assert '<script src="vendor/gsap.min.js" defer>' in index and _re.search(r'<script src="app\.js\?v=[0-9a-f]{10}" defer>', index)   # RS24: GSAP first
     assert not _re.search(r"<script(?![^>]*src=)[^>]*>", index) and not _re.search(r"\son[a-z]+\s*=", index)
     assert "<html lang=\"en\">" in index   # RS24: no forced light theme; the system setting applies until the visitor picks one
@@ -1054,3 +1054,18 @@ def test_harm_filter_shared_cases():
     js = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
     for p in scout.HARM[2:]:   # the first two are built from the service list; the rest must be character-identical
         assert "/" + p.pattern + "/i" in js, p.pattern
+
+
+def test_hero_map_is_self_hosted_pinned_and_optional():
+    """RS60: a pinned, tree-shaken three.js bundle on our own origin with its licence; the map script is a stamped module
+    that fetches nothing, bails out on weak devices and never animates under reduced motion."""
+    bundle = (ROOT / "web" / "vendor" / "three-0.186.1-hero.min.js").read_text(encoding="utf-8")
+    assert "SPDX-License-Identifier: MIT" in bundle and "Three.js Authors" in bundle and len(bundle) < 700_000
+    js = (ROOT / "web" / "hero-map.js").read_text(encoding="utf-8")
+    for code in (js, bundle):
+        assert not re.search(r"fetch\(|XMLHttpRequest|sendBeacon|document\.cookie|new Function", code)
+    assert "./vendor/three-0.186.1-hero.min.js" in js and "saveData" in js and "deviceMemory" in js
+    assert "prefers-reduced-motion" in js and "one still frame" in js and "has-results" in js and "Ashima" in js
+    assert (ROOT / "ops" / "hero-map" / "three-entry.js").exists() and (ROOT / "ops" / "hero-map" / "build.md").exists()
+    html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
+    assert re.search(r'<script src="hero-map\.js\?v=[0-9a-f]{10}" type="module">', html)

@@ -62,6 +62,12 @@
   .bg-shapes{position:absolute;top:0;left:0;right:0;height:640px;overflow:hidden;pointer-events:none;z-index:-1;opacity:.6;
     -webkit-mask-image:linear-gradient(to bottom,#000 35%,transparent 100%);mask-image:linear-gradient(to bottom,#000 35%,transparent 100%)}
   .bg-shapes .sh{position:absolute;display:block;animation:drift 18s ease-in-out infinite alternate}
+  /* RS60: the three.js contour map (hero-map.js), under the shapes; it melts into the page at its edges */
+  .hero-map{position:absolute;top:0;left:0;right:0;height:820px;overflow:hidden;pointer-events:none;z-index:-1;
+    -webkit-mask-image:linear-gradient(to bottom,#000 55%,transparent 100%);mask-image:linear-gradient(to bottom,#000 55%,transparent 100%)}
+  .hero-map canvas{display:block;width:100%;height:100%}
+  body.has-hero-map .bg-shapes .sh.s1,body.has-hero-map .bg-shapes .sh.s3,body.has-hero-map .bg-shapes .sh.s4,
+  body.has-hero-map .bg-shapes .sh.s5{display:none}   /* circles and blobs fight the contour lines */
   .sh.s1{width:240px;left:-150px;top:430px;opacity:.9;animation-duration:22s}
   .sh.s2{width:86px;right:7%;top:84px;opacity:.22;animation-name:driftSpin;animation-duration:26s}
   .sh.s3{width:38px;left:16%;top:470px;opacity:.12}
@@ -1071,5 +1077,6 @@
 </div></div>
 
 <script src="app.js?v=4305179f3b" defer></script>
+<script src="hero-map.js?v=4950d156f7" type="module"></script>   <!-- RS60: decorative, loads after the page is idle -->
 </body>
 </html>
