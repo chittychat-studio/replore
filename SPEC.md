@@ -955,7 +955,11 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   dropping it (owner: "transitions smooth?"): the stage stays, the bot switches to its search pose, the globe spins up,
   the rail and label follow the search, and the example cards leave; the results then replace the stage. On laptops and up the whole stage fits the first screen (owner: "show in first screen, not after
   scrolling"): the title runs on one line, the pair scales with the window height, the licence pill sits in each card's
-  top-right corner, and the cards end above the fold at 1366x768. No gradients or glass rule is
+  top-right corner, and the cards end above the fold at 1366x768. Type (owner reference 2026-10-23): the title's first half is heavy, tight
+  Inter Tight (800), the second half Instrument Serif (self-hosted, SIL OFL) in a muted tone; the same heavy Inter Tight
+  replaces Anton everywhere else (logo, headings, Trending numbers, card avatars) so the site uses one family
+  (owner: "maintain similar font throughout site"). The stage rail sits right beside the globe. On arrival the bot peeks
+  out from behind the globe with a head tilt, then hops out to its spot (reduced motion: no peek). No gradients or glass rule is
   lifted for this stage only, by the owner's pick.
 - **RS66** No em dashes in site copy (owner 2026-10-23: "check no em dashes across site"). Nothing a visitor reads on
   the web page (text, titles, tooltips, aria labels, the plan prompt) uses an em dash; a colon, comma, full stop or

@@ -1084,9 +1084,9 @@ var ART={
     '<rect x="16" y="52" width="28" height="34" rx="5" fill="var(--card)" stroke="var(--line)" stroke-width="2"/>'+
     '<rect x="46" y="34" width="28" height="52" rx="5" fill="var(--accent)"/>'+
     '<rect x="76" y="62" width="28" height="24" rx="5" fill="var(--card)" stroke="var(--line)" stroke-width="2"/>'+
-    '<text x="60" y="68" text-anchor="middle" font-family="Anton,Impact,sans-serif" font-weight="400" font-size="20" fill="#fff">1</text>'+
-    '<text x="30" y="76" text-anchor="middle" font-family="Anton,Impact,sans-serif" font-weight="400" font-size="16" fill="var(--muted)">2</text>'+
-    '<text x="90" y="80" text-anchor="middle" font-family="Anton,Impact,sans-serif" font-weight="400" font-size="14" fill="var(--muted)">3</text>'+
+    '<text x="60" y="68" text-anchor="middle" font-family="Inter Tight,Segoe UI,sans-serif" font-weight="800" font-size="20" fill="#fff">1</text>'+
+    '<text x="30" y="76" text-anchor="middle" font-family="Inter Tight,Segoe UI,sans-serif" font-weight="800" font-size="16" fill="var(--muted)">2</text>'+
+    '<text x="90" y="80" text-anchor="middle" font-family="Inter Tight,Segoe UI,sans-serif" font-weight="800" font-size="14" fill="var(--muted)">3</text>'+
     '<path d="M60 6l4.4 9 9.9 1.4-7.2 7 1.7 9.8L60 28.6l-8.8 4.6 1.7-9.8-7.2-7 9.9-1.4z" fill="var(--accent2)"/></svg>',
   plan:'<svg viewBox="0 0 120 96" aria-hidden="true">'+
     '<ellipse cx="60" cy="88" rx="38" ry="5" fill="var(--line)" opacity=".7"/>'+
@@ -1411,6 +1411,9 @@ function buildLiveDemo(host){
       label=host.querySelector(".st-label"), bot=host.querySelector(".st-bot"),
       rail=[].slice.call(host.querySelectorAll(".st-rail li"));
   if(globe) startAsciiGlobe(globe, reduce);
+  var sb=bot&&bot.parentNode;
+  if(bot&&globe&&!reduce&&bot.classList&&sb&&sb.classList&&bot.addEventListener){ bot.classList.add("peek"); sb.classList.add("peeking");   // RS65: peek, then hop out
+    bot.addEventListener("animationend",function(){ bot.classList.remove("peek"); sb.classList.remove("peeking"); },{once:true}); }
   var timers=[], k=0, paused=false;
   function later(f,ms){ timers.push(setTimeout(f,ms)); }
   function clear(){ timers.forEach(clearTimeout); timers=[]; }

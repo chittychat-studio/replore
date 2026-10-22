@@ -9,7 +9,7 @@
   Replore web page (SPEC RS22). Static page (this file + app.js + theme.js), no build step, no key or token.
   Security headers and the Content-Security-Policy live in web/_headers (RS49); keep every script in a file, never inline.
   It calls the PUBLIC GitHub search API from the browser (unauthenticated: ~10 searches/minute).
-  No third-party requests for assets: GSAP 3.12.5 (motion) and the Anton/Inter Tight/JetBrains Mono fonts are served from this site
+  No third-party requests for assets: GSAP 3.12.5 (motion) and the Inter Tight/Instrument Serif/JetBrains Mono fonts are served from this site
   (vendor/, fonts/); the page degrades gracefully without GSAP. Only GitHub's API is called (RS33).
   The browser version uses keyword search plus a small server-side AI relevance check (functions/api/relevance.js, RS34; the
   key lives on the server, never in this page); the plugin (Claude Code, or the script in any AI agent) also writes smarter
@@ -40,7 +40,7 @@
     --accent:#3f6f8e; --accent-ink:#22374a; --accent2:#5b88a6; --accent-rgb:63,111,142; --tint:#c7d6e2; --deep:#22374a; --btn-grad:linear-gradient(135deg,#3f6f8e,#22374a); --good:#426832; --warn:#855816;   /* RS46: verdict tags >= 4.5:1 on their tints (were 4.1) */
    
     --warnbg:#f3ead2; --goodbg:#e4ecdc; --offbg:#e9eef2; --shadow:30,42,54;
-    --f-display:"Anton",Impact,"Arial Narrow Bold",sans-serif; --f-body:"Inter Tight",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --f-display:"Inter Tight",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;   /* RS65: one family site-wide */ --f-body:"Inter Tight",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
     --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   }
   @media (prefers-color-scheme: dark){
@@ -188,7 +188,7 @@
   .ld-card.in{opacity:1;transform:none} .ld-card.out{opacity:0;transform:translateY(-8px);transition-duration:.4s}
   .ld-top{display:flex;align-items:center;gap:10px;min-width:0}
   .ld-top .avatar{width:26px;height:26px;border-radius:7px;flex:0 0 auto;display:grid;place-items:center;
-    font:400 13px/1 var(--f-display);color:#fff;background:linear-gradient(135deg,hsl(var(--h) 62% 58%),hsl(calc(var(--h) + 24) 58% 40%))}
+    font:800 13px/1 var(--f-display);color:#fff;background:linear-gradient(135deg,hsl(var(--h) 62% 58%),hsl(calc(var(--h) + 24) 58% 40%))}
   .ld-name{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
   .ld-name .owner{font-weight:500;color:var(--muted)}
   .ld-desc{margin:0;font-size:13px;color:var(--muted);line-height:1.45;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
@@ -259,10 +259,10 @@
   .brand{display:flex;align-items:baseline;gap:10px;cursor:pointer;border-radius:10px;transition:opacity .15s}
   .brand:hover{opacity:.82}
   .brand:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
-  /* RS47 display face: Anton (one weight) for headings and big numbers; body Inter Tight; labels JetBrains Mono */
-  h1,.res-head h2,.group-h,.sheet h2,.hero-title,.demo-card .t{font-family:var(--f-display);font-weight:400;letter-spacing:.005em;font-synthesis:none}
+  /* RS65 (was RS47 Anton): headings and big numbers in heavy, tight Inter Tight, the hero's face; labels JetBrains Mono */
+  h1,.res-head h2,.group-h,.sheet h2,.hero-title,.demo-card .t{font-family:var(--f-display);font-weight:800;letter-spacing:-.03em}
   .mono,.hero-pill,.rcard .meta,.tc-meta,.topics span,.left-div,.rank{font-family:var(--f-mono);letter-spacing:.02em}
-  .stars .cnt,.tc-stars{font-family:var(--f-display);font-weight:400;letter-spacing:.02em}
+  .stars .cnt,.tc-stars{font-family:var(--f-display);font-weight:800;letter-spacing:-.02em}
   h1{font-size:34px;margin:0;
     background:linear-gradient(135deg,var(--accent-ink),var(--accent));-webkit-background-clip:text;
     background-clip:text;color:transparent}
@@ -379,7 +379,7 @@
   .rcard{display:flex;flex-direction:column;padding:16px 16px 14px;border-radius:16px}
   .rcard .rc-head{display:flex;align-items:center;gap:11px}
   .rcard .avatar{flex:0 0 auto;width:38px;height:38px;border-radius:11px;display:grid;place-items:center;
-    font:400 18px/1 var(--f-display);color:#fff;
+    font:800 18px/1 var(--f-display);color:#fff;
     background:linear-gradient(135deg,hsl(var(--h) 62% 58%),hsl(calc(var(--h) + 24) 58% 40%));
     box-shadow:0 8px 18px -10px hsl(var(--h) 60% 40% / .8)}
   .rcard .rc-title{min-width:0;flex:1}
@@ -612,7 +612,7 @@
   .tb-big .tb-name:hover{text-decoration:underline}
   .tb-big .tb-desc{margin:0;font-size:14px;color:#c7d6e2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .tb-facts{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;font-size:13px;color:#c7d6e2}
-  .tb-facts .tb-n{font:400 26px/1 var(--f-display);color:#fff;letter-spacing:.02em}
+  .tb-facts .tb-n{font:800 26px/1 var(--f-display);color:#fff;letter-spacing:-.03em}
   .tb-big .tag{background:rgba(163,191,126,.16);color:#c3dba3}
   .tb-big .tag.t-warn{background:rgba(216,169,92,.16);color:#e8c48a}
   .tb-tools{display:flex;flex-wrap:wrap;gap:6px}
@@ -624,7 +624,7 @@
   .tb-sm:hover{border-color:var(--accent);text-decoration:none}
   .tb-sm .tb-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
   .tb-sm .tb-lab{color:var(--muted)}
-  .tb-sm .tb-n{font:400 22px/1 var(--f-display);color:var(--accent-ink);letter-spacing:.02em}
+  .tb-sm .tb-n{font:800 22px/1 var(--f-display);color:var(--accent-ink);letter-spacing:-.03em}
   .tb-sm b{font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .tb-sm small{font-size:12.5px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
   .tb-sm .tag{align-self:flex-start;font-size:11px}
@@ -835,8 +835,10 @@
     -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 90px,#000 calc(100% - 160px),transparent 100%);
     mask-image:linear-gradient(180deg,transparent 0,#000 90px,#000 calc(100% - 160px),transparent 100%)}
   body:not(.has-results) .hero > *{position:relative;z-index:0}
-  .hero-title{font-family:var(--f-body);font-weight:300;letter-spacing:-.02em;font-size:clamp(36px,5vw,62px);line-height:1.04}
-  .hero-title em{font-style:normal;background:none;-webkit-text-fill-color:currentColor;color:var(--muted)}
+  /* owner reference 2026-10-23: a heavy, tight sans line, then a light serif in a muted tone */
+  .hero-title{font-family:var(--f-body);font-weight:800;letter-spacing:-.04em;font-size:clamp(36px,5vw,62px);line-height:1.04}
+  .hero-title em{font-family:"Instrument Serif",Georgia,"Times New Roman",serif;font-weight:400;font-style:normal;letter-spacing:-.01em;
+    font-size:1.08em;background:none;-webkit-text-fill-color:currentColor;color:var(--muted)}
   .hero-pill{background:transparent;border-color:var(--line);color:var(--muted)}
   .stage-slot:empty{display:none}
   body.has-results .stage-slot{display:none}   /* RS65: the stage carries the search; results replace it */
@@ -903,7 +905,7 @@
     .st-ctrl{bottom:0}
     .st-arrow{width:38px;height:38px;font-size:19px}
     .st-label{font-size:19px}
-    .st-rail{top:4px;gap:9px}
+    .st-rail{top:4px;gap:9px;left:auto;right:calc(50% + var(--gs) * .8 + 40px)}   /* close to the globe */
     .st-rail i{width:26px;height:26px}
     .st-rail li.on{font-size:17px}
     .st .ld-card{padding:10px 12px;gap:6px}
@@ -916,6 +918,18 @@
     body:not(.has-results) .stage-slot{margin-top:10px}
     body:not(.has-results) .hero .search .status:empty, body:not(.has-results) .hero .ts-box:empty{display:none}
   }
+  /* RS65: on arrival the bot peeks out from behind the globe, tilts its head, then hops out to its spot */
+  .st-bot.peek{animation:botPeek 2.4s cubic-bezier(.3,.7,.25,1) .5s both}
+  .st-b .st-sh{transition:opacity .4s}
+  .st-b.peeking .st-sh{opacity:0}
+  @keyframes botPeek{
+    0%  {transform:translateX(calc(var(--gs,262px) * -.42)) rotate(-16deg);clip-path:inset(0 0 0 70%)}
+    30% {transform:translateX(calc(var(--gs,262px) * -.42)) rotate(-16deg);clip-path:inset(0 0 0 50%)}
+    52% {transform:translateX(calc(var(--gs,262px) * -.42)) rotate(-4deg);clip-path:inset(0 0 0 50%)}
+    80% {transform:translateX(8px) translateY(-14px) rotate(3deg);clip-path:inset(0 0 0 0)}
+    100%{transform:none;clip-path:inset(0 0 0 0)}
+  }
+  @media (prefers-reduced-motion:reduce){ .st-bot.peek{animation:none} }
 </style>
 </head>
 <body>
@@ -1262,6 +1276,6 @@
   <p class="mut rag-only" style="margin-top:12px" hidden><b>Hybrid search:</b> repos are ranked by your words and by what you mean, so "voice notes" also finds "speech-to-text". Repos our index finds that the word search missed are checked on GitHub before you see them.</p>
 </div></div>
 
-<script src="app.js?v=20aee7bf51" defer></script>
+<script src="app.js?v=e0177ca976" defer></script>
 </body>
 </html>
