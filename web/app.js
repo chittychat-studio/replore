@@ -1315,6 +1315,13 @@ function placeDemo(){
   var stage=document.getElementById("stageSlot");   // RS65: on wide screens the demo sits on the studio stage under the search
   if(DEMO_MQ&&DEMO_MQ.matches){ if(ex.parentNode!==slot) slot.appendChild(ex); }
   else if(stage){ if(ex.parentNode!==stage) stage.appendChild(ex); }
+  // RS65: on the stage, Leo and the globe greet first and the example cards sit under the search bar
+  var deckSlot=document.getElementById("deckSlot"), ld=ex.querySelector&&ex.querySelector(".ld");
+  var deck=ex.querySelector&&(ex.querySelector(".ld-deck")||(deckSlot&&deckSlot.querySelector(".ld-deck")));
+  if(deckSlot&&deck&&ld&&deckSlot.appendChild){
+    var onStage=stage&&ex.parentNode===stage, note=ld.querySelector(".ld-note")||deckSlot.querySelector(".ld-note");
+    if(onStage){ if(deck.parentNode!==deckSlot){ deckSlot.innerHTML=""; deckSlot.appendChild(deck); if(note) deckSlot.appendChild(note); } }
+    else if(deck.parentNode!==ld){ ld.appendChild(deck); if(note) ld.appendChild(note); } }
   else if(ex.parentNode!==out && !out.querySelector(".rcard, .group-h, .err")) out.appendChild(ex);
   [].forEach.call(ex.querySelectorAll(".demo-dot"),function(d){ d.tabIndex=(DEMO_MQ&&DEMO_MQ.matches)?-1:0; });   // search comes first for keyboards
 }
@@ -1361,14 +1368,14 @@ function startAsciiGlobe(canvas, reduce){
     if(!r.width||!r.height) return;
     if(canvas.width!==Math.round(r.width*d)||canvas.height!==Math.round(r.height*d)){ canvas.width=Math.round(r.width*d); canvas.height=Math.round(r.height*d); }   // RS65: height too
     var W=canvas.width, H=canvas.height, cell=Math.max(8,Math.round(Math.min(W,H)/40)), cols=Math.floor(W/cell), rows=Math.floor(H/(cell*1.6));
-    g.clearRect(0,0,W,H); g.font=Math.round(cell*1.3)+"px "+(css("--f-mono")||"monospace"); g.textBaseline="top";
+    g.clearRect(0,0,W,H); g.font="700 "+Math.round(cell*1.3)+"px "+(css("--f-mono")||"monospace"); g.textBaseline="top";   // RS65: bolder
     var ink=css("--accent-ink"), dim=css("--accent2");
     var cx=cols*.5, cy=rows*.5, R=Math.min(rows*.47, cols*.29);
     for(var j=0;j<rows;j++) for(var i=0;i<cols;i++){ var x=(i-cx)/R*.62, y=(j-cy)/R, r2=x*x+y*y; if(r2>1) continue;
       var z=Math.sqrt(1-r2), lon=Math.atan2(x,z)+t, lat=Math.asin(y), light=.3+.7*z;
       var land=asciiNoise(lon*2.2+10,lat*3+4)>.52, grid=Math.abs(Math.sin(lon*6))<.06||Math.abs(Math.sin(lat*6))<.05;
-      var v=land?.5+.5*light:grid?.3*light:.12*light;
-      g.globalAlpha=land?.25+.45*light:.15+.25*light; g.fillStyle=land?ink:dim;
+      var v=land?.55+.45*light:grid?.45*light:.3*light;   // RS65: the whole sphere reads, not just the land
+      g.globalAlpha=land?.55+.45*light:.32+.33*light; g.fillStyle=land?ink:dim;
       g.fillText(ASCII_RAMP[Math.min(ASCII_RAMP.length-1,Math.floor(v*ASCII_RAMP.length))],i*cell,j*cell*1.6); }
     g.globalAlpha=1; }
   function frame(now){ if(!live) return; if(!canvas.isConnected){ live=false; return; }   // home screen replaced: stop for good
@@ -1398,12 +1405,10 @@ function buildLiveDemo(host){
     '<div class="st-stage">'+
       '<div class="st-pair" aria-hidden="true">'+
         (wide?'<div class="st-g"><canvas class="ld-globe"></canvas><span class="st-sh"></span></div>':'')+
-        '<div class="st-b"><img class="st-bot" src="scout-hero.webp" alt="" width="180" height="184" decoding="async"><span class="st-sprite"></span><span class="st-sh"></span></div></div>'+
-      '<p class="st-say"><b>Hello there! I’m Leo.</b><span class="st-say-t">Let’s explore what free GitHub repos have to offer for your idea. Then I’ll help you plan it.</span>'+
+        '<div class="st-b"><img class="st-bot" src="scout-hero.webp" alt="" width="180" height="184" decoding="async"><span class="st-sprite"></span><span class="st-sh"></span>'+
+        (wide&&!reduce?'<video class="st-peekvid" muted playsinline preload="auto" aria-hidden="true"></video>':'')+'</div></div>'+
+      '<p class="st-say"><b>Hello there!</b><em>I’m Leo.</em><span class="st-say-t">Let’s explore what free GitHub repos have to offer for your idea. Then I’ll help you plan it.</span>'+
         '<span class="st-pills" aria-hidden="true">'+STAGES.map(function(t){ return '<i>'+t+'</i>'; }).join("")+'</span></p>'+   // the search stages, as pills   // RS65: Leo, the scout
-      '<div class="st-ctrl"><button type="button" class="st-arrow st-prev" aria-label="Previous example search">&lsaquo;</button>'+
-        '<b class="st-label" aria-hidden="true"></b>'+
-        '<button type="button" class="st-arrow st-next" aria-label="Next example search">&rsaquo;</button></div>'+
     '</div>'+
     '<div class="ld-deck" aria-hidden="true"></div>'+
     '<p class="ld-note">Example: Replore’s real top results for this search</p>'+
@@ -1428,9 +1433,18 @@ function buildLiveDemo(host){
   var greeted=false, started=false;
   function startDemo(){ if(started) return; started=true; run(); }
   function greet(){ if(greeted) return; greeted=true; speak(SAY); sprite("wave", false, function(){ still(); startDemo(); }); }
-  if(canAnim){ bot.classList.add("peek"); sb.classList.add("peeking");   // peek, then hop out, then wave hello
+  // the peek: Leo's Flow/Veo clip (he peeks from behind the globe, looks around, hops out) where the browser can show
+  // see-through video; Safari cannot, so it gets the CSS peek instead
+  var pv=sb&&sb.querySelector&&sb.querySelector(".st-peekvid"), ua=(navigator&&navigator.userAgent)||"";
+  var alphaVideo=!!pv&&!/^((?!chrome|android|crios|fxios|edg).)*safari/i.test(ua);
+  function cssPeek(){ bot.classList.add("peek"); sb.classList.add("peeking");
     bot.addEventListener("animationend",function(){ bot.classList.remove("peek"); sb.classList.remove("peeking"); greet(); },{once:true});
-    setTimeout(greet, 3400); setTimeout(startDemo, 7000); }   // fallbacks if an animation event never fires
+    setTimeout(greet, 3400); }
+  if(canAnim&&alphaVideo){ var done=false, fin=function(){ if(done) return; done=true; sb.classList.remove("videopeek"); greet(); };
+    sb.classList.add("videopeek"); pv.addEventListener("ended",fin); pv.addEventListener("error",function(){ sb.classList.remove("videopeek"); if(!done){ done=true; cssPeek(); } });
+    pv.src="leo-peek.webm"; var pp=pv.play&&pv.play(); if(pp&&pp.catch) pp.catch(function(){ sb.classList.remove("videopeek"); if(!done){ done=true; cssPeek(); } });
+    setTimeout(fin, 6500); setTimeout(startDemo, 10000); }
+  else if(canAnim){ cssPeek(); setTimeout(startDemo, 7000); }   // fallbacks if an animation event never fires
   else { speak(SAY); }
   // typing: Leo pauses the example and answers you
   var qin=document.getElementById("q");
@@ -1481,10 +1495,6 @@ function buildLiveDemo(host){
     later(function(){ if(cur) cur.classList.remove("on"); }, t0+1000+visits.length*900+300);
     later(function(){ [].forEach.call(deck.children,function(c){ c.classList.add("out"); }); }, t0+6200);
     later(run, t0+6800); }
-  function go(d){ k+=d-1; paused=false; run(); }
-  var prev=host.querySelector(".st-prev"), next=host.querySelector(".st-next");
-  if(prev&&prev.addEventListener) prev.addEventListener("click",function(){ go(-1); });
-  if(next&&next.addEventListener) next.addEventListener("click",function(){ go(1); });
   // RS65: a real search takes over the stage: the bot searches, the rail and label follow it, the example cards leave
   var busy=false;
   function onSearch(){ var on=document.body.classList.contains("searching");

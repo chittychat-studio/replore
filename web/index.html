@@ -882,7 +882,7 @@
   /* RS65 compact (owner: "show in first screen, not after scrolling"): on laptops and up the whole stage (title, search,
      bot and globe, the three cards) fits one screen. The pair scales with the window height. */
   @media (min-width:1000px){
-    body:not(.has-results) .hero{padding-top:8px;padding-bottom:6px;--gs:clamp(140px,20vh,240px)}
+    body:not(.has-results) .hero{padding-top:8px;padding-bottom:6px;--gs:clamp(150px,calc(20vh + 10px),250px)}
     body:not(.has-results) .hero .hero-pill{margin-bottom:6px}
     body:not(.has-results) .hero-title{font-size:clamp(34px,3.4vw,52px);margin-bottom:6px}
     body:not(.has-results) .hero-title .ln{display:inline-block;vertical-align:top}
@@ -941,6 +941,35 @@
   .st-b.animating .st-bot{visibility:hidden}
   @keyframes leoSprite{from{background-position:0 0}to{background-position:100% 0}}
   .demo-slot .st-sprite{width:150px}
+  /* RS65 v2: Leo first and bigger, no arrows; the example cards sit under the search */
+  .deck-slot:empty{display:none}
+  body.has-results .deck-slot{display:none}
+  .deck-slot{margin-top:14px;display:grid;gap:6px;justify-items:center}
+  .deck-slot .ld-deck{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;width:100%;max-width:1160px}
+  .deck-slot .ld-card{background:var(--card);border:1px solid var(--line);border-radius:18px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);text-align:left;position:relative}
+  .deck-slot .ld-card .ld-top{padding-right:190px}
+  .deck-slot .ld-card .ld-lic{position:absolute;right:10px;top:9px;transform-origin:100% 0}
+  .deck-slot .ld-note{font-size:11.5px;color:var(--muted);justify-self:start;max-width:1160px;width:100%}
+  .st-ctrl{display:none}
+  @media (min-width:1000px){
+    .st-stage{height:calc(var(--gs) + 14px)}
+    .st-pair{bottom:10px}
+    .st-bot{width:calc(var(--gs) * .82)}
+    .st-sprite{width:calc(var(--gs) * .97)}
+    .st-say{left:calc(50% + var(--gs) * 1.0 + 12px);top:calc(var(--gs) * .1)}
+    .stage-slot{margin:4px 0 6px}
+  }
+  /* RS65: the peek clip (Flow/Veo), placed so Leo emerges from behind the globe and lands on his spot */
+  .st-peekvid{position:absolute;z-index:2;left:calc(50% - var(--gs,262px) * .81);bottom:calc(var(--gs,262px) * -.01);
+    width:calc(var(--gs,262px) * 1.156);height:auto;pointer-events:none;display:none}
+  .st-b.videopeek .st-peekvid{display:block}
+  .st-b.videopeek .st-bot,.st-b.videopeek .st-sh{visibility:hidden}
+  /* no bubble (owner reference): plain text beside Leo */
+  .st-say{background:none;border:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;padding:0;border-radius:0}
+  .st-say b{font-size:clamp(24px,2.3vw,32px);font-weight:800;letter-spacing:-.03em;line-height:1.05}
+  .st-say em{display:block;font-family:"Instrument Serif",Georgia,serif;font-style:normal;font-size:clamp(20px,1.8vw,26px);
+    color:var(--accent-ink);margin:2px 0 6px}
+  .st-say-t{display:block;font-size:13.5px}
 </style>
 </head>
 <body>
@@ -990,6 +1019,7 @@
     <h2 class="hero-title" id="heroTitle" aria-label="Find it before you build it."><span class="ln" aria-hidden="true"><span class="in">Find it before</span></span><span class="ln" aria-hidden="true"><em class="in">you build it.</em></span></h2>   <!-- RS65 -->
     <p class="sub">Describe what you’re building. Get popular, free-to-use, maintained repos that fit.</p>
     <div id="demoSlot" class="demo-slot"></div>   <!-- RS24: on phones the demo sits here, before the search -->
+    <div id="stageSlot" class="stage-slot"></div>   <!-- RS65: Leo and the globe greet first, above the search -->
 
     <div class="search">
       <div class="vibebar">
@@ -1009,7 +1039,7 @@
       <p id="srStatus" class="sr-only" role="status" aria-live="polite"></p>   <!-- RS46: short result count for screen readers -->
       <div id="tsBox" class="ts-box"></div>
     </div>
-    <div id="stageSlot" class="stage-slot"></div>   <!-- RS65: the studio stage: bot, globe, dial, example results -->
+    <div id="deckSlot" class="deck-slot"></div>   <!-- RS65: the example results, under the search -->
   </section>
 
   <section class="out-wrap">
@@ -1287,6 +1317,6 @@
   <p class="mut rag-only" style="margin-top:12px" hidden><b>Hybrid search:</b> repos are ranked by your words and by what you mean, so "voice notes" also finds "speech-to-text". Repos our index finds that the word search missed are checked on GitHub before you see them.</p>
 </div></div>
 
-<script src="app.js?v=dc3694f45b" defer></script>
+<script src="app.js?v=766f5fb62e" defer></script>
 </body>
 </html>
