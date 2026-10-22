@@ -895,7 +895,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   minified with esbuild 0.28.2 into `web/vendor/three-0.186.1-hero.min.js` (~132 KB compressed instead of ~420 KB for
   the whole library), with three.js's licence kept at the end of the file; `ops/hero-map/build.md` has the command.
   `web/hero-map.js` (a stamped module, RS52) loads it after the page is idle. Motion carries meaning: each keystroke
-  in the search box sends a ripple across the map, and while a search runs a thin dashed route, drawn in the same ink as the contours (no glow), traces across it; the camera
+  in the search box sends a ripple across the map, and while a search runs a soft scan sweeps across and brightens the contour lines it passes while the terrain drifts faster (no added lines or glow: owner rejected a glowing route and a thin trail as odd); the camera
   follows the pointer slightly. Smoothing is time-based, so slow devices look the same, only less fluid. It is
   skipped on data-saver, devices reporting under 4 GB of memory and browsers without WebGL2; "reduce motion" gets one
   still frame with no ripples or route; it renders at most 1.5 device pixels per CSS pixel, pauses in hidden tabs and

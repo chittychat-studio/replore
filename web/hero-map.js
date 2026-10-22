@@ -1,6 +1,6 @@
 // SPEC RS60: the scout's map. A WebGL contour landscape behind the hero, drawn with three.js (MIT; only the parts used,
 // bundled in vendor/three-0.186.1-hero.min.js). It means something: typing sends a ripple across the map, and while a
-// search runs a lit path traces across it (we're scouting). Pure decoration otherwise: the page works the same without it.
+// search runs a soft scan sweeps across and the terrain drifts faster (we're scouting). No glows, no extra lines. Pure decoration otherwise: the page works the same without it.
 //   - skipped on data-saver, devices under 4 GB of memory and browsers without WebGL2
 //   - "reduce motion": one still frame, no ripples or path
 //   - pauses in hidden tabs and off-screen; fades out and stops once results show
@@ -39,7 +39,7 @@ void main(){
 }`;
 
 const FRAG = `
-uniform float uTime, uRippleT, uPath, uAlpha;
+uniform float uTime, uRippleT, uPath, uPath2, uAlpha;
 uniform vec2 uRippleO;
 uniform vec3 uLine, uGlow;
 varying float vH; varying vec2 vUv; varying float vDepth;
@@ -54,20 +54,14 @@ void main(){
   float age=uTime-uRippleT;
   float d=distance(vUv*asp,uRippleO*asp);
   float ring=age>0.?exp(-pow((d-age*.42)*14.,2.))*exp(-age*1.1):0.;
-  // the scout's route while searching
-  float x0=.06, x=vUv.x;
-  float pd=abs(vUv.y-route(x));
-  float on=step(x0,x)*step(x,uPath);
-  // a thin dashed trail in map ink, like a route drawn on paper: no glow, no bloom
-  float w=fwidth(pd)*1.2+.0012;
-  float dash=step(.45,fract(x*46.-uTime*.6));
-  float path=on*dash*(1.-smoothstep(w*.5,w,pd));
-  float hd=distance(vUv*asp,vec2(uPath,route(uPath))*asp);
-  float head=uPath>x0?1.-smoothstep(.006,.006+fwidth(hd)*1.5,hd):0.;
+  // while searching, a soft scan sweeps across and lights up the contour lines it passes (no new shapes)
+  float sx=vUv.x+vUv.y*.25;
+  float scan=uPath>0.?exp(-pow((sx-(uPath*1.5-.2))*5.5,2.))*uPath2:0.;
   // distance and side fade, so the map melts into the page
   float fade=(1.-smoothstep(5.5,11.,vDepth))*smoothstep(0.,.12,vUv.x)*smoothstep(1.,.88,vUv.x)*smoothstep(0.,.18,vUv.y);
-  vec3 col=mix(uLine,uGlow,clamp(ring*1.2+path*.6+head*.6,0.,1.));
-  float a=(lines*.5+ring*lines*1.1+path*.85+head)*fade*uAlpha;
+  float lift=clamp(ring*1.2+scan*1.1,0.,1.);
+  vec3 col=mix(uLine,uGlow,lift);
+  float a=lines*(.5+ring*1.1+scan*.9)*fade*uAlpha;
   gl_FragColor=vec4(col,clamp(a,0.,1.));
 }`;
 
@@ -109,7 +103,7 @@ async function start() {
   const scene = new T.Scene();
   const camera = new T.PerspectiveCamera(36, 1, 0.1, 40);
   const uniforms = {
-    uTime: { value: 0 }, uRippleT: { value: -99 }, uRippleO: { value: new T.Vector2(0.5, 0.4) }, uPath: { value: 0 },
+    uTime: { value: 0 }, uRippleT: { value: -99 }, uRippleO: { value: new T.Vector2(0.5, 0.4) }, uPath: { value: 0 }, uPath2: { value: 0 },
     uAlpha: { value: 0 }, uLine: { value: new T.Color() }, uGlow: { value: new T.Color() },
   };
   const paint = () => { const t = THEMES[theme()]; uniforms.uLine.value.set(t.line); uniforms.uGlow.value.set(t.glow); alphaTarget = t.alpha; };
@@ -131,12 +125,12 @@ async function start() {
   // input: pointer parallax, a ripple per keystroke, the route while searching
   const target = { x: 0, y: 0 }, cam = { x: 0, y: 0 };
   const q = document.getElementById("q");
-  let pathStart = -1, clock0 = performance.now();
+  let clock0 = performance.now(), mapT = 0, scanT = 0;
   const now = () => (performance.now() - clock0) / 1000;
   if (!reduce) {
     addEventListener("pointermove", (e) => { target.x = e.clientX / innerWidth - 0.5; target.y = e.clientY / innerHeight - 0.5; }, { passive: true });
     if (q) q.addEventListener("input", () => {
-      uniforms.uRippleT.value = uniforms.uTime.value;
+      uniforms.uRippleT.value = uniforms.uTime.value;   // map time
       uniforms.uRippleO.value.set(0.3 + Math.random() * 0.4, 0.3 + Math.random() * 0.25);
       wake();
     });
@@ -144,19 +138,22 @@ async function start() {
   const searching = () => document.body.classList.contains("searching") && !document.body.classList.contains("has-results");
   const results = () => document.body.classList.contains("has-results");
 
-  let running = false, visible = true, frame = 0, last = now();
+  let running = false, visible = true, frame = 0, last = now(), flow = 1;
   const loop = () => {
     if (!running) return;
-    const t = reduce ? 4 : now(), dt = Math.min(0.1, Math.max(0, now() - last)); last = now();
+    const dt = Math.min(0.1, Math.max(0, now() - last)); last = now();
     const ease = (rate) => 1 - Math.exp(-dt * rate);   // frame-rate independent smoothing
+    const busy = searching() && !reduce;
+    flow += ((busy ? 2.6 : 1) - flow) * ease(1.5);   // the terrain drifts faster while we scout
+    mapT += dt * flow;
+    const t = reduce ? 4 : mapT;
     uniforms.uTime.value = t;
     cam.x += (target.x - cam.x) * ease(2.4); cam.y += (target.y - cam.y) * ease(2.4);
     camera.position.set(cam.x * 0.9, 3.1 - cam.y * 0.35, 4.2);
     camera.lookAt(0, -1.0, -2.6);
-    if (searching() && !reduce) {
-      if (pathStart < 0) pathStart = t;
-      uniforms.uPath.value = 0.06 + ((t - pathStart) / 1.8) % 1.1;   // trace across, then again until results land
-    } else { pathStart = -1; uniforms.uPath.value = Math.max(0, uniforms.uPath.value - 0.03); }
+    if (busy) { scanT += dt; uniforms.uPath.value = 0.001 + (scanT / 2.4) % 1; }   // one sweep every 2.4 s until results land
+    uniforms.uPath2.value += ((busy ? 1 : 0) - uniforms.uPath2.value) * ease(3);   // the scan fades in and out, never pops
+    if (!busy && uniforms.uPath2.value < 0.01) { scanT = 0; uniforms.uPath.value = 0; }
     const a = results() ? 0 : alphaTarget;
     uniforms.uAlpha.value += (a - uniforms.uAlpha.value) * (reduce ? 1 : ease(2.2));
     renderer.render(scene, camera);
