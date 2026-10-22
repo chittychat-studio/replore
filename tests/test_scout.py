@@ -778,9 +778,9 @@ def test_web_page_is_safe_static(monkeypatch):
     assert "function showTrending" in html and 'id="trendCar"' in html and 'id="trendBtn"' in html
     assert "&sort=" in html and "github.com/trending" not in html
     assert "body.view-trending .tcar, body.has-results .tcar{display:none}" in html  # no Rising list twice; results focus
-    assert 'prefers-reduced-motion: reduce)").matches) return;' in html
-    # RS36 thinking orb pill: dotted sphere + label, under the home demo and as the search loading indicator
-    assert "function startDotOrb" in html and "function think(" in html and 'id="homeThink"' in html
+    assert 'class="tbento"' in html and "tb-big" in html and "tb-sm" in html   # RS63: bento grid, no auto-turning ring
+    # RS36 thinking orb pill: the search loading indicator (RS61: no longer under the home demo; the ASCII globe is there)
+    assert "function startDotOrb" in html and "function think(" in html and 'id="homeThink"' not in html
     assert 'class="think-orb" aria-hidden="true"' in html and "draw(); if(reduce) return;" in html and "canvas.isConnected" in html
     assert 'think(st,"Checking which repos fit")' in html and "function startOrb" not in html
     # RS34: dropped repos sit at the end under a divider and show without a click (no hidden undo button)
@@ -958,8 +958,8 @@ def test_rs47_look_and_motion_kit():
     assert 'class="ln" aria-hidden="true"' in html and 'aria-label="Describe it. Get repos that fit."' in html and "var segs=" not in html
     assert "data-magnet" in html and 'G.quickTo(el,"x"' in html and "(hover:hover) and (pointer:fine)" in html
     assert "function odometer(" in html and "function snapHtml(" in html and "html:out.innerHTML" not in html
-    assert 'class="tring"' in html and 'class="ttape"' in html and "TAPE_ICON" in html and "✦</b>" not in html
-    assert "f>0.6 ? 0 : -1" in html   # only cards facing the visitor are focusable
+    assert 'class="tring"' not in html and 'class="ttape"' not in html and "TAPE_ICON" not in html and "✦</b>" not in html   # RS62
+    assert 'role="listitem"' in html and "rows.slice(1).map" in html   # RS63: every tile is a plain focusable link
 
 
 
@@ -1054,3 +1054,16 @@ def test_harm_filter_shared_cases():
     js = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
     for p in scout.HARM[2:]:   # the first two are built from the service list; the rest must be character-identical
         assert "/" + p.pattern + "/i" in js, p.pattern
+
+
+def test_home_demo_is_the_real_product_and_honest():
+    """RS61: the home demo shows real Replore results for real quick-pick searches, labelled as examples, with no
+    network call, no star counts, and the ASCII globe on desktop only."""
+    js = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
+    start = js.index("var LIVE_DEMO=")
+    block = js[start:js.index("// remember the last results", start)]
+    assert "buildLiveDemo(hd)" in js and "Example: Replore" in block and "fetch(" not in block
+    assert block.count('{q:"') == 3 and "☆" not in block and "kstars(" not in block
+    for lic in re.findall(r'\["[^"]+","([^"]+)","', block):
+        assert lic in ("MIT", "Apache-2.0"), lic
+    assert "max-width: 999px" in block and "prefers-reduced-motion" in block and "isConnected" in block

@@ -889,6 +889,46 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   with no port. The workflow checks the endpoint with an anchored regex; `evals/relevance_live.mjs` refuses other
   hosts and treats a redirect as an error; `ops/rag_smoke.py` omits the key for other hosts and never follows redirects.
 
+- **RS61** Home demo shows the real product, over an ASCII globe (owner 2026-10-23 picked directions 2 and 4 from the
+  hero comparison). The home screen's step carousel is replaced by a live demo: a quick-pick search types itself, then
+  that search's real top 3 results land as cards (owner initial, name, one-line description), their licence verdict pops
+  in and the Explore buttons (RS51) light in turn; then the next search. The cards are what `scout.py` returned for those
+  searches on 2026-10-23 with the site's own keyword queries, held in `LIVE_DEMO` in `web/app.js`; they are labelled
+  "Example: Replore's real top results for this search", make no network call (the home screen costs no GitHub quota),
+  and are refreshed by hand. No star counts, since a fixed number would go stale. On desktop an ASCII globe of GitHub
+  (canvas, the site's mono font and accent colours) turns behind the cards and spins up while a search runs; it is left
+  out on screens under 1000 px, where the demo sits above the search box and shows one card at a time under its typed query as one
+  plain line (a small search icon, the text, the caret; no box and no quote marks, owner 2026-10-23). Reduced motion shows the finished state with no typing, no spin. Hovering pauses the demo; the
+  globe pauses off-screen and in hidden tabs, and stops for good once the home screen is replaced. The "How it works"
+  window keeps the four-step carousel. The RS36 dotted-orb pill ("Ranking by fit…") is no longer shown under the home
+  demo, since the ASCII globe already signals searching (owner 2026-10-23); it stays as the loading line during a real search.
+
+- **RS62** Rising row and a demo that shows its work (owner 2026-10-23: "don't like this way of listing and the banner
+  tag"; the ASCII globe "pushed to the right corner"; "we are not showing searching, ranking … before cards show up").
+  The home "Rising on GitHub this month" list is one flat row of cards in the result-card language (owner tile, name,
+  stars, two-line description, licence pill) that scrolls sideways with snap points; arrow keys move one card. It
+  replaces the RS47 3D ring and the tilted ticker tape, which are removed. In the RS61 demo the globe and the cards take turns in one stage, never
+  overlapping (owner chose "globe, then cards" over overlap, side by side or stacked): while the query types and a mono
+  status line steps through "Searching GitHub" (the globe spins up) and "Ranking by fit", the globe fills the stage; as
+  the first card lands it fades out and the cards take its place; the next search brings it back. Hidden, it stops drawing.
+
+- **RS63** Result card A and a tabbed bento for Trending (owner 2026-10-23, picked from live mock-ups: card "A,
+  essentials then act"; Trending "bento grid", then "tabbed leaderboard also good but no motion?").
+  **Card:** owner tile, repo name (links to GitHub) with "by owner" under it, rank; what it does (up to 3 lines); the
+  RS29a match line; one line of facts: licence verdict pill (SPDX and the paid/free detail stay in its tooltip), stars,
+  "Updated …", and Starter when it applies. Two 44 px actions side by side: **Add to plan** and **Open on GitHub**. Then
+  "Look inside": three labelled tools, Diagram ("see the structure"), Wiki ("ask about it"), Code ("read the files",
+  GitHub1s), and a small "Also:" line with Digest and Edit (RS51 keeps all five links); then "Is it safe to build on?"
+  (RS53). Removed as noise: the forks chip, topic hashtags and the "SPDX · updated" meta line. `CACHE_V` 15. The home
+  demo's mini cards show the same three tools.
+  **Trending on GitHub (home):** tabs Rising this month / Most stars / Most forks above a bento grid. #1 is a big tile in
+  flat navy with an ASCII texture (the hero globe's characters), what it does, the number in the display face, the
+  licence pill and its Diagram / Wiki / Code buttons; #2–#5 are scoreboard tiles (rank, number, name, one line), with a
+  licence pill only when the repo is not free to use. No gradients, one accent. Switching tabs fades the tiles out, slides
+  the new ones in one after another and rolls the numbers (RS47 odometer); reduced motion swaps them with no movement.
+  A list is fetched only when its tab is first opened (RS35 cache, 30 minutes); if one fails it falls back to Rising.
+  Arrow keys move between tabs. Replaces the RS62 sideways row.
+
 ## RX — Deliberately excluded (v0.1)
 
 - **RX1** Scraping github.com HTML, or any non-API source.

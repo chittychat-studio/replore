@@ -211,7 +211,8 @@ var ICONS={
   alert:'<path d="M8 2.2l6 10.6H2z"/><path d="M8 6.6v2.9M8 11.2v.01"/>',
   ban:'<circle cx="8" cy="8" r="5.8"/><path d="M3.9 12.1l8.2-8.2"/>',
   sun:'<circle cx="8" cy="8" r="2.8"/><path d="M8 1.5v1.6M8 12.9v1.6M1.5 8h1.6M12.9 8h1.6M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1"/>',
-  moon:'<path d="M13.2 9.6A5.6 5.6 0 0 1 6.4 2.8a5.6 5.6 0 1 0 6.8 6.8z"/>'
+  moon:'<path d="M13.2 9.6A5.6 5.6 0 0 1 6.4 2.8a5.6 5.6 0 1 0 6.8 6.8z"/>',
+  search:'<circle cx="7" cy="7" r="4.6"/><path d="M10.4 10.4l3.4 3.4"/>'
 };
 function ico(n,cls){ return '<svg class="ico'+(cls?' '+cls:'')+'" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor"'+
   ' stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'+ICONS[n]+'</svg>'; }
@@ -244,7 +245,7 @@ var INSTALL={npm:"npm install ",pypi:"pip install ",cargo:"cargo add ",go:"go ge
 var PKG_RE=/^[@A-Za-z0-9._\/~+-]{1,214}$/, VER_RE=/^[A-Za-z0-9.+_~-]{1,64}$/, ADV_RE=/^[A-Z][A-Z0-9]{1,15}-[A-Za-z0-9._:-]{1,60}$/, TAG_RE=/^[A-Za-z0-9._\/+@-]{1,80}$/;
 function trustRow(r){ if(!validRepoName(r.name)) return "";
   return '<details class="trust" data-repo="'+esc(r.name)+'" data-spdx="'+esc(r.spdx||"")+'"'+(TRUST_LANGS[r.lang]===1?' data-lang="'+esc(r.lang)+'"':'')+'>'+
-    '<summary>'+ico("shield")+'Safe to build on?</summary><div class="trust-body"></div></details>'; }
+    '<summary>'+ico("shield")+'Is it safe to build on?</summary><div class="trust-body"></div></details>'; }
 function installCmd(system,name){ return INSTALL.hasOwnProperty(system) && PKG_RE.test(String(name||"")) ? INSTALL[system]+name : ""; }
 // RS53a: count = the page number of the Link header's rel="last" (per_page=1), else the items returned
 function lastPage(link,n){ var m=/<[^>]*[?&]page=(\d+)[^>]*>;\s*rel="last"/.exec(link||""); return m ? +m[1] : (n|0); }
@@ -303,32 +304,40 @@ document.addEventListener("click",function(e){ var b=e.target&&e.target.closest&
   if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(ok,function(){});
 });
 function cardHtml(r,i,qtokens){
+  // RS63 card A ("essentials, then act"): what it does, one line of facts, two big actions, three labelled tools.
+  // Dropped as noise for most people: the forks chip, topic hashtags and the raw SPDX line (still in the licence tooltip).
   var free=freeText(r.spdx), paid=lu(r.spdx), v=licenseVerdict(r.spdx);
   var okCom=v.c==="t-good"?1:0;   // one "free for commercial use" flag = the green verdict (permissive + weak copyleft)
   var parts=String(r.name).split("/"), owner=parts.length>1?parts[0]:"", repo=parts.length>1?parts.slice(1).join("/"):r.name;
-  var tops=(r.topics||[]).filter(function(t){ return /^[a-z0-9][a-z0-9-]{0,30}$/.test(t); }).slice(0,3);
+  var xs=exploreLinks(r.name), pick=function(l){ for(var k=0;k<xs.length;k++) if(xs[k].label===l) return xs[k]; return null; };
+  var tool=function(l,name,hint){ var x=pick(l); return x?'<a class="rc-tool" href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer" title="'+esc(x.title)+'">'+
+    esc(name)+'<small>'+esc(hint)+'</small></a>':''; };
+  var also=function(l,name){ var x=pick(l); return x?'<a href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer" title="'+esc(x.title)+'">'+esc(name)+'</a>':''; };
   return '<article class="rcard'+(i!=null&&i<3?' top'+(i+1):'')+'" data-com="'+okCom+'" data-starter="'+(r.starter?1:0)+'"'+(r.left?' data-left="1"':'')+'>'+
     '<div class="rc-head">'+
       '<span class="avatar" aria-hidden="true" style="--h:'+ownerHue(owner||repo)+'">'+esc((owner||repo).charAt(0).toUpperCase())+'</span>'+
-      '<div class="rc-title">'+(owner?'<span class="owner">'+esc(owner)+' /</span>':'')+
-        '<div class="name"><a href="'+esc(r.url)+'" target="_blank" rel="noopener" title="'+esc(r.name)+'">'+esc(repo)+'</a></div></div>'+
+      '<div class="rc-title"><div class="name"><a href="'+esc(r.url)+'" target="_blank" rel="noopener" title="'+esc(r.name)+'">'+esc(repo)+'</a></div>'+
+        (owner?'<span class="owner">by '+esc(owner)+'</span>':'')+'</div>'+
       (i!=null?'<span class="rank">#'+(i+1)+'</span>':'')+
     '</div>'+
-    (function(xs){ return xs.length?'<nav class="explore" aria-label="Explore '+esc(r.name)+'">'+
-      xs.map(function(x){ return '<a href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer" title="'+esc(x.title)+'">'+esc(x.label)+'</a>'; }).join("")+'</nav>':''; })(exploreLinks(r.name))+
-    '<div class="rc-stats"><span class="stars">'+ico("star")+'<span class="cnt" data-v="'+r.stars+'">'+kstars(r.stars)+'</span></span>'+
-      (r.forks?'<span class="forks" title="Forks">'+ico("fork")+kstars(r.forks)+'</span>':'')+
-      (r.starter?'<span class="tag t-star" title="A ready-made template to start your project from">Starter</span>':'')+'</div>'+
-    (function(w){ return w?'<div class="why">'+esc(w)+'</div>':''; })(whyRelevant(r,qtokens))+
     '<p class="desc">'+descHtml(r)+'</p>'+
-    (tops.length?'<div class="topics">'+tops.map(function(t){ return '<span>#'+esc(t)+'</span>'; }).join("")+'</div>':'')+
-    '<div class="meta">'+esc(r.spdx)+' · updated <span title="'+esc(r.pushed)+'">'+esc(agoText(r.pushed)||r.pushed)+'</span></div>'+
-    trustRow(r)+
+    (function(w){ return w?'<div class="why">'+esc(w)+'</div>':''; })(whyRelevant(r,qtokens))+
+    '<div class="rc-facts">'+
+      '<span class="tag '+v.c+'" title="License: '+esc(r.spdx)+' · '+esc(paid)+' · Completely free? '+esc(free)+'">'+ico(v.i)+esc(v.t)+'</span>'+
+      '<span class="stars">'+ico("star")+'<span class="cnt" data-v="'+r.stars+'">'+kstars(r.stars)+'</span> stars</span>'+
+      '<span class="upd" title="'+esc(r.pushed)+'">Updated '+esc(agoText(r.pushed)||r.pushed)+'</span>'+
+      (r.starter?'<span class="tag t-star" title="A ready-made template to start your project from">Starter</span>':'')+
+    '</div>'+
     '<div class="rc-foot">'+
-      '<div class="tags"><span class="tag '+v.c+'" title="License: '+esc(r.spdx)+' · '+esc(paid)+' · Completely free? '+esc(free)+'">'+ico(v.i)+esc(v.t)+'</span></div>'+
       '<label class="pick"><input type="checkbox" class="pick-cb" data-name="'+esc(r.name)+'" data-url="'+esc(r.url)+
         '" data-desc="'+esc(r.desc||"")+'"><span class="pk-add">'+ico("plus")+'Add to plan</span><span class="pk-in">'+ico("check")+'In plan</span></label>'+
+      '<a class="rc-gh" href="'+esc(r.url)+'" target="_blank" rel="noopener">Open on GitHub</a>'+
     '</div>'+
+    (xs.length?'<div class="rc-look"><span class="rc-look-h">Look inside</span>'+
+      '<nav class="rc-tools" aria-label="Look inside '+esc(r.name)+'">'+tool("Diagram","Diagram","see the structure")+tool("Wiki","Wiki","ask about it")+
+        tool("Browse","Code","read the files")+'</nav>'+
+      '<p class="rc-also">Also: '+also("Digest","Digest for an AI chat")+' · '+also("Edit","Edit in the browser")+'</p></div>':'')+
+    trustRow(r)+
   '</article>';
 }
 // RS38: cards ease in when they scroll into view (not off-screen, where the animation would be missed)
@@ -1242,71 +1251,55 @@ function think(st, text){
   if(t){ t.textContent=text; return; }
   st.innerHTML=thinkPill(text,"think-sm"); startDotOrb(st.querySelector(".think-orb"));
 }
-function startHomeThinking(wrap, demoHost){
-  if(!wrap) return; startDotOrb(wrap.querySelector(".think-orb"));
-  var txt=wrap.querySelector(".think-txt"); if(!demoHost || !txt) return;
-  demoHost.__onStep=function(i){ if(!txt.isConnected) return;          // dissolve the label with the card
-    txt.style.opacity="0"; setTimeout(function(){ txt.textContent=(STEPS[i]&&STEPS[i].doing)||""; txt.style.opacity="1"; },350); };
-}
 
 // RS35 home carousel: top Rising repos, rotates itself, pauses on hover/focus/touch, still under reduced motion
-// RS47 ticker separator: a git-branch mark (owner 2026-10-15: "change this with different icon"), single colour
-var TAPE_ICON='<svg class="tape-ico" viewBox="0 0 16 16" aria-hidden="true"><circle cx="4" cy="3.5" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/>'+
-  '<circle cx="4" cy="12.5" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="5.5" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/>'+
-  '<path d="M4 5.5v5M12 7.5c0 2.5-3 3-6.6 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
 function buildTrendCarousel(){
-  var box=document.getElementById("trendCar"), ring=document.getElementById("tcarTrack"); if(!box||!ring) return;
-  var spin=ring.querySelector(".tring-spin"), tape=box.querySelector(".ttape .run");
-  fetchTrending("rising").then(function(got){
-    var rows=trendRows(got.items,"rising").rows.filter(hasDesc).slice(0,12); if(rows.length<3) return;   // RS45: a showcase card must say what the repo does
-    var card=function(r){ var v=licenseVerdict(r.spdx);
-      return '<a class="tcard" href="'+esc(r.url)+'" target="_blank" rel="noopener" draggable="false">'+
-        '<span class="tc-top"><span class="tc-name">'+esc(r.name)+'</span><span class="tc-stars">'+ico("star")+kstars(r.stars)+'</span></span>'+
-        '<span class="tc-desc">'+esc(plainDesc(r.desc))+'</span>'+
-        '<span class="tc-meta">'+esc(v.t||"")+(r.forks?' · '+kstars(r.forks)+' forks':'')+'</span></a>'; };
-    spin.innerHTML=rows.map(card).join("");
-    // RS47 ticker: the same names on a tape; written twice so the -50% loop has no seam
-    if(tape){ var one=rows.map(function(r){ return '<span>'+esc(r.name)+'</span>'+TAPE_ICON; }).join(""); tape.innerHTML=one+one; }
-    box.hidden=false;
-    // RS47 trending ring: cards stand on a cylinder, each turned 360/N degrees, pushed out by the radius
-    var cards=spin.querySelectorAll(".tcard"), n=cards.length, step=360/n, R=0, angle=0;
-    function layout(){ var w=cards[0].offsetWidth||260; R=Math.round((w+26)/(2*Math.tan(Math.PI/n)));
-      for(var i=0;i<n;i++) cards[i].style.transform="rotateY("+(i*step)+"deg) translateZ("+R+"px)"; paint(); }
-    function paint(){   // tilt the ring 6deg toward you; lift it by R*sin(6deg) so the front cards stay centred in the band
-      spin.style.transform="translate3d(0,"+(-R*0.1045).toFixed(1)+"px,"+(-R)+"px) rotateX(-6deg) rotateY("+angle.toFixed(2)+"deg)";
-      for(var i=0;i<n;i++){ var f=Math.cos((i*step+angle)*Math.PI/180);   // 1 = facing you, -1 = behind
-        cards[i].style.opacity=(0.25+0.75*Math.max(0,f)).toFixed(3);
-        cards[i].tabIndex = f>0.6 ? 0 : -1; } }   // only cards facing you take keyboard focus
-    layout(); window.addEventListener("resize",layout);
-    // drag to turn; a drag never opens a card
-    var dragging=false, moved=0, lastX=0;
-    ring.addEventListener("pointerdown",function(e){ dragging=true; moved=0; lastX=e.clientX; });
-    window.addEventListener("pointermove",function(e){ if(!dragging) return; var dx=e.clientX-lastX; lastX=e.clientX; moved+=Math.abs(dx); angle+=dx*0.25; paint(); });
-    window.addEventListener("pointerup",function(){ dragging=false; });
-    ring.addEventListener("click",function(e){ if(moved>6){ e.preventDefault(); moved=0; } },true);
-    function face(i){ angle=-i*step; paint(); }
-    ring.addEventListener("keydown",function(e){ if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight") return; e.preventDefault();
-      var cur=Math.round(-angle/step); face(cur+(e.key==="ArrowRight"?1:-1)); });
-    spin.addEventListener("focusin",function(e){ var c=e.target.closest(".tcard"); if(c) face([].indexOf.call(cards,c)); });
-    if(matchMedia("(prefers-reduced-motion: reduce)").matches) return;   // still, but drag and arrow keys work
-    var paused=false, idle=null, onScreen=true, running=false, last=0;
-    function pause(){ paused=true; clearTimeout(idle); }
-    function resume(){ clearTimeout(idle); idle=setTimeout(function(){ paused=false; },2500); }
-    ["mouseenter","focusin","pointerdown"].forEach(function(ev){ ring.addEventListener(ev,pause,{passive:true}); });
-    ["mouseleave","focusout","pointerup"].forEach(function(ev){ ring.addEventListener(ev,resume,{passive:true}); });
-    function turn(t){
-      if(!onScreen || document.hidden || !ring.offsetParent){ running=false; last=0; return; }   // stop scheduling frames
-      window.__tcarRaf=requestAnimationFrame(turn);
-      var dt=last?Math.min(48,t-last):16; last=t;
-      if(paused||dragging) return;
-      angle-=dt*0.006; paint();                        // about one turn a minute
-    }
-    function start(){ if(running) return; running=true; last=0; cancelAnimationFrame(window.__tcarRaf); window.__tcarRaf=requestAnimationFrame(turn); }
-    window.__tcarStart=start;
-    if(window.IntersectionObserver) new IntersectionObserver(function(es){ onScreen=es[0].isIntersecting; if(onScreen) start(); }).observe(ring);
-    document.addEventListener("visibilitychange",function(){ if(!document.hidden) start(); });
-    start();
-  }).catch(function(){});   // GitHub unreachable or rate-limited: no carousel, nothing else changes
+  // RS63: Trending on GitHub as a bento grid with three tabs. #1: big tile with what it does, the number, licence and
+  // Look-inside tools; #2-#5: scoreboard tiles (licence pill only when NOT free to use). Switching tabs slides the tiles
+  // in one after another and rolls the numbers. Each list is fetched only when its tab is first opened (cached 30 min, RS35).
+  var box=document.getElementById("trendCar"), grid=document.getElementById("tcarTrack"); if(!box||!grid) return;
+  var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches;
+  var LAB={rising:"rising this month", stars:"most starred", forks:"most forked"}, cur="", gen=0;
+  var tex=""; for(var y=0;y<18;y++){ for(var x=0;x<96;x++){ var v=asciiNoise(x*.09,y*.16+3); tex+=ASCII_RAMP[Math.min(ASCII_RAMP.length-1,Math.floor(v*v*ASCII_RAMP.length))]; } tex+="\n"; }
+  var split=function(n){ var p=String(n).split("/"); return {o:p[0], r:p.slice(1).join("/")}; };
+  function html(rows, kind){
+    var num=function(r){ return kstars(kind==="forks"?r.forks:r.stars); }, unit=kind==="forks"?"forks":"stars";
+    var a=rows[0], an=split(a.name), av=licenseVerdict(a.spdx), xs=exploreLinks(a.name);
+    var big='<div class="tb-big" role="listitem" style="--i:0"><pre class="tb-tex" aria-hidden="true">'+tex+'</pre>'+
+      '<span class="tb-lab">#1 '+LAB[kind]+'</span>'+
+      '<a class="tb-name" href="'+esc(a.url)+'" target="_blank" rel="noopener"><span class="owner">'+esc(an.o)+' / </span>'+esc(an.r)+'</a>'+
+      '<p class="tb-desc">'+esc(plainDesc(a.desc))+'</p>'+
+      '<div class="tb-facts"><span><span class="tb-n">'+num(a)+'</span> '+unit+'</span><span class="tag '+av.c+'">'+ico(av.i)+esc(av.t)+'</span></div>'+
+      (xs.length?'<div class="tb-tools">'+xs.filter(function(x){ return x.label==="Diagram"||x.label==="Wiki"||x.label==="Browse"; }).map(function(x){
+        return '<a href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer" title="'+esc(x.title)+'">'+esc(x.label==="Browse"?"Code":x.label)+'</a>'; }).join("")+'</div>':'')+
+      '</div>';
+    return big+rows.slice(1).map(function(r,k){ var n=split(r.name), v=licenseVerdict(r.spdx);
+      return '<a class="tb-sm" role="listitem" style="--i:'+(k+1)+'" href="'+esc(r.url)+'" target="_blank" rel="noopener">'+
+        '<span class="tb-top"><span class="tb-lab">#'+(k+2)+'</span><span class="tb-n">'+num(r)+'</span></span>'+
+        '<b title="'+esc(r.name)+'">'+esc(n.r)+'</b><small>'+esc(plainDesc(r.desc))+'</small>'+
+        (v.c==="t-good"?'':'<span class="tag '+v.c+'">'+ico(v.i)+esc(v.t)+'</span>')+'</a>'; }).join("");
+  }
+  function show(kind){
+    if(kind===cur) return; var my=++gen; cur=kind;
+    [].forEach.call(box.querySelectorAll(".tb-tab"),function(t){ var on=t.getAttribute("data-k")===kind; t.classList.toggle("on",on); t.setAttribute("aria-selected",String(on)); });
+    grid.setAttribute("aria-label",(kind==="rising"?"Rising repos this month":kind==="stars"?"Most-starred repos":"Most-forked repos"));
+    grid.setAttribute("aria-busy","true");
+    if(grid.firstChild && !reduce) grid.classList.add("tb-out");
+    return fetchTrending(kind).then(function(got){ if(my!==gen) return;
+      var rows=trendRows(got.items,kind).rows.filter(hasDesc).slice(0,5); if(rows.length<3) throw new Error("few");   // RS45: a tile must say what the repo does
+      grid.classList.remove("tb-out","tb-in"); grid.innerHTML=html(rows,kind); void grid.offsetWidth;
+      if(!reduce){ grid.classList.add("tb-in");
+        var G=window.gsap; if(G) [].forEach.call(grid.querySelectorAll(".tb-n"),function(el,k){ odometer(el, el.textContent, G, .15+k*.07); }); }
+      grid.setAttribute("aria-busy","false"); box.hidden=false;
+    }).catch(function(){ if(my!==gen) return; grid.classList.remove("tb-out"); grid.setAttribute("aria-busy","false");
+      if(kind==="rising") return;   // GitHub unreachable or rate-limited on first load: no section, nothing else changes
+      cur=""; show("rising"); });
+  }
+  [].forEach.call(box.querySelectorAll(".tb-tab"),function(t){ t.addEventListener("click",function(){ show(t.getAttribute("data-k")); }); });
+  box.querySelector(".tb-tabs").addEventListener("keydown",function(e){ if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight") return;
+    var ts=[].slice.call(box.querySelectorAll(".tb-tab")), i=ts.indexOf(document.activeElement); if(i<0) return; e.preventDefault();
+    var n=ts[(i+(e.key==="ArrowRight"?1:ts.length-1))%ts.length]; n.focus(); n.click(); });
+  show("rising");
 }
 (function(){ var go=function(){ buildTrendCarousel(); };
   if(window.requestIdleCallback) requestIdleCallback(go,{timeout:2500}); else setTimeout(go,800); })();
@@ -1328,11 +1321,113 @@ function showHome(){
   out.innerHTML='<div class="explain">'+
     '<div id="heroDemo" class="demo"></div>'+
     '</div>';
-  var hd=document.getElementById("heroDemo"); buildDemo(hd);
-  var slot=hd&&hd.querySelector(".demo-think");   // RS36: the orb lives inside the demo card's footer — one component
-  if(slot){ slot.id="homeThink"; slot.innerHTML=thinkPill(STEPS[0].doing); startHomeThinking(slot, hd); }
+  var hd=document.getElementById("heroDemo"); buildLiveDemo(hd);   // RS61: the real product, live
   placeDemo();
   if(window.__resetPicks) window.__resetPicks();
+}
+// ---- RS61: home demo = the real product, live. A quick-pick search types itself, then Replore's real top results for
+// it land as cards (licence verdict pops, Explore buttons light in turn), over an ASCII globe of GitHub (desktop only).
+// The cards are what scout.py returned for these searches on 2026-10-23 (site keyword queries, fit ranking); they are
+// examples of the output, refreshed by hand, and say so. No network call, so the home screen costs no GitHub quota.
+var LIVE_DEMO=[
+  {q:"a portfolio website with smooth scroll animations", r:[
+    ["cobiwave/simplefolio","MIT","A minimal portfolio template for Developers"],
+    ["hsnaydd/moveTo","MIT","A lightweight scroll animation javascript library without any dependency"],
+    ["academicpages/academicpages.github.io","MIT","Github Pages template based upon HTML and Markdown for personal, portfolio-based websites."]]},
+  {q:"a chatbot that answers questions from my PDFs, Python", r:[
+    ["Cinnamon/kotaemon","Apache-2.0","An open-source RAG-based tool for chatting with your documents."],
+    ["bhaskatripathi/pdfGPT","MIT","PDF GPT allows you to chat with the contents of your PDF file by using GPT capabilities."],
+    ["Nutlope/pdftochat","MIT","Chat with your PDFs with AI"]]},
+  {q:"dashboard to show my sales spreadsheet as charts", r:[
+    ["ColorlibHQ/AdminLTE","MIT","AdminLTE - Free admin dashboard template based on Bootstrap 5"],
+    ["coreui/coreui-free-bootstrap-admin-template","MIT","Free Bootstrap Admin & Dashboard Template Built for AI-Assisted Development"],
+    ["vercel/nextjs-postgres-nextauth-tailwindcss-template","MIT","Admin dashboard template."]]}];
+var ASCII_RAMP=" .:-=+*#%@";
+function asciiNoise(x,y){ function h(a,b){ var s=Math.sin(a*127.1+b*311.7)*43758.5453; return s-Math.floor(s); }
+  var xi=Math.floor(x), yi=Math.floor(y), xf=x-xi, yf=y-yi, u=xf*xf*(3-2*xf), v=yf*yf*(3-2*yf);
+  var a=h(xi,yi), b=h(xi+1,yi), c=h(xi,yi+1), d=h(xi+1,yi+1); return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v; }
+// the ASCII globe: GitHub as a world of characters; spins up while a search runs (demo or real)
+function startAsciiGlobe(canvas, reduce){
+  if(!canvas || !canvas.getContext) return;   // no canvas: the cards alone carry the demo
+  var g=canvas.getContext("2d"); if(!g) return;
+  var t=0, spin=.22, boost=0, live=true, raf=0, last=0;
+  function css(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim()||"#5b88a6"; }
+  function draw(){ var r=canvas.getBoundingClientRect(), d=Math.min(window.devicePixelRatio||1,1.5);
+    if(!r.width||!r.height) return;
+    if(canvas.width!==Math.round(r.width*d)){ canvas.width=Math.round(r.width*d); canvas.height=Math.round(r.height*d); }
+    var W=canvas.width, H=canvas.height, cell=Math.max(8,Math.round(Math.min(W,H)/40)), cols=Math.floor(W/cell), rows=Math.floor(H/(cell*1.6));
+    g.clearRect(0,0,W,H); g.font=Math.round(cell*1.3)+"px "+(css("--f-mono")||"monospace"); g.textBaseline="top";
+    var ink=css("--accent-ink"), dim=css("--accent2");
+    var cx=cols*.5, cy=rows*.5, R=Math.min(rows*.47, cols*.29);
+    for(var j=0;j<rows;j++) for(var i=0;i<cols;i++){ var x=(i-cx)/R*.62, y=(j-cy)/R, r2=x*x+y*y; if(r2>1) continue;
+      var z=Math.sqrt(1-r2), lon=Math.atan2(x,z)+t, lat=Math.asin(y), light=.3+.7*z;
+      var land=asciiNoise(lon*2.2+10,lat*3+4)>.52, grid=Math.abs(Math.sin(lon*6))<.06||Math.abs(Math.sin(lat*6))<.05;
+      var v=land?.5+.5*light:grid?.3*light:.12*light;
+      g.globalAlpha=land?.25+.45*light:.15+.25*light; g.fillStyle=land?ink:dim;
+      g.fillText(ASCII_RAMP[Math.min(ASCII_RAMP.length-1,Math.floor(v*ASCII_RAMP.length))],i*cell,j*cell*1.6); }
+    g.globalAlpha=1; }
+  function frame(now){ if(!live) return; if(!canvas.isConnected){ live=false; return; }   // home screen replaced: stop for good
+    var dt=last?Math.min(.1,(now-last)/1000):0; last=now;
+    var busy=boost>0||document.body.classList.contains("searching");
+    spin+=((busy?1.6:.22)-spin)*(1-Math.exp(-dt*2.5)); t+=dt*spin; if(boost>0) boost-=dt;
+    var hidden=canvas.parentNode&&canvas.parentNode.parentNode&&canvas.parentNode.parentNode.classList.contains("show-cards");
+    if(!hidden) draw(); raf=requestAnimationFrame(frame); }
+  canvas.__boost=function(s){ boost=Math.max(boost,s||1.4); };
+  canvas.__stop=function(){ live=false; cancelAnimationFrame(raf); };
+  if(reduce){ draw(); return; }
+  if(window.IntersectionObserver) new IntersectionObserver(function(es){ var v=es[0].isIntersecting;
+    if(v&&!live){ live=true; last=0; raf=requestAnimationFrame(frame); } else if(!v){ live=false; cancelAnimationFrame(raf); } }).observe(canvas);
+  document.addEventListener("visibilitychange",function(){ if(document.hidden){ live=false; cancelAnimationFrame(raf); } });
+  raf=requestAnimationFrame(frame);
+}
+function buildLiveDemo(host){
+  if(!host || host.dataset.built) return; host.dataset.built="1";
+  var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches;
+  var wide=!(window.matchMedia&&matchMedia("(max-width: 999px)").matches);
+  // RS62: globe, then cards. The globe fills the stage while the search types and runs, then fades out as the cards
+  // land in the same place; it comes back for the next search. They never overlap.
+  host.innerHTML='<div class="ld">'+
+    '<div class="ld-q" aria-hidden="true">'+ico("search")+'<span class="ld-typed"></span><span class="ld-caret"></span></div>'+
+    '<p class="ld-status" aria-hidden="true"><span class="ld-status-t"></span><span class="ld-dots"><i></i><i></i><i></i></span></p>'+
+    '<div class="ld-stage">'+(wide?'<canvas class="ld-globe" aria-hidden="true"></canvas>':'')+
+    '<div class="ld-deck" aria-hidden="true"></div></div>'+
+    '<p class="ld-note">Example: Replore’s real top results for this search</p></div>';   // no orb pill: the globe already says "searching"
+  var ld=host.querySelector(".ld"), deck=host.querySelector(".ld-deck"), typed=host.querySelector(".ld-typed"), globe=host.querySelector(".ld-globe"),
+      status=host.querySelector(".ld-status"), statusT=host.querySelector(".ld-status-t");
+  function say(txt){ if(!status) return; if(!txt){ status.classList.remove("on"); return; } statusT.textContent=txt; status.classList.add("on"); }
+  if(globe) startAsciiGlobe(globe, reduce);
+  var timers=[], k=0, paused=false;
+  function later(f,ms){ timers.push(setTimeout(f,ms)); }
+  function clear(){ timers.forEach(clearTimeout); timers=[]; }
+  function cardHtmlMini(r){ var p=r[0].split("/"), v=licenseVerdict(r[1]);
+    return '<div class="ld-card"><div class="ld-top"><span class="avatar" style="--h:'+ownerHue(p[0])+'">'+esc(p[0].charAt(0).toUpperCase())+'</span>'+
+      '<span class="ld-name"><span class="owner">'+esc(p[0])+' /</span> '+esc(p.slice(1).join("/"))+'</span></div>'+
+      '<p class="ld-desc">'+esc(r[2])+'</p>'+
+      '<div class="ld-ex"><i>Diagram</i><i>Wiki</i><i>Code</i></div>'+   // RS63: the same three tools as card A
+      '<span class="tag '+v.c+' ld-lic">'+ico(v.i)+esc(v.t)+'</span></div>'; }
+  function run(){ clear(); if(paused||!host.isConnected) return;
+    var ex=LIVE_DEMO[k%LIVE_DEMO.length], shown=wide?3:1; k++;
+    deck.innerHTML=ex.r.slice(0,shown).map(cardHtmlMini).join(""); typed.textContent=""; say(""); ld.classList.remove("show-cards");
+    if(reduce){ typed.textContent=ex.q; ld.classList.add("show-cards"); [].forEach.call(deck.children,function(c){ c.classList.add("in","lit"); }); return; }
+    var step=Math.max(18,Math.min(42,1400/ex.q.length));
+    for(var i=1;i<=ex.q.length;i++) (function(n){ later(function(){ typed.textContent=ex.q.slice(0,n); }, n*step); })(i);
+    var t0=ex.q.length*step+250;
+    later(function(){ say("Searching GitHub"); if(globe&&globe.__boost) globe.__boost(2.2); }, t0);
+    later(function(){ say("Ranking by fit"); }, t0+1100);
+    later(function(){ say(""); }, t0+2050);
+    t0+=1000;   // cards land after the two steps have been seen
+    [].forEach.call(deck.children,function(c,j){ var at=t0+1100+j*240;
+      later(function(){ if(j===0) ld.classList.add("show-cards"); c.classList.add("in"); }, at);
+      later(function(){ c.classList.add("lit"); }, at+380);
+      [].forEach.call(c.querySelectorAll(".ld-ex i"),function(b,m){ later(function(){ b.classList.add("on"); }, at+560+m*110);
+        later(function(){ b.classList.remove("on"); }, at+1200+m*110); }); });
+    later(function(){ [].forEach.call(deck.children,function(c){ c.classList.add("out"); }); ld.classList.remove("show-cards"); }, t0+5600);
+    later(run, t0+6200); }
+  host.__stopDemo=function(){ paused=true; clear(); if(globe&&globe.__stop) globe.__stop(); };
+  host.__playDemo=function(){ if(paused){ paused=false; run(); } };
+  host.addEventListener("mouseenter",function(){ paused=true; });
+  host.addEventListener("mouseleave",function(){ if(paused){ paused=false; if(!timers.length) run(); } });
+  run();
 }
 // remember the last results so a page refresh brings them back (cached locally, no new API call)
 // RS44: the owner's Stripe Payment Link (public URL, no key). Empty = all tip elements stay hidden.
@@ -1345,7 +1440,7 @@ function tipUrlOk(u, host){ u=String(u||"");
 (function(){ if(typeof location==="undefined" || !tipUrlOk(TIP_URL, location.hostname)) return;
   document.querySelectorAll(".tip-link").forEach(function(a){ a.href=TIP_URL; });
   document.querySelectorAll(".tip-el").forEach(function(el){ el.hidden=false; }); })();
-var LAST="findrepo_last", CACHE_V="14";   // 14: one filter row, no "All" chip (RS29d); 13: cards carry the trust row (RS53); 12: Wiki (DeepWiki) Explore button; 11: cards carry Explore links (RS51); 10: no inline onclick (RS49)  // bump when saved markup changes, so stale caches are dropped
+var LAST="findrepo_last", CACHE_V="15";   // 15: card A (RS63); 14: one filter row, no "All" chip (RS29d); 13: cards carry the trust row (RS53); 12: Wiki (DeepWiki) Explore button; 11: cards carry Explore links (RS51); 10: no inline onclick (RS49)  // bump when saved markup changes, so stale caches are dropped
 // RS43 A: the visitor's own last 10 searches for 1 hour, in their browser only. Pure functions (tested) + thin wrappers.
 var RECENT="replore_recent", RECENT_TTL_MS=3600000, RECENT_MAX=10;
 function recentKey(f){ return JSON.stringify([String(f.q||"").trim().toLowerCase().replace(/\s+/g," "), f.platform||"", String(f.minstars||""),
