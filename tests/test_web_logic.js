@@ -270,7 +270,9 @@ console.log("prd ok:", f.join(" | "));
   const h = s.cardHtml({name:"ow<n>/re\"po", stars:1200, forks:30, spdx:"MIT", pushed:"2026-10-01", url:"https://github.com/a/b",
     desc:"<img src=x>", topics:["ok-topic","<bad>"], starter:false, rel:0}, 0, []);
   assert.ok(!h.includes("<img") && !h.includes("<bad>") && !h.includes("ow<n>"), "repo text must be escaped");
-  assert.ok(h.includes("class=\"topics\"") && h.includes("top1") && h.includes("pick-cb"));   // fake DOM: esc() yields "" here, so check structure only
+  assert.ok(!h.includes("class=\"topics\"") && h.includes("top1") && h.includes("pick-cb") && h.includes("rc-gh") && !h.includes("rc-tools"));   // RS63 card A; a bad name gets no tools
+  const ok = s.cardHtml({name:"vercel/next.js", stars:1, forks:9, spdx:"MIT", pushed:"2026-10-01", url:"https://github.com/vercel/next.js", desc:"x", topics:[], starter:false, rel:0}, 0, []);
+  assert.ok(ok.includes("rc-tools") && (ok.match(/class="rc-tool"/g) || []).length === 3 && ok.includes("rc-also") && !ok.includes("forks"));   // fake DOM blanks esc(): structure only   // fake DOM: esc() yields "" here, so check structure only
   console.log("card ok"); }
 
 // RS51 Explore links: same owner/repo path on four tools; malformed names get none
@@ -335,7 +337,7 @@ console.log("prd ok:", f.join(" | "));
   const root = { cloneNode: () => ({ innerHTML: "saved", querySelectorAll: q => q === "details.trust" ? [det] : [] }) };
   assert.strictEqual(s.snapHtml(root), "saved");
   assert.ok(!("open" in det.attrs) && body.innerHTML === "" && !("data-done" in body.attrs));
-  assert.strictEqual(s.CACHE_V, "14");   // 14: one filter row (RS29d)
+  assert.strictEqual(s.CACHE_V, "15");   // 15: card A (RS63)
   console.log("trust ok"); }
 
 // RS56: the shared web/plugin cases — GitHub shaping and the panel's wording (tests/test_trust.py runs the same file)

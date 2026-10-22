@@ -191,7 +191,7 @@
   .ld-name{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
   .ld-name .owner{font-weight:500;color:var(--muted)}
   .ld-desc{margin:0;font-size:13px;color:var(--muted);line-height:1.45;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
-  .ld-ex{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}
+  .ld-ex{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
   .ld-ex i{font-style:normal;font-size:11.5px;font-weight:700;text-align:center;color:var(--accent-ink);border:1.5px solid color-mix(in srgb,var(--accent) 45%,var(--line));
     border-radius:8px;padding:4px 0;transition:background .25s,color .25s,border-color .25s}
   .ld-ex i.on{background:var(--accent);border-color:var(--accent);color:#fff}
@@ -439,6 +439,28 @@
   .rcard .rc-foot .pick:has(input:checked) .pk-in{display:inline}
   .rcard:has(.pick-cb:checked){border-color:var(--accent)}
   details.excl summary{cursor:pointer;color:var(--muted)}
+  /* RS63 card A: name, "by owner", what it does, one line of facts, two big actions, three labelled tools */
+  .rcard .rc-title .owner{display:block;margin-top:1px}
+  .rcard .desc{color:var(--ink);font-size:14px;margin:12px 0 4px;-webkit-line-clamp:3;min-height:0}
+  .rcard .rc-facts{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:8px 0 12px;font-size:13px;color:var(--muted)}
+  .rcard .rc-facts .stars{display:inline-flex;align-items:center;gap:4px;background:none;padding:0;font-weight:600;color:var(--ink);font-size:13px}
+  .rcard .rc-facts .stars .ico{margin:0;color:var(--accent-ink)}
+  .rcard .rc-facts .cnt{font:inherit;letter-spacing:0}
+  .rcard .rc-foot{display:flex;gap:8px;margin-top:auto;padding-top:12px;flex-wrap:nowrap}
+  .rcard .rc-foot .pick{flex:1;margin:0;justify-content:center;min-height:44px;display:inline-flex;align-items:center;border-radius:12px}
+  .rcard .rc-gh{flex:1;display:inline-flex;align-items:center;justify-content:center;min-height:44px;border-radius:12px;font-weight:700;font-size:13px;
+    border:1.5px solid var(--line);color:var(--ink);text-decoration:none;padding:8px 10px;text-align:center}
+  .rcard .rc-gh:hover{border-color:var(--accent);color:var(--accent-ink);text-decoration:none}
+  .rcard .rc-gh:focus-visible,.rcard .rc-tool:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .rcard .rc-look{margin-top:12px;display:grid;gap:8px}
+  .rcard .rc-look-h{font:500 11px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  .rcard .rc-tools{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .rcard .rc-tool{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:48px;padding:7px 4px;border-radius:12px;
+    background:var(--offbg);border:1px solid var(--line);color:var(--ink);font-weight:700;font-size:13px;text-decoration:none;text-align:center}
+  .rcard .rc-tool small{font-weight:500;font-size:11px;color:var(--muted)}
+  .rcard .rc-tool:hover{border-color:var(--accent);text-decoration:none}
+  .rcard .rc-also{margin:0;font-size:12px;color:var(--muted)} .rcard .rc-also a{color:var(--accent-ink)}
+  .rcard .trust{margin:10px 0 0}
   .rcard .why{font-size:12px;font-weight:600;color:var(--ink);margin:8px 0 4px;line-height:1.35}
   .rcard .desc{font-size:13.5px;line-height:1.5;color:var(--muted);margin:8px 0 10px;
     display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;min-height:2.6em}
@@ -575,27 +597,49 @@
   /* RS35 home carousel */
   .tcar{margin:16px 0 0;text-align:left}
   .tcar-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:0 2px 8px;font-size:14px}
-  /* RS62: Rising row = flat cards in the result-card language, scrolled sideways with snap points (no ring, no ticker) */
-  .trow{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(240px,1fr);gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;
-    padding:4px 2px 14px;margin:6px 0 0;scrollbar-width:thin;overscroll-behavior-x:contain;
-    -webkit-mask-image:linear-gradient(to right,#000 92%,transparent);mask-image:linear-gradient(to right,#000 92%,transparent)}
-  .trow:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:12px}
-  .trc{scroll-snap-align:start;display:flex;flex-direction:column;gap:8px;min-width:0;padding:14px 16px;border:1px solid var(--line);
-    border-radius:14px;background:var(--card);color:var(--ink);text-decoration:none;transition:border-color .2s,transform .2s,box-shadow .2s}
-  .trc:hover{border-color:var(--accent);transform:translateY(-2px);text-decoration:none;box-shadow:0 14px 28px -20px rgba(var(--shadow),.6)}
-  .trc:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-  .trc-top{display:flex;align-items:center;gap:10px;min-width:0}
-  .trc-top .avatar{width:28px;height:28px;border-radius:8px;flex:0 0 auto;display:grid;place-items:center;font:400 14px/1 var(--f-display);color:#fff;
-    background:linear-gradient(135deg,hsl(var(--h) 62% 58%),hsl(calc(var(--h) + 24) 58% 40%))}
-  .trc-name{min-width:0;flex:1;font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .trc-name .owner{font-weight:500;color:var(--muted)}
-  .trc-stars{flex:0 0 auto;font:400 14px/1 var(--f-display);letter-spacing:.02em;color:var(--accent-ink);display:flex;align-items:center;gap:4px}
-  .trc-stars .ico{margin:0}
-  .trc-desc{margin:0;font-size:13px;line-height:1.45;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.9em}
-  .trc .tag{align-self:flex-start;margin-top:auto}
-  @media (min-width:1000px){ .trow{grid-auto-columns:calc((100% - 36px)/4)} }
-  @media (min-width:1500px){ .trow{grid-auto-columns:calc((100% - 48px)/5)} }
-  @media (prefers-reduced-motion:reduce){ .trc{transition:none} .trc:hover{transform:none} }
+  /* RS63 Rising = a bento grid: #1 gets a big flat-navy tile with an ASCII texture and real substance; #2-#5 read like a
+     scoreboard (rank, name, stars). One accent, no gradients, no shadows on the small tiles. */
+  .tbento{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:minmax(118px,auto);gap:10px;margin:8px 0 0}
+  .tb-big{grid-column:span 2;grid-row:span 2;position:relative;overflow:hidden;border-radius:16px;background:#1b2d3d;color:#e6edf3;
+    padding:22px;display:flex;flex-direction:column;justify-content:flex-end;gap:10px;min-width:0}
+  .tb-tex{position:absolute;inset:0;margin:0;font:400 11px/1.25 var(--f-mono);color:#5b88a6;opacity:.32;white-space:pre;overflow:hidden;
+    pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(to bottom,#000 10%,transparent 75%);mask-image:linear-gradient(to bottom,#000 10%,transparent 75%)}
+  .tb-big>*:not(.tb-tex){position:relative}
+  .tb-lab{font:500 11.5px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:#9cc0d8}
+  .tb-big .tb-name{font-size:22px;font-weight:700;line-height:1.2;color:#fff;text-decoration:none;overflow-wrap:anywhere}
+  .tb-big .tb-name .owner{font-weight:500;color:#9cc0d8}
+  .tb-big .tb-name:hover{text-decoration:underline}
+  .tb-big .tb-desc{margin:0;font-size:14px;color:#c7d6e2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .tb-facts{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;font-size:13px;color:#c7d6e2}
+  .tb-facts .tb-n{font:400 26px/1 var(--f-display);color:#fff;letter-spacing:.02em}
+  .tb-big .tag{background:rgba(163,191,126,.16);color:#c3dba3}
+  .tb-big .tag.t-warn{background:rgba(216,169,92,.16);color:#e8c48a}
+  .tb-tools{display:flex;flex-wrap:wrap;gap:6px}
+  .tb-tools a{font-size:12.5px;font-weight:700;color:#e6edf3;text-decoration:none;border:1px solid rgba(199,214,226,.35);border-radius:10px;padding:7px 12px;min-height:36px;
+    display:inline-flex;align-items:center}
+  .tb-tools a:hover{border-color:#9cc0d8;background:rgba(156,192,216,.12)}
+  .tb-sm{display:flex;flex-direction:column;gap:6px;min-width:0;padding:14px 16px;border-radius:14px;border:1px solid var(--line);background:var(--card);
+    color:var(--ink);text-decoration:none;transition:border-color .2s}
+  .tb-sm:hover{border-color:var(--accent);text-decoration:none}
+  .tb-sm .tb-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+  .tb-sm .tb-lab{color:var(--muted)}
+  .tb-sm .tb-n{font:400 22px/1 var(--f-display);color:var(--accent-ink);letter-spacing:.02em}
+  .tb-sm b{font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tb-sm small{font-size:12.5px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+  .tb-sm .tag{align-self:flex-start;font-size:11px}
+  .tb-big a:focus-visible,.tb-sm:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  @media (max-width:760px){ .tbento{grid-template-columns:repeat(2,minmax(0,1fr))} .tb-big{grid-row:auto;min-height:250px} }
+  /* RS63 tabs + motion: a switch slides the tiles in one after another; the numbers roll (odometer) */
+  .tb-tabs{display:inline-flex;gap:2px;padding:3px;margin:2px 2px 6px;background:var(--offbg);border:1px solid var(--line);border-radius:999px;max-width:100%;overflow-x:auto}
+  .tb-tab{font:inherit;font-weight:700;font-size:13px;color:var(--muted);background:transparent;border:0;border-radius:999px;padding:8px 14px;min-height:38px;
+    cursor:pointer;white-space:nowrap;transition:background-color .25s,color .25s}
+  .tb-tab:hover{color:var(--ink)} .tb-tab.on{background:var(--ink);color:var(--bg)}
+  .tb-tab:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .tbento.tb-in>*{animation:tbIn .55s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0) * 70ms)}
+  .tbento.tb-out>*{transition:opacity .18s ease,transform .18s ease;opacity:0;transform:translateY(-6px)}
+  @keyframes tbIn{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){ .tbento.tb-in>*{animation:none} .tbento.tb-out>*{transition:none} .tb-tab{transition:none} }
+  @media (prefers-reduced-motion:reduce){ .tb-sm{transition:none} }
   @media (min-width:1200px){
     .page{max-width:1500px}
     .hero{max-width:1100px}
@@ -839,10 +883,14 @@
   </section>
 
   <section class="out-wrap">
-    <section id="trendCar" class="tcar" aria-label="Rising on GitHub this month" hidden>
-        <div class="tcar-head"><b>Rising on GitHub this month</b>
+    <section id="trendCar" class="tcar" aria-label="Trending on GitHub" hidden>
+        <div class="tcar-head"><b>Trending on GitHub</b>
           <button type="button" class="link-btn" id="trendHome">See all trending →</button></div>
-        <div class="trow" id="tcarTrack" role="list" aria-label="Rising repos this month"></div>   <!-- RS62: one flat row -->
+        <div class="tb-tabs" role="tablist" aria-label="Trending lists">   <!-- RS63: tabs switch the bento with motion -->
+          <button type="button" role="tab" class="tb-tab on" data-k="rising" aria-selected="true" aria-controls="tcarTrack">Rising this month</button>
+          <button type="button" role="tab" class="tb-tab" data-k="stars" aria-selected="false" aria-controls="tcarTrack">Most stars</button>
+          <button type="button" role="tab" class="tb-tab" data-k="forks" aria-selected="false" aria-controls="tcarTrack">Most forks</button></div>
+        <div class="tbento" id="tcarTrack" role="list" aria-label="Rising repos this month" aria-live="polite" aria-busy="false"></div>   <!-- RS63: bento grid -->
       </section>
     <div id="out" class="results"></div>
     <p class="privacy-note">Nothing you type is stored.
@@ -1109,6 +1157,6 @@
   <p class="mut rag-only" style="margin-top:12px" hidden><b>Hybrid search:</b> repos are ranked by your words and by what you mean, so "voice notes" also finds "speech-to-text". Repos our index finds that the word search missed are checked on GitHub before you see them.</p>
 </div></div>
 
-<script src="app.js?v=7453c8d902" defer></script>
+<script src="app.js?v=9c5e3a9e59" defer></script>
 </body>
 </html>

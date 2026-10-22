@@ -912,6 +912,23 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   status line steps through "Searching GitHub" (the globe spins up) and "Ranking by fit", the globe fills the stage; as
   the first card lands it fades out and the cards take its place; the next search brings it back. Hidden, it stops drawing.
 
+- **RS63** Result card A and a tabbed bento for Trending (owner 2026-10-23, picked from live mock-ups: card "A,
+  essentials then act"; Trending "bento grid", then "tabbed leaderboard also good but no motion?").
+  **Card:** owner tile, repo name (links to GitHub) with "by owner" under it, rank; what it does (up to 3 lines); the
+  RS29a match line; one line of facts: licence verdict pill (SPDX and the paid/free detail stay in its tooltip), stars,
+  "Updated …", and Starter when it applies. Two 44 px actions side by side: **Add to plan** and **Open on GitHub**. Then
+  "Look inside": three labelled tools, Diagram ("see the structure"), Wiki ("ask about it"), Code ("read the files",
+  GitHub1s), and a small "Also:" line with Digest and Edit (RS51 keeps all five links); then "Is it safe to build on?"
+  (RS53). Removed as noise: the forks chip, topic hashtags and the "SPDX · updated" meta line. `CACHE_V` 15. The home
+  demo's mini cards show the same three tools.
+  **Trending on GitHub (home):** tabs Rising this month / Most stars / Most forks above a bento grid. #1 is a big tile in
+  flat navy with an ASCII texture (the hero globe's characters), what it does, the number in the display face, the
+  licence pill and its Diagram / Wiki / Code buttons; #2–#5 are scoreboard tiles (rank, number, name, one line), with a
+  licence pill only when the repo is not free to use. No gradients, one accent. Switching tabs fades the tiles out, slides
+  the new ones in one after another and rolls the numbers (RS47 odometer); reduced motion swaps them with no movement.
+  A list is fetched only when its tab is first opened (RS35 cache, 30 minutes); if one fails it falls back to Rising.
+  Arrow keys move between tabs. Replaces the RS62 sideways row.
+
 ## RX — Deliberately excluded (v0.1)
 
 - **RX1** Scraping github.com HTML, or any non-API source.

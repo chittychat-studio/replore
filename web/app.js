@@ -245,7 +245,7 @@ var INSTALL={npm:"npm install ",pypi:"pip install ",cargo:"cargo add ",go:"go ge
 var PKG_RE=/^[@A-Za-z0-9._\/~+-]{1,214}$/, VER_RE=/^[A-Za-z0-9.+_~-]{1,64}$/, ADV_RE=/^[A-Z][A-Z0-9]{1,15}-[A-Za-z0-9._:-]{1,60}$/, TAG_RE=/^[A-Za-z0-9._\/+@-]{1,80}$/;
 function trustRow(r){ if(!validRepoName(r.name)) return "";
   return '<details class="trust" data-repo="'+esc(r.name)+'" data-spdx="'+esc(r.spdx||"")+'"'+(TRUST_LANGS[r.lang]===1?' data-lang="'+esc(r.lang)+'"':'')+'>'+
-    '<summary>'+ico("shield")+'Safe to build on?</summary><div class="trust-body"></div></details>'; }
+    '<summary>'+ico("shield")+'Is it safe to build on?</summary><div class="trust-body"></div></details>'; }
 function installCmd(system,name){ return INSTALL.hasOwnProperty(system) && PKG_RE.test(String(name||"")) ? INSTALL[system]+name : ""; }
 // RS53a: count = the page number of the Link header's rel="last" (per_page=1), else the items returned
 function lastPage(link,n){ var m=/<[^>]*[?&]page=(\d+)[^>]*>;\s*rel="last"/.exec(link||""); return m ? +m[1] : (n|0); }
@@ -304,32 +304,40 @@ document.addEventListener("click",function(e){ var b=e.target&&e.target.closest&
   if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(ok,function(){});
 });
 function cardHtml(r,i,qtokens){
+  // RS63 card A ("essentials, then act"): what it does, one line of facts, two big actions, three labelled tools.
+  // Dropped as noise for most people: the forks chip, topic hashtags and the raw SPDX line (still in the licence tooltip).
   var free=freeText(r.spdx), paid=lu(r.spdx), v=licenseVerdict(r.spdx);
   var okCom=v.c==="t-good"?1:0;   // one "free for commercial use" flag = the green verdict (permissive + weak copyleft)
   var parts=String(r.name).split("/"), owner=parts.length>1?parts[0]:"", repo=parts.length>1?parts.slice(1).join("/"):r.name;
-  var tops=(r.topics||[]).filter(function(t){ return /^[a-z0-9][a-z0-9-]{0,30}$/.test(t); }).slice(0,3);
+  var xs=exploreLinks(r.name), pick=function(l){ for(var k=0;k<xs.length;k++) if(xs[k].label===l) return xs[k]; return null; };
+  var tool=function(l,name,hint){ var x=pick(l); return x?'<a class="rc-tool" href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer" title="'+esc(x.title)+'">'+
+    esc(name)+'<small>'+esc(hint)+'</small></a>':''; };
+  var also=function(l,name){ var x=pick(l); return x?'<a href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer" title="'+esc(x.title)+'">'+esc(name)+'</a>':''; };
   return '<article class="rcard'+(i!=null&&i<3?' top'+(i+1):'')+'" data-com="'+okCom+'" data-starter="'+(r.starter?1:0)+'"'+(r.left?' data-left="1"':'')+'>'+
     '<div class="rc-head">'+
       '<span class="avatar" aria-hidden="true" style="--h:'+ownerHue(owner||repo)+'">'+esc((owner||repo).charAt(0).toUpperCase())+'</span>'+
-      '<div class="rc-title">'+(owner?'<span class="owner">'+esc(owner)+' /</span>':'')+
-        '<div class="name"><a href="'+esc(r.url)+'" target="_blank" rel="noopener" title="'+esc(r.name)+'">'+esc(repo)+'</a></div></div>'+
+      '<div class="rc-title"><div class="name"><a href="'+esc(r.url)+'" target="_blank" rel="noopener" title="'+esc(r.name)+'">'+esc(repo)+'</a></div>'+
+        (owner?'<span class="owner">by '+esc(owner)+'</span>':'')+'</div>'+
       (i!=null?'<span class="rank">#'+(i+1)+'</span>':'')+
     '</div>'+
-    (function(xs){ return xs.length?'<nav class="explore" aria-label="Explore '+esc(r.name)+'">'+
-      xs.map(function(x){ return '<a href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer" title="'+esc(x.title)+'">'+esc(x.label)+'</a>'; }).join("")+'</nav>':''; })(exploreLinks(r.name))+
-    '<div class="rc-stats"><span class="stars">'+ico("star")+'<span class="cnt" data-v="'+r.stars+'">'+kstars(r.stars)+'</span></span>'+
-      (r.forks?'<span class="forks" title="Forks">'+ico("fork")+kstars(r.forks)+'</span>':'')+
-      (r.starter?'<span class="tag t-star" title="A ready-made template to start your project from">Starter</span>':'')+'</div>'+
-    (function(w){ return w?'<div class="why">'+esc(w)+'</div>':''; })(whyRelevant(r,qtokens))+
     '<p class="desc">'+descHtml(r)+'</p>'+
-    (tops.length?'<div class="topics">'+tops.map(function(t){ return '<span>#'+esc(t)+'</span>'; }).join("")+'</div>':'')+
-    '<div class="meta">'+esc(r.spdx)+' · updated <span title="'+esc(r.pushed)+'">'+esc(agoText(r.pushed)||r.pushed)+'</span></div>'+
-    trustRow(r)+
+    (function(w){ return w?'<div class="why">'+esc(w)+'</div>':''; })(whyRelevant(r,qtokens))+
+    '<div class="rc-facts">'+
+      '<span class="tag '+v.c+'" title="License: '+esc(r.spdx)+' · '+esc(paid)+' · Completely free? '+esc(free)+'">'+ico(v.i)+esc(v.t)+'</span>'+
+      '<span class="stars">'+ico("star")+'<span class="cnt" data-v="'+r.stars+'">'+kstars(r.stars)+'</span> stars</span>'+
+      '<span class="upd" title="'+esc(r.pushed)+'">Updated '+esc(agoText(r.pushed)||r.pushed)+'</span>'+
+      (r.starter?'<span class="tag t-star" title="A ready-made template to start your project from">Starter</span>':'')+
+    '</div>'+
     '<div class="rc-foot">'+
-      '<div class="tags"><span class="tag '+v.c+'" title="License: '+esc(r.spdx)+' · '+esc(paid)+' · Completely free? '+esc(free)+'">'+ico(v.i)+esc(v.t)+'</span></div>'+
       '<label class="pick"><input type="checkbox" class="pick-cb" data-name="'+esc(r.name)+'" data-url="'+esc(r.url)+
         '" data-desc="'+esc(r.desc||"")+'"><span class="pk-add">'+ico("plus")+'Add to plan</span><span class="pk-in">'+ico("check")+'In plan</span></label>'+
+      '<a class="rc-gh" href="'+esc(r.url)+'" target="_blank" rel="noopener">Open on GitHub</a>'+
     '</div>'+
+    (xs.length?'<div class="rc-look"><span class="rc-look-h">Look inside</span>'+
+      '<nav class="rc-tools" aria-label="Look inside '+esc(r.name)+'">'+tool("Diagram","Diagram","see the structure")+tool("Wiki","Wiki","ask about it")+
+        tool("Browse","Code","read the files")+'</nav>'+
+      '<p class="rc-also">Also: '+also("Digest","Digest for an AI chat")+' · '+also("Edit","Edit in the browser")+'</p></div>':'')+
+    trustRow(r)+
   '</article>';
 }
 // RS38: cards ease in when they scroll into view (not off-screen, where the animation would be missed)
@@ -1246,23 +1254,52 @@ function think(st, text){
 
 // RS35 home carousel: top Rising repos, rotates itself, pauses on hover/focus/touch, still under reduced motion
 function buildTrendCarousel(){
-  // RS62: one flat row of cards in the result-card language; scroll sideways (snap), arrow keys move a card at a time
-  var box=document.getElementById("trendCar"), row=document.getElementById("tcarTrack"); if(!box||!row) return;
-  fetchTrending("rising").then(function(got){
-    var rows=trendRows(got.items,"rising").rows.filter(hasDesc).slice(0,12); if(rows.length<3) return;   // RS45: a showcase card must say what the repo does
-    row.innerHTML=rows.map(function(r){ var v=licenseVerdict(r.spdx), p=String(r.name).split("/"), owner=p[0], repo=p.slice(1).join("/");
-      return '<a class="trc" role="listitem" href="'+esc(r.url)+'" target="_blank" rel="noopener">'+
-        '<span class="trc-top"><span class="avatar" aria-hidden="true" style="--h:'+ownerHue(owner)+'">'+esc(owner.charAt(0).toUpperCase())+'</span>'+
-        '<span class="trc-name"><span class="owner">'+esc(owner)+' /</span> '+esc(repo)+'</span>'+
-        '<span class="trc-stars" title="Stars">'+ico("star")+kstars(r.stars)+'</span></span>'+
-        '<span class="trc-desc">'+esc(plainDesc(r.desc))+'</span>'+
-        '<span class="tag '+v.c+'">'+ico(v.i)+esc(v.t)+'</span></a>'; }).join("");
-    box.hidden=false;
-    row.tabIndex=0;
-    row.addEventListener("keydown",function(e){ if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight") return; e.preventDefault();
-      var c=row.querySelector(".trc"); if(!c) return;
-      row.scrollBy({left:(e.key==="ArrowRight"?1:-1)*(c.offsetWidth+12),behavior:"smooth"}); });
-  }).catch(function(){});   // GitHub unreachable or rate-limited: no row, nothing else changes
+  // RS63: Trending on GitHub as a bento grid with three tabs. #1: big tile with what it does, the number, licence and
+  // Look-inside tools; #2-#5: scoreboard tiles (licence pill only when NOT free to use). Switching tabs slides the tiles
+  // in one after another and rolls the numbers. Each list is fetched only when its tab is first opened (cached 30 min, RS35).
+  var box=document.getElementById("trendCar"), grid=document.getElementById("tcarTrack"); if(!box||!grid) return;
+  var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches;
+  var LAB={rising:"rising this month", stars:"most starred", forks:"most forked"}, cur="", gen=0;
+  var tex=""; for(var y=0;y<18;y++){ for(var x=0;x<96;x++){ var v=asciiNoise(x*.09,y*.16+3); tex+=ASCII_RAMP[Math.min(ASCII_RAMP.length-1,Math.floor(v*v*ASCII_RAMP.length))]; } tex+="\n"; }
+  var split=function(n){ var p=String(n).split("/"); return {o:p[0], r:p.slice(1).join("/")}; };
+  function html(rows, kind){
+    var num=function(r){ return kstars(kind==="forks"?r.forks:r.stars); }, unit=kind==="forks"?"forks":"stars";
+    var a=rows[0], an=split(a.name), av=licenseVerdict(a.spdx), xs=exploreLinks(a.name);
+    var big='<div class="tb-big" role="listitem" style="--i:0"><pre class="tb-tex" aria-hidden="true">'+tex+'</pre>'+
+      '<span class="tb-lab">#1 '+LAB[kind]+'</span>'+
+      '<a class="tb-name" href="'+esc(a.url)+'" target="_blank" rel="noopener"><span class="owner">'+esc(an.o)+' / </span>'+esc(an.r)+'</a>'+
+      '<p class="tb-desc">'+esc(plainDesc(a.desc))+'</p>'+
+      '<div class="tb-facts"><span><span class="tb-n">'+num(a)+'</span> '+unit+'</span><span class="tag '+av.c+'">'+ico(av.i)+esc(av.t)+'</span></div>'+
+      (xs.length?'<div class="tb-tools">'+xs.filter(function(x){ return x.label==="Diagram"||x.label==="Wiki"||x.label==="Browse"; }).map(function(x){
+        return '<a href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer" title="'+esc(x.title)+'">'+esc(x.label==="Browse"?"Code":x.label)+'</a>'; }).join("")+'</div>':'')+
+      '</div>';
+    return big+rows.slice(1).map(function(r,k){ var n=split(r.name), v=licenseVerdict(r.spdx);
+      return '<a class="tb-sm" role="listitem" style="--i:'+(k+1)+'" href="'+esc(r.url)+'" target="_blank" rel="noopener">'+
+        '<span class="tb-top"><span class="tb-lab">#'+(k+2)+'</span><span class="tb-n">'+num(r)+'</span></span>'+
+        '<b title="'+esc(r.name)+'">'+esc(n.r)+'</b><small>'+esc(plainDesc(r.desc))+'</small>'+
+        (v.c==="t-good"?'':'<span class="tag '+v.c+'">'+ico(v.i)+esc(v.t)+'</span>')+'</a>'; }).join("");
+  }
+  function show(kind){
+    if(kind===cur) return; var my=++gen; cur=kind;
+    [].forEach.call(box.querySelectorAll(".tb-tab"),function(t){ var on=t.getAttribute("data-k")===kind; t.classList.toggle("on",on); t.setAttribute("aria-selected",String(on)); });
+    grid.setAttribute("aria-label",(kind==="rising"?"Rising repos this month":kind==="stars"?"Most-starred repos":"Most-forked repos"));
+    grid.setAttribute("aria-busy","true");
+    if(grid.firstChild && !reduce) grid.classList.add("tb-out");
+    return fetchTrending(kind).then(function(got){ if(my!==gen) return;
+      var rows=trendRows(got.items,kind).rows.filter(hasDesc).slice(0,5); if(rows.length<3) throw new Error("few");   // RS45: a tile must say what the repo does
+      grid.classList.remove("tb-out","tb-in"); grid.innerHTML=html(rows,kind); void grid.offsetWidth;
+      if(!reduce){ grid.classList.add("tb-in");
+        var G=window.gsap; if(G) [].forEach.call(grid.querySelectorAll(".tb-n"),function(el,k){ odometer(el, el.textContent, G, .15+k*.07); }); }
+      grid.setAttribute("aria-busy","false"); box.hidden=false;
+    }).catch(function(){ if(my!==gen) return; grid.classList.remove("tb-out"); grid.setAttribute("aria-busy","false");
+      if(kind==="rising") return;   // GitHub unreachable or rate-limited on first load: no section, nothing else changes
+      cur=""; show("rising"); });
+  }
+  [].forEach.call(box.querySelectorAll(".tb-tab"),function(t){ t.addEventListener("click",function(){ show(t.getAttribute("data-k")); }); });
+  box.querySelector(".tb-tabs").addEventListener("keydown",function(e){ if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight") return;
+    var ts=[].slice.call(box.querySelectorAll(".tb-tab")), i=ts.indexOf(document.activeElement); if(i<0) return; e.preventDefault();
+    var n=ts[(i+(e.key==="ArrowRight"?1:ts.length-1))%ts.length]; n.focus(); n.click(); });
+  show("rising");
 }
 (function(){ var go=function(){ buildTrendCarousel(); };
   if(window.requestIdleCallback) requestIdleCallback(go,{timeout:2500}); else setTimeout(go,800); })();
@@ -1366,7 +1403,7 @@ function buildLiveDemo(host){
     return '<div class="ld-card"><div class="ld-top"><span class="avatar" style="--h:'+ownerHue(p[0])+'">'+esc(p[0].charAt(0).toUpperCase())+'</span>'+
       '<span class="ld-name"><span class="owner">'+esc(p[0])+' /</span> '+esc(p.slice(1).join("/"))+'</span></div>'+
       '<p class="ld-desc">'+esc(r[2])+'</p>'+
-      '<div class="ld-ex">'+EXPLORE.map(function(e){ return '<i>'+esc(e[0])+'</i>'; }).join("")+'</div>'+
+      '<div class="ld-ex"><i>Diagram</i><i>Wiki</i><i>Code</i></div>'+   // RS63: the same three tools as card A
       '<span class="tag '+v.c+' ld-lic">'+ico(v.i)+esc(v.t)+'</span></div>'; }
   function run(){ clear(); if(paused||!host.isConnected) return;
     var ex=LIVE_DEMO[k%LIVE_DEMO.length], shown=wide?3:1; k++;
@@ -1403,7 +1440,7 @@ function tipUrlOk(u, host){ u=String(u||"");
 (function(){ if(typeof location==="undefined" || !tipUrlOk(TIP_URL, location.hostname)) return;
   document.querySelectorAll(".tip-link").forEach(function(a){ a.href=TIP_URL; });
   document.querySelectorAll(".tip-el").forEach(function(el){ el.hidden=false; }); })();
-var LAST="findrepo_last", CACHE_V="14";   // 14: one filter row, no "All" chip (RS29d); 13: cards carry the trust row (RS53); 12: Wiki (DeepWiki) Explore button; 11: cards carry Explore links (RS51); 10: no inline onclick (RS49)  // bump when saved markup changes, so stale caches are dropped
+var LAST="findrepo_last", CACHE_V="15";   // 15: card A (RS63); 14: one filter row, no "All" chip (RS29d); 13: cards carry the trust row (RS53); 12: Wiki (DeepWiki) Explore button; 11: cards carry Explore links (RS51); 10: no inline onclick (RS49)  // bump when saved markup changes, so stale caches are dropped
 // RS43 A: the visitor's own last 10 searches for 1 hour, in their browser only. Pure functions (tested) + thin wrappers.
 var RECENT="replore_recent", RECENT_TTL_MS=3600000, RECENT_MAX=10;
 function recentKey(f){ return JSON.stringify([String(f.q||"").trim().toLowerCase().replace(/\s+/g," "), f.platform||"", String(f.minstars||""),

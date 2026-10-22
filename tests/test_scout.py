@@ -778,7 +778,7 @@ def test_web_page_is_safe_static(monkeypatch):
     assert "function showTrending" in html and 'id="trendCar"' in html and 'id="trendBtn"' in html
     assert "&sort=" in html and "github.com/trending" not in html
     assert "body.view-trending .tcar, body.has-results .tcar{display:none}" in html  # no Rising list twice; results focus
-    assert 'class="trow"' in html and "scroll-snap-type:x mandatory" in html   # RS62: a flat row, no auto-turning ring
+    assert 'class="tbento"' in html and "tb-big" in html and "tb-sm" in html   # RS63: bento grid, no auto-turning ring
     # RS36 thinking orb pill: the search loading indicator (RS61: no longer under the home demo; the ASCII globe is there)
     assert "function startDotOrb" in html and "function think(" in html and 'id="homeThink"' not in html
     assert 'class="think-orb" aria-hidden="true"' in html and "draw(); if(reduce) return;" in html and "canvas.isConnected" in html
@@ -959,7 +959,7 @@ def test_rs47_look_and_motion_kit():
     assert "data-magnet" in html and 'G.quickTo(el,"x"' in html and "(hover:hover) and (pointer:fine)" in html
     assert "function odometer(" in html and "function snapHtml(" in html and "html:out.innerHTML" not in html
     assert 'class="tring"' not in html and 'class="ttape"' not in html and "TAPE_ICON" not in html and "✦</b>" not in html   # RS62
-    assert "row.scrollBy(" in html and 'role="listitem"' in html   # RS62: every card is a plain focusable link; arrows scroll the row
+    assert 'role="listitem"' in html and "rows.slice(1).map" in html   # RS63: every tile is a plain focusable link
 
 
 
