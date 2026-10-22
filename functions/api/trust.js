@@ -1,16 +1,16 @@
-// SPEC RS52b — "Safe to build on?" trust check. Cloudflare Pages Function: GET /api/trust?repo=owner/repo&lang=<language>
+// SPEC RS53b — "Safe to build on?" trust check. Cloudflare Pages Function: GET /api/trust?repo=owner/repo&lang=<language>
 // Asks OpenSSF Scorecard (security health) and Google's deps.dev (published package, its licenses and OSV advisory IDs)
 // about one PUBLIC repo name, server-side so the visitor's IP is not passed on. It never receives search words (RS33).
 // Display only: nothing here touches the ranking (RS5, RX3). Every part fails on its own: "error" or "none", never a guess (RS7).
 import { sameOrigin, rateLimit } from "./relevance.js";
 
 const CALL_MS = 4000, CACHE_TTL = 86400, MAX_ADVISORIES = 10;
-const TRUST_RATE = new Map();   // RS52b: its own per-IP store, so opening panels never eats the relevance check's burst allowance
+const TRUST_RATE = new Map();   // RS53b: its own per-IP store, so opening panels never eats the relevance check's burst allowance
 export function resetTrustRate() { TRUST_RATE.clear(); }
-// RS51/RS52b: the only repo names accepted — the same owner/repo shape GitHub allows
+// RS51/RS53b: the only repo names accepted — the same owner/repo shape GitHub allows
 const REPO_RE = /^[A-Za-z0-9-]{1,39}\/[A-Za-z0-9._-]{1,100}$/;
 export const validRepo = r => typeof r === "string" && REPO_RE.test(r) && !/\/\.\.?$/.test(r);
-// RS52b: GitHub language -> the one ecosystem the forward check tries (deps.dev system names)
+// RS53b: GitHub language -> the one ecosystem the forward check tries (deps.dev system names)
 export const ECOSYSTEM = { JavaScript: "npm", TypeScript: "npm", Python: "pypi", Rust: "cargo", Go: "go", Ruby: "rubygems", "C#": "nuget" };
 // RS9: values from the APIs are data; anything outside these shapes is dropped, never shown
 const NAME_RE = /^[@A-Za-z0-9._\/~+-]{1,214}$/, VERSION_RE = /^[A-Za-z0-9.+_~-]{1,64}$/,
@@ -40,7 +40,7 @@ export function defaultVersion(j) {
   return typeof s === "string" && VERSION_RE.test(s) ? s : null;
 }
 
-// RS52b: accept a version only when the package itself names this exact repo as its source (spoofs claim the reverse way)
+// RS53b: accept a version only when the package itself names this exact repo as its source (spoofs claim the reverse way)
 export function linksToRepo(j, repo) {
   const want = "github.com/" + repo.toLowerCase();
   return (j && Array.isArray(j.relatedProjects) ? j.relatedProjects : []).some(p =>
@@ -76,7 +76,7 @@ export async function scorecardPart(repo, fetchImpl = fetch) {
   } catch { return { status: "error" }; }
 }
 
-// RS52b: Go publishes major version N>=2 as its own module, `<path>/vN`; the bare path is only v0/v1 (live 2026-10-22:
+// RS53b: Go publishes major version N>=2 as its own module, `<path>/vN`; the bare path is only v0/v1 (live 2026-10-22:
 // gofiber/fiber's bare path is v1.14.6 from 2020, with 6 advisories, while the current module is /v3 at v3.6.1)
 export const GO_MAJORS = ["", "/v2", "/v3", "/v4", "/v5", "/v6", "/v7", "/v8", "/v9"];
 export async function packagePart(repo, lang, fetchImpl = fetch) {
@@ -119,7 +119,7 @@ export async function onRequestGet(context, fetchImpl = fetch, cache = globalThi
     "&lang=" + encodeURIComponent(lang));
   if (cache) { try { const hit = await cache.match(key); if (hit) return json(200, await hit.json(), "public, max-age=3600"); } catch {} }
   const body = await trustFor(repo, lang, fetchImpl);
-  if (cache && body.scorecard.status !== "error" && body.package.status !== "error") {   // RS52b: never cache a failure
+  if (cache && body.scorecard.status !== "error" && body.package.status !== "error") {   // RS53b: never cache a failure
     const put = Promise.resolve().then(() => cache.put(key, new Response(JSON.stringify(body), {
       headers: { "Content-Type": "application/json", "Cache-Control": "max-age=" + CACHE_TTL } }))).catch(() => {});
     if (context.waitUntil) context.waitUntil(put);

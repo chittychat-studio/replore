@@ -156,7 +156,7 @@ function keep(items, minStars, platform, excluded, seen){
     var starter=!!it.is_template||topics.some(function(t){return STARTER_TOPICS.has(t);});
     var row={name:cname,stars:it.stargazers_count||0,spdx:spdx,pushed:(it.pushed_at||"").slice(0,10),
       url:it.html_url||("https://github.com/"+name),desc:desc,starter:starter,rel:i,topics:topics.slice(0,8),forks:it.forks_count||0,
-      lang:typeof it.language==="string"?it.language:""};   // RS52: picks the package ecosystem for the trust check
+      lang:typeof it.language==="string"?it.language:""};   // RS53: picks the package ecosystem for the trust check
     out.push(row); seen[cname]=row;
   }
   return out;
@@ -220,7 +220,7 @@ var EXPLORE=[["Diagram","https://gitdiagram.com/","See the repo as an architectu
 function validRepoName(name){ name=String(name||""); return /^[A-Za-z0-9-]{1,39}\/[A-Za-z0-9._-]{1,100}$/.test(name) && !/\/\.\.?$/.test(name); }
 function exploreLinks(name){ if(!validRepoName(name)) return [];
   return EXPLORE.map(function(e){ return {label:e[0], url:e[1]+name, title:e[2]}; }); }
-// RS52: "Safe to build on?" — fetched only when a visitor opens the row; display only, it never touches the rank (RX3)
+// RS53: "Safe to build on?" — fetched only when a visitor opens the row; display only, it never touches the rank (RX3)
 var TRUST_LANGS={JavaScript:1,TypeScript:1,Python:1,Rust:1,Go:1,Ruby:1,"C#":1};   // the languages /api/trust maps to a package ecosystem
 var INSTALL={npm:"npm install ",pypi:"pip install ",cargo:"cargo add ",go:"go get ",rubygems:"gem install ",nuget:"dotnet add package "};
 var PKG_RE=/^[@A-Za-z0-9._\/~+-]{1,214}$/, VER_RE=/^[A-Za-z0-9.+_~-]{1,64}$/, ADV_RE=/^[A-Z][A-Z0-9]{1,15}-[A-Za-z0-9._:-]{1,60}$/, TAG_RE=/^[A-Za-z0-9._\/+@-]{1,80}$/;
@@ -228,7 +228,7 @@ function trustRow(r){ if(!validRepoName(r.name)) return "";
   return '<details class="trust" data-repo="'+esc(r.name)+'" data-spdx="'+esc(r.spdx||"")+'"'+(TRUST_LANGS[r.lang]===1?' data-lang="'+esc(r.lang)+'"':'')+'>'+
     '<summary>🛡 Safe to build on?</summary><div class="trust-body"></div></details>'; }
 function installCmd(system,name){ return INSTALL.hasOwnProperty(system) && PKG_RE.test(String(name||"")) ? INSTALL[system]+name : ""; }
-// RS52a: count = the page number of the Link header's rel="last" (per_page=1), else the items returned
+// RS53a: count = the page number of the Link header's rel="last" (per_page=1), else the items returned
 function lastPage(link,n){ var m=/<[^>]*[?&]page=(\d+)[^>]*>;\s*rel="last"/.exec(link||""); return m ? +m[1] : (n|0); }
 function ghShape(raw){ var c=raw.community||{}, rl=raw.release||{}, g=raw.gfi||{};
   var limited=[c,rl,g].some(function(x){ return x.s===403||x.s===429; });
@@ -261,7 +261,7 @@ function trustHtml(gh, tr, spdx, repo){
   }
   return '<ul>'+L.map(function(x){ return '<li>'+x+'</li>'; }).join("")+'</ul><p class="trust-note">For information — it doesn\'t change the ranking. '+
     'Sources: OpenSSF Scorecard, deps.dev, OSV.dev, GitHub.</p>'; }
-var __trust={};   // RS52: answers kept in page memory per repo, so reopening a row costs nothing
+var __trust={};   // RS53: answers kept in page memory per repo, so reopening a row costs nothing
 async function ghTrust(repo){ var H={headers:{"Accept":"application/vnd.github+json"}}, base="https://api.github.com/repos/"+repo;
   function one(p){ return fetch(base+p,H).then(function(r){ return r.json().catch(function(){ return null; })
     .then(function(j){ return {s:r.status, j:j, link:r.headers.get("Link")}; }); }, function(){ return {s:0}; }); }
@@ -981,7 +981,7 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
       "Include: overview and goals; key features; which repo above covers each part (with its GitHub URL); "+
       "data model and APIs; non-goals; and open questions. Use only the repos listed — don't invent libraries, versions, or statistics. "+
       "If no repo above covers a feature, list it under GAPS instead of stretching a repo to fit.\n\n"+   // RS28c
-      "If you have the Context7 MCP server, use it to read each USE repo's current docs before you pick versions or APIs.\n\n"+   // RS52e
+      "If you have the Context7 MCP server, use it to read each USE repo's current docs before you pick versions or APIs.\n\n"+   // RS53e
       "Before you write anything: ask me 5 short questions that would most improve this plan, all in one numbered "+
       "message, then wait for my answers.";   // RS28d
   }
@@ -1319,7 +1319,7 @@ function tipUrlOk(u, host){ u=String(u||"");
 (function(){ if(typeof location==="undefined" || !tipUrlOk(TIP_URL, location.hostname)) return;
   document.querySelectorAll(".tip-link").forEach(function(a){ a.href=TIP_URL; });
   document.querySelectorAll(".tip-el").forEach(function(el){ el.hidden=false; }); })();
-var LAST="findrepo_last", CACHE_V="13";   // 13: cards carry the trust row (RS52); 12: Wiki (DeepWiki) Explore button; 11: cards carry Explore links (RS51); 10: no inline onclick (RS49)  // bump when saved markup changes, so stale caches are dropped
+var LAST="findrepo_last", CACHE_V="13";   // 13: cards carry the trust row (RS53); 12: Wiki (DeepWiki) Explore button; 11: cards carry Explore links (RS51); 10: no inline onclick (RS49)  // bump when saved markup changes, so stale caches are dropped
 // RS43 A: the visitor's own last 10 searches for 1 hour, in their browser only. Pure functions (tested) + thin wrappers.
 var RECENT="replore_recent", RECENT_TTL_MS=3600000, RECENT_MAX=10;
 function recentKey(f){ return JSON.stringify([String(f.q||"").trim().toLowerCase().replace(/\s+/g," "), f.platform||"", String(f.minstars||""),
@@ -1339,7 +1339,7 @@ function cleanCards(root){ var c=root.querySelectorAll(".rcard"); for(var i=0;i<
 // RS47: saved HTML comes from a copy, so a half-rolled odometer is saved as its plain number and the live one keeps rolling
 function snapHtml(root){ var c=root.cloneNode(true), o=c.querySelectorAll('.cnt[data-odo="1"]');
   for(var j=0;j<o.length;j++){ o[j].textContent=o[j].getAttribute("aria-label")||o[j].textContent; o[j].removeAttribute("data-odo"); }
-  var t=c.querySelectorAll("details.trust");   // RS52d: an opened trust panel is never saved — closed and emptied
+  var t=c.querySelectorAll("details.trust");   // RS53d: an opened trust panel is never saved — closed and emptied
   for(var k=0;k<t.length;k++){ t[k].removeAttribute("open"); var b=t[k].querySelector(".trust-body"); if(b){ b.innerHTML=""; b.removeAttribute("data-done"); } }
   return c.innerHTML; }
 function saveResults(){ try{ var out=document.getElementById("out"); cleanCards(out);

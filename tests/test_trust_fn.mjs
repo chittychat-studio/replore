@@ -1,4 +1,4 @@
-// SPEC RS52b: the trust function (functions/api/trust.js). No network: Scorecard and deps.dev are a fake fetch.
+// SPEC RS53b: the trust function (functions/api/trust.js). No network: Scorecard and deps.dev are a fake fetch.
 import assert from "node:assert";
 import * as fn from "../functions/api/trust.js";
 
@@ -16,7 +16,7 @@ const ok = () => fake([["securityscorecards", [200, SC]], ["versions/5.3.0", [20
 const get = (qs, f, headers = {}, cache) => fn.onRequestGet({ request: new Request("https://replore.test/api/trust?" + qs, { headers }) }, f, cache);
 const body = async r => r.json();
 
-// RS52b validation: RS51 repo names only, fixed language list
+// RS53b validation: RS51 repo names only, fixed language list
 assert.ok(fn.validRepo("expressjs/express") && fn.validRepo("a-b/c.d_e"));
 ["", "x", "a/b/c", "a/..", "a/.", "../etc", "a b/c", "-".repeat(40) + "/x", 7].forEach(r => assert.ok(!fn.validRepo(r), String(r)));
 for (const qs of ["repo=a%2F..", "repo=a/b/c", "repo=x", "repo=a/b&lang=Klingon", "repo=a/b&lang=__proto__", "lang=Go"])
@@ -38,7 +38,7 @@ assert.strictEqual(fn.ECOSYSTEM.TypeScript, "npm"); assert.strictEqual(fn.ECOSYS
   assert.ok(f.calls.some(u => u === "https://api.deps.dev/v3/systems/npm/packages/express/versions/5.3.0"));
   assert.ok(f.calls.includes("https://api.securityscorecards.dev/projects/github.com/expressjs/express")); }
 
-// RS52b anti-spoof: a package with the repo's name that points at another repo is not shown
+// RS53b anti-spoof: a package with the repo's name that points at another repo is not shown
 { const f = fake([["securityscorecards", [200, SC]], ["versions/5.3.0", [200, VER("github.com/someone/else")]], ["packages/express", [200, PKG]]]);
   assert.deepStrictEqual((await body(await get("repo=expressjs/express&lang=JavaScript", f))).package, { status: "none" }); }
 // ISSUE_TRACKER links don't count either; repo match is case-insensitive
@@ -58,7 +58,7 @@ const def = v => [200, { versions: [{ versionKey: { version: "v0.1.0" } }, { ver
   assert.deepStrictEqual(j.scorecard, { status: "none" });
   assert.strictEqual(j.package.name, "github.com/gin-gonic/gin"); assert.strictEqual(j.package.version, "v1.12.0");
   assert.strictEqual(f.calls.filter(u => u.startsWith(D) && !u.includes("/versions/")).length, fn.GO_MAJORS.length, "bare path + /v2…/v9 probed"); }
-// RS52b live regression (gofiber/fiber): the highest major module wins over the stale bare path
+// RS53b live regression (gofiber/fiber): the highest major module wins over the stale bare path
 { const f = exact({ [D + "github.com%2Fgofiber%2Ffiber"]: def("v1.14.6"), [D + "github.com%2Fgofiber%2Ffiber%2Fv2"]: def("v2.52.15"),
     [D + "github.com%2Fgofiber%2Ffiber%2Fv3"]: def("v3.6.1"),
     [D + "github.com%2Fgofiber%2Ffiber%2Fv3/versions/v3.6.1"]: [200, VER("github.com/gofiber/fiber", { advisoryKeys: [] })] });
@@ -93,7 +93,7 @@ assert.strictEqual(fn.defaultVersion({ versions: [{ versionKey: { version: "1.0 
   const s = fn.shapeVersion({ advisoryKeys: many, licenses: ["MIT", "x<y"] }, "npm", "p", "1.0.0");
   assert.strictEqual(s.advisories.length, 10); assert.strictEqual(s.advisoryCount, 14); assert.deepStrictEqual(s.licenses, ["MIT"]); }
 
-// RS52b cache: hit skips the network; failures are never stored
+// RS53b cache: hit skips the network; failures are never stored
 { const store = new Map(), cache = { match: async k => store.get(k.url)?.clone(), put: async (k, v) => { store.set(k.url, v); } };
   const puts = []; const ctx = qs => ({ request: new Request("https://replore.test/api/trust?" + qs), waitUntil: p => puts.push(p) });
   const f1 = ok(); await fn.onRequestGet(ctx("repo=ExpressJS/express&lang=JavaScript"), f1, cache); await Promise.all(puts);

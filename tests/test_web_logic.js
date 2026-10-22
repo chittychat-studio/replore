@@ -267,7 +267,7 @@ console.log("prd ok:", f.join(" | "));
     assert.deepStrictEqual(s.exploreLinks(n), [], n));
   console.log("explore ok"); }
 
-// RS52 trust check: helpers, anti-injection, saved results. A real escaper stands in for the fake DOM here.
+// RS53 trust check: helpers, anti-injection, saved results. A real escaper stands in for the fake DOM here.
 { const realEl = document.createElement;
   document.createElement = () => { const o = { set textContent(v) { this._t = String(v); },
     get innerHTML() { return this._t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); } }; return o; };
@@ -315,7 +315,7 @@ console.log("prd ok:", f.join(" | "));
     assert.strictEqual(s.trustRow({ name: "a/..", spdx: "MIT" }), "");
     assert.ok(s.cardHtml({ name: "a/b", stars: 1, spdx: "MIT", pushed: "2026-10-01", url: "https://github.com/a/b", desc: "", topics: [], lang: "Go" }, 0, []).includes('class="trust"'));
   } finally { document.createElement = realEl; }
-  // RS52d: a saved copy never keeps an opened panel
+  // RS53d: a saved copy never keeps an opened panel
   const body = { innerHTML: "<ul>secret</ul>", attrs: { "data-done": "1" }, removeAttribute(k) { delete this.attrs[k]; } };
   const det = { attrs: { open: "" }, removeAttribute(k) { delete this.attrs[k]; }, querySelector: () => body };
   const root = { cloneNode: () => ({ innerHTML: "saved", querySelectorAll: q => q === "details.trust" ? [det] : [] }) };

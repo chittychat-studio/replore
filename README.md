@@ -63,7 +63,7 @@ What you can do there:
   - **Wiki** ([DeepWiki](https://deepwiki.com)): AI-written docs for the repo that you can ask questions.
   - **Browse** ([GitHub1s](https://github1s.com)): read the code in a VS Code-style viewer.
   - **Edit** ([github.dev](https://github.dev)): open the repo in GitHub's web editor.
-- **Check it's safe to build on.** Open **🛡 Safe to build on?** on a card (SPEC RS52) to see its security health
+- **Check it's safe to build on.** Open **🛡 Safe to build on?** on a card (SPEC RS53) to see its security health
   score ([OpenSSF Scorecard](https://scorecard.dev)), known vulnerabilities in its latest published package
   ([OSV.dev](https://osv.dev), via [deps.dev](https://deps.dev)), a copy-paste install command (`npm install`,
   `pip install`, `go get`, …), whether it has a README, contributing guide and good first issues, and its latest
@@ -74,7 +74,7 @@ What you can do there:
 - **Turn picks into a build plan.** Tick **＋ Add to plan** on the repos you want (or **Select all shown**), then
   **Copy prompt**, **Open in Claude**, **Open in ChatGPT** or **Open in Gemini** to have your own AI write the plan.
   The page itself calls no AI and holds no key for this. Tip: give your agent the free
-  [Context7](https://github.com/upstash/context7) MCP server so it reads each repo's current docs (SPEC RS52e).
+  [Context7](https://github.com/upstash/context7) MCP server so it reads each repo's current docs (SPEC RS53e).
 - **Browse what's popular.** The **🔥 Trending** view lists Rising, Most stars and Most forks repos without a search.
 - **Pick up where you left off.** A refresh brings your last results back; repeat searches within an hour come from
   your browser instead of GitHub. Tap ✕ or the logo to clear them.
@@ -127,7 +127,7 @@ privacy window say so. To turn it off: Cloudflare dashboard → Workers & Pages 
 `cloudflareinsights.com` hosts from `web/_headers`.
 Before adding or switching a provider, check its data-use terms (free tiers intended for prototyping, such as GitHub
 Models, don't qualify) and update `PRIVACY.md`.
-**Trust check (maintainer, SPEC RS52):** `functions/api/trust.js` (`GET /api/trust?repo=owner/repo&lang=…`) needs no
+**Trust check (maintainer, SPEC RS53):** `functions/api/trust.js` (`GET /api/trust?repo=owner/repo&lang=…`) needs no
 key, binding or setting. It asks OpenSSF Scorecard and deps.dev server-side (public repo names only, never search words
 or visitor IPs) and keeps each answer in Cloudflare's edge cache for 24 hours. It accepts a package only when the
 package itself names the repo as its source, because deps.dev's repo→package list includes spoofed claims. A per-IP

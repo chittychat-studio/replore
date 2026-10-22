@@ -756,20 +756,20 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   from the GitHub API, used only when it matches `owner/repo` (owner `[A-Za-z0-9-]{1,39}`, repo `[A-Za-z0-9._-]{1,100}`,
   not `.` or `..`); otherwise the row is left out (RS9). They are navigations only: the page fetches nothing from these
   sites, so the CSP (RS49) is unchanged. Saved results are re-keyed (`CACHE_V` 12, since the Wiki button was added) so cards render with the row.
-- **RS52** "Safe to build on?" trust check on result cards (web; owner request 2026-10-22, architect review: "here
+- **RS53** "Safe to build on?" trust check on result cards (web; owner request 2026-10-22, architect review: "here
   are repos **and** whether they're safe to build on"). Each card whose name passes the RS51 `owner/repo` check has a
   collapsed `<details>` row, **Safe to build on?**. Nothing is fetched until a visitor opens it (the unauthenticated
   GitHub core limit is 60 requests an hour per IP, RS41); the answer is kept in page memory, so reopening costs nothing.
   **Display only:** it never changes the rank, the filters or the relevance check (RS5, RX3). Every value shown comes
   from the API answer or is left out — never guessed (RS7); a source that fails shows "Couldn't check" on its own line,
   and the other lines still show.
-  - **RS52a GitHub (browser, `api.github.com`, already in the CSP).** Three calls: `/repos/{r}/community/profile`
+  - **RS53a GitHub (browser, `api.github.com`, already in the CSP).** Three calls: `/repos/{r}/community/profile`
     (README, contributing guide, code of conduct), `/repos/{r}/releases/latest` (tag and date; 404 = "No releases
     yet"), and `/repos/{r}/issues?labels=good first issue&state=open&per_page=1`, whose count is the `page` number of
     the `Link` header's `rel="last"` (no header = the number of items returned, 0 or 1). That list can include pull
     requests carrying the label; the line says "good first issues", which is what GitHub's label means. A 403/429 shows
     "GitHub's hourly limit is used up — try again later".
-  - **RS52b Trust function, `GET /api/trust?repo=owner/repo&lang=<GitHub language>`** (`functions/api/trust.js`). It
+  - **RS53b Trust function, `GET /api/trust?repo=owner/repo&lang=<GitHub language>`** (`functions/api/trust.js`). It
     accepts only an RS51-valid repo name and a language from a fixed list or none (anything else → 400), refuses another
     site's `Origin` (403 `bad_origin`) and bursts from one IP (429, per-isolate, as RS34g), and never receives the
     visitor's search words. It calls, server-side so the visitor's IP is not passed on, each call capped at 4 s:
@@ -787,17 +787,17 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
     name, version, licenses and advisory IDs (OSV.dev identifiers, e.g. `GHSA-…`, `PYSEC-…`; at most 10 shown, plus the
     total). Answers are kept in Cloudflare's edge cache for 24 h per `repo` + `lang` (public names only); a part that
     errored is not cached.
-  - **RS52c What the card shows**, in plain words (RS17, RS37): security health "8.9/10" linking to
+  - **RS53c What the card shows**, in plain words (RS17, RS37): security health "8.9/10" linking to
     `scorecard.dev/viewer`; known vulnerabilities in the latest published version ("None known" or the count, each ID
     linking to `osv.dev/vulnerability/<id>`); a copy-paste install command as text with a copy button (`npm install`,
     `pip install`, `cargo add`, `go get`, `gem install`, `dotnet add package`) — never run or written anywhere (RX4); the
     package's license when it differs from the repo's; beginner-friendly files and good-first-issue count; latest
     release; and one line "For information — it doesn't change the ranking." Package names, tags and IDs are data
     (RS9): each is checked against a strict pattern, escaped, and dropped if it fails.
-  - **RS52d Saved results (RS43)** never keep an opened panel: the saved copy is closed and emptied, and `CACHE_V`
+  - **RS53d Saved results (RS43)** never keep an opened panel: the saved copy is closed and emptied, and `CACHE_V`
     becomes 13 (12 was the RS51 Wiki button). `PRIVACY.md` names the new recipients (RS33). The CSP is unchanged: the page calls only
     `api.github.com` and its own origin.
-  - **RS52e Context7 tip (guidance only).** The RS30 "Next steps" modal, the RS28 plan prompt, the skill and
+  - **RS53e Context7 tip (guidance only).** The RS30 "Next steps" modal, the RS28 plan prompt, the skill and
     `AGENTS.md` suggest the free Context7 MCP server so the user's own agent reads current docs for the repos they
     pick. Replore never calls, installs or configures it (RS1, RS11, RX4 unchanged).
 
