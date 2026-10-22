@@ -155,7 +155,8 @@ function keep(items, minStars, platform, excluded, seen){
     var topics=(it.topics||[]).map(function(t){return String(t).toLowerCase();});
     var starter=!!it.is_template||topics.some(function(t){return STARTER_TOPICS.has(t);});
     var row={name:cname,stars:it.stargazers_count||0,spdx:spdx,pushed:(it.pushed_at||"").slice(0,10),
-      url:it.html_url||("https://github.com/"+name),desc:desc,starter:starter,rel:i,topics:topics.slice(0,8),forks:it.forks_count||0};
+      url:it.html_url||("https://github.com/"+name),desc:desc,starter:starter,rel:i,topics:topics.slice(0,8),forks:it.forks_count||0,
+      lang:typeof it.language==="string"?it.language:""};   // RS53: picks the package ecosystem for the trust check
     out.push(row); seen[cname]=row;
   }
   return out;
@@ -216,9 +217,73 @@ var EXPLORE=[["Diagram","https://gitdiagram.com/","See the repo as an architectu
   ["Wiki","https://deepwiki.com/","Read AI-written docs for the repo and ask it questions (DeepWiki)"],
   ["Browse","https://github1s.com/","Read the code in a VS Code-style viewer (GitHub1s)"],
   ["Edit","https://github.dev/","Open in github.dev, the web editor (sign in to GitHub)"]];
-function exploreLinks(name){ name=String(name||"");
-  if(!/^[A-Za-z0-9-]{1,39}\/[A-Za-z0-9._-]{1,100}$/.test(name) || /\/\.\.?$/.test(name)) return [];
+function validRepoName(name){ name=String(name||""); return /^[A-Za-z0-9-]{1,39}\/[A-Za-z0-9._-]{1,100}$/.test(name) && !/\/\.\.?$/.test(name); }
+function exploreLinks(name){ if(!validRepoName(name)) return [];
   return EXPLORE.map(function(e){ return {label:e[0], url:e[1]+name, title:e[2]}; }); }
+// RS53: "Safe to build on?" — fetched only when a visitor opens the row; display only, it never touches the rank (RX3)
+var TRUST_LANGS={JavaScript:1,TypeScript:1,Python:1,Rust:1,Go:1,Ruby:1,"C#":1};   // the languages /api/trust maps to a package ecosystem
+var INSTALL={npm:"npm install ",pypi:"pip install ",cargo:"cargo add ",go:"go get ",rubygems:"gem install ",nuget:"dotnet add package "};
+var PKG_RE=/^[@A-Za-z0-9._\/~+-]{1,214}$/, VER_RE=/^[A-Za-z0-9.+_~-]{1,64}$/, ADV_RE=/^[A-Z][A-Z0-9]{1,15}-[A-Za-z0-9._:-]{1,60}$/, TAG_RE=/^[A-Za-z0-9._\/+@-]{1,80}$/;
+function trustRow(r){ if(!validRepoName(r.name)) return "";
+  return '<details class="trust" data-repo="'+esc(r.name)+'" data-spdx="'+esc(r.spdx||"")+'"'+(TRUST_LANGS[r.lang]===1?' data-lang="'+esc(r.lang)+'"':'')+'>'+
+    '<summary>🛡 Safe to build on?</summary><div class="trust-body"></div></details>'; }
+function installCmd(system,name){ return INSTALL.hasOwnProperty(system) && PKG_RE.test(String(name||"")) ? INSTALL[system]+name : ""; }
+// RS53a: count = the page number of the Link header's rel="last" (per_page=1), else the items returned
+function lastPage(link,n){ var m=/<[^>]*[?&]page=(\d+)[^>]*>;\s*rel="last"/.exec(link||""); return m ? +m[1] : (n|0); }
+function ghShape(raw){ var c=raw.community||{}, rl=raw.release||{}, g=raw.gfi||{};
+  var limited=[c,rl,g].some(function(x){ return x.s===403||x.s===429; });
+  var f=c.s===200&&c.j&&c.j.files;
+  var rel=rl.s===404?"none":(rl.s===200&&rl.j&&TAG_RE.test(String(rl.j.tag_name||""))&&/^\d{4}-\d{2}-\d{2}/.test(String(rl.j.published_at||""))?
+    {tag:rl.j.tag_name, date:rl.j.published_at.slice(0,10)}:null);
+  return {limited:limited, files:f?{readme:!!f.readme, contributing:!!f.contributing, coc:!!f.code_of_conduct}:null, release:rel,
+    gfi:g.s===200&&Array.isArray(g.j)?lastPage(g.link,g.j.length):null}; }
+function trustHtml(gh, tr, spdx, repo){
+  var L=[], NA='<span class="mut">couldn\'t check</span>', yes=function(b,t){ return (b?"✓ ":"✗ ")+t; };
+  var sc=tr&&tr.scorecard, pk=tr&&tr.package;
+  if(sc&&sc.status==="ok") L.push('<b>Security health</b> '+esc(String(sc.score))+'/10'+(sc.maintained!=null?' · maintained '+esc(String(sc.maintained))+'/10':'')+
+    ' · <a href="https://scorecard.dev/viewer/?uri=github.com/'+esc(repo)+'" target="_blank" rel="noopener noreferrer">OpenSSF Scorecard</a>');
+  else L.push('<b>Security health</b> '+(sc&&sc.status==="none"?'<span class="mut">not scored by OpenSSF Scorecard yet</span>':NA));
+  if(pk&&pk.status==="ok"&&PKG_RE.test(String(pk.name))&&VER_RE.test(String(pk.version))){
+    var ids=(pk.advisories||[]).filter(function(id){ return ADV_RE.test(String(id)); }), n=Math.max(pk.advisoryCount|0, ids.length);
+    L.push('<b>Known vulnerabilities</b> in '+esc(pk.name)+' '+esc(pk.version)+': '+(n===0?'✓ none known':
+      '<span class="t-warn-ink">⚠ '+n+' known</span> — '+ids.map(function(id){ return '<a href="https://osv.dev/vulnerability/'+esc(id)+'" target="_blank" rel="noopener noreferrer">'+esc(id)+'</a>'; }).join(", ")+(n>ids.length?' …':'')));
+    var cmd=installCmd(pk.system,pk.name);
+    if(cmd) L.push('<b>Install</b> <code>'+esc(cmd)+'</code> <button type="button" class="trust-copy" data-cmd="'+esc(cmd)+'" title="Copy the command">⧉</button>');
+    var lic=(pk.licenses||[]).filter(function(x){ return /^[A-Za-z0-9.+() -]{1,80}$/.test(String(x)); });
+    if(lic.length && lic.indexOf(spdx)<0) L.push('<b>Package license</b> '+esc(lic.join(", "))+' <span class="mut">(the repo says '+esc(spdx||"none")+')</span>');
+  } else if(pk&&pk.status==="none") L.push('<b>Package</b> <span class="mut">no published package matched this repo</span>');
+  else if(!pk||pk.status==="error") L.push('<b>Known vulnerabilities</b> '+NA);
+  if(gh&&gh.limited) L.push('<span class="mut">GitHub\'s hourly limit is used up — try again later</span>');
+  else {
+    L.push('<b>Beginner-friendly</b> '+(gh&&gh.files?[yes(gh.files.readme,"README"),yes(gh.files.contributing,"contributing guide"),yes(gh.files.coc,"code of conduct")].join(" · "):NA)+
+      (gh&&gh.gfi!=null?' · '+gh.gfi+' good first issue'+(gh.gfi===1?'':'s'):''));
+    L.push('<b>Latest release</b> '+(gh&&gh.release==="none"?'<span class="mut">no releases yet</span>':gh&&gh.release?esc(gh.release.tag)+', '+esc(agoText(gh.release.date)||gh.release.date):NA));
+  }
+  return '<ul>'+L.map(function(x){ return '<li>'+x+'</li>'; }).join("")+'</ul><p class="trust-note">For information — it doesn\'t change the ranking. '+
+    'Sources: OpenSSF Scorecard, deps.dev, OSV.dev, GitHub.</p>'; }
+var __trust={};   // RS53: answers kept in page memory per repo, so reopening a row costs nothing
+async function ghTrust(repo){ var H={headers:{"Accept":"application/vnd.github+json"}}, base="https://api.github.com/repos/"+repo;
+  function one(p){ return fetch(base+p,H).then(function(r){ return r.json().catch(function(){ return null; })
+    .then(function(j){ return {s:r.status, j:j, link:r.headers.get("Link")}; }); }, function(){ return {s:0}; }); }
+  var x=await Promise.all([one("/community/profile"), one("/releases/latest"), one("/issues?labels="+encodeURIComponent("good first issue")+"&state=open&per_page=1")]);
+  return ghShape({community:x[0], release:x[1], gfi:x[2]}); }
+function apiTrust(repo, lang){ return fetch("/api/trust?repo="+encodeURIComponent(repo)+(lang?"&lang="+encodeURIComponent(lang):""),{headers:{"Accept":"application/json"}})
+  .then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; }); }
+document.addEventListener("toggle",function(e){ var d=e.target;   // toggle doesn't bubble: listen in the capture phase
+  if(!d||!d.classList||!d.classList.contains("trust")||!d.open) return;
+  var body=d.querySelector(".trust-body"), repo=d.getAttribute("data-repo"), lang=d.getAttribute("data-lang")||"";
+  if(!body||!validRepoName(repo)||body.getAttribute("data-done")) return;
+  body.setAttribute("data-done","1"); body.innerHTML='<p class="mut">Checking…</p>';
+  var key=repo+"|"+(TRUST_LANGS[lang]===1?lang:"");
+  var p=__trust[key]||(__trust[key]=Promise.all([ghTrust(repo), apiTrust(repo, TRUST_LANGS[lang]===1?lang:"")]));
+  p.then(function(x){ body.innerHTML=trustHtml(x[0],x[1],d.getAttribute("data-spdx")||"",repo);
+    if(!x[1]||x[0].limited){ delete __trust[key]; body.removeAttribute("data-done"); } },   // a failed part retries on the next open
+    function(){ delete __trust[key]; body.removeAttribute("data-done"); body.innerHTML='<p class="mut">Couldn\'t check right now.</p>'; });
+},true);
+document.addEventListener("click",function(e){ var b=e.target&&e.target.closest&&e.target.closest(".trust-copy"); if(!b) return;
+  var t=b.getAttribute("data-cmd")||""; function ok(){ b.textContent="✓"; setTimeout(function(){ b.textContent="⧉"; },1400); }
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(ok,function(){});
+});
 function cardHtml(r,i,qtokens){
   var free=freeText(r.spdx), paid=lu(r.spdx), v=licenseVerdict(r.spdx);
   var okCom=v.c==="t-good"?1:0;   // one "free for commercial use" flag = the green verdict (permissive + weak copyleft)
@@ -240,6 +305,7 @@ function cardHtml(r,i,qtokens){
     '<p class="desc">'+descHtml(r)+'</p>'+
     (tops.length?'<div class="topics">'+tops.map(function(t){ return '<span>#'+esc(t)+'</span>'; }).join("")+'</div>':'')+
     '<div class="meta">'+esc(r.spdx)+' · updated <span title="'+esc(r.pushed)+'">'+esc(agoText(r.pushed)||r.pushed)+'</span></div>'+
+    trustRow(r)+
     '<div class="rc-foot">'+
       '<div class="tags"><span class="tag '+v.c+'" title="License: '+esc(r.spdx)+' · '+esc(paid)+' · Completely free? '+esc(free)+'">'+v.t+'</span></div>'+
       '<label class="pick"><input type="checkbox" class="pick-cb" data-name="'+esc(r.name)+'" data-url="'+esc(r.url)+
@@ -915,6 +981,7 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
       "Include: overview and goals; key features; which repo above covers each part (with its GitHub URL); "+
       "data model and APIs; non-goals; and open questions. Use only the repos listed — don't invent libraries, versions, or statistics. "+
       "If no repo above covers a feature, list it under GAPS instead of stretching a repo to fit.\n\n"+   // RS28c
+      "If you have the Context7 MCP server, use it to read each USE repo's current docs before you pick versions or APIs.\n\n"+   // RS53e
       "Before you write anything: ask me 5 short questions that would most improve this plan, all in one numbered "+
       "message, then wait for my answers.";   // RS28d
   }
@@ -1065,7 +1132,7 @@ function trendingQuery(kind, now){
 }
 function slimItem(it){ return {full_name:it.full_name, fork:it.fork, archived:it.archived, disabled:it.disabled,
   license:it.license?{spdx_id:it.license.spdx_id}:null, pushed_at:it.pushed_at, stargazers_count:it.stargazers_count,
-  forks_count:it.forks_count, description:it.description, topics:it.topics, is_template:it.is_template, html_url:it.html_url}; }
+  forks_count:it.forks_count, description:it.description, topics:it.topics, is_template:it.is_template, html_url:it.html_url, language:it.language}; }
 async function fetchTrending(kind){
   var key="replore_trend_"+kind, hit=null;
   try{ hit=JSON.parse(localStorage.getItem(key)||"null"); }catch(e){}   // public repo data only
@@ -1252,7 +1319,7 @@ function tipUrlOk(u, host){ u=String(u||"");
 (function(){ if(typeof location==="undefined" || !tipUrlOk(TIP_URL, location.hostname)) return;
   document.querySelectorAll(".tip-link").forEach(function(a){ a.href=TIP_URL; });
   document.querySelectorAll(".tip-el").forEach(function(el){ el.hidden=false; }); })();
-var LAST="findrepo_last", CACHE_V="12";   // 12: Wiki (DeepWiki) Explore button; 11: cards carry Explore links (RS51); 10: no inline onclick (RS49)  // bump when saved markup changes, so stale caches are dropped
+var LAST="findrepo_last", CACHE_V="13";   // 13: cards carry the trust row (RS53); 12: Wiki (DeepWiki) Explore button; 11: cards carry Explore links (RS51); 10: no inline onclick (RS49)  // bump when saved markup changes, so stale caches are dropped
 // RS43 A: the visitor's own last 10 searches for 1 hour, in their browser only. Pure functions (tested) + thin wrappers.
 var RECENT="replore_recent", RECENT_TTL_MS=3600000, RECENT_MAX=10;
 function recentKey(f){ return JSON.stringify([String(f.q||"").trim().toLowerCase().replace(/\s+/g," "), f.platform||"", String(f.minstars||""),
@@ -1272,6 +1339,8 @@ function cleanCards(root){ var c=root.querySelectorAll(".rcard"); for(var i=0;i<
 // RS47: saved HTML comes from a copy, so a half-rolled odometer is saved as its plain number and the live one keeps rolling
 function snapHtml(root){ var c=root.cloneNode(true), o=c.querySelectorAll('.cnt[data-odo="1"]');
   for(var j=0;j<o.length;j++){ o[j].textContent=o[j].getAttribute("aria-label")||o[j].textContent; o[j].removeAttribute("data-odo"); }
+  var t=c.querySelectorAll("details.trust");   // RS53d: an opened trust panel is never saved — closed and emptied
+  for(var k=0;k<t.length;k++){ t[k].removeAttribute("open"); var b=t[k].querySelector(".trust-body"); if(b){ b.innerHTML=""; b.removeAttribute("data-done"); } }
   return c.innerHTML; }
 function saveResults(){ try{ var out=document.getElementById("out"); cleanCards(out);
   localStorage.setItem(LAST, JSON.stringify({ v:CACHE_V, html:snapHtml(out), q:document.getElementById("q").value,

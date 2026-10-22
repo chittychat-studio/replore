@@ -756,13 +756,57 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   from the GitHub API, used only when it matches `owner/repo` (owner `[A-Za-z0-9-]{1,39}`, repo `[A-Za-z0-9._-]{1,100}`,
   not `.` or `..`); otherwise the row is left out (RS9). They are navigations only: the page fetches nothing from these
   sites, so the CSP (RS49) is unchanged. Saved results are re-keyed (`CACHE_V` 12, since the Wiki button was added) so cards render with the row.
-
 - **RS52** Fresh code after every deploy (owner report 2026-10-22: "why can't I see wiki?"). The custom domain's
   Cloudflare zone lets browsers keep `.js` files for 4 hours, while the page itself is never cached, so a fresh page
   could run yesterday's `app.js`. `web/index.html` therefore loads each script as `<name>?v=<first 10 hex of the
   SHA-256 of the file, line endings normalised to LF>` (`theme.js`, `app.js`). `ops/stamp_assets.py` (standard
   library only) rewrites the stamps; a test fails when a stamp doesn't match its file, so a code change can't ship
   without one. The query string changes nothing for the CSP (RS49), which matches on origin only.
+- **RS53** "Safe to build on?" trust check on result cards (web; owner request 2026-10-22, architect review: "here
+  are repos **and** whether they're safe to build on"). Each card whose name passes the RS51 `owner/repo` check has a
+  collapsed `<details>` row, **Safe to build on?**. Nothing is fetched until a visitor opens it (the unauthenticated
+  GitHub core limit is 60 requests an hour per IP, RS41); the answer is kept in page memory, so reopening costs nothing.
+  **Display only:** it never changes the rank, the filters or the relevance check (RS5, RX3). Every value shown comes
+  from the API answer or is left out — never guessed (RS7); a source that fails shows "Couldn't check" on its own line,
+  and the other lines still show.
+  - **RS53a GitHub (browser, `api.github.com`, already in the CSP).** Three calls: `/repos/{r}/community/profile`
+    (README, contributing guide, code of conduct), `/repos/{r}/releases/latest` (tag and date; 404 = "No releases
+    yet"), and `/repos/{r}/issues?labels=good first issue&state=open&per_page=1`, whose count is the `page` number of
+    the `Link` header's `rel="last"` (no header = the number of items returned, 0 or 1). That list can include pull
+    requests carrying the label; the line says "good first issues", which is what GitHub's label means. A 403/429 shows
+    "GitHub's hourly limit is used up — try again later".
+  - **RS53b Trust function, `GET /api/trust?repo=owner/repo&lang=<GitHub language>`** (`functions/api/trust.js`). It
+    accepts only an RS51-valid repo name and a language from a fixed list or none (anything else → 400), refuses another
+    site's `Origin` (403 `bad_origin`) and bursts from one IP (429, per-isolate, as RS34g), and never receives the
+    visitor's search words. It calls, server-side so the visitor's IP is not passed on, each call capped at 4 s:
+    (1) **OpenSSF Scorecard** `api.securityscorecards.dev/projects/github.com/{r}` → overall score (0–10), the date it was
+    scored and the `Maintained` check; 404 = "not scored yet". (2) **deps.dev** (Google), a *forward* check only: the
+    language picks one ecosystem (JavaScript/TypeScript → npm, Python → PyPI, Rust → Cargo, Go → Go, Ruby → RubyGems,
+    C# → NuGet; others → no package line), the package name is the repo name (lower-cased; Go: `github.com/{r}`, plus
+    `/v2`…`/v9` probed in parallel because Go publishes each major ≥2 as its own module — the highest that exists wins,
+    and if a higher one errors the line is "Couldn't check", never an older major; live 2026-10-22 the bare
+    `gofiber/fiber` path was v1.14.6 from 2020 with 6 advisories while the current module is `/v3`), and
+    its default version is accepted **only when that version's `relatedProjects` names `github.com/{r}` as
+    `SOURCE_REPO`** (case-insensitive). The reverse list (`projects/…:packageversions`) is not used: live
+    2026-10-22 it listed spoof packages claiming popular repos (`@amaansidq/repo-spoof-test` → `torvalds/linux`) and
+    left out real ones past its 1500-version cap (PyPI `requests`). From the accepted version it returns the system,
+    name, version, licenses and advisory IDs (OSV.dev identifiers, e.g. `GHSA-…`, `PYSEC-…`; at most 10 shown, plus the
+    total). Answers are kept in Cloudflare's edge cache for 24 h per `repo` + `lang` (public names only); a part that
+    errored is not cached.
+  - **RS53c What the card shows**, in plain words (RS17, RS37): security health "8.9/10" linking to
+    `scorecard.dev/viewer`; known vulnerabilities in the latest published version ("None known" or the count, each ID
+    linking to `osv.dev/vulnerability/<id>`); a copy-paste install command as text with a copy button (`npm install`,
+    `pip install`, `cargo add`, `go get`, `gem install`, `dotnet add package`) — never run or written anywhere (RX4); the
+    package's license when it differs from the repo's; beginner-friendly files and good-first-issue count; latest
+    release; and one line "For information — it doesn't change the ranking." Package names, tags and IDs are data
+    (RS9): each is checked against a strict pattern, escaped, and dropped if it fails.
+  - **RS53d Saved results (RS43)** never keep an opened panel: the saved copy is closed and emptied, and `CACHE_V`
+    becomes 13 (12 was the RS51 Wiki button). `PRIVACY.md` names the new recipients (RS33). The CSP is unchanged: the page calls only
+    `api.github.com` and its own origin.
+  - **RS53e Context7 tip (guidance only).** The RS30 "Next steps" modal, the RS28 plan prompt, the skill and
+    `AGENTS.md` suggest the free Context7 MCP server so the user's own agent reads current docs for the repos they
+    pick. Replore never calls, installs or configures it (RS1, RS11, RX4 unchanged).
+
 
 ## RX — Deliberately excluded (v0.1)
 

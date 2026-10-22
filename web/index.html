@@ -334,6 +334,22 @@
   .rcard .explore a:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 20%,transparent);transform:translateY(-1px)}
   .rcard .explore a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   @media (max-width:379px){ .rcard .explore{grid-template-columns:repeat(3,minmax(0,1fr))} }   /* small phones: 3 + 2, never clipped */
+  /* RS53: "Safe to build on?" — collapsed until opened; nothing is fetched before that */
+  .rcard .trust{margin:8px 0 2px;font-size:12.5px}
+  .rcard .trust summary{cursor:pointer;font-weight:700;color:var(--accent-ink);min-height:34px;display:flex;align-items:center;
+    list-style:none;border-radius:8px;padding:0 4px;width:max-content;max-width:100%}
+  .rcard .trust summary::-webkit-details-marker{display:none}
+  .rcard .trust summary::after{content:"▸";margin-left:6px;transition:transform .15s}
+  .rcard .trust[open] summary::after{transform:rotate(90deg)}
+  .rcard .trust summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .rcard .trust ul{list-style:none;margin:4px 0 0;padding:0;display:grid;gap:5px;overflow-wrap:anywhere}
+  .rcard .trust code{font-size:12px;background:var(--offbg);border-radius:6px;padding:1px 6px}
+  .rcard .trust a{color:var(--accent-ink)}
+  .rcard .trust .t-warn-ink{color:var(--warn);font-weight:700}
+  .rcard .trust .trust-copy{font:inherit;border:1px solid var(--line);background:transparent;color:inherit;border-radius:6px;
+    min-width:30px;min-height:28px;cursor:pointer}
+  .rcard .trust .trust-note{margin:6px 0 0;font-size:11px;color:var(--muted)}
+  @media (prefers-reduced-motion:reduce){ .rcard .trust summary::after{transition:none} }
   .rcard .rc-foot{margin-top:auto;padding-top:12px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);
     display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
   /* RS28: "Add to plan" is the card's main action — an accent button; ticked = solid "✓ In plan" */
@@ -921,7 +937,8 @@
     <li><b>Get a build plan</b> — hit <i>Generate plan</i> on the bar that appears. Replore turns your picks plus
       what you're building into a step-by-step prompt — no AI runs here, it hands the prompt to <b>your own</b> AI.</li>
     <li><b>Build it with your AI agent</b> — paste the plan into Claude Code, Codex, Cursor or any agent.
-      Want smarter search and a feature-by-feature plan from a whole PRD? <button type="button" class="link-btn" data-open="pluginModal">Use the plugin</button>.</li>
+      Want smarter search and a feature-by-feature plan from a whole PRD? <button type="button" class="link-btn" data-open="pluginModal">Use the plugin</button>.
+      Tip: add the free <a href="https://github.com/upstash/context7" target="_blank" rel="noopener noreferrer">Context7</a> MCP server to your agent so it reads each repo's current docs instead of guessing.</li>
   </ol>
   <p class="mut" style="margin-top:12px">Remember: stars are popularity, not quality, and a license is a plain summary, not legal advice.</p>
 </div></div>
@@ -992,6 +1009,9 @@
       account, only when you click it. <b>Open in Gemini</b> copies it and opens gemini.google.com; you paste it.</li>
     <li><b>Explore</b> links on a card (Diagram, Digest, Wiki, Browse, Edit) open gitdiagram.com, gitingest.com, deepwiki.com, github1s.com or
       github.dev at the repo's public name, only when you click one; your searches are never sent.</li>
+    <li><b>Safe to build on?</b> on a card, only when you open it: your browser asks GitHub's API about that repo, and our
+      trust check sends the repo's public name and language to OpenSSF Scorecard and Google's deps.dev (vulnerability data
+      from OSV.dev), without your IP address or your searches.</li>
     <li><b>Feedback</b> you send (title, type, message, and your email only if you add it) goes through
       <b>Web3Forms</b> (<code>api.web3forms.com</code>), an email-forwarding service, to hello@cardzo.co.in. Nothing is
       sent until you press Send.</li>
@@ -1022,6 +1042,6 @@
   <p class="mut rag-only" style="margin-top:12px" hidden><b>Hybrid search:</b> repos are ranked by your words and by what you mean, so "voice notes" also finds "speech-to-text". Repos our index finds that the word search missed are checked on GitHub before you see them.</p>
 </div></div>
 
-<script src="app.js?v=c40916a6d4" defer></script>
+<script src="app.js?v=7b3d308ab5" defer></script>
 </body>
 </html>

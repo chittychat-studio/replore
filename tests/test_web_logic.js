@@ -18,7 +18,7 @@ global.window = global;
 const s = {};
 new Function("document", "localStorage",
   code + "; this.keywordQueries=keywordQueries; this.exploreLinks=exploreLinks; this.rankByFit=rankByFit; this.fitScore=fitScore; this.whyRelevant=whyRelevant; this.esc=esc; this.lu=lu; this.freeText=freeText;" +
-  " this.keep=keep; this.ragRan=ragRan; this.hasDesc=hasDesc; this.descHtml=descHtml; this.tipUrlOk=tipUrlOk; this.clean=clean; this.harmful=harmful; this.harmfulRepo=harmfulRepo; this.prdFeatures=prdFeatures; this.trendingQuery=trendingQuery; this.trendRows=trendRows; this.feedbackUrl=feedbackUrl; this.feedbackPayload=feedbackPayload; this.agoText=agoText; this.cardHtml=cardHtml; this.recentKey=recentKey; this.recentFind=recentFind; this.recentAdd=recentAdd; this.CACHE_V=CACHE_V; this.bm25Scores=bm25Scores; this.repoText=repoText; this.rrfOrder=rrfOrder; this.hybridOrder=hybridOrder; this.confirmQueries=confirmQueries; this.ghQuery=ghQuery; this.sigTokens=sigTokens; this.resultSummary=resultSummary;").call(s, document, global.localStorage || {getItem:()=>null,setItem(){},removeItem(){}});
+  " this.keep=keep; this.ragRan=ragRan; this.hasDesc=hasDesc; this.descHtml=descHtml; this.tipUrlOk=tipUrlOk; this.clean=clean; this.harmful=harmful; this.harmfulRepo=harmfulRepo; this.prdFeatures=prdFeatures; this.trendingQuery=trendingQuery; this.trendRows=trendRows; this.feedbackUrl=feedbackUrl; this.feedbackPayload=feedbackPayload; this.agoText=agoText; this.cardHtml=cardHtml; this.recentKey=recentKey; this.recentFind=recentFind; this.recentAdd=recentAdd; this.CACHE_V=CACHE_V; this.bm25Scores=bm25Scores; this.repoText=repoText; this.rrfOrder=rrfOrder; this.hybridOrder=hybridOrder; this.confirmQueries=confirmQueries; this.ghQuery=ghQuery; this.sigTokens=sigTokens; this.resultSummary=resultSummary; this.trustRow=trustRow; this.trustHtml=trustHtml; this.ghShape=ghShape; this.lastPage=lastPage; this.installCmd=installCmd; this.snapHtml=snapHtml;").call(s, document, global.localStorage || {getItem:()=>null,setItem(){},removeItem(){}});
 
 // RS16: iOS excludes macOS
 // RS16: expansions are specific on-topic phrases, never a bare category (live regression: "website" -> "frontend framework"
@@ -266,3 +266,60 @@ console.log("prd ok:", f.join(" | "));
   ["", "noslash", "a/b/c", "a/..", "a/.", "o w/r", "a/b?x=1", "a/b#x", "\"a/b", "javascript:a/b"].forEach(n =>
     assert.deepStrictEqual(s.exploreLinks(n), [], n));
   console.log("explore ok"); }
+
+// RS53 trust check: helpers, anti-injection, saved results. A real escaper stands in for the fake DOM here.
+{ const realEl = document.createElement;
+  document.createElement = () => { const o = { set textContent(v) { this._t = String(v); },
+    get innerHTML() { return this._t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); } }; return o; };
+  try {
+    // counts from the Link header's rel="last"; none = items returned
+    const link = '<https://api.github.com/repositories/1/issues?labels=good+first+issue&state=open&per_page=1&page=2>; rel="next", ' +
+      '<https://api.github.com/repositories/1/issues?labels=good+first+issue&state=open&per_page=1&page=37>; rel="last"';
+    assert.strictEqual(s.lastPage(link, 1), 37); assert.strictEqual(s.lastPage(null, 1), 1); assert.strictEqual(s.lastPage("", 0), 0);
+    assert.strictEqual(s.lastPage('<https://x/y?per_page=1>; rel="last"', 1), 1, "per_page= is not page=");
+    // install commands: known ecosystems, safe names only (RX4: text, never run)
+    assert.strictEqual(s.installCmd("npm", "express"), "npm install express");
+    assert.strictEqual(s.installCmd("go", "github.com/gin-gonic/gin"), "go get github.com/gin-gonic/gin");
+    assert.strictEqual(s.installCmd("pypi", "requests; rm -rf /"), "");
+    assert.strictEqual(s.installCmd("npm", "$(curl x)"), ""); assert.strictEqual(s.installCmd("hasOwnProperty", "x"), "");
+    // GitHub answers -> shape
+    const gh = s.ghShape({ community: { s: 200, j: { files: { readme: {}, contributing: null, code_of_conduct: {} } } },
+      release: { s: 200, j: { tag_name: "v5.3.0", published_at: "2026-10-01T00:00:00Z" } }, gfi: { s: 200, j: [{}], link } });
+    assert.deepStrictEqual(gh, { limited: false, files: { readme: true, contributing: false, coc: true }, release: { tag: "v5.3.0", date: "2026-10-01" }, gfi: 37 });
+    assert.strictEqual(s.ghShape({ release: { s: 404 } }).release, "none");
+    assert.strictEqual(s.ghShape({ release: { s: 200, j: { tag_name: "<img src=x>", published_at: "2026-10-01" } } }).release, null);
+    assert.ok(s.ghShape({ community: { s: 403 } }).limited);
+    // full panel: values shown, hostile values dropped, failures said plainly (RS7)
+    const tr = { scorecard: { status: "ok", score: 8.9, maintained: 10 }, package: { status: "ok", system: "npm", name: "express", version: "5.3.0",
+      licenses: ["MIT"], advisories: ["GHSA-qw6h-vgh9-j6wx", "<script>alert(1)</script>"], advisoryCount: 2 } };
+    let h = s.trustHtml(gh, tr, "MIT", "expressjs/express");
+    assert.ok(h.includes("8.9/10") && h.includes("maintained 10/10") && h.includes("scorecard.dev/viewer/?uri=github.com/expressjs/express"));
+    assert.ok(h.includes("osv.dev/vulnerability/GHSA-qw6h-vgh9-j6wx") && h.includes("⚠ 2 known") && !h.includes("<script"));
+    assert.ok(h.includes("npm install express") && h.includes("37 good first issues") && h.includes("v5.3.0"));
+    assert.ok(!h.includes("Package license"), "same license as the repo: no extra line");
+    assert.ok(h.includes("doesn't change the ranking"));
+    h = s.trustHtml(gh, { scorecard: { status: "ok", score: 5 }, package: { ...tr.package, licenses: ["GPL-3.0"], advisories: [], advisoryCount: 0 } }, "MIT", "a/b");
+    assert.ok(h.includes("✓ none known") && h.includes("Package license") && h.includes("the repo says MIT"));
+    h = s.trustHtml({ limited: true }, null, "MIT", "a/b");   // function down + GitHub limit
+    assert.ok(h.includes("couldn't check") && h.includes("hourly limit") && !h.includes("/10"));
+    h = s.trustHtml(gh, { scorecard: { status: "none" }, package: { status: "none" } }, "MIT", "a/b");
+    assert.ok(h.includes("not scored by OpenSSF Scorecard yet") && h.includes("no published package matched"));
+    h = s.trustHtml(gh, { scorecard: { status: "ok", score: 7 }, package: { status: "skipped" } }, "MIT", "a/b");
+    assert.ok(!h.includes("Known vulnerabilities") && !h.includes("Install"), "no language -> no package lines");
+    h = s.trustHtml(gh, { scorecard: { status: "ok", score: 7 }, package: { status: "ok", system: "npm", name: "<x>", version: "1" } }, "MIT", "a/b");
+    assert.ok(!h.includes("&lt;x&gt;") && !h.includes("<x>"), "a malformed package name is dropped, not shown");
+    // the row: only for RS51-valid names; language only from the fixed list
+    assert.ok(s.trustRow({ name: "a/b", spdx: "MIT", lang: "Python" }).includes('data-lang="Python"'));
+    assert.ok(!s.trustRow({ name: "a/b", spdx: "MIT", lang: "COBOL" }).includes("data-lang"));
+    assert.ok(!s.trustRow({ name: "a/b", spdx: "MIT", lang: "constructor" }).includes("data-lang"));
+    assert.strictEqual(s.trustRow({ name: "a/..", spdx: "MIT" }), "");
+    assert.ok(s.cardHtml({ name: "a/b", stars: 1, spdx: "MIT", pushed: "2026-10-01", url: "https://github.com/a/b", desc: "", topics: [], lang: "Go" }, 0, []).includes('class="trust"'));
+  } finally { document.createElement = realEl; }
+  // RS53d: a saved copy never keeps an opened panel
+  const body = { innerHTML: "<ul>secret</ul>", attrs: { "data-done": "1" }, removeAttribute(k) { delete this.attrs[k]; } };
+  const det = { attrs: { open: "" }, removeAttribute(k) { delete this.attrs[k]; }, querySelector: () => body };
+  const root = { cloneNode: () => ({ innerHTML: "saved", querySelectorAll: q => q === "details.trust" ? [det] : [] }) };
+  assert.strictEqual(s.snapHtml(root), "saved");
+  assert.ok(!("open" in det.attrs) && body.innerHTML === "" && !("data-done" in body.attrs));
+  assert.strictEqual(s.CACHE_V, "13");
+  console.log("trust ok"); }
