@@ -959,7 +959,9 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   Inter Tight (800), the second half Instrument Serif (self-hosted, SIL OFL) in a muted tone; the same heavy Inter Tight
   replaces Anton everywhere else (logo, headings, Trending numbers, card avatars) so the site uses one family
   (owner: "maintain similar font throughout site"). The stage rail sits right beside the bot. On arrival the bot peeks
-  out from behind the globe with a head tilt, then hops out to its spot (reduced motion: no peek). No gradients or glass rule is
+  out from behind the globe with a head tilt, then hops out to its spot (reduced motion: no peek). The bot is named Leo; after the peek a speech bubble beside his head says
+  "Hello there! I'm Leo. Let's explore what free GitHub repos have to offer for your idea. Then I'll help you plan it."
+  (owner wording 2026-10-23), and "On it! Searching GitHub for you…" while a real search runs. No gradients or glass rule is
   lifted for this stage only, by the owner's pick.
 - **RS66** No em dashes in site copy (owner 2026-10-23: "check no em dashes across site"). Nothing a visitor reads on
   the web page (text, titles, tooltips, aria labels, the plan prompt) uses an em dash; a colon, comma, full stop or

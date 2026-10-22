@@ -1400,6 +1400,7 @@ function buildLiveDemo(host){
       '<div class="st-pair" aria-hidden="true">'+
         (wide?'<div class="st-g"><canvas class="ld-globe"></canvas><span class="st-sh"></span></div>':'')+
         '<div class="st-b"><img class="st-bot" src="scout-hero.webp" alt="" width="180" height="184" decoding="async"><span class="st-sh"></span></div></div>'+
+      '<p class="st-say"><b>Hello there! I’m Leo.</b><span class="st-say-t">Let’s explore what free GitHub repos have to offer for your idea. Then I’ll help you plan it.</span></p>'+   // RS65: Leo, the scout
       '<div class="st-ctrl"><button type="button" class="st-arrow st-prev" aria-label="Previous example search">&lsaquo;</button>'+
         '<b class="st-label" aria-hidden="true"></b>'+
         '<button type="button" class="st-arrow st-next" aria-label="Next example search">&rsaquo;</button></div>'+
@@ -1411,7 +1412,9 @@ function buildLiveDemo(host){
       label=host.querySelector(".st-label"), bot=host.querySelector(".st-bot"),
       rail=[].slice.call(host.querySelectorAll(".st-rail li"));
   if(globe) startAsciiGlobe(globe, reduce);
-  var sb=bot&&bot.parentNode;
+  var sb=bot&&bot.parentNode, say=host.querySelector(".st-say"), sayT=host.querySelector(".st-say-t"), SAY=sayT?sayT.textContent:"";
+  function speak(txt){ if(sayT) sayT.textContent=txt; if(say&&say.classList) say.classList.add("on"); }
+  setTimeout(function(){ speak(SAY); }, reduce?0:2700);   // after the peek
   if(bot&&globe&&!reduce&&bot.classList&&sb&&sb.classList&&bot.addEventListener){ bot.classList.add("peek"); sb.classList.add("peeking");   // RS65: peek, then hop out
     bot.addEventListener("animationend",function(){ bot.classList.remove("peek"); sb.classList.remove("peeking"); },{once:true}); }
   var timers=[], k=0, paused=false;
@@ -1464,10 +1467,10 @@ function buildLiveDemo(host){
   var busy=false;
   function onSearch(){ var on=document.body.classList.contains("searching");
     if(on&&!busy){ busy=true; clear(); var qv=document.getElementById("q");
-      typed.textContent=(qv&&qv.value||"").trim(); stage(0,"Searching GitHub"); pose("search"); if(cur) cur.classList.remove("on","click");
+      typed.textContent=(qv&&qv.value||"").trim(); stage(0,"Searching GitHub"); pose("search"); speak("On it! Searching GitHub for you…"); if(cur) cur.classList.remove("on","click");
       [].forEach.call(deck.children,function(c){ c.classList.add("out"); });
       later(function(){ stage(1,"Ranking by fit"); }, 1400); later(function(){ stage(2,"Licence check"); }, 2800); }
-    else if(!on&&busy){ busy=false; if(!document.body.classList.contains("has-results")&&host.isConnected){ paused=false; run(); } } }
+    else if(!on&&busy){ busy=false; speak(SAY); if(!document.body.classList.contains("has-results")&&host.isConnected){ paused=false; run(); } } }
   if(window.MutationObserver) new MutationObserver(onSearch).observe(document.body,{attributes:true,attributeFilter:["class"]});
   host.__stopDemo=function(){ paused=true; clear(); };   // the globe keeps turning on the stage; it stops itself once removed
   host.__playDemo=function(){ if(paused){ paused=false; run(); } };

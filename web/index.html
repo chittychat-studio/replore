@@ -930,6 +930,17 @@
     100%{transform:none;clip-path:inset(0 0 0 0)}
   }
   @media (prefers-reduced-motion:reduce){ .st-bot.peek{animation:none} }
+  /* RS65: Leo's speech bubble, beside his head; pops in after the peek */
+  .st-say{position:absolute;z-index:3;top:0;left:calc(50% + var(--gs,262px) * .45);max-width:250px;margin:0;padding:10px 14px;
+    text-align:left;font-size:13.5px;line-height:1.4;color:var(--ink);background:var(--card);border:1px solid var(--line);
+    border-radius:14px 14px 14px 4px;box-shadow:0 10px 24px rgba(var(--shadow),.18);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    opacity:0;transform:translateY(6px) scale(.96);transform-origin:0 100%;transition:opacity .35s,transform .45s cubic-bezier(.3,1.4,.5,1)}
+  .st-say.on{opacity:1;transform:none}
+  .st-say b{display:block;font-weight:700}
+  .st-say-t{color:var(--muted)}
+  @media (min-width:1000px){ .st-rail{top:calc(var(--gs) * .5)} }
+  .demo-slot .st-say{left:calc(50% + 50px);top:4px;max-width:170px;font-size:12.5px}
+  @media (prefers-reduced-motion:reduce){ .st-say{transition:none} }
 </style>
 </head>
 <body>
@@ -1276,6 +1287,6 @@
   <p class="mut rag-only" style="margin-top:12px" hidden><b>Hybrid search:</b> repos are ranked by your words and by what you mean, so "voice notes" also finds "speech-to-text". Repos our index finds that the word search missed are checked on GitHub before you see them.</p>
 </div></div>
 
-<script src="app.js?v=e0177ca976" defer></script>
+<script src="app.js?v=5511edb07d" defer></script>
 </body>
 </html>
