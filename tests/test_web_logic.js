@@ -321,7 +321,7 @@ console.log("prd ok:", f.join(" | "));
   const root = { cloneNode: () => ({ innerHTML: "saved", querySelectorAll: q => q === "details.trust" ? [det] : [] }) };
   assert.strictEqual(s.snapHtml(root), "saved");
   assert.ok(!("open" in det.attrs) && body.innerHTML === "" && !("data-done" in body.attrs));
-  assert.strictEqual(s.CACHE_V, "13");
+  assert.strictEqual(s.CACHE_V, "14");   // 14: one filter row (RS29d)
   console.log("trust ok"); }
 
 // RS56: the shared web/plugin cases — GitHub shaping and the panel's wording (tests/test_trust.py runs the same file)
