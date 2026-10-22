@@ -808,10 +808,19 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
     pick. Replore never calls, installs or configures it (RS1, RS11, RX4 unchanged).
 
 
-- **RS53** Tagline (owner decision 2026-10-22). Replore is described as **"the repo scout for vibe coders"** with the
+- **RS54** Tagline (owner decision 2026-10-22; numbered RS53 in #72, renumbered because the trust check #71 holds RS53). Replore is described as **"the repo scout for vibe coders"** with the
   line **"Find it before you build it."** It is not called an agent: it finds and explains repos and never writes code
   into the user's project (RX4). Used in the page `<title>`, its meta description, the hero pill (replacing "AI-powered
   repo finder"), the hero subline, the top of the README, and the plugin and marketplace descriptions.
+
+- **RS55** No emoji or symbol glyphs as icons (owner 2026-10-22: "I don't want any icons/emojis which will give it out
+  as AI slop"). The web page shows no colour emoji (U+1F000–U+1FAFF, U+2600–U+27BF) and no symbol characters standing in
+  for icons (✦ ★ ⑂ ✕ ✓ ✗ ☑ ☐ ☰ ⚙ ↗ ⧉ ＋ ☼ ☾ ▸). Labels that had one are plain text. Where a control needs a mark, it
+  uses one hand-drawn line-icon set: a 16px grid, 1.6 stroke, round caps, `currentColor`, `aria-hidden`, defined once
+  in `web/app.js` (`ICONS` / `ico()`) and inlined in the same style in `web/index.html`. Icon-only controls keep an
+  `aria-label`. The tab icon is `web/favicon.svg`, the header's compass logo with light and dark colours. The four-point
+  sparkle shape is gone from the hero backdrop. Illustrations (hero, how-it-works, empty states, share image) are a
+  separate step and come from one commissioned style, not stock emoji. A test fails if a banned character is back.
 
 ## RX — Deliberately excluded (v0.1)
 

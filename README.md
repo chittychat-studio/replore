@@ -56,7 +56,7 @@ What you can do there:
 - **Search in plain words.** Describe what you're building; filters (tech stack, minimum stars) are optional.
   Repos an AI check thinks don't fit move to the end, under "Less likely to fit".
 - **Read each result at a glance.** Every card shows stars and forks, a "Matches:" line with the words it matched,
-  what the repo does, when it was last updated, and one license verdict ("✅ Free for commercial use", "⚠ Must
+  what the repo does, when it was last updated, and one license verdict ("Free for commercial use", "Must
   open-source your app", …). Filter to **Free for commercial use** or **Starters** (ready-made templates).
 - **Look inside a repo before you pick it.** Each card has five buttons under the repo name, each opening a free tool
   in a new tab (SPEC RS51):
@@ -73,13 +73,13 @@ What you can do there:
 - **Find similar repos.** Paste a repo you like (`owner/repo` or its GitHub link) and get others like it.
 - **Match a whole plan.** Upload a plan or PRD; it's read in your browser (never uploaded) and searched feature by
   feature.
-- **Turn picks into a build plan.** Tick **＋ Add to plan** on the repos you want (or **Select all shown**), then
+- **Turn picks into a build plan.** Tick **Add to plan** on the repos you want (or **Select all shown**), then
   **Copy prompt**, **Open in Claude**, **Open in ChatGPT** or **Open in Gemini** to have your own AI write the plan.
   The page itself calls no AI and holds no key for this. Tip: give your agent the free
   [Context7](https://github.com/upstash/context7) MCP server so it reads each repo's current docs (SPEC RS53e).
-- **Browse what's popular.** The **🔥 Trending** view lists Rising, Most stars and Most forks repos without a search.
+- **Browse what's popular.** The **Trending** view lists Rising, Most stars and Most forks repos without a search.
 - **Pick up where you left off.** A refresh brings your last results back; repeat searches within an hour come from
-  your browser instead of GitHub. Tap ✕ or the logo to clear them.
+  your browser instead of GitHub. The search bar's clear button or the logo clears them.
 - Light and dark themes, keyboard and screen-reader friendly, and a **Feedback** form for bugs and ideas.
 
 A static page at `web/index.html` powers it. It auto-deploys (Cloudflare Pages) to [replore.cardzo.co.in](https://replore.cardzo.co.in)
@@ -261,7 +261,7 @@ off-by-default local safety log — are in [`PRIVACY.md`](PRIVACY.md).
 Repository data from the GitHub API. Security scores from [OpenSSF Scorecard](https://scorecard.dev); package and
 vulnerability data from [deps.dev](https://deps.dev) and [OSV.dev](https://osv.dev). Replore is not affiliated with or endorsed by GitHub. GitHub® is a trademark of GitHub, Inc.
 
-Find Replore useful? The web page has a Tip button next to ★ Star, and a QR code in the plan window (both Stripe). Tips are optional, unlock nothing, and help us keep Replore free and fund more open-source projects.
+Find Replore useful? The web page has a Tip button next to Star, and a QR code in the plan window (both Stripe). Tips are optional, unlock nothing, and help us keep Replore free and fund more open-source projects.
 
 ## License
 
