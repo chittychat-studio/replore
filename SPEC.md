@@ -748,7 +748,11 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   SHA with the tag as a comment (`@<40 hex>  # v4`), so a moved tag cannot change what CI runs. Dev dependencies are pinned
   exactly (`pytest==9.1.1`, which supports Python 3.10–3.14). The repo's own Claude Code instructions live in
   `.claude/CLAUDE.md`, not at the plugin root, where `claude plugin validate` warned that a root `CLAUDE.md` is not loaded
-  as plugin context. A test checks all four.
+  as plugin context. **Required check (2026-10-22):** the `protect main` ruleset requires a status check named `ci`,
+  but the workflow's jobs reported only as `test (ubuntu-latest)` / `test (windows-latest)`, so the check never
+  arrived and every PR (#68–#74) needed the admin bypass. `ci.yml` now ends with a job named `ci` that needs `test`,
+  runs `if: always()` (a skipped required check counts as passing on GitHub, so it must never be skipped) and fails
+  unless every test job succeeded. A test checks all five.
 
 - **RS51** Explore links on result cards (web). Right under the repo name (the GitHub link) each card has a row of
   five equal-width buttons (at least 34px tall, accent-tinted, so they read as clickable) that open in a new tab (`rel="noopener noreferrer"`): Diagram → `https://gitdiagram.com/<owner>/<repo>`, Digest →
