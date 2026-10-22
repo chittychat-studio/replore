@@ -324,6 +324,14 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   licences and 0 otherwise, so the two chips could never differ (the paid-vs-free distinction is a copyleft
   nuance kept in the card verdict/tooltip, not two redundant filters). An empty filtered set shows a "clear
   filter" message. Filters apply only to the single top-matches list, not the grouped PRD view.
+- **RS29d** One filter row (owner 2026-10-22: "do we really need both these filters separate?"). The result filters
+  are two on/off switches, "Free for commercial use" and "Starters", which can be combined; with neither on, every result
+  shows, so there is no "All" chip and no separate "Clear filter" button (tap a switch again to turn it off; an empty
+  filtered set still offers "Clear filter"). A switch that is on is tinted with a check and has `aria-pressed="true"`.
+  In the Trending view the list switcher (Rising / Most stars / Most forks) is a segmented control at the start of the
+  same row, not a second row; its one-line note sits under the row. On phones the switcher takes the full width.
+  This supersedes the "All / … / Starters" chip row described in RS29.
+
 - **RS29c** *(retired)* A per-results "this is keyword search" banner was shown, then removed at the owner's
   call: each card's "Matches your words" line already shows the match is lexical, and the plugin stays one click
   away (menu + the "Want every suitable repo?" banner). The "About the results" modal states how the page searches: needs-first keyword search (RS16a), then an AI check that moves repos that don't fit to "Less likely to fit" (RS34; it never hides them), and the one-hour repeat cache (RS43). No copy on the page says there is no AI or no relevance check. The hero carries a small pill "✦ AI-powered repo finder" (owner decision 2026-10-14, over the maintainer's note that the AI only filters results, it doesn't find or rank them, and that results are plain keyword search when the AI check is unavailable); it folds away with the tagline once results show on single-column screens.
@@ -856,6 +864,30 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   numbers and ordinary symbols such as © or # stay. Display only: ranking, the harm check and the build-plan prompt use
   the description as GitHub sent it, so web/plugin parity (RS29b) is unchanged. A description that is only emoji
   counts as empty and shows the RS45 "no description" line.
+
+- **RS57** Link preview and README banner (owner 2026-10-22: rich look, no AI-slop art). The page carries Open Graph and
+  Twitter card tags (title and description from RS54) pointing at `https://replore.cardzo.co.in/og.jpg` (1200×630, JPEG,
+  under 250 KB because WhatsApp skips previews over ~300 KB). The README opens with `docs/banner.png` (1280×640), which
+  the owner can also set as the GitHub social preview (repo Settings → Social preview; there is no API for it). Both are
+  rendered from one source, `ops/share/card.html`: brand colours, the site's own fonts, a topographic "scout's map"
+  backdrop and a stack of result cards drawn like the real UI (no real repo names, no emoji, no generated art), by
+  `python ops/render_share.py` (headless Chrome or Edge, 60 s limit per render, throwaway profile). A commissioned
+  illustration can replace the cards later without changing the tags.
+
+- **RS18a** Harmful-repo patterns need context (review 2026-10-22: bare `crack`, `ddos` and `keygen` dropped ordinary repos
+  such as "Crack the coding interview" and "Anti-DDoS protection" and counted them as harmful). A repo is dropped for
+  piracy or attacks only when the word comes with that context: crack/cracked + software, Windows, Office, Adobe, games,
+  apps or licences (or "cracked version/apk", "activation/serial/software crack", "warez"); keygen within 40 characters
+  of crack, serial, patch or activation; DDoS + tool, script, bot, botnet, panel or flooder, IP stressers and booters,
+  or "DDoSing a website/server". `scout.py` HARM and `web/app.js` HARM stay character-identical, and
+  `tests/fixtures/harm_cases.json` (must drop / must keep) is checked against both engines.
+
+- **RS34h** Keys only to Replore's hosts (review 2026-10-22: the live-eval workflow's `https://*.pages.dev/...` glob
+  matched any host, so a dispatched run could send `REPLORE_EVAL_KEY` anywhere; `ops/rag_smoke.py` sent the key to
+  whatever URL it was given and followed redirects with it). The eval and plugin keys are sent only to
+  `https://replore.cardzo.co.in`, `https://replore.pages.dev` or one preview label under it (`<x>.replore.pages.dev`),
+  with no port. The workflow checks the endpoint with an anchored regex; `evals/relevance_live.mjs` refuses other
+  hosts and treats a redirect as an error; `ops/rag_smoke.py` omits the key for other hosts and never follows redirects.
 
 ## RX — Deliberately excluded (v0.1)
 

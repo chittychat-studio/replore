@@ -18,8 +18,8 @@ var STARTER_MIN_SHARE=0.10, MAX_QUERIES=4, MAX_AGE_MONTHS=24;
 var SVC="(whats ?app|instagram|facebook|snapchat|telegram|gmail|tiktok|email|wifi|someone'?s? account)";
 var HARM=[new RegExp("hack(ing|er)?\\s+(of\\s+|a\\s+|an\\s+|the\\s+)?"+SVC,"i"),
  new RegExp(SVC+"\\s+(account\\s+)?(hack|hacking|hacker|cracker)","i"),/account takeover/i,
- /stalkerware|spyware/i,/credential stealer|password stealer|stealer\b/i,/\bkeygen|crack(ed)?\b/i,
- /\bddos\b/i,/game (cheat|hack)|aimbot|wallhack/i,/free (premium|robux|v-?bucks|coins) generator/i];
+ /stalkerware|spyware/i,/credential stealer|password stealer|stealer\b/i,/\bkeygens?\b.{0,40}\b(crack|serial|patch|activat)|\b(crack|serial|patch|activat)\w*\b.{0,40}\bkeygens?\b/i,/\bcrack(ed|s)?\s+(for\s+|of\s+)?(paid\s+|premium\s+)?(software|windows|office|adobe|photoshop|games?|apps?|licen[cs]es?)\b|\bcracked\s+(version|apk|software|games?|apps?)\b|\b(software|licen[cs]e|activation|serial|game)\s+crack(s|ing|er)?\b|\bwarez\b/i,
+ /\bddos\s+(attack\s+)?(tool|script|bot|botnet|panel|flooder)s?\b|\b(ip\s+)?(stresser|booter)s?\b|\bddos(ing)?\s+(any\s+|a\s+|the\s+)?(website|server|ip|target)s?\b/i,/game (cheat|hack)|aimbot|wallhack/i,/free (premium|robux|v-?bucks|coins) generator/i];
 var HARM_INTENT=[/\bhack (into|someone|my (ex|girlfriend|boyfriend|wife|husband|partner))/i,
  /steal (passwords|accounts|credentials|data)/i,/spy on\b/i,/crack (paid|licensed) software/i,
  /take down (a )?(website|server|service)/i];
@@ -382,10 +382,12 @@ function attachTilt(container, reduce){
 var PLUGIN_CTA='<p class="cta-inline">MORE_LINENeed every match? <button type="button" class="link-btn" data-open="pluginModal">Use the plugin →</button></p>';
 
 // result-side filter chips (filter the already-fetched cards, no new API calls — RS29)
-var RES_FILTERS=[["all","All"],["com","Free for commercial use"],["starter","Starters"]];
+// RS29d: one row. Each filter is an on/off switch (both can be on); none on = every result, so there is no "All" chip.
+var RES_FILTERS=[["com","Free for commercial use"],["starter","Starters"]];
+function resFlags(){ var f=window.__resFilter||"all"; return {com:f.indexOf("com")>=0, starter:f.indexOf("starter")>=0}; }
 function filterBar(){ return '<div class="res-filter" role="group" aria-label="Filter results">'+
-  RES_FILTERS.map(function(f,i){ return '<button type="button" class="rfilter'+(i===0?' on':'')+'" data-f="'+f[0]+'">'+f[1]+'</button>'; }).join("")+
-  '<button type="button" class="rfilter rclear" id="resClearBtn" data-f="all" title="Show all results" hidden>'+ico("x")+'Clear filter</button>'+
+  RES_FILTERS.map(function(f){ return '<button type="button" class="rfilter" data-f="'+f[0]+'" aria-pressed="false">'+
+    '<span class="rf-on">'+ico("check")+'</span>'+f[1]+'</button>'; }).join("")+
   '<button type="button" class="rsel" id="resSelAll" title="Tick every repo shown, for a build plan (RS28a)">Select all shown</button>'+
   '</div>'; }
 
@@ -413,10 +415,10 @@ function render(top, queries, excluded, totalMatches, qtokens, heading, note, ga
 // show/hide result cards by the active filter + reveal-limit (client-side only, no API calls)
 function applyResultFilter(){
   var out=document.getElementById("out"); if(!out || !out.querySelector(".res-filter")) return;  // only the top-matches view
-  var cards=out.querySelectorAll(".rcard"), f=window.__resFilter||"all", limit=window.__resLimit||10, shown=0, matched=0;
+  var cards=out.querySelectorAll(".rcard"), fl=resFlags(), limit=window.__resLimit||10, shown=0, matched=0;
   for(var i=0;i<cards.length;i++){ var c=cards[i];
-    var ok = (f==="all" || (f==="com"&&c.getAttribute("data-com")==="1")
-      || (f==="starter"&&c.getAttribute("data-starter")==="1"));   // RS34: left-out repos are last, so they reveal after the kept ones
+    var ok = (!fl.com || c.getAttribute("data-com")==="1")
+      && (!fl.starter || c.getAttribute("data-starter")==="1");   // RS29d: switches combine; RS34: left-out repos reveal last
     if(ok){ matched++; if(shown<limit){ if(c.style.display==="none"){ c.style.display=""; if(inView(c)){ c.classList.remove("reveal"); void c.offsetWidth; c.classList.add("reveal"); } else queueReveal(c); }
         c.style.display=""; shown++; } else c.style.display="none"; }
     else c.style.display="none";
@@ -425,8 +427,8 @@ function applyResultFilter(){
   var ld=out.querySelector(".left-div"); if(ld) ld.hidden = ![].some.call(out.querySelectorAll('.rcard[data-left="1"]'), function(c){ return c.style.display!=="none"; });
   var more=out.querySelector("#resMore");
   if(more){ if(matched>shown){ more.hidden=false; more.textContent="Showing "+shown+" of "+matched+" · scroll for more"; } else more.hidden=true; }
-  var chips=out.querySelectorAll(".rfilter"); for(var j=0;j<chips.length;j++) chips[j].classList.toggle("on", chips[j].getAttribute("data-f")===f);
-  var cb=out.querySelector("#resClearBtn"); if(cb) cb.hidden=(f==="all");  // show "Clear filter" only when a filter is active
+  var chips=out.querySelectorAll(".rfilter");
+  for(var j=0;j<chips.length;j++){ var on=!!fl[chips[j].getAttribute("data-f")]; chips[j].classList.toggle("on",on); chips[j].setAttribute("aria-pressed",String(on)); }
   syncSelAll();
 }
 // "Select all shown" (RS28a): acts only on visible cards — respects the active filter and scroll-reveal
@@ -982,7 +984,9 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
   // result-filter chips + show-more + clear (delegated, survives re-render)
   out.addEventListener("click",function(e){ var t=e.target;
     var fb=t.closest&&t.closest(".rfilter");
-    if(fb){ window.__resFilter=fb.getAttribute("data-f"); window.__resLimit=10; applyResultFilter(); checkMore(); return; }
+    if(fb){ var fl=resFlags(), k=fb.getAttribute("data-f"); fl[k]=!fl[k];   // RS29d: a switch, tap again to turn it off
+      window.__resFilter=(fl.com&&fl.starter)?"com+starter":fl.com?"com":fl.starter?"starter":"all";
+      window.__resLimit=10; applyResultFilter(); checkMore(); return; }
     if(t.closest&&t.closest(".trend-tab")){ showTrending(t.closest(".trend-tab").getAttribute("data-trend")); return; }
     if(t.closest&&t.closest("#resClear")){ window.__resFilter="all"; window.__resLimit=10; applyResultFilter(); checkMore(); return; }
     if(t.closest&&t.closest("#resSelAll")){ var bx=shownPickBoxes(), all=bx.every(function(x){ return x.checked; });
@@ -1191,11 +1195,11 @@ async function showTrending(kind){
     var got=await fetchTrending(kind); if(gen!==window.__runGen) return;
     var t=trendRows(got.items, kind);
     out.innerHTML=render(t.rows,[got.q],t.excluded,t.rows.length,[],"Trending on GitHub","",null);
-    var head=out.querySelector(".res-head");
-    if(head) head.insertAdjacentHTML("afterend",'<div class="trend-tabs" role="tablist" aria-label="Trending lists">'+
+    var bar=out.querySelector(".res-filter");   // RS29d: the list switcher opens the filter row, the note sits under it
+    if(bar){ bar.insertAdjacentHTML("afterbegin",'<div class="trend-tabs" role="tablist" aria-label="Trending lists">'+
       Object.keys(TREND_TABS).map(function(k){ return '<button type="button" class="trend-tab'+(k===kind?' on':'')+'" data-trend="'+k+
-        '" role="tab" aria-selected="'+(k===kind)+'">'+TREND_TABS[k]+'</button>'; }).join("")+'</div>'+
-      '<p class="res-note mut">'+esc(TREND_NOTE[kind])+'</p>');
+        '" role="tab" aria-selected="'+(k===kind)+'">'+TREND_TABS[k]+'</button>'; }).join("")+'</div><span class="rf-sep" aria-hidden="true"></span>');
+      bar.insertAdjacentHTML("afterend",'<p class="res-note mut trend-note">'+esc(TREND_NOTE[kind])+'</p>'); }
     out.setAttribute("data-gate","trending");
     animateCards(out); initResultFilter(); st.textContent=""; saveResults(); syncClearQ();
   }catch(e){ if(gen!==window.__runGen) return; st.textContent=""; out.innerHTML='<div class="panel"><p class="err">'+esc(e.message)+'</p></div>'; }
@@ -1341,7 +1345,7 @@ function tipUrlOk(u, host){ u=String(u||"");
 (function(){ if(typeof location==="undefined" || !tipUrlOk(TIP_URL, location.hostname)) return;
   document.querySelectorAll(".tip-link").forEach(function(a){ a.href=TIP_URL; });
   document.querySelectorAll(".tip-el").forEach(function(el){ el.hidden=false; }); })();
-var LAST="findrepo_last", CACHE_V="13";   // 13: cards carry the trust row (RS53); 12: Wiki (DeepWiki) Explore button; 11: cards carry Explore links (RS51); 10: no inline onclick (RS49)  // bump when saved markup changes, so stale caches are dropped
+var LAST="findrepo_last", CACHE_V="14";   // 14: one filter row, no "All" chip (RS29d); 13: cards carry the trust row (RS53); 12: Wiki (DeepWiki) Explore button; 11: cards carry Explore links (RS51); 10: no inline onclick (RS49)  // bump when saved markup changes, so stale caches are dropped
 // RS43 A: the visitor's own last 10 searches for 1 hour, in their browser only. Pure functions (tested) + thin wrappers.
 var RECENT="replore_recent", RECENT_TTL_MS=3600000, RECENT_MAX=10;
 function recentKey(f){ return JSON.stringify([String(f.q||"").trim().toLowerCase().replace(/\s+/g," "), f.platform||"", String(f.minstars||""),

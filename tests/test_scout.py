@@ -722,8 +722,9 @@ def test_web_page_is_safe_static(monkeypatch):
     assert "Generate plan" in html and "Build it with your AI agent" in html
     # RS27a: similar-repo requires text and is narrowed by it (no silent drop); "find similar" alone is blocked
     assert "RS27a" in html and "· matching" in html and "Add a few words too" in html
-    # RS29: a persistent "Clear filter" button appears when a non-All filter is active
-    assert 'id="resClearBtn"' in html and "Clear filter" in html
+    # RS29d: two on/off filters, no "All" chip; an empty filtered set still offers "Clear filter"
+    assert "function resFlags" in html and 'aria-pressed="false"' in html and '["all","All"]' not in html
+    assert 'id="resClear"' in html and "Clear filter" in html
     # search-bar ✕ resets everything (text, similar repo, filters, picks, results) — shared with the logo
     assert 'id="clearQ"' in html and "function resetAll" in html and 'addEventListener("click",resetAll)' in html
     # light/dark toggle (RS24)
@@ -910,7 +911,7 @@ def test_privacy_notice_matches_what_the_code_does():
         assert banned not in html, banned
     # only these hosts are contacted; PRIVACY.md names each of them
     hosts = set(re.findall(r"https://([a-z0-9.-]+)", html))
-    allowed = {"api.github.com", "github.com", "claude.ai", "claude.com", "replore.pages.dev", "cardzo.co.in", "chatgpt.com", "gemini.google.com", "api.web3forms.com", "groq.com", "www.cloudflare.com", "challenges.cloudflare.com", "buy.stripe.com", "gitdiagram.com", "gitingest.com", "deepwiki.com", "github1s.com", "github.dev",
+    allowed = {"api.github.com", "github.com", "claude.ai", "claude.com", "replore.pages.dev", "cardzo.co.in", "chatgpt.com", "gemini.google.com", "api.web3forms.com", "groq.com", "www.cloudflare.com", "challenges.cloudflare.com", "buy.stripe.com", "replore.cardzo.co.in", "gitdiagram.com", "gitingest.com", "deepwiki.com", "github1s.com", "github.dev",
                "scorecard.dev", "osv.dev"}  # RS53 trust links (navigations); RS34/RS34a provider terms, RS34c Turnstile, RS44 tips, RS51 Explore links
     assert hosts <= allowed, hosts - allowed
     for named in ("api.github.com", "Cloudflare", "claude.ai", "security.log", "200 characters", "off by default",
@@ -1015,3 +1016,41 @@ def test_spec_rule_ids_are_unique():
     ids = re.findall(r"^\s*- \*\*(R[SX]\d+[a-z]?)\b", spec, re.M)
     dupes = sorted({i for i in ids if ids.count(i) > 1})
     assert len(ids) > 50 and not dupes, f"duplicate SPEC rule IDs: {dupes}"
+
+
+def _jpeg_size(data):
+    """(width, height) from a baseline or progressive JPEG's SOF marker, standard library only."""
+    i = 2
+    while i < len(data):
+        if data[i] != 0xFF:
+            i += 1
+            continue
+        marker, seg = data[i + 1], int.from_bytes(data[i + 2:i + 4], "big")
+        if marker in (0xC0, 0xC1, 0xC2):
+            return int.from_bytes(data[i + 7:i + 9], "big"), int.from_bytes(data[i + 5:i + 7], "big")
+        i += 2 + seg
+    return None
+
+
+def test_link_preview_tags_and_image():
+    """RS57: Open Graph / Twitter tags point at a 1200x630 JPEG small enough for WhatsApp; README shows the banner."""
+    html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
+    for tag in ('property="og:title"', 'property="og:description"', 'property="og:url"', 'name="twitter:card" content="summary_large_image"',
+                'property="og:image" content="https://replore.cardzo.co.in/og.jpg"', 'name="twitter:image" content="https://replore.cardzo.co.in/og.jpg"'):
+        assert tag in html, tag
+    og = (ROOT / "web" / "og.jpg").read_bytes()
+    assert og[:2] == b"\xff\xd8" and len(og) < 250_000 and _jpeg_size(og) == (1200, 630)
+    assert (ROOT / "docs" / "banner.png").read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
+    assert "](docs/banner.png)" in (ROOT / "README.md").read_text(encoding="utf-8")
+    assert (ROOT / "ops" / "share" / "card.html").exists()
+
+
+def test_harm_filter_shared_cases():
+    """RS18, RS29b: piracy/attack tools are dropped; ordinary repos that merely say 'crack', 'ddos' or 'keygen' are kept.
+    The same file is checked against web/app.js in tests/test_web_logic.js."""
+    fx = json.loads((ROOT / "tests" / "fixtures" / "harm_cases.json").read_text(encoding="utf-8"))
+    assert [d for d in fx["harmful"] if not scout.harmful_repo(d)] == []
+    assert [d for d in fx["fine"] if scout.harmful_repo(d)] == []
+    js = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
+    for p in scout.HARM[2:]:   # the first two are built from the service list; the rest must be character-identical
+        assert "/" + p.pattern + "/i" in js, p.pattern
