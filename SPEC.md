@@ -288,6 +288,15 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   A short interview gives the user's AI the facts the search can't (audience, must-haves, hosting, timeline), so the
   plan fits better. Trade-off accepted: the plan arrives one reply later. Exactly one round of questions, so the
   hand-off never turns into an open-ended chat before the plan.
+- **RS28h** Show it before you write it (owner request 2026-10-23, web and plugin). After the RS28d answers and
+  before the PRD, the user's AI makes reference images or a simple design mockup of the main screens (an artifact,
+  canvas, HTML page or image, whichever it can make) and waits for the user to approve or ask for changes; the PRD is
+  written only after approval and matches what was approved. The web plan prompt says: "After my answers and before
+  the PRD, show me what the app will look like: make reference images or a simple design mockup of the main screens
+  (an artifact, canvas, HTML page or image, whichever you can make), then wait for me to approve it or ask for
+  changes. Write the PRD only after I approve, and match what I approved." The plugin skill gives the same order when
+  the user asks it to write a plan or PRD from the picks. Why: a visual is approved in seconds and catches a wrong
+  idea before a long PRD is built on it. Replore still makes no model call (RS1): the user's own AI makes the visuals.
 - **RS28e** Role line (owner wording 2026-10-14). The plan prompt opens with: "You are the principal architect for
   my vibe coding app, with 15+ years of experience building similar apps." The owner first proposed "my million
   dollar startup"; replaced because most users build small projects, and inflated stakes push the AI to plan for

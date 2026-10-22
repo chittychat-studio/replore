@@ -1014,7 +1014,10 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
       "If no repo above covers a feature, list it under GAPS instead of stretching a repo to fit.\n\n"+   // RS28c
       "If you have the Context7 MCP server, use it to read each USE repo's current docs before you pick versions or APIs.\n\n"+   // RS53e
       "Before you write anything: ask me 5 short questions that would most improve this plan, all in one numbered "+
-      "message, then wait for my answers.";   // RS28d
+      "message, then wait for my answers.\n\n"+   // RS28d
+      "After my answers and before the PRD, show me what the app will look like: make reference images or a simple "+
+      "design mockup of the main screens (an artifact, canvas, HTML page or image, whichever you can make), then wait "+
+      "for me to approve it or ask for changes. Write the PRD only after I approve, and match what I approved.";   // RS28h
   }
   if(clearBtn) clearBtn.addEventListener("click",function(){
     var cbs=out.querySelectorAll(".pick-cb"); for(var i=0;i<cbs.length;i++) cbs[i].checked=false;
