@@ -191,8 +191,11 @@
   .ld-lic{justify-self:start;transform:scale(.7);opacity:0;transition:transform .35s cubic-bezier(.3,1.6,.5,1),opacity .2s}
   .ld-card.lit .ld-lic{transform:none;opacity:1}
   .ld-note{position:relative;z-index:1;margin:0;font-size:12px;color:var(--muted)}
-  /* phones: the demo sits above the real search box, so it shows result cards only, no typed query (owner 2026-10-23) */
-  .demo-slot .ld{min-height:0;gap:8px} .demo-slot .ld-q{display:none}
+  /* phones: the demo sits above the real search box, so its typed query is one plain line (icon, text, caret):
+     no box, so it never reads as a second search field, and no quote marks (owner 2026-10-23) */
+  .demo-slot .ld{min-height:0;gap:8px}
+  .demo-slot .ld-q{background:none;border:0;box-shadow:none;padding:0 2px;font-size:14px;color:var(--muted);gap:8px}
+  .demo-slot .ld-q .ico{width:14px;height:14px}
   @media (prefers-reduced-motion:reduce){ .ld-card,.ld-lic,.ld-ex i{transition:none} .ld-caret{animation:none} }
   .left-div{grid-column:1/-1;margin:14px 4px 2px;font-size:13px;font-weight:700;color:var(--muted);
     display:flex;align-items:center;gap:10px}

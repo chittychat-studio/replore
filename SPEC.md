@@ -897,8 +897,8 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   "Example: Replore's real top results for this search", make no network call (the home screen costs no GitHub quota),
   and are refreshed by hand. No star counts, since a fixed number would go stale. On desktop an ASCII globe of GitHub
   (canvas, the site's mono font and accent colours) turns behind the cards and spins up while a search runs; it is left
-  out on screens under 1000 px, where the demo sits above the search box and shows one card at a time with no typed query
-  (owner: the text entry looked wrong on phones). Reduced motion shows the finished state with no typing, no spin. Hovering pauses the demo; the
+  out on screens under 1000 px, where the demo sits above the search box and shows one card at a time under its typed query as one
+  plain line (a small search icon, the text, the caret; no box and no quote marks, owner 2026-10-23). Reduced motion shows the finished state with no typing, no spin. Hovering pauses the demo; the
   globe pauses off-screen and in hidden tabs, and stops for good once the home screen is replaced. The "How it works"
   window keeps the four-step carousel.
 
