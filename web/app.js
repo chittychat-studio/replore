@@ -1312,7 +1312,9 @@ var DEMO_MQ=window.matchMedia?matchMedia("(max-width: 999px)"):null;
 function placeDemo(){
   var ex=document.querySelector(".explain"), slot=document.getElementById("demoSlot"), out=document.getElementById("out");
   if(!ex||!slot||!out) return;
+  var stage=document.getElementById("stageSlot");   // RS65: on wide screens the demo sits on the studio stage under the search
   if(DEMO_MQ&&DEMO_MQ.matches){ if(ex.parentNode!==slot) slot.appendChild(ex); }
+  else if(stage){ if(ex.parentNode!==stage) stage.appendChild(ex); }
   else if(ex.parentNode!==out && !out.querySelector(".rcard, .group-h, .err")) out.appendChild(ex);
   [].forEach.call(ex.querySelectorAll(".demo-dot"),function(d){ d.tabIndex=(DEMO_MQ&&DEMO_MQ.matches)?-1:0; });   // search comes first for keyboards
 }
@@ -1354,10 +1356,10 @@ function startAsciiGlobe(canvas, reduce){
   if(!canvas || !canvas.getContext) return;   // no canvas: the cards alone carry the demo
   var g=canvas.getContext("2d"); if(!g) return;
   var t=0, spin=.22, boost=0, live=true, raf=0, last=0;
-  function css(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim()||"#5b88a6"; }
+  function css(n){ return getComputedStyle(canvas).getPropertyValue(n).trim()||"#5b88a6"; }   // RS65: the stage tokens
   function draw(){ var r=canvas.getBoundingClientRect(), d=Math.min(window.devicePixelRatio||1,1.5);
     if(!r.width||!r.height) return;
-    if(canvas.width!==Math.round(r.width*d)){ canvas.width=Math.round(r.width*d); canvas.height=Math.round(r.height*d); }
+    if(canvas.width!==Math.round(r.width*d)||canvas.height!==Math.round(r.height*d)){ canvas.width=Math.round(r.width*d); canvas.height=Math.round(r.height*d); }   // RS65: height too
     var W=canvas.width, H=canvas.height, cell=Math.max(8,Math.round(Math.min(W,H)/40)), cols=Math.floor(W/cell), rows=Math.floor(H/(cell*1.6));
     g.clearRect(0,0,W,H); g.font=Math.round(cell*1.3)+"px "+(css("--f-mono")||"monospace"); g.textBaseline="top";
     var ink=css("--accent-ink"), dim=css("--accent2");
@@ -1387,21 +1389,43 @@ function buildLiveDemo(host){
   if(!host || host.dataset.built) return; host.dataset.built="1";
   var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches;
   var wide=!(window.matchMedia&&matchMedia("(max-width: 999px)").matches);
-  // RS62: globe, then cards. The globe fills the stage while the search types and runs, then fades out as the cards
-  // land in the same place; it comes back for the next search. They never overlap.
-  host.innerHTML='<div class="ld">'+
+  // RS65: the studio stage. The scout bot stands beside the ASCII globe of GitHub inside a tick dial; the rail names the
+  // stage of the search, the dial fills while it runs, and the real top results land as frosted cards under the pair.
+  // The arrows step through the example searches. Phones get the bot and one card (no globe, no rail).
+  var STAGES="Searching|Ranking by fit|Licence check|Ready".split("|"), NUM="I|II|III|IV".split("|");
+  host.innerHTML='<div class="ld st">'+
     '<div class="ld-q" aria-hidden="true">'+ico("search")+'<span class="ld-typed"></span><span class="ld-caret"></span></div>'+
-    '<p class="ld-status" aria-hidden="true"><span class="ld-status-t"></span><span class="ld-dots"><i></i><i></i><i></i></span></p>'+
-    '<div class="ld-stage">'+(wide?'<canvas class="ld-globe" aria-hidden="true"></canvas>':'')+
-    '<div class="ld-deck" aria-hidden="true"></div></div>'+
-    '<p class="ld-note">Example: Replore’s real top results for this search</p></div>';   // no orb pill: the globe already says "searching"
-  var ld=host.querySelector(".ld"), deck=host.querySelector(".ld-deck"), typed=host.querySelector(".ld-typed"), globe=host.querySelector(".ld-globe"),
-      status=host.querySelector(".ld-status"), statusT=host.querySelector(".ld-status-t");
-  function say(txt){ if(!status) return; if(!txt){ status.classList.remove("on"); return; } statusT.textContent=txt; status.classList.add("on"); }
+    '<div class="st-stage">'+
+      (wide?'<ol class="st-rail" aria-hidden="true">'+STAGES.map(function(t,i){ return '<li><i>'+NUM[i]+'</i>'+t+'</li>'; }).join("")+'</ol>':'')+
+      '<canvas class="st-dial" aria-hidden="true"></canvas>'+
+      '<div class="st-pair" aria-hidden="true">'+
+        (wide?'<div class="st-g"><canvas class="ld-globe"></canvas><span class="st-sh"></span></div>':'')+
+        '<div class="st-b"><img class="st-bot" src="scout-hero.webp" alt="" width="180" height="184" decoding="async"><span class="st-sh"></span></div></div>'+
+      '<div class="st-ctrl"><button type="button" class="st-arrow st-prev" aria-label="Previous example search">&lsaquo;</button>'+
+        '<b class="st-label" aria-hidden="true"></b>'+
+        '<button type="button" class="st-arrow st-next" aria-label="Next example search">&rsaquo;</button></div>'+
+    '</div>'+
+    '<div class="ld-deck" aria-hidden="true"></div>'+
+    '<p class="ld-note">Example: Replore’s real top results for this search</p></div>';
+  var deck=host.querySelector(".ld-deck"), typed=host.querySelector(".ld-typed"), globe=host.querySelector(".ld-globe"),
+      label=host.querySelector(".st-label"), bot=host.querySelector(".st-bot"), dial=host.querySelector(".st-dial"),
+      rail=[].slice.call(host.querySelectorAll(".st-rail li"));
   if(globe) startAsciiGlobe(globe, reduce);
-  var timers=[], k=0, paused=false;
+  var timers=[], k=0, paused=false, prog=0;
   function later(f,ms){ timers.push(setTimeout(f,ms)); }
   function clear(){ timers.forEach(clearTimeout); timers=[]; }
+  function stage(i, txt){ rail.forEach(function(li,j){ li.classList.toggle("on", j===i); }); if(label) label.textContent=txt||""; }
+  function pose(p){ if(bot) bot.src=p==="search"?"scout-search.webp":"scout-hero.webp"; }
+  function drawDial(){ var g=dial&&dial.getContext&&dial.getContext("2d"); if(!g||!dial.getBoundingClientRect) return;
+    var r=dial.getBoundingClientRect(), d=Math.min(window.devicePixelRatio||1,1.5); if(!r.width) return;
+    if(dial.width!==Math.round(r.width*d)||dial.height!==Math.round(r.height*d)){ dial.width=Math.round(r.width*d); dial.height=Math.round(r.height*d); }
+    var W=dial.width, H=dial.height, cx=W/2, cy=H*.1, rx=W/2-6*d, ry=H*.8, N=wide?140:70;
+    var ink=getComputedStyle(dial).getPropertyValue("--ink").trim()||"#eef3f7";
+    g.clearRect(0,0,W,H); g.strokeStyle=ink; g.lineWidth=1.4*d;
+    for(var i=0;i<N;i++){ var a=Math.PI*i/(N-1), x=cx-Math.cos(a)*rx, y=cy+Math.sin(a)*ry;
+      if(Math.abs(x-cx)<W*.16 && y>cy+ry*.78) continue;   // room for the arrows
+      g.globalAlpha=(i/(N-1))<=prog?.85:.22; g.beginPath(); g.moveTo(x,y-5*d); g.lineTo(x,y+5*d); g.stroke(); }
+    g.globalAlpha=1; }
   function cardHtmlMini(r){ var p=r[0].split("/"), v=licenseVerdict(r[1]);
     return '<div class="ld-card"><div class="ld-top"><span class="avatar" style="--h:'+ownerHue(p[0])+'">'+esc(p[0].charAt(0).toUpperCase())+'</span>'+
       '<span class="ld-name"><span class="owner">'+esc(p[0])+' /</span> '+esc(p.slice(1).join("/"))+'</span></div>'+
@@ -1409,27 +1433,32 @@ function buildLiveDemo(host){
       '<div class="ld-ex"><i>Diagram</i><i>Wiki</i><i>Code</i></div>'+   // RS63: the same three tools as card A
       '<span class="tag '+v.c+' ld-lic">'+ico(v.i)+esc(v.t)+'</span></div>'; }
   function run(){ clear(); if(paused||!host.isConnected) return;
-    var ex=LIVE_DEMO[k%LIVE_DEMO.length], shown=wide?3:1; k++;
-    deck.innerHTML=ex.r.slice(0,shown).map(cardHtmlMini).join(""); typed.textContent=""; say(""); ld.classList.remove("show-cards");
-    if(reduce){ typed.textContent=ex.q; ld.classList.add("show-cards"); [].forEach.call(deck.children,function(c){ c.classList.add("in","lit"); }); return; }
+    var n=LIVE_DEMO.length, ex=LIVE_DEMO[((k%n)+n)%n], shown=wide?3:1; k++;
+    deck.innerHTML=ex.r.slice(0,shown).map(cardHtmlMini).join(""); typed.textContent=""; prog=0; drawDial(); stage(-1,""); pose("hero");
+    if(reduce){ typed.textContent=ex.q; prog=1; drawDial(); stage(3, ex.r.length+" repos fit"); [].forEach.call(deck.children,function(c){ c.classList.add("in","lit"); }); return; }
     var step=Math.max(18,Math.min(42,1400/ex.q.length));
-    for(var i=1;i<=ex.q.length;i++) (function(n){ later(function(){ typed.textContent=ex.q.slice(0,n); }, n*step); })(i);
+    for(var i=1;i<=ex.q.length;i++) (function(m){ later(function(){ typed.textContent=ex.q.slice(0,m); }, m*step); })(i);
     var t0=ex.q.length*step+250;
-    later(function(){ say("Searching GitHub"); if(globe&&globe.__boost) globe.__boost(2.2); }, t0);
-    later(function(){ say("Ranking by fit"); }, t0+1100);
-    later(function(){ say(""); }, t0+2050);
-    t0+=1000;   // cards land after the two steps have been seen
-    [].forEach.call(deck.children,function(c,j){ var at=t0+1100+j*240;
-      later(function(){ if(j===0) ld.classList.add("show-cards"); c.classList.add("in"); }, at);
+    later(function(){ stage(0,"Searching GitHub"); pose("search"); if(globe&&globe.__boost) globe.__boost(2.4); }, t0);
+    for(var s=1;s<=30;s++) (function(m){ later(function(){ prog=m/30; drawDial(); }, t0+m*60); })(s);
+    later(function(){ stage(1,"Ranking by fit"); }, t0+800);
+    later(function(){ stage(2,"Licence check"); }, t0+1450);
+    t0+=2000;
+    later(function(){ stage(3, ex.r.length+" repos fit"); pose("hero"); }, t0);
+    [].forEach.call(deck.children,function(c,j){ var at=t0+j*200;
+      later(function(){ c.classList.add("in"); }, at);
       later(function(){ c.classList.add("lit"); }, at+380);
       [].forEach.call(c.querySelectorAll(".ld-ex i"),function(b,m){ later(function(){ b.classList.add("on"); }, at+560+m*110);
         later(function(){ b.classList.remove("on"); }, at+1200+m*110); }); });
-    later(function(){ [].forEach.call(deck.children,function(c){ c.classList.add("out"); }); ld.classList.remove("show-cards"); }, t0+5600);
-    later(run, t0+6200); }
+    later(function(){ [].forEach.call(deck.children,function(c){ c.classList.add("out"); }); }, t0+6200);
+    later(run, t0+6800); }
+  function go(d){ k+=d-1; paused=false; run(); }
+  var prev=host.querySelector(".st-prev"), next=host.querySelector(".st-next");
+  if(prev&&prev.addEventListener) prev.addEventListener("click",function(){ go(-1); });
+  if(next&&next.addEventListener) next.addEventListener("click",function(){ go(1); });
+  if(window.addEventListener) window.addEventListener("resize",drawDial);
   host.__stopDemo=function(){ paused=true; clear(); if(globe&&globe.__stop) globe.__stop(); };
   host.__playDemo=function(){ if(paused){ paused=false; run(); } };
-  host.addEventListener("mouseenter",function(){ paused=true; });
-  host.addEventListener("mouseleave",function(){ if(paused){ paused=false; if(!timers.length) run(); } });
   run();
 }
 // remember the last results so a page refresh brings them back (cached locally, no new API call)

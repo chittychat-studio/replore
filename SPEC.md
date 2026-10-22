@@ -940,6 +940,17 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
 
 ## RX — Deliberately excluded (v0.1)
 
+- **RS65** Studio-stage home (owner 2026-10-23, picked from live mock-ups after the CarWhisperer dashboard reference:
+  version C, "bot beside the globe", darker blue, sized between the two tries). On the home screen the hero is one lit
+  dark-blue stage, dark in both themes (its tokens are set on the stage, not per theme): the RS54 pill, the tagline as the
+  title ("Find it before / you build it.", light weight, second line muted), the search, then the live demo under it. The
+  demo: the example search typed above; a stage rail (I Searching, II Ranking by fit, III Licence check, IV Ready); the
+  scout bot (RS64 art, `web/scout-*.webp`) standing beside the ASCII globe on the floor, each with a contact shadow; a tick
+  dial that fills while the search runs; ‹ › buttons (44 px, labelled) that step through the RS61 example searches; and
+  the real top three as frosted cards under the pair. The globe now stays beside the bot while the cards show
+  (supersedes RS62 "globe, then cards"). Phones: no globe, rail or dial; the bot and one card, still before the search
+  (RS24). Trending (RS63) follows as the gallery. Reduced motion shows the finished state. No gradients or glass rule is
+  lifted for this stage only, by the owner's pick.
 - **RS64** Explainer video (owner 2026-10-23). A 52 s, 16:9 HyperFrames project in `video/explainer/` (storylines A + C
   mixed: "11:40 pm, then the scout"). Her desk is one Google Flow 3D still with the real chat and Replore screens warped
   onto the laptop; the scout is an original 3D bot (white shell, black visor, arc eyes, navy satchel, brass magnifier),

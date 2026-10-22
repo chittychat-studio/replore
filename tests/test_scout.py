@@ -957,7 +957,7 @@ def test_rs47_look_and_motion_kit():
     for fam in ("'Anton'", "'Inter Tight'", "'JetBrains Mono'"):
         assert fam in fcss, fam
     assert "--accent:#3f6f8e" in html and "--btn-grad:" in html and "192,83,44" not in html
-    assert 'class="ln" aria-hidden="true"' in html and 'aria-label="Describe it. Get repos that fit."' in html and "var segs=" not in html
+    assert 'class="ln" aria-hidden="true"' in html and 'aria-label="Find it before you build it."' in html and "var segs=" not in html
     assert "data-magnet" in html and 'G.quickTo(el,"x"' in html and "(hover:hover) and (pointer:fine)" in html
     assert "function odometer(" in html and "function snapHtml(" in html and "html:out.innerHTML" not in html
     assert 'class="tring"' not in html and 'class="ttape"' not in html and "TAPE_ICON" not in html and "✦</b>" not in html   # RS62
@@ -1069,6 +1069,10 @@ def test_home_demo_is_the_real_product_and_honest():
     for lic in re.findall(r'\["[^"]+","([^"]+)","', block):
         assert lic in ("MIT", "Apache-2.0"), lic
     assert "max-width: 999px" in block and "prefers-reduced-motion" in block and "isConnected" in block
+    # RS65: the studio stage: bot beside the globe, stage rail, dial, arrows, slot under the search
+    assert 'class="st-pair"' in block and "scout-hero.webp" in block and "st-rail" in block and "drawDial" in block
+    assert 'aria-label="Next example search"' in block and 'id="stageSlot"' in _page()
+    assert (ROOT / "web" / "scout-hero.webp").exists() and (ROOT / "web" / "scout-search.webp").exists()
 
 
 def test_rs28h_plugin_shows_visuals_before_prd():
