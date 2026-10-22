@@ -1245,63 +1245,24 @@ function think(st, text){
 }
 
 // RS35 home carousel: top Rising repos, rotates itself, pauses on hover/focus/touch, still under reduced motion
-// RS47 ticker separator: a git-branch mark (owner 2026-10-15: "change this with different icon"), single colour
-var TAPE_ICON='<svg class="tape-ico" viewBox="0 0 16 16" aria-hidden="true"><circle cx="4" cy="3.5" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/>'+
-  '<circle cx="4" cy="12.5" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="5.5" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/>'+
-  '<path d="M4 5.5v5M12 7.5c0 2.5-3 3-6.6 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
 function buildTrendCarousel(){
-  var box=document.getElementById("trendCar"), ring=document.getElementById("tcarTrack"); if(!box||!ring) return;
-  var spin=ring.querySelector(".tring-spin"), tape=box.querySelector(".ttape .run");
+  // RS62: one flat row of cards in the result-card language; scroll sideways (snap), arrow keys move a card at a time
+  var box=document.getElementById("trendCar"), row=document.getElementById("tcarTrack"); if(!box||!row) return;
   fetchTrending("rising").then(function(got){
     var rows=trendRows(got.items,"rising").rows.filter(hasDesc).slice(0,12); if(rows.length<3) return;   // RS45: a showcase card must say what the repo does
-    var card=function(r){ var v=licenseVerdict(r.spdx);
-      return '<a class="tcard" href="'+esc(r.url)+'" target="_blank" rel="noopener" draggable="false">'+
-        '<span class="tc-top"><span class="tc-name">'+esc(r.name)+'</span><span class="tc-stars">'+ico("star")+kstars(r.stars)+'</span></span>'+
-        '<span class="tc-desc">'+esc(plainDesc(r.desc))+'</span>'+
-        '<span class="tc-meta">'+esc(v.t||"")+(r.forks?' · '+kstars(r.forks)+' forks':'')+'</span></a>'; };
-    spin.innerHTML=rows.map(card).join("");
-    // RS47 ticker: the same names on a tape; written twice so the -50% loop has no seam
-    if(tape){ var one=rows.map(function(r){ return '<span>'+esc(r.name)+'</span>'+TAPE_ICON; }).join(""); tape.innerHTML=one+one; }
+    row.innerHTML=rows.map(function(r){ var v=licenseVerdict(r.spdx), p=String(r.name).split("/"), owner=p[0], repo=p.slice(1).join("/");
+      return '<a class="trc" role="listitem" href="'+esc(r.url)+'" target="_blank" rel="noopener">'+
+        '<span class="trc-top"><span class="avatar" aria-hidden="true" style="--h:'+ownerHue(owner)+'">'+esc(owner.charAt(0).toUpperCase())+'</span>'+
+        '<span class="trc-name"><span class="owner">'+esc(owner)+' /</span> '+esc(repo)+'</span>'+
+        '<span class="trc-stars" title="Stars">'+ico("star")+kstars(r.stars)+'</span></span>'+
+        '<span class="trc-desc">'+esc(plainDesc(r.desc))+'</span>'+
+        '<span class="tag '+v.c+'">'+ico(v.i)+esc(v.t)+'</span></a>'; }).join("");
     box.hidden=false;
-    // RS47 trending ring: cards stand on a cylinder, each turned 360/N degrees, pushed out by the radius
-    var cards=spin.querySelectorAll(".tcard"), n=cards.length, step=360/n, R=0, angle=0;
-    function layout(){ var w=cards[0].offsetWidth||260; R=Math.round((w+26)/(2*Math.tan(Math.PI/n)));
-      for(var i=0;i<n;i++) cards[i].style.transform="rotateY("+(i*step)+"deg) translateZ("+R+"px)"; paint(); }
-    function paint(){   // tilt the ring 6deg toward you; lift it by R*sin(6deg) so the front cards stay centred in the band
-      spin.style.transform="translate3d(0,"+(-R*0.1045).toFixed(1)+"px,"+(-R)+"px) rotateX(-6deg) rotateY("+angle.toFixed(2)+"deg)";
-      for(var i=0;i<n;i++){ var f=Math.cos((i*step+angle)*Math.PI/180);   // 1 = facing you, -1 = behind
-        cards[i].style.opacity=(0.25+0.75*Math.max(0,f)).toFixed(3);
-        cards[i].tabIndex = f>0.6 ? 0 : -1; } }   // only cards facing you take keyboard focus
-    layout(); window.addEventListener("resize",layout);
-    // drag to turn; a drag never opens a card
-    var dragging=false, moved=0, lastX=0;
-    ring.addEventListener("pointerdown",function(e){ dragging=true; moved=0; lastX=e.clientX; });
-    window.addEventListener("pointermove",function(e){ if(!dragging) return; var dx=e.clientX-lastX; lastX=e.clientX; moved+=Math.abs(dx); angle+=dx*0.25; paint(); });
-    window.addEventListener("pointerup",function(){ dragging=false; });
-    ring.addEventListener("click",function(e){ if(moved>6){ e.preventDefault(); moved=0; } },true);
-    function face(i){ angle=-i*step; paint(); }
-    ring.addEventListener("keydown",function(e){ if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight") return; e.preventDefault();
-      var cur=Math.round(-angle/step); face(cur+(e.key==="ArrowRight"?1:-1)); });
-    spin.addEventListener("focusin",function(e){ var c=e.target.closest(".tcard"); if(c) face([].indexOf.call(cards,c)); });
-    if(matchMedia("(prefers-reduced-motion: reduce)").matches) return;   // still, but drag and arrow keys work
-    var paused=false, idle=null, onScreen=true, running=false, last=0;
-    function pause(){ paused=true; clearTimeout(idle); }
-    function resume(){ clearTimeout(idle); idle=setTimeout(function(){ paused=false; },2500); }
-    ["mouseenter","focusin","pointerdown"].forEach(function(ev){ ring.addEventListener(ev,pause,{passive:true}); });
-    ["mouseleave","focusout","pointerup"].forEach(function(ev){ ring.addEventListener(ev,resume,{passive:true}); });
-    function turn(t){
-      if(!onScreen || document.hidden || !ring.offsetParent){ running=false; last=0; return; }   // stop scheduling frames
-      window.__tcarRaf=requestAnimationFrame(turn);
-      var dt=last?Math.min(48,t-last):16; last=t;
-      if(paused||dragging) return;
-      angle-=dt*0.006; paint();                        // about one turn a minute
-    }
-    function start(){ if(running) return; running=true; last=0; cancelAnimationFrame(window.__tcarRaf); window.__tcarRaf=requestAnimationFrame(turn); }
-    window.__tcarStart=start;
-    if(window.IntersectionObserver) new IntersectionObserver(function(es){ onScreen=es[0].isIntersecting; if(onScreen) start(); }).observe(ring);
-    document.addEventListener("visibilitychange",function(){ if(!document.hidden) start(); });
-    start();
-  }).catch(function(){});   // GitHub unreachable or rate-limited: no carousel, nothing else changes
+    row.tabIndex=0;
+    row.addEventListener("keydown",function(e){ if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight") return; e.preventDefault();
+      var c=row.querySelector(".trc"); if(!c) return;
+      row.scrollBy({left:(e.key==="ArrowRight"?1:-1)*(c.offsetWidth+12),behavior:"smooth"}); });
+  }).catch(function(){});   // GitHub unreachable or rate-limited: no row, nothing else changes
 }
 (function(){ var go=function(){ buildTrendCarousel(); };
   if(window.requestIdleCallback) requestIdleCallback(go,{timeout:2500}); else setTimeout(go,800); })();
@@ -1372,7 +1333,8 @@ function startAsciiGlobe(canvas, reduce){
     var dt=last?Math.min(.1,(now-last)/1000):0; last=now;
     var busy=boost>0||document.body.classList.contains("searching");
     spin+=((busy?1.6:.22)-spin)*(1-Math.exp(-dt*2.5)); t+=dt*spin; if(boost>0) boost-=dt;
-    draw(); raf=requestAnimationFrame(frame); }
+    var hidden=canvas.parentNode&&canvas.parentNode.parentNode&&canvas.parentNode.parentNode.classList.contains("show-cards");
+    if(!hidden) draw(); raf=requestAnimationFrame(frame); }
   canvas.__boost=function(s){ boost=Math.max(boost,s||1.4); };
   canvas.__stop=function(){ live=false; cancelAnimationFrame(raf); };
   if(reduce){ draw(); return; }
@@ -1385,11 +1347,17 @@ function buildLiveDemo(host){
   if(!host || host.dataset.built) return; host.dataset.built="1";
   var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches;
   var wide=!(window.matchMedia&&matchMedia("(max-width: 999px)").matches);
-  host.innerHTML='<div class="ld">'+(wide?'<canvas class="ld-globe" aria-hidden="true"></canvas>':'')+
+  // RS62: globe, then cards. The globe fills the stage while the search types and runs, then fades out as the cards
+  // land in the same place; it comes back for the next search. They never overlap.
+  host.innerHTML='<div class="ld">'+
     '<div class="ld-q" aria-hidden="true">'+ico("search")+'<span class="ld-typed"></span><span class="ld-caret"></span></div>'+
-    '<div class="ld-deck" aria-hidden="true"></div>'+
+    '<p class="ld-status" aria-hidden="true"><span class="ld-status-t"></span><span class="ld-dots"><i></i><i></i><i></i></span></p>'+
+    '<div class="ld-stage">'+(wide?'<canvas class="ld-globe" aria-hidden="true"></canvas>':'')+
+    '<div class="ld-deck" aria-hidden="true"></div></div>'+
     '<p class="ld-note">Example: Replore’s real top results for this search</p></div>';   // no orb pill: the globe already says "searching"
-  var deck=host.querySelector(".ld-deck"), typed=host.querySelector(".ld-typed"), globe=host.querySelector(".ld-globe");
+  var ld=host.querySelector(".ld"), deck=host.querySelector(".ld-deck"), typed=host.querySelector(".ld-typed"), globe=host.querySelector(".ld-globe"),
+      status=host.querySelector(".ld-status"), statusT=host.querySelector(".ld-status-t");
+  function say(txt){ if(!status) return; if(!txt){ status.classList.remove("on"); return; } statusT.textContent=txt; status.classList.add("on"); }
   if(globe) startAsciiGlobe(globe, reduce);
   var timers=[], k=0, paused=false;
   function later(f,ms){ timers.push(setTimeout(f,ms)); }
@@ -1402,18 +1370,21 @@ function buildLiveDemo(host){
       '<span class="tag '+v.c+' ld-lic">'+ico(v.i)+esc(v.t)+'</span></div>'; }
   function run(){ clear(); if(paused||!host.isConnected) return;
     var ex=LIVE_DEMO[k%LIVE_DEMO.length], shown=wide?3:1; k++;
-    deck.innerHTML=ex.r.slice(0,shown).map(cardHtmlMini).join(""); typed.textContent="";
-    if(reduce){ typed.textContent=ex.q; [].forEach.call(deck.children,function(c){ c.classList.add("in","lit"); }); return; }
+    deck.innerHTML=ex.r.slice(0,shown).map(cardHtmlMini).join(""); typed.textContent=""; say(""); ld.classList.remove("show-cards");
+    if(reduce){ typed.textContent=ex.q; ld.classList.add("show-cards"); [].forEach.call(deck.children,function(c){ c.classList.add("in","lit"); }); return; }
     var step=Math.max(18,Math.min(42,1400/ex.q.length));
     for(var i=1;i<=ex.q.length;i++) (function(n){ later(function(){ typed.textContent=ex.q.slice(0,n); }, n*step); })(i);
     var t0=ex.q.length*step+250;
-    later(function(){ if(globe&&globe.__boost) globe.__boost(1.6); }, t0);
+    later(function(){ say("Searching GitHub"); if(globe&&globe.__boost) globe.__boost(2.2); }, t0);
+    later(function(){ say("Ranking by fit"); }, t0+1100);
+    later(function(){ say(""); }, t0+2050);
+    t0+=1000;   // cards land after the two steps have been seen
     [].forEach.call(deck.children,function(c,j){ var at=t0+1100+j*240;
-      later(function(){ c.classList.add("in"); }, at);
+      later(function(){ if(j===0) ld.classList.add("show-cards"); c.classList.add("in"); }, at);
       later(function(){ c.classList.add("lit"); }, at+380);
       [].forEach.call(c.querySelectorAll(".ld-ex i"),function(b,m){ later(function(){ b.classList.add("on"); }, at+560+m*110);
         later(function(){ b.classList.remove("on"); }, at+1200+m*110); }); });
-    later(function(){ [].forEach.call(deck.children,function(c){ c.classList.add("out"); }); }, t0+5600);
+    later(function(){ [].forEach.call(deck.children,function(c){ c.classList.add("out"); }); ld.classList.remove("show-cards"); }, t0+5600);
     later(run, t0+6200); }
   host.__stopDemo=function(){ paused=true; clear(); if(globe&&globe.__stop) globe.__stop(); };
   host.__playDemo=function(){ if(paused){ paused=false; run(); } };

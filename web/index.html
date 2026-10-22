@@ -165,8 +165,15 @@
   .demo-slot:empty{display:none} .demo-slot{margin:6px 0 18px;text-align:left}
   /* RS61: home demo = the live product over an ASCII globe (desktop); one card under the typed query on phones */
   .ld{position:relative;display:flex;flex-direction:column;gap:12px;padding:6px 4px 0;min-height:360px;text-align:left}
-  .ld-globe{position:absolute;top:34px;right:-6px;width:60%;height:400px;pointer-events:none;z-index:0}
-  #heroDemo .ld-deck,#heroDemo .ld-q{max-width:410px}
+  /* RS62 globe, then cards: one stage; the globe shows while searching and fades as the cards land in its place */
+  .ld-stage{position:relative;width:100%}
+  .ld-globe{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:.85;transition:opacity .5s ease}
+  .ld.show-cards .ld-globe{opacity:0}
+  #heroDemo .ld{align-items:center}
+  #heroDemo .ld-stage{max-width:430px;min-height:372px}
+  #heroDemo .ld-deck,#heroDemo .ld-q{width:100%;max-width:430px}
+  @media (prefers-reduced-motion:reduce){ .ld-globe{transition:none} }
+  #heroDemo .ld-note{max-width:430px;width:100%}
   .ld-q{position:relative;z-index:1;display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);
     border-radius:999px;padding:11px 16px;font-size:15px;color:var(--ink);box-shadow:0 10px 30px -18px rgba(var(--shadow),.5);max-width:520px}
   .ld-q .ico{width:16px;height:16px;margin:0;color:var(--muted)}
@@ -191,6 +198,14 @@
   .ld-lic{justify-self:start;transform:scale(.7);opacity:0;transition:transform .35s cubic-bezier(.3,1.6,.5,1),opacity .2s}
   .ld-card.lit .ld-lic{transform:none;opacity:1}
   .ld-note{position:relative;z-index:1;margin:0;font-size:12px;color:var(--muted)}
+  /* the steps between typing and results, in the mono voice; fades in and out, never jumps the layout */
+  .ld-status{position:relative;z-index:1;margin:0;height:18px;font:500 12.5px/18px var(--f-mono);letter-spacing:.04em;color:var(--accent-ink);
+    opacity:0;transition:opacity .3s ease;display:flex;align-items:center;gap:2px;max-width:430px;width:100%}
+  .ld-status.on{opacity:1}
+  .ld-dots i{display:inline-block;width:3px;height:3px;margin-left:3px;border-radius:50%;background:currentColor;animation:ldDot 1s infinite}
+  .ld-dots i:nth-child(2){animation-delay:.15s} .ld-dots i:nth-child(3){animation-delay:.3s}
+  @keyframes ldDot{0%,100%{opacity:.25}50%{opacity:1}}
+  @media (prefers-reduced-motion:reduce){ .ld-dots i{animation:none} }
   /* phones: the demo sits above the real search box, so its typed query is one plain line (icon, text, caret):
      no box, so it never reads as a second search field, and no quote marks (owner 2026-10-23) */
   .demo-slot .ld{min-height:0;gap:8px}
@@ -560,19 +575,27 @@
   /* RS35 home carousel */
   .tcar{margin:16px 0 0;text-align:left}
   .tcar-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:0 2px 8px;font-size:14px}
-  .tcard{flex:0 0 78%;max-width:300px;transform-style:preserve-3d;will-change:transform;transition:box-shadow .3s ease,border-color .3s ease;
-    box-shadow:0 18px 36px -24px rgba(var(--shadow),.55);background:var(--card);border:1px solid var(--line);
-    border-radius:14px;padding:12px 14px;text-decoration:none;color:var(--ink);display:flex;flex-direction:column;gap:6px}
-  .tcard:hover{border-color:var(--accent);text-decoration:none}
-  .tcard .tc-top{display:flex;justify-content:space-between;gap:8px;font-weight:700;font-size:14px}
-  .tcard .tc-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}
-  .tcard .tc-stars{white-space:nowrap;color:var(--accent-ink)}
-  .tcard .tc-desc{font-size:12.5px;color:var(--muted);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-  .tcard .tc-meta{font-size:11.5px;color:var(--muted)}
-  @media (min-width:700px){ .tcard{flex-basis:46%} }
-  /* RS24 wide desktops: one top-down column that uses the full width (no split screen) */
-  @media (min-width:1000px){ .tcard{flex:0 0 calc((100% - 30px)/4);max-width:none;min-height:172px;padding:18px 18px 16px;gap:8px}
-    .tcard .tc-top{font-size:15px} .tcard .tc-desc{font-size:13.5px;-webkit-line-clamp:3} .tcard .tc-meta{margin-top:auto} }
+  /* RS62: Rising row = flat cards in the result-card language, scrolled sideways with snap points (no ring, no ticker) */
+  .trow{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(240px,1fr);gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;
+    padding:4px 2px 14px;margin:6px 0 0;scrollbar-width:thin;overscroll-behavior-x:contain;
+    -webkit-mask-image:linear-gradient(to right,#000 92%,transparent);mask-image:linear-gradient(to right,#000 92%,transparent)}
+  .trow:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:12px}
+  .trc{scroll-snap-align:start;display:flex;flex-direction:column;gap:8px;min-width:0;padding:14px 16px;border:1px solid var(--line);
+    border-radius:14px;background:var(--card);color:var(--ink);text-decoration:none;transition:border-color .2s,transform .2s,box-shadow .2s}
+  .trc:hover{border-color:var(--accent);transform:translateY(-2px);text-decoration:none;box-shadow:0 14px 28px -20px rgba(var(--shadow),.6)}
+  .trc:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .trc-top{display:flex;align-items:center;gap:10px;min-width:0}
+  .trc-top .avatar{width:28px;height:28px;border-radius:8px;flex:0 0 auto;display:grid;place-items:center;font:400 14px/1 var(--f-display);color:#fff;
+    background:linear-gradient(135deg,hsl(var(--h) 62% 58%),hsl(calc(var(--h) + 24) 58% 40%))}
+  .trc-name{min-width:0;flex:1;font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .trc-name .owner{font-weight:500;color:var(--muted)}
+  .trc-stars{flex:0 0 auto;font:400 14px/1 var(--f-display);letter-spacing:.02em;color:var(--accent-ink);display:flex;align-items:center;gap:4px}
+  .trc-stars .ico{margin:0}
+  .trc-desc{margin:0;font-size:13px;line-height:1.45;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.9em}
+  .trc .tag{align-self:flex-start;margin-top:auto}
+  @media (min-width:1000px){ .trow{grid-auto-columns:calc((100% - 36px)/4)} }
+  @media (min-width:1500px){ .trow{grid-auto-columns:calc((100% - 48px)/5)} }
+  @media (prefers-reduced-motion:reduce){ .trc{transition:none} .trc:hover{transform:none} }
   @media (min-width:1200px){
     .page{max-width:1500px}
     .hero{max-width:1100px}
@@ -588,7 +611,6 @@
     body:not(.has-results):not(.searching) .out-wrap > .privacy-note{grid-area:foot}
     body:not(.has-results):not(.searching) .out-wrap > .gh-credit{grid-area:credit}
   }
-  @media (min-width:1500px){ .tcard{flex-basis:calc((100% - 40px)/5)} }
   /* RS36: on wide screens the home demo fills its half of the opening section (bigger art, type and frame) */
   @media (min-width:1200px){
     body:not(.has-results):not(.searching) #heroDemo{max-width:680px}
@@ -677,23 +699,7 @@
   .odo-col{display:inline-block;height:1.1em;line-height:1.1em;overflow:hidden;vertical-align:bottom}
   .odo-strip{display:block}
   .odo-strip>i{display:block;font-style:normal;height:1.1em}
-  .tring{position:relative;height:250px;perspective:1600px;overflow:hidden;margin:6px 0 0;outline:none}
-  .tring-spin{position:absolute;left:50%;top:50%;width:0;height:0;transform-style:preserve-3d}
-  .tring .tcard{position:absolute;left:0;top:0;width:260px;min-height:158px;margin:-79px 0 0 -130px;backface-visibility:hidden;
-    -webkit-backface-visibility:hidden;flex:none;max-width:none}
-  .tring:hover .tring-spin,.tring:focus-within .tring-spin{cursor:grab}
-  .ttape{position:relative;overflow:hidden;background:var(--accent);color:#fff;transform:rotate(-1.5deg);margin:10px -6px 4px;
-    padding:9px 0;box-shadow:0 10px 24px -14px rgba(var(--accent-rgb),.9)}
-  .ttape .run{display:flex;gap:0;white-space:nowrap;width:max-content;font:400 22px/1.1 var(--f-display);letter-spacing:.02em;
-    animation:ttape 40s linear infinite}
-  .ttape .run span{padding:0 18px}
-  .ttape .run{align-items:center}
-  .ttape .tape-ico{width:.95em;height:.95em;flex:none;opacity:.85}
-  .ttape:hover .run{animation-play-state:paused}
-  @keyframes ttape{to{transform:translateX(-50%)}}
-  @media (max-width:699px){ .tring{height:210px} .tring .tcard{width:210px;min-height:140px;margin:-70px 0 0 -105px;padding:14px}
-    .ttape .run{font-size:17px} }
-  @media (prefers-reduced-motion: reduce){ .ttape .run{animation:none} .roll>span,.go-btn::before,.nav-btn::before{transition:none} }
+  @media (prefers-reduced-motion: reduce){ .roll>span,.go-btn::before,.nav-btn::before{transition:none} }
 
   /* RS37 warm cards: a faint orange wash + warm edge in light mode so cards lift off the page (dark mode unchanged) */
   .rcard,.tcard{background:var(--card-bg,var(--card));border-color:var(--card-line,var(--line));
@@ -836,8 +842,7 @@
     <section id="trendCar" class="tcar" aria-label="Rising on GitHub this month" hidden>
         <div class="tcar-head"><b>Rising on GitHub this month</b>
           <button type="button" class="link-btn" id="trendHome">See all trending →</button></div>
-        <div class="tring" id="tcarTrack" tabindex="0" role="group" aria-roledescription="carousel" aria-label="Rising repos: drag or use the arrow keys to turn"><div class="tring-spin"></div></div>
-        <div class="ttape" aria-hidden="true"><div class="run"></div></div>
+        <div class="trow" id="tcarTrack" role="list" aria-label="Rising repos this month"></div>   <!-- RS62: one flat row -->
       </section>
     <div id="out" class="results"></div>
     <p class="privacy-note">Nothing you type is stored.
@@ -1104,6 +1109,6 @@
   <p class="mut rag-only" style="margin-top:12px" hidden><b>Hybrid search:</b> repos are ranked by your words and by what you mean, so "voice notes" also finds "speech-to-text". Repos our index finds that the word search missed are checked on GitHub before you see them.</p>
 </div></div>
 
-<script src="app.js?v=d43abdd4ef" defer></script>
+<script src="app.js?v=7453c8d902" defer></script>
 </body>
 </html>

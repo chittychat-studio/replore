@@ -903,6 +903,15 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   window keeps the four-step carousel. The RS36 dotted-orb pill ("Ranking by fit…") is no longer shown under the home
   demo, since the ASCII globe already signals searching (owner 2026-10-23); it stays as the loading line during a real search.
 
+- **RS62** Rising row and a demo that shows its work (owner 2026-10-23: "don't like this way of listing and the banner
+  tag"; the ASCII globe "pushed to the right corner"; "we are not showing searching, ranking … before cards show up").
+  The home "Rising on GitHub this month" list is one flat row of cards in the result-card language (owner tile, name,
+  stars, two-line description, licence pill) that scrolls sideways with snap points; arrow keys move one card. It
+  replaces the RS47 3D ring and the tilted ticker tape, which are removed. In the RS61 demo the globe and the cards take turns in one stage, never
+  overlapping (owner chose "globe, then cards" over overlap, side by side or stacked): while the query types and a mono
+  status line steps through "Searching GitHub" (the globe spins up) and "Ranking by fit", the globe fills the stage; as
+  the first card lands it fades out and the cards take its place; the next search brings it back. Hidden, it stops drawing.
+
 ## RX — Deliberately excluded (v0.1)
 
 - **RX1** Scraping github.com HTML, or any non-API source.
