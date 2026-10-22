@@ -1008,3 +1008,14 @@ def test_spec_rule_ids_are_unique():
     ids = re.findall(r"^\s*- \*\*(R[SX]\d+[a-z]?)\b", spec, re.M)
     dupes = sorted({i for i in ids if ids.count(i) > 1})
     assert len(ids) > 50 and not dupes, f"duplicate SPEC rule IDs: {dupes}"
+
+
+def test_harm_filter_shared_cases():
+    """RS18, RS29b: piracy/attack tools are dropped; ordinary repos that merely say 'crack', 'ddos' or 'keygen' are kept.
+    The same file is checked against web/app.js in tests/test_web_logic.js."""
+    fx = json.loads((ROOT / "tests" / "fixtures" / "harm_cases.json").read_text(encoding="utf-8"))
+    assert [d for d in fx["harmful"] if not scout.harmful_repo(d)] == []
+    assert [d for d in fx["fine"] if scout.harmful_repo(d)] == []
+    js = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
+    for p in scout.HARM[2:]:   # the first two are built from the service list; the rest must be character-identical
+        assert "/" + p.pattern + "/i" in js, p.pattern

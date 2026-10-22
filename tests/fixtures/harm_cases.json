@@ -1,0 +1,32 @@
+{
+  "_about": "SPEC RS18, RS29b: repo descriptions both engines must treat the same way. tests/test_scout.py (scout.harmful_repo) and tests/test_web_logic.js (harmfulRepo) read this file. `harmful` must be dropped; `fine` must be kept (live false positives from the 2026-10-22 review: a bare 'crack', 'ddos' or 'keygen' dropped ordinary repos).",
+  "harmful": [
+    "WhatsApp Hacking Learn about ethical hacking of WhatsApp accounts",
+    "Instagram account hacker tool",
+    "Office 2021 crack and keygen",
+    "Adobe Photoshop cracked version free download",
+    "Windows activation crack for every edition",
+    "Keygen for any software serial number",
+    "Software crack collection",
+    "Warez downloads index",
+    "DDoS attack tool for websites",
+    "Layer 7 DDoS script with proxies",
+    "IP stresser and booter panel",
+    "DDoSing any website from your browser",
+    "Free Robux generator",
+    "Game cheat with aimbot and wallhack",
+    "Credential stealer for browsers"
+  ],
+  "fine": [
+    "Crack the coding interview solutions in Python",
+    "Cracking the Coding Interview, 6th edition, in JavaScript",
+    "Anti-DDoS protection middleware for Express",
+    "DDoS mitigation rules for Nginx",
+    "Wisecrack generator for your chat bot",
+    "ssh-keygen wrapper for Node.js",
+    "Keygen API client for software licensing",
+    "Crack detection in concrete images with deep learning",
+    "MS-DOS tool collection for retro computing",
+    "A privacy-focused nutrition tracker"
+  ]
+}

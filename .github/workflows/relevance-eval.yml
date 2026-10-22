@@ -25,5 +25,9 @@ jobs:
           ENDPOINT: ${{ inputs.endpoint }}   # passed as data, never pasted into the script
           REPLORE_EVAL_KEY: ${{ secrets.REPLORE_EVAL_KEY }}   # RS34g: the deployment's EVAL_KEY (repo secret); empty = no key sent
         run: |
-          case "$ENDPOINT" in https://*.pages.dev/api/relevance|https://replore.cardzo.co.in/api/relevance) ;; *) echo "endpoint must be a *.pages.dev or replore.cardzo.co.in /api/relevance URL"; exit 2;; esac
+          # RS34g: the eval key goes only to Replore's own hosts. A shell `case` glob lets `*` match "/" and any host,
+          # so the check is an anchored regex: replore.cardzo.co.in, replore.pages.dev or one preview label under it.
+          if ! [[ "$ENDPOINT" =~ ^https://(replore\.cardzo\.co\.in|([a-z0-9-]{1,63}\.)?replore\.pages\.dev)/api/relevance$ ]]; then
+            echo "endpoint must be https://replore.cardzo.co.in/api/relevance or https://<preview>.replore.pages.dev/api/relevance"; exit 2
+          fi
           node evals/relevance_live.mjs "$ENDPOINT"

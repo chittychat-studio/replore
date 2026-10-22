@@ -196,6 +196,12 @@ assert.strictEqual(xdup.rel, 0, "dup rel drops to the better position found by a
     assert.strictEqual(s.whyRelevant(r, s.sigTokens(qOf[r.name])), h.length ? "Matches: " + h.join(", ") : "", r.name); } }
 console.log("web logic ok");
 
+// RS18, RS29b: shared harm cases (also checked against scout.py in tests/test_scout.py)
+{ const H = JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures", "harm_cases.json"), "utf8"));
+  assert.deepStrictEqual(H.harmful.filter(d => !s.harmfulRepo(d)), [], "should be dropped");
+  assert.deepStrictEqual(H.fine.filter(d => s.harmfulRepo(d)), [], "should be kept");
+  console.log("harm ok"); }
+
 // RS23: PRD feature extraction (client-side, capped for the rate limit)
 const prd = ["# My app PRD","## Features","- User authentication with email and Google",
  "- Payment checkout with Stripe","- Push notifications","* Image upload and cropping",

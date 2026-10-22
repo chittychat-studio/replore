@@ -73,8 +73,10 @@ KEY = ("Key: stars = how many people bookmarked it (popularity, not quality, and
 _SVC = r"(whats ?app|instagram|facebook|snapchat|telegram|gmail|tiktok|email|wifi|someone'?s? account)"
 HARM = [re.compile(p, re.I) for p in (
     r"hack(ing|er)?\s+(of\s+|a\s+|an\s+|the\s+)?" + _SVC, _SVC + r"\s+(account\s+)?(hack|hacking|hacker|cracker)",
-    r"account takeover", r"stalkerware|spyware", r"credential stealer|password stealer|stealer\b", r"\bkeygen|crack(ed)?\b",
-    r"\bddos\b", r"game (cheat|hack)|aimbot|wallhack", r"free (premium|robux|v-?bucks|coins) generator")]
+    r"account takeover", r"stalkerware|spyware", r"credential stealer|password stealer|stealer\b", # RS18: crack / keygen / ddos only in a piracy or attack context; the bare words dropped ordinary repos
+    r"\bkeygens?\b.{0,40}\b(crack|serial|patch|activat)|\b(crack|serial|patch|activat)\w*\b.{0,40}\bkeygens?\b",
+    r"\bcrack(ed|s)?\s+(for\s+|of\s+)?(paid\s+|premium\s+)?(software|windows|office|adobe|photoshop|games?|apps?|licen[cs]es?)\b|\bcracked\s+(version|apk|software|games?|apps?)\b|\b(software|licen[cs]e|activation|serial|game)\s+crack(s|ing|er)?\b|\bwarez\b",
+    r"\bddos\s+(attack\s+)?(tool|script|bot|botnet|panel|flooder)s?\b|\b(ip\s+)?(stresser|booter)s?\b|\bddos(ing)?\s+(any\s+|a\s+|the\s+)?(website|server|ip|target)s?\b", r"game (cheat|hack)|aimbot|wallhack", r"free (premium|robux|v-?bucks|coins) generator")]
 
 
 def harmful_repo(desc):

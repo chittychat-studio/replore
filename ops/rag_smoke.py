@@ -17,6 +17,7 @@ import os
 import re
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 
 CASES = [
@@ -31,14 +32,31 @@ CASES = [
         {"name": "e/game", "description": "2D platform game", "topics": []}]),
 ]
 NAME = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+")
+# RS34g: keys are sent only to Replore's own hosts (production, or one preview label under replore.pages.dev)
+KEY_HOST = re.compile(r"replore\.cardzo\.co\.in|([a-z0-9-]{1,63}\.)?replore\.pages\.dev")
 
 
-def _call(url, body=None, opener=urllib.request.urlopen, timeout=20):
+def key_host_ok(url):
+    u = urllib.parse.urlsplit(url)
+    return u.scheme == "https" and u.port is None and bool(KEY_HOST.fullmatch(u.hostname or ""))
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """A redirect would carry the key header to the new host, so any 3xx is an error instead."""
+    def redirect_request(self, *a, **k):
+        return None
+
+
+_OPEN = urllib.request.build_opener(_NoRedirect).open
+
+
+def _call(url, body=None, opener=_OPEN, timeout=20):
     data = None if body is None else json.dumps(body).encode("utf-8")
     headers = {"Content-Type": "application/json", "User-Agent": "replore-rag-smoke"}
-    if body is not None and os.environ.get("REPLORE_EVAL_KEY"):   # RS34g: CI-only key, opens the semantic route
+    keyed = body is not None and key_host_ok(url)
+    if keyed and os.environ.get("REPLORE_EVAL_KEY"):   # RS34g: CI-only key, opens the semantic route
         headers["X-Replore-Eval-Key"] = os.environ["REPLORE_EVAL_KEY"]
-    elif body is not None and os.environ.get("REPLORE_PLUGIN_KEY"):   # or the plugin key (semantic route only)
+    elif keyed and os.environ.get("REPLORE_PLUGIN_KEY"):   # or the plugin key (semantic route only)
         headers["X-Replore-Plugin-Key"] = os.environ["REPLORE_PLUGIN_KEY"]
     req = urllib.request.Request(url, data=data, method="GET" if body is None else "POST", headers=headers)
     try:
@@ -72,7 +90,7 @@ def check_reply(flags, repos, status, j):
     return out
 
 
-def main(argv=None, opener=urllib.request.urlopen):
+def main(argv=None, opener=_OPEN):
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("base", help="deployment URL, e.g. https://claude-my-branch.replore.pages.dev")
     ap.add_argument("--yes", action="store_true", help="approve the Workers AI calls")
@@ -81,6 +99,8 @@ def main(argv=None, opener=urllib.request.urlopen):
         print("base must be an https:// origin with no path")
         return 1
     url = a.base.rstrip("/") + "/api/relevance"
+    if (os.environ.get("REPLORE_EVAL_KEY") or os.environ.get("REPLORE_PLUGIN_KEY")) and not key_host_ok(url):
+        print("not sending your key: " + a.base + " is not replore.cardzo.co.in or a *.replore.pages.dev preview")
     status, cfg = _call(url, opener=opener)
     flags = cfg.get("rag") if isinstance(cfg, dict) and isinstance(cfg.get("rag"), dict) else {}
     print(f"switched on: rerank={bool(flags.get('rerank'))} index={bool(flags.get('index'))} (HTTP {status})")
