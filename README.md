@@ -1,5 +1,7 @@
 # Replore
 
+**The repo scout for vibe coders. Find it before you build it.**
+
 A repo finder for your AI coding agent — a one-command plugin for **Claude Code**, and an MCP server for
 **Codex, Cursor, Gemini CLI, Copilot, Windsurf, Cline or any other agent** ([setup](#use-in-any-other-ai-agent)). Describe your project in plain words and get the open-source GitHub repos that
 **best fit** it — ranked by relevance, popularity, and how freely you can use the license — as a comparison
