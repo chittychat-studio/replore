@@ -816,28 +816,23 @@
   /* RS65: the studio stage (owner pick 2026-10-23, after the CarWhisperer reference): a lit dark-blue stage holds the
      tagline, the search and the live demo. It stays dark in both themes, so its tokens are set here, not per theme. */
   /* the stage follows the theme: a cool light studio in light mode, the dark-blue studio in dark mode */
-  :root{ --st-light:rgba(255,255,255,.75); --st-a:#d6e2eb; --st-b:#e3eaf0; --st-c:#edf2f6; --st-d:#f4f6f8; --st-ray:rgba(255,255,255,.4);
+  :root{ --st-light:rgba(255,255,255,.75); --st-a:#d6e2eb; --st-b:#e3eaf0; --st-c:#edf2f6; --st-d:#f4f6f8; 
     --st-card:rgba(255,255,255,.66); }
   @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --st-light:rgba(156,192,216,.26); --st-a:#34546f; --st-b:#213a51;
-    --st-c:#182b3d; --st-d:#121a22; --st-ray:rgba(232,240,246,.035); --st-card:rgba(14,25,37,.62); } }
+    --st-c:#182b3d; --st-d:#121a22; --st-card:rgba(14,25,37,.62); } }
   :root[data-theme="dark"]{ --st-light:rgba(156,192,216,.26); --st-a:#34546f; --st-b:#213a51; --st-c:#182b3d; --st-d:#121a22;
-    --st-ray:rgba(232,240,246,.035); --st-card:rgba(14,25,37,.62); }
+    --st-card:rgba(14,25,37,.62); }
   body:not(.has-results):not(.searching) .hero{position:relative;isolation:isolate;max-width:1240px;
     padding:22px clamp(16px,3vw,40px) 20px;margin:0 auto 4px;--card:var(--st-card);--card-bg:var(--st-card)}
   /* no box: the stage light runs edge to edge and fades into the page at the top and bottom */
   body:not(.has-results):not(.searching) .page{overflow-x:clip}
-  body:not(.has-results):not(.searching) .hero::after,
-  body:not(.has-results):not(.searching) .hero::before{content:"";position:absolute;top:-30px;bottom:-60px;left:50%;width:100vw;
+  body:not(.has-results):not(.searching) .hero::after{content:"";position:absolute;top:-30px;bottom:-60px;left:50%;width:100vw;
     transform:translateX(-50%);pointer-events:none}
   body:not(.has-results):not(.searching) .hero::after{z-index:-2;
     background:radial-gradient(70% 60% at 72% 8%, var(--st-light), transparent 62%),
       linear-gradient(180deg,var(--st-a) 0%,var(--st-b) 42%,var(--st-c) 66%,var(--st-d) 100%);
     -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 90px,#000 calc(100% - 160px),transparent 100%);
     mask-image:linear-gradient(180deg,transparent 0,#000 90px,#000 calc(100% - 160px),transparent 100%)}
-  body:not(.has-results):not(.searching) .hero::before{z-index:-1;
-    background:repeating-linear-gradient(115deg,transparent 0 90px,var(--st-ray) 90px 150px,transparent 150px 260px);
-    -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 90px,#000 45%,transparent 70%);
-    mask-image:linear-gradient(180deg,transparent 0,#000 90px,#000 45%,transparent 70%)}
   body:not(.has-results):not(.searching) .hero > *{position:relative;z-index:0}
   .hero-title{font-family:var(--f-body);font-weight:300;letter-spacing:-.02em;font-size:clamp(36px,5vw,62px);line-height:1.04}
   .hero-title em{font-style:normal;background:none;-webkit-text-fill-color:currentColor;color:var(--muted)}
