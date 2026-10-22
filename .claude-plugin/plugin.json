@@ -1,8 +1,8 @@
 {
   "name": "replore",
   "displayName": "Replore",
-  "version": "0.3.0",
-  "description": "The repo scout for vibe coders. Find it before you build it: describe your project in plain words; get the open-source GitHub repos that best fit it — ranked by relevance, popularity, and how freely you can use the license — with plain-English license and last-push date.",
+  "version": "0.4.0",
+  "description": "The repo scout for vibe coders. Find it before you build it: describe your project in plain words; get the open-source GitHub repos that best fit it — ranked by relevance, popularity, and how freely you can use the license — with plain-English license and last-push date, and whether each is safe to build on.",
   "author": {
     "name": "chittychat-studio"
   },

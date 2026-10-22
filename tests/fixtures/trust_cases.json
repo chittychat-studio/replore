@@ -1,0 +1,1193 @@
+{
+ "_about": "SPEC RS54: shared trust-check cases. The web (tests/test_trust_fn.mjs, tests/test_web_logic.js; RS53) and the plugin (tests/test_trust.py; RS54) both run every case, so the two cannot drift. Unlisted URLs answer 404 'Not found'.",
+ "server": [
+  {
+   "name": "npm package accepted; a malformed advisory ID is dropped (RS9)",
+   "repo": "expressjs/express",
+   "lang": "JavaScript",
+   "routes": {
+    "https://api.securityscorecards.dev/projects/github.com/expressjs/express": [
+     200,
+     {
+      "score": 8.94,
+      "date": "2026-10-19T21:25:38Z",
+      "checks": [
+       {
+        "name": "Code-Review",
+        "score": 10
+       },
+       {
+        "name": "Maintained",
+        "score": 10
+       }
+      ]
+     }
+    ],
+    "https://api.deps.dev/v3/systems/npm/packages/express": [
+     200,
+     {
+      "versions": [
+       {
+        "versionKey": {
+         "version": "0.0.1"
+        }
+       },
+       {
+        "versionKey": {
+         "version": "5.3.0"
+        },
+        "isDefault": true
+       }
+      ]
+     }
+    ],
+    "https://api.deps.dev/v3/systems/npm/packages/express/versions/5.3.0": [
+     200,
+     {
+      "licenses": [
+       "MIT"
+      ],
+      "advisoryKeys": [
+       {
+        "id": "GHSA-qw6h-vgh9-j6wx"
+       },
+       {
+        "id": "<script>"
+       }
+      ],
+      "relatedProjects": [
+       {
+        "projectKey": {
+         "id": "github.com/expressjs/express"
+        },
+        "relationType": "SOURCE_REPO",
+        "relationProvenance": "UNVERIFIED_METADATA"
+       }
+      ]
+     }
+    ]
+   },
+   "expect": {
+    "scorecard": {
+     "status": "ok",
+     "score": 8.9,
+     "date": "2026-10-19",
+     "maintained": 10
+    },
+    "package": {
+     "status": "ok",
+     "system": "npm",
+     "name": "express",
+     "version": "5.3.0",
+     "licenses": [
+      "MIT"
+     ],
+     "advisories": [
+      "GHSA-qw6h-vgh9-j6wx"
+     ],
+     "advisoryCount": 1
+    }
+   }
+  },
+  {
+   "name": "anti-spoof: same name, but the package names another repo",
+   "repo": "expressjs/express",
+   "lang": "JavaScript",
+   "routes": {
+    "https://api.securityscorecards.dev/projects/github.com/expressjs/express": [
+     200,
+     {
+      "score": 8.94,
+      "date": "2026-10-19T21:25:38Z",
+      "checks": [
+       {
+        "name": "Code-Review",
+        "score": 10
+       },
+       {
+        "name": "Maintained",
+        "score": 10
+       }
+      ]
+     }
+    ],
+    "https://api.deps.dev/v3/systems/npm/packages/express": [
+     200,
+     {
+      "versions": [
+       {
+        "versionKey": {
+         "version": "0.0.1"
+        }
+       },
+       {
+        "versionKey": {
+         "version": "5.3.0"
+        },
+        "isDefault": true
+       }
+      ]
+     }
+    ],
+    "https://api.deps.dev/v3/systems/npm/packages/express/versions/5.3.0": [
+     200,
+     {
+      "licenses": [
+       "MIT"
+      ],
+      "advisoryKeys": [],
+      "relatedProjects": [
+       {
+        "projectKey": {
+         "id": "github.com/someone/else"
+        },
+        "relationType": "SOURCE_REPO",
+        "relationProvenance": "UNVERIFIED_METADATA"
+       }
+      ]
+     }
+    ]
+   },
+   "expect": {
+    "scorecard": {
+     "status": "ok",
+     "score": 8.9,
+     "date": "2026-10-19",
+     "maintained": 10
+    },
+    "package": {
+     "status": "none"
+    }
+   }
+  },
+  {
+   "name": "an ISSUE_TRACKER link is not a source link",
+   "repo": "expressjs/express",
+   "lang": "TypeScript",
+   "routes": {
+    "https://api.deps.dev/v3/systems/npm/packages/express": [
+     200,
+     {
+      "versions": [
+       {
+        "versionKey": {
+         "version": "0.0.1"
+        }
+       },
+       {
+        "versionKey": {
+         "version": "5.3.0"
+        },
+        "isDefault": true
+       }
+      ]
+     }
+    ],
+    "https://api.deps.dev/v3/systems/npm/packages/express/versions/5.3.0": [
+     200,
+     {
+      "licenses": [
+       "MIT"
+      ],
+      "advisoryKeys": [],
+      "relatedProjects": [
+       {
+        "projectKey": {
+         "id": "github.com/expressjs/express"
+        },
+        "relationType": "ISSUE_TRACKER",
+        "relationProvenance": "UNVERIFIED_METADATA"
+       }
+      ]
+     }
+    ]
+   },
+   "expect": {
+    "scorecard": {
+     "status": "none"
+    },
+    "package": {
+     "status": "none"
+    }
+   }
+  },
+  {
+   "name": "the repo match is case-insensitive",
+   "repo": "expressjs/express",
+   "lang": "JavaScript",
+   "routes": {
+    "https://api.deps.dev/v3/systems/npm/packages/express": [
+     200,
+     {
+      "versions": [
+       {
+        "versionKey": {
+         "version": "0.0.1"
+        }
+       },
+       {
+        "versionKey": {
+         "version": "5.3.0"
+        },
+        "isDefault": true
+       }
+      ]
+     }
+    ],
+    "https://api.deps.dev/v3/systems/npm/packages/express/versions/5.3.0": [
+     200,
+     {
+      "licenses": [
+       "MIT"
+      ],
+      "advisoryKeys": [],
+      "relatedProjects": [
+       {
+        "projectKey": {
+         "id": "github.com/ExpressJS/Express"
+        },
+        "relationType": "SOURCE_REPO",
+        "relationProvenance": "UNVERIFIED_METADATA"
+       }
+      ]
+     }
+    ]
+   },
+   "expect": {
+    "scorecard": {
+     "status": "none"
+    },
+    "package": {
+     "status": "ok",
+     "system": "npm",
+     "name": "express",
+     "version": "5.3.0",
+     "licenses": [
+      "MIT"
+     ],
+     "advisories": [],
+     "advisoryCount": 0
+    }
+   }
+  },
+  {
+   "name": "PyPI name is the lower-cased repo name",
+   "repo": "psf/Requests",
+   "lang": "Python",
+   "routes": {
+    "https://api.deps.dev/v3/systems/pypi/packages/requests": [
+     200,
+     {
+      "versions": [
+       {
+        "versionKey": {
+         "version": "0.0.1"
+        }
+       },
+       {
+        "versionKey": {
+         "version": "2.34.2"
+        },
+        "isDefault": true
+       }
+      ]
+     }
+    ],
+    "https://api.deps.dev/v3/systems/pypi/packages/requests/versions/2.34.2": [
+     200,
+     {
+      "licenses": [
+       "Apache-2.0"
+      ],
+      "advisoryKeys": [],
+      "relatedProjects": [
+       {
+        "projectKey": {
+         "id": "github.com/psf/requests"
+        },
+        "relationType": "SOURCE_REPO",
+        "relationProvenance": "UNVERIFIED_METADATA"
+       }
+      ]
+     }
+    ]
+   },
+   "expect": {
+    "scorecard": {
+     "status": "none"
+    },
+    "package": {
+     "status": "ok",
+     "system": "pypi",
+     "name": "requests",
+     "version": "2.34.2",
+     "licenses": [
+      "Apache-2.0"
+     ],
+     "advisories": [],
+     "advisoryCount": 0
+    }
+   }
+  },
+  {
+   "name": "Go: bare module path when no /vN exists",
+   "repo": "gin-gonic/gin",
+   "lang": "Go",
+   "routes": {
+    "https://api.deps.dev/v3/systems/go/packages/github.com%2Fgin-gonic%2Fgin": [
+     200,
+     {
+      "versions": [
+       {
+        "versionKey": {
+         "version": "0.0.1"
+        }
+       },
+       {
+        "versionKey": {
+         "version": "v1.12.0"
+        },
+        "isDefault": true
+       }
+      ]
+     }
+    ],
+    "https://api.deps.dev/v3/systems/go/packages/github.com%2Fgin-gonic%2Fgin/versions/v1.12.0": [
+     200,
+     {
+      "licenses": [
+       "MIT"
+      ],
+      "advisoryKeys": [],
+      "relatedProjects": [
+       {
+        "projectKey": {
+         "id": "github.com/gin-gonic/gin"
+        },
+        "relationType": "SOURCE_REPO",
+        "relationProvenance": "UNVERIFIED_METADATA"
+       }
+      ]
+     }
+    ]
+   },
+   "expect": {
+    "scorecard": {
+     "status": "none"
+    },
+    "package": {
+     "status": "ok",
+     "system": "go",
+     "name": "github.com/gin-gonic/gin",
+     "version": "v1.12.0",
+     "licenses": [
+      "MIT"
+     ],
+     "advisories": [],
+     "advisoryCount": 0
+    }
+   }
+  },
+  {
+   "name": "Go: the highest major module wins over the stale bare path (gofiber/fiber, live 2026-10-22)",
+   "repo": "gofiber/fiber",
+   "lang": "Go",
+   "routes": {
+    "https://api.deps.dev/v3/systems/go/packages/github.com%2Fgofiber%2Ffiber": [
+     200,
+     {
+      "versions": [
+       {
+        "versionKey": {
+         "version": "0.0.1"
+        }
+       },
+       {
+        "versionKey": {
+         "version": "v1.14.6"
+        },
+        "isDefault": true
+       }
+      ]
+     }
+    ],
+    "https://api.deps.dev/v3/systems/go/packages/github.com%2Fgofiber%2Ffiber%2Fv2": [
+     200,
+     {
+      "versions": [
+       {
+        "versionKey": {
+         "version": "0.0.1"
+        }
+       },
+       {
+        "versionKey": {
+         "version": "v2.52.15"
+        },
+        "isDefault": true
+       }
+      ]
+     }
+    ],
+    "https://api.deps.dev/v3/systems/go/packages/github.com%2Fgofiber%2Ffiber%2Fv3": [
+     200,
+     {
+      "versions": [
+       {
+        "versionKey": {
+         "version": "0.0.1"
+        }
+       },
+       {
+        "versionKey": {
+         "version": "v3.6.1"
+        },
+        "isDefault": true
+       }
+      ]
+     }
+    ],
+    "https://api.deps.dev/v3/systems/go/packages/github.com%2Fgofiber%2Ffiber/versions/v1.14.6": [
+     200,
+     {
+      "licenses": [
+       "MIT"
+      ],
+      "advisoryKeys": [
+       {
+        "id": "GHSA-aaaa-bbbb-cccc"
+       }
+      ],
+      "relatedProjects": [
+       {
+        "projectKey": {
+         "id": "github.com/gofiber/fiber"
+        },
+        "relationType": "SOURCE_REPO",
+        "relationProvenance": "UNVERIFIED_METADATA"
+       }
+      ]
+     }
+    ],
+    "https://api.deps.dev/v3/systems/go/packages/github.com%2Fgofiber%2Ffiber%2Fv3/versions/v3.6.1": [
+     200,
+     {
+      "licenses": [
+       "MIT"
+      ],
+      "advisoryKeys": [],
+      "relatedProjects": [
+       {
+        "projectKey": {
+         "id": "github.com/gofiber/fiber"
+        },
+        "relationType": "SOURCE_REPO",
+        "relationProvenance": "UNVERIFIED_METADATA"
+       }
+      ]
+     }
+    ]
+   },
+   "expect": {
+    "scorecard": {
+     "status": "none"
+    },
+    "package": {
+     "status": "ok",
+     "system": "go",
+     "name": "github.com/gofiber/fiber/v3",
+     "version": "v3.6.1",
+     "licenses": [
+      "MIT"
+     ],
+     "advisories": [],
+     "advisoryCount": 0
+    }
+   }
+  },
+  {
+   "name": "Go: a newer major that errors never falls back to an older one",
+   "repo": "gofiber/fiber",
+   "lang": "Go",
+   "routes": {
+    "https://api.deps.dev/v3/systems/go/packages/github.com%2Fgofiber%2Ffiber": [
+     200,
+     {
+      "versions": [
+       {
+        "versionKey": {
+         "version": "0.0.1"
+        }
+       },
+       {
+        "versionKey": {
+         "version": "v1.14.6"
+        },
+        "isDefault": true
+       }
+      ]
+     }
+    ],
+    "https://api.deps.dev/v3/systems/go/packages/github.com%2Fgofiber%2Ffiber%2Fv3": [
+     503,
+     "busy"
+    ],
+    "https://api.deps.dev/v3/systems/go/packages/github.com%2Fgofiber%2Ffiber/versions/v1.14.6": [
+     200,
+     {
+      "licenses": [
+       "MIT"
+      ],
+      "advisoryKeys": [],
+      "relatedProjects": [
+       {
+        "projectKey": {
+         "id": "github.com/gofiber/fiber"
+        },
+        "relationType": "SOURCE_REPO",
+        "relationProvenance": "UNVERIFIED_METADATA"
+       }
+      ]
+     }
+    ]
+   },
+   "expect": {
+    "scorecard": {
+     "status": "none"
+    },
+    "package": {
+     "status": "error"
+    }
+   }
+  },
+  {
+   "name": "no or unsupported language: package skipped",
+   "repo": "torvalds/linux",
+   "lang": "",
+   "routes": {
+    "https://api.securityscorecards.dev/projects/github.com/torvalds/linux": [
+     200,
+     {
+      "score": 3,
+      "checks": []
+     }
+    ]
+   },
+   "expect": {
+    "scorecard": {
+     "status": "ok",
+     "score": 3,
+     "date": null,
+     "maintained": null
+    },
+    "package": {
+     "status": "skipped"
+    }
+   }
+  },
+  {
+   "name": "Scorecard 500 is an error; a package with no default version is none",
+   "repo": "a/b",
+   "lang": "Rust",
+   "routes": {
+    "https://api.securityscorecards.dev/projects/github.com/a/b": [
+     500,
+     "boom"
+    ],
+    "https://api.deps.dev/v3/systems/cargo/packages/b": [
+     200,
+     {
+      "versions": []
+     }
+    ]
+   },
+   "expect": {
+    "scorecard": {
+     "status": "error"
+    },
+    "package": {
+     "status": "none"
+    }
+   }
+  },
+  {
+   "name": "deps.dev 503 is an error",
+   "repo": "a/b",
+   "lang": "Ruby",
+   "routes": {
+    "https://api.deps.dev/v3/systems/rubygems/packages/b": [
+     503,
+     "busy"
+    ]
+   },
+   "expect": {
+    "scorecard": {
+     "status": "none"
+    },
+    "package": {
+     "status": "error"
+    }
+   }
+  },
+  {
+   "name": "404 text bodies everywhere: none, none",
+   "repo": "nobody/nothing",
+   "lang": "C#",
+   "routes": {},
+   "expect": {
+    "scorecard": {
+     "status": "none"
+    },
+    "package": {
+     "status": "none"
+    }
+   }
+  },
+  {
+   "name": "malformed Scorecard answer is an error, never a guess",
+   "repo": "a/b",
+   "lang": "",
+   "routes": {
+    "https://api.securityscorecards.dev/projects/github.com/a/b": [
+     200,
+     {
+      "score": "9"
+     }
+    ]
+   },
+   "expect": {
+    "scorecard": {
+     "status": "error"
+    },
+    "package": {
+     "status": "skipped"
+    }
+   }
+  },
+  {
+   "name": "a malformed default version is treated as no version",
+   "repo": "a/b",
+   "lang": "JavaScript",
+   "routes": {
+    "https://api.deps.dev/v3/systems/npm/packages/b": [
+     200,
+     {
+      "versions": [
+       {
+        "versionKey": {
+         "version": "1.0 <x>"
+        },
+        "isDefault": true
+       }
+      ]
+     }
+    ]
+   },
+   "expect": {
+    "scorecard": {
+     "status": "none"
+    },
+    "package": {
+     "status": "none"
+    }
+   }
+  },
+  {
+   "name": "advisories capped at 10 with the true total; bad licenses dropped",
+   "repo": "a/b",
+   "lang": "JavaScript",
+   "routes": {
+    "https://api.deps.dev/v3/systems/npm/packages/b": [
+     200,
+     {
+      "versions": [
+       {
+        "versionKey": {
+         "version": "0.0.1"
+        }
+       },
+       {
+        "versionKey": {
+         "version": "1.0.0"
+        },
+        "isDefault": true
+       }
+      ]
+     }
+    ],
+    "https://api.deps.dev/v3/systems/npm/packages/b/versions/1.0.0": [
+     200,
+     {
+      "licenses": [
+       "MIT",
+       "x<y"
+      ],
+      "advisoryKeys": [
+       {
+        "id": "GHSA-aaaa-bbbb-0"
+       },
+       {
+        "id": "GHSA-aaaa-bbbb-1"
+       },
+       {
+        "id": "GHSA-aaaa-bbbb-2"
+       },
+       {
+        "id": "GHSA-aaaa-bbbb-3"
+       },
+       {
+        "id": "GHSA-aaaa-bbbb-4"
+       },
+       {
+        "id": "GHSA-aaaa-bbbb-5"
+       },
+       {
+        "id": "GHSA-aaaa-bbbb-6"
+       },
+       {
+        "id": "GHSA-aaaa-bbbb-7"
+       },
+       {
+        "id": "GHSA-aaaa-bbbb-8"
+       },
+       {
+        "id": "GHSA-aaaa-bbbb-9"
+       },
+       {
+        "id": "GHSA-aaaa-bbbb-10"
+       },
+       {
+        "id": "GHSA-aaaa-bbbb-11"
+       },
+       {
+        "id": "GHSA-aaaa-bbbb-12"
+       },
+       {
+        "id": "GHSA-aaaa-bbbb-13"
+       }
+      ],
+      "relatedProjects": [
+       {
+        "projectKey": {
+         "id": "github.com/a/b"
+        },
+        "relationType": "SOURCE_REPO",
+        "relationProvenance": "UNVERIFIED_METADATA"
+       }
+      ]
+     }
+    ]
+   },
+   "expect": {
+    "scorecard": {
+     "status": "none"
+    },
+    "package": {
+     "status": "ok",
+     "system": "npm",
+     "name": "b",
+     "version": "1.0.0",
+     "licenses": [
+      "MIT"
+     ],
+     "advisories": [
+      "GHSA-aaaa-bbbb-0",
+      "GHSA-aaaa-bbbb-1",
+      "GHSA-aaaa-bbbb-2",
+      "GHSA-aaaa-bbbb-3",
+      "GHSA-aaaa-bbbb-4",
+      "GHSA-aaaa-bbbb-5",
+      "GHSA-aaaa-bbbb-6",
+      "GHSA-aaaa-bbbb-7",
+      "GHSA-aaaa-bbbb-8",
+      "GHSA-aaaa-bbbb-9"
+     ],
+     "advisoryCount": 14
+    }
+   }
+  },
+  {
+   "name": "Scorecard rounds half up, like the web (8.85 -> 8.9)",
+   "repo": "a/b",
+   "lang": "",
+   "routes": {
+    "https://api.securityscorecards.dev/projects/github.com/a/b": [
+     200,
+     {
+      "score": 8.85,
+      "date": "2026-01-02",
+      "checks": [
+       {
+        "name": "Maintained",
+        "score": -1
+       }
+      ]
+     }
+    ]
+   },
+   "expect": {
+    "scorecard": {
+     "status": "ok",
+     "score": 8.9,
+     "date": "2026-01-02",
+     "maintained": null
+    },
+    "package": {
+     "status": "skipped"
+    }
+   }
+  }
+ ],
+ "github": [
+  {
+   "name": "all three answers",
+   "raw": {
+    "community": {
+     "s": 200,
+     "j": {
+      "files": {
+       "readme": {},
+       "contributing": null,
+       "code_of_conduct": {}
+      }
+     }
+    },
+    "release": {
+     "s": 200,
+     "j": {
+      "tag_name": "v5.3.0",
+      "published_at": "2026-10-01T00:00:00Z"
+     }
+    },
+    "gfi": {
+     "s": 200,
+     "j": [
+      {}
+     ],
+     "link": "<https://api.github.com/repositories/1/issues?labels=good+first+issue&state=open&per_page=1&page=2>; rel=\"next\", <https://api.github.com/repositories/1/issues?labels=good+first+issue&state=open&per_page=1&page=37>; rel=\"last\""
+    }
+   },
+   "expect": {
+    "limited": false,
+    "files": {
+     "readme": true,
+     "contributing": false,
+     "coc": true
+    },
+    "release": {
+     "tag": "v5.3.0",
+     "date": "2026-10-01"
+    },
+    "gfi": 37
+   }
+  },
+  {
+   "name": "no releases",
+   "raw": {
+    "release": {
+     "s": 404
+    }
+   },
+   "expect": {
+    "limited": false,
+    "files": null,
+    "release": "none",
+    "gfi": null
+   }
+  },
+  {
+   "name": "a hostile release tag is dropped",
+   "raw": {
+    "release": {
+     "s": 200,
+     "j": {
+      "tag_name": "<img src=x>",
+      "published_at": "2026-10-01"
+     }
+    }
+   },
+   "expect": {
+    "limited": false,
+    "files": null,
+    "release": null,
+    "gfi": null
+   }
+  },
+  {
+   "name": "rate limited",
+   "raw": {
+    "community": {
+     "s": 403
+    }
+   },
+   "expect": {
+    "limited": true,
+    "files": null,
+    "release": null,
+    "gfi": null
+   }
+  },
+  {
+   "name": "no Link header: count the items",
+   "raw": {
+    "gfi": {
+     "s": 200,
+     "j": [
+      {}
+     ],
+     "link": null
+    }
+   },
+   "expect": {
+    "limited": false,
+    "files": null,
+    "release": null,
+    "gfi": 1
+   }
+  },
+  {
+   "name": "per_page= is not page=",
+   "raw": {
+    "gfi": {
+     "s": 200,
+     "j": [],
+     "link": "<https://x/y?per_page=1>; rel=\"last\""
+    }
+   },
+   "expect": {
+    "limited": false,
+    "files": null,
+    "release": null,
+    "gfi": 0
+   }
+  }
+ ],
+ "render": [
+  {
+   "name": "everything known",
+   "gh": {
+    "limited": false,
+    "files": {
+     "readme": true,
+     "contributing": false,
+     "coc": true
+    },
+    "release": {
+     "tag": "v5.3.0",
+     "date": "2026-10-01"
+    },
+    "gfi": 37
+   },
+   "tr": {
+    "scorecard": {
+     "status": "ok",
+     "score": 8.9,
+     "maintained": 10
+    },
+    "package": {
+     "status": "ok",
+     "system": "npm",
+     "name": "express",
+     "version": "5.3.0",
+     "licenses": [
+      "MIT"
+     ],
+     "advisories": [
+      "GHSA-qw6h-vgh9-j6wx",
+      "<script>alert(1)</script>"
+     ],
+     "advisoryCount": 2
+    }
+   },
+   "spdx": "MIT",
+   "repo": "expressjs/express",
+   "contains": [
+    "Security health 8.9/10",
+    "maintained 10/10",
+    "OpenSSF Scorecard",
+    "Known vulnerabilities in express 5.3.0",
+    "2 known",
+    "GHSA-qw6h-vgh9-j6wx",
+    "npm install express",
+    "Beginner-friendly",
+    "✓ README",
+    "✗ contributing guide",
+    "37 good first issues",
+    "Latest release v5.3.0",
+    "doesn't change the ranking"
+   ],
+   "absent": [
+    "<script",
+    "Package license"
+   ]
+  },
+  {
+   "name": "no advisories; package license differs from the repo's",
+   "gh": {
+    "limited": false,
+    "files": {
+     "readme": true,
+     "contributing": false,
+     "coc": true
+    },
+    "release": {
+     "tag": "v5.3.0",
+     "date": "2026-10-01"
+    },
+    "gfi": 37
+   },
+   "spdx": "MIT",
+   "repo": "a/b",
+   "tr": {
+    "scorecard": {
+     "status": "ok",
+     "score": 5
+    },
+    "package": {
+     "status": "ok",
+     "system": "npm",
+     "name": "express",
+     "version": "5.3.0",
+     "licenses": [
+      "GPL-3.0"
+     ],
+     "advisories": [],
+     "advisoryCount": 0
+    }
+   },
+   "contains": [
+    "Security health 5/10",
+    "none known",
+    "Package license GPL-3.0",
+    "the repo says MIT"
+   ],
+   "absent": [
+    "maintained"
+   ]
+  },
+  {
+   "name": "trust check down and GitHub limit used up",
+   "gh": {
+    "limited": true
+   },
+   "tr": null,
+   "spdx": "MIT",
+   "repo": "a/b",
+   "contains": [
+    "Security health couldn't check",
+    "Known vulnerabilities couldn't check",
+    "hourly limit"
+   ],
+   "absent": [
+    "/10",
+    "Beginner-friendly"
+   ]
+  },
+  {
+   "name": "not scored, no package",
+   "gh": {
+    "limited": false,
+    "files": {
+     "readme": true,
+     "contributing": false,
+     "coc": true
+    },
+    "release": {
+     "tag": "v5.3.0",
+     "date": "2026-10-01"
+    },
+    "gfi": 37
+   },
+   "tr": {
+    "scorecard": {
+     "status": "none"
+    },
+    "package": {
+     "status": "none"
+    }
+   },
+   "spdx": "MIT",
+   "repo": "a/b",
+   "contains": [
+    "not scored by OpenSSF Scorecard yet",
+    "no published package matched this repo"
+   ],
+   "absent": [
+    "Install"
+   ]
+  },
+  {
+   "name": "no language: no package lines",
+   "gh": {
+    "limited": false,
+    "files": {
+     "readme": true,
+     "contributing": false,
+     "coc": true
+    },
+    "release": {
+     "tag": "v5.3.0",
+     "date": "2026-10-01"
+    },
+    "gfi": 37
+   },
+   "tr": {
+    "scorecard": {
+     "status": "ok",
+     "score": 7
+    },
+    "package": {
+     "status": "skipped"
+    }
+   },
+   "spdx": "MIT",
+   "repo": "a/b",
+   "contains": [
+    "Security health 7/10"
+   ],
+   "absent": [
+    "Known vulnerabilities",
+    "Install",
+    "Package"
+   ]
+  },
+  {
+   "name": "a malformed package name is dropped, not shown",
+   "gh": {
+    "limited": false,
+    "files": {
+     "readme": true,
+     "contributing": false,
+     "coc": true
+    },
+    "release": {
+     "tag": "v5.3.0",
+     "date": "2026-10-01"
+    },
+    "gfi": 37
+   },
+   "spdx": "MIT",
+   "repo": "a/b",
+   "tr": {
+    "scorecard": {
+     "status": "ok",
+     "score": 7
+    },
+    "package": {
+     "status": "ok",
+     "system": "npm",
+     "name": "<x>",
+     "version": "1"
+    }
+   },
+   "contains": [
+    "Security health 7/10"
+   ],
+   "absent": [
+    "<x>",
+    "&lt;x",
+    "Install"
+   ]
+  }
+ ]
+}

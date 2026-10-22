@@ -323,3 +323,16 @@ console.log("prd ok:", f.join(" | "));
   assert.ok(!("open" in det.attrs) && body.innerHTML === "" && !("data-done" in body.attrs));
   assert.strictEqual(s.CACHE_V, "13");
   console.log("trust ok"); }
+
+// RS54: the shared web/plugin cases — GitHub shaping and the panel's wording (tests/test_trust.py runs the same file)
+{ const cases = JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures", "trust_cases.json"), "utf8"));
+  cases.github.forEach(c => assert.deepStrictEqual(s.ghShape(c.raw), c.expect, c.name));
+  const realEl = document.createElement;
+  document.createElement = () => ({ set textContent(v) { this._t = String(v); },
+    get innerHTML() { return this._t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); } });
+  try {
+    cases.render.forEach(c => { const html = s.trustHtml(c.gh, c.tr, c.spdx, c.repo), text = html.replace(/<[^>]+>/g, "");
+      c.contains.forEach(w => assert.ok(text.includes(w), c.name + ": missing " + w + " in " + text));
+      c.absent.forEach(w => assert.ok(!text.includes(w) && !html.includes(w), c.name + ": must not show " + w)); });
+  } finally { document.createElement = realEl; }
+  console.log("shared trust cases ok"); }

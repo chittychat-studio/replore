@@ -144,6 +144,10 @@ limit of 10 requests per 10 seconds runs in memory; for a hard limit, add a WAF 
 
 Needs Python 3.11+ (the plugin tells you how to install it if it's missing). Once installed, it is available in every project.
 
+After the comparison table, ask *"which of these are safe to build on?"* and the plugin runs the same check as the web
+page's **Safe to build on?**: security health, known vulnerabilities, an install command, beginner-friendliness and
+the latest release (SPEC RS54). The web page and the plugin share one set of test cases, so they give the same answer.
+
 ## Use in any other AI agent
 
 Replore is model-agnostic. The `/plugin install` command above is Claude Code-only; every other agent loads the
@@ -177,7 +181,8 @@ These are each agent's documented MCP locations at the time of writing; if one h
 docs — the command and argument stay the same.
 
 **3. Ask your agent** — *"find repos for a diet app for iPhone"*. It calls Replore's `find_repos` tool and shows the
-comparison table. Your AI writes the searches and judges which results fit; the feature-by-feature PRD mode is in the
+comparison table. Then *"which of these are safe to build on?"* calls `check_repos`, the same check as the web page's
+**Safe to build on?** (SPEC RS54). Your AI writes the searches and judges which results fit; the feature-by-feature PRD mode is in the
 Claude Code plugin.
 
 **No MCP support?** Open the cloned folder in your agent. Codex, Cursor, Copilot, Cline and Windsurf read
@@ -186,6 +191,7 @@ Claude Code plugin.
 
 ```
 python3 scripts/scout.py "diet tracker app" "calorie counter" --markdown
+python3 scripts/trust.py expressjs/express psf/requests      # is it safe to build on? (1-5 repos, SPEC RS54)
 ```
 
 Same filters, ranking and license labels in every path. Browser-only chats with no local tools can't run it — use
@@ -242,6 +248,7 @@ python3 -m pytest
 node tests/test_web_logic.js        # web page logic (no network)
 node tests/test_relevance_fn.mjs    # relevance check function (fake AI)
 node tests/test_trust_fn.mjs        # trust check function (fake Scorecard/deps.dev)
+# tests/fixtures/trust_cases.json is run by the web tests above and by pytest (tests/test_trust.py): one behaviour, two ports
 python3 evals/run.py                # fit-ranking evals
 ```
 
@@ -253,7 +260,8 @@ it never sees your searches).
 Search words go to GitHub to run the search; on the web page they also pass through a small relevance check to an AI
 provider (Cloudflare Workers AI, with Groq as fallback) that moves off-topic repos to the end of the list. Fonts and scripts are served from the site itself. The plugin never uses
 the relevance check. Opening **Safe to build on?** sends only the repo's public name and language to our trust check,
-which asks OpenSSF Scorecard and Google's deps.dev without your IP or searches. Details — including what the web page keeps in your browser and the plugin's optional,
+which asks OpenSSF Scorecard and Google's deps.dev without your IP or searches. In the plugin the same check runs
+only when you ask for it, straight from your computer to GitHub, Scorecard and deps.dev (repo names only). Details — including what the web page keeps in your browser and the plugin's optional,
 off-by-default local safety log — are in [`PRIVACY.md`](PRIVACY.md).
 
 ## Credits
