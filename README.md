@@ -56,6 +56,9 @@ A static page at `web/index.html` powers it. It auto-deploys (Cloudflare Pages) 
 2. Push to `main` (the `pages` workflow deploys `web/`), or run the **pages** workflow by hand.
 3. Open the URL the workflow prints.
 
+The page's code is in `web/app.js` (plus `web/theme.js`); its security headers and Content-Security-Policy are in
+`web/_headers` (SPEC RS49), so a new third-party script or API must be added there or the browser blocks it.
+
 It calls the public GitHub search API from the browser (about 10 searches a minute, no login, no key) and runs
 the same filters, ranking and license labels as the plugin. The searches are keyword-based; then a small server-side
 **relevance check** (`functions/api/relevance.js`, SPEC RS34) asks an AI which of the top 30 repos don't fit what you
@@ -74,9 +77,23 @@ redeploy; optional `LLM_BASE_URL` (any OpenAI-compatible endpoint; default Groq)
 `llama-3.1-8b-instant`). With neither the binding nor the key, the page shows plain keyword results with no note.
 **Bot check (SPEC RS34c, recommended):** in Cloudflare → Turnstile, add a widget for your site's hostname
 (Invisible or Managed), then in the Pages project add the variable `TURNSTILE_SITE_KEY` (public) and the **secret**
-`TURNSTILE_SECRET`, and redeploy. Every AI check then needs a fresh Turnstile token. Also add a rate-limiting rule
+`TURNSTILE_SECRET`, and redeploy. Every AI check then needs a fresh Turnstile token. **Without `TURNSTILE_SECRET` the
+function refuses every AI check (SPEC RS34g, fail closed).** For local `wrangler pages dev` or a Preview deployment
+without Turnstile, set the variable `ALLOW_NO_TURNSTILE` = `1` on that environment only — never on Production. The
+function also limits each IP to 10 checks per 10 seconds in memory (best effort; the WAF rule below is the real limit).
+Two optional **secrets** (16+ random characters each) let callers that can't run Turnstile in, and skip the per-IP limit:
+`EVAL_KEY` opens the paid AI check and the meaning route, for the live eval and `ops/rag_smoke.py` only — keep it in CI
+(repository secret `REPLORE_EVAL_KEY` for the `relevance-eval-live` workflow) or on your machine as `REPLORE_EVAL_KEY`, and
+never hand it out. `PLUGIN_KEY` opens only the cheap meaning route (`mode:"semantic"`), so it is the one you may give to
+plugin users, who set it as `REPLORE_PLUGIN_KEY`. **Plugin `--semantic` without `PLUGIN_KEY`:** the server answers 403 and
+the plugin silently keeps its keyword + BM25 order (no error, no meaning scores, no indexed repos). Also add a rate-limiting rule
 (Security → WAF → Rate limiting rules) on the path `/api/relevance`, per IP. On the Free plan, the worst that
 abuse can do is use up the day's allowance, never bill you.
+**Page-view counts (maintainer, SPEC RS33):** Cloudflare Web Analytics is switched on for the Pages project, so
+Cloudflare injects its cookieless beacon (`static.cloudflareinsights.com`) into every page; `PRIVACY.md` and the page's
+privacy window say so. To turn it off: Cloudflare dashboard → Workers & Pages → the Replore project → **Web Analytics**
+→ disable; then remove the Web Analytics wording from `PRIVACY.md`, the privacy window and this README, and drop the two
+`cloudflareinsights.com` hosts from `web/_headers`.
 Before adding or switching a provider, check its data-use terms (free tiers intended for prototyping, such as GitHub
 Models, don't qualify) and update `PRIVACY.md`.
 
@@ -188,7 +205,9 @@ python3 -m pytest
 
 ## Privacy
 
-No account, no database, no analytics, nothing stored: the makers of Replore never keep your ideas or searches.
+No account, no database, nothing you type is stored: the makers of Replore never keep your ideas or searches. The web
+page's host counts page views with Cloudflare Web Analytics (cookieless, script from `static.cloudflareinsights.com`;
+it never sees your searches).
 Search words go to GitHub to run the search; on the web page they also pass through a small relevance check to an AI
 provider (Cloudflare Workers AI, with Groq as fallback) that moves off-topic repos to the end of the list. Fonts and scripts are served from the site itself. The plugin never uses
 the relevance check. Details — including what the web page keeps in your browser and the plugin's optional,

@@ -15,7 +15,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   what is being built), it asks the user one plain question about the project or task, and runs no search until
   they answer. The question also offers two optional preferences: language or stack, and whether unlicensed repos are OK.
 - **RS2** "All public GitHub" means the GitHub REST search API (`GET /search/repositories`). Each query
-  is sent with `per_page=30` and `fork:false archived:false is:public` added, in GitHub's best-match
+  is sent with `per_page=50` and `fork:false archived:false is:public` added (plus the RS4b filter qualifiers), in GitHub's best-match
   (relevance) order over name, description, topics and README; this seeds the fit ranking (RS5). `sort=stars`
   is no longer forced — stars stay in every result and still weigh in RS5.
   Results from all queries are merged and de-duplicated by `full_name`.
@@ -29,6 +29,18 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
 - **RS4a** Minimum stars: a repo with fewer than `--min-stars` stars (CLI and workflow default 50; 0 turns it
   off) is excluded and counted as `low_stars`. Reason: fit ranking (RS5) gives relevant small repos a real slot, and a
   live "diet app" run put 41- and 48-star repos in the top 3 ahead of one with 2,670.
+- **RS4b** Filters go into the search (peer review 2026-10-18: live "animation library" returned 5 repos, with 13 left
+  out for licence and 12 as stale, because one page of 30 best matches was fetched and filtered afterwards). Each query
+  also carries `pushed:>=YYYY-MM-DD` (today minus the RS4 window, 30.44 days a month, UTC date; omitted when the window is
+  0) and `stars:>=N` (the RS4a floor; omitted at 0), and asks for 50 results (second review: 100 let weak tail matches in; see RS5c). A qualifier the user already typed
+  (`stars:`, `pushed:`, `fork:`, `archived:`, `is:`, negated or not) is not added again. GitHub documents a 256-character
+  limit on the query text (not counting operators or qualifiers) and at most 5 AND/OR/NOT operators; to stay safe we
+  count everything: qualifiers are added in order (fork, archived, is, pushed, stars) only while the whole `q` string
+  stays within 256 UTF-16 code units (what the page's `.length` counts; `scout.py` counts the same way, and trims like
+  JS `trim()`, byte-order mark included), and none of them is an operator. The client-side filters (RS2–RS4a) still run
+  on every reply as a second check and still produce the excluded counts. The page's `ghQuery()` and `build_query()` in
+  `scripts/scout.py` build the identical string (RS29b; shared cases in `tests/fixtures/qualifier_cases.json`, asserted
+  by both test suites). Confirm searches for indexed repos (RS42) and the trending lists (RS35) are unchanged.
 - **RS5** Fit ranking (default `--rank fit`). The aim is to save the user from scrolling hundreds of repos, so
   the top rank is what a builder actually wants: relevant **and** popular **and** free to use. Each candidate
   gets a *fit* score, highest first, blending three signals:
@@ -44,6 +56,12 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   `--candidates` (default 40), so the relevance gate (RS6) can drop repos and still have 20 left.
   Goal-based evals (`evals/run.py`, cases in `evals/fit_cases.json`) assert the fit ranking puts the
   relevant-and-popular-and-free repo at #1 across labelled scenarios; they run in CI and must pass.
+- **RS5c** Head before tail (second review 2026-10-18; live: `zensical` at best-match position 32 and `next-sitemap` at
+  39 reached the top 20 over `11ty`/`lume` at 21–29, because relevance is 0 from position 20 on, so deep matches competed
+  on stars alone). Relevance keeps its 20-position span (the RS5 goal evals are tuned to it; spreading it over the whole
+  page let a tangential giant beat an exact match). Instead, a repo whose best position in any search is 20 or later is
+  a *tail* match and ranks after every head match; within each group the RS5 fit order and RS29b tie-breaks apply. The
+  same rule is in `scripts/scout.py` (`_tail`, `REL_SPAN`) and the page (`relTail`, `REL_SPAN`), tested in both.
 - **RS1b** Vague but usable input (e.g. "diet app"): the skill does not block on a question. It searches the
   domain (e.g. `diet tracker app`, `calorie counter`, `meal planner app`), says which platform it assumed or that
   it searched all, and offers one line to narrow it. It asks first only when there is no domain at all
@@ -63,7 +81,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   asks it to do something, it does not, and tells the user.
 - **RS10** Output: a plain table for people, `--json` for machines, or `--markdown` for a job summary (RS13). Each row has rank, `full_name`, a one-line `why` relevance note (RS24), stars, license label (RS14), starter flag and start hint (RS15),
   last push date, URL, matched query and description. Every run also prints the query
-  list and the excluded counts (fork/archived, license, stale, duplicate).
+  list and the excluded counts (fork/archived, license, stale, low stars, harmful, duplicate).
 - **RS13** GitHub Actions run (`.github/workflows/find.yml`): a manual "Run workflow" form takes search
   queries separated by `;`, plus the license mode, the max age, the ranking mode (RS5) and
   prefer-starters (RS15), and an optional CSV block (`--csv-block` with `--markdown`, RS20). It runs `scout.py --markdown` with the
@@ -135,7 +153,10 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   GPL/AGPL family → "Free to use, but you must share your code"; no license → "No: no license". The output says
   this checks the license only: some projects also sell a paid hosted version or paid add-ons, which the plugin does
   not check. `--csv` prints the same rows as CSV (rank, repo, url, stars, license, can_use_in_paid_product,
-  completely_free, starter, how_to_start, last_push, query, description) for Excel or Google Sheets. The skill
+  completely_free, starter, how_to_start, last_push, query, description) for Excel or Google Sheets. Every text cell
+  (repo name, why, licence label, query, description and the rest) that starts with `=`, `+`, `-`, `@`, a tab or a carriage
+  return gets a leading `'`, so a spreadsheet shows it as text and never runs it as a formula (peer review 2026-10-18:
+  only the description was guarded). The skill
   answers with a comparison table of up to 20 repos with these columns: #, Repo, Stars, What it does, Relevance,
   License, OK in a paid product?, Completely free?, Starter?, Last update, How to start. "What it does" is taken
   from the description only. "Relevance" is High/Medium/Low with a short reason; it is the skill's judgment from
@@ -144,8 +165,9 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   learning) and a fill-in prompt template (What I'm building / Platform / Stack / Selling it? / Starting from
   scratch?). The skill reads the same five fields from whatever the user wrote, and asks only for the ones it
   needs per RS1a/RS1b.
-- **RS22** Web page (`web/index.html`, deployed by Cloudflare Pages from `main`, RS40). Static,
-  single file, no external scripts (except Cloudflare Turnstile when the RS34c bot check is on), no build step, no embedded secret (the RS34 fallback key lives only in the
+- **RS22** Web page (`web/index.html` with its code in `web/app.js` and `web/theme.js`, RS49; deployed by Cloudflare
+  Pages from `main`, RS40). Static, no external scripts of its own (except Cloudflare Turnstile when the RS34c bot check
+  is on; the host also injects Cloudflare Web Analytics, RS33), no build step, no embedded secret (the RS34 fallback key lives only in the
   server-side function). It runs the keyword-to-query, filter,
   fit-rank (RS5), license-label (RS14), completely-free (RS20) and starter (RS15) logic in JavaScript,
   mirroring `scripts/scout.py`. It shows clickable example prompts (RS21) that fill the box, and calls the public GitHub search API from the browser (unauthenticated,
@@ -189,7 +211,8 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   solid "✓ In plan" when picked (RS28). Every field comes from the GitHub API response; nothing is invented.
   On wide screens the home demo is larger (art, type and frame) to use its half of the opening section. The plain-English license meaning (e.g. "OK to use in a paid product" / "Completely free?") renders as
   a line on every card at every breakpoint — not only on wide screens — so the core promise is visible on phones.
-  Motion comes from GSAP, loaded from cdnjs at a pinned version as the one external script; every GSAP
+  Motion comes from GSAP 3.12.5, self-hosted as `web/vendor/gsap.min.js` and loaded with `defer` before `app.js` (also
+  `defer`), so it is always defined before the page code runs (peer review 2026-10-18: it was `async`, a race); every GSAP
   use is guarded so the page works fully without it, and all motion is disabled under prefers-reduced-motion.
   Cards are cursor-reactive (a pointer-driven 3D tilt with a light glare, skipped on touch and under reduced
   motion) and the star counts tween up on reveal, all with the already-loaded GSAP and CSS (no extra library).
@@ -197,8 +220,9 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   shown as the results panel's empty state; a current screenshot of the live page (`web/tour.png`) is committed
   under `web/` and shown in the Tour.
   Type follows RS47 (self-hosted Anton / Inter Tight / JetBrains Mono, no external stylesheet) with a full system
-  fallback if a font fails to load; sizes and weights are raised for prominence and legibility. The page defaults to light (`data-theme="light"` on the root); a toggle switches to dark and the choice is
-  remembered in `localStorage` (a per-viewer convenience, wrapped in try/catch). No key or token is ever stored (RS22).
+  fallback if a font fails to load; sizes and weights are raised for prominence and legibility. The page follows the visitor's system setting (`prefers-color-scheme`) until they pick one (peer review 2026-10-18
+  reversed the earlier hard-coded `data-theme="light"`, which made the dark-mode CSS unreachable); a toggle switches theme and the choice is
+  remembered in `localStorage` (a per-viewer convenience, wrapped in try/catch) and restored by `web/theme.js` before first paint. No key or token is ever stored (RS22).
   Each result — web card and script row alike — carries a one-line *why relevant* note derived from the search:
   the user's own matching words if they appear in the repo name/description, else a best-match fallback. It is
   stated as keyword transparency, never as an AI judgement.
@@ -220,6 +244,12 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   the plugin never keeps any part of a user's prompts unless they chose to (RS33). When on, it only logs — it never blocks the user and
   never echoes the prompt back verbatim beyond a short truncated sample — so it is an audit trail, not a gate.
   The guarantee holds from the skill text alone; the hook records attempts for review.
+  **Launcher (peer review 2026-10-18: the hook hard-coded `python3`, which a Windows install usually lacks):** the
+  `hooks.json` command (run by `sh`, or Git Bash on Windows) exits 0 at once when `REPLORE_SECURITY_LOG` is unset, so the
+  default costs no Python start; otherwise it uses the first of `python3`, `python`, `py -3` that actually runs (a
+  Microsoft Store stub that only prints "not found" is skipped) and exits 0 if none does. The entry has a 10-second
+  `timeout`. It always ends with `exit 0` — Python is run, not `exec`'d, because Python itself exits 2 when it can't
+  open the script (second review), which would block the prompt. It can never block a prompt.
 - **RS27** Similar-repo mode. Given an existing repo (owner/repo or a GitHub URL), find similar open-source
   repos: look up the repo's metadata (topics, language, description), derive search queries from its topics
   (and description keywords when it has few topics), run the normal filter + fit pipeline (RS2–RS5), and exclude
@@ -308,6 +338,14 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   browser cannot run Claude: query generation (keyword expansion on the web vs Claude-written queries + the
   RS6 relevance gate in the plugin) and the absence of `--license any` on the web. The plugin CLI default stays
   `--top 20` (candidates `40`) for its table; `--all` is uncapped.
+  Peer review 2026-10-18 found two filter gaps and closed them in `scripts/scout.py`, following this rule: the RS18
+  harmful-description drop (same patterns as the page's `HARM`, counted as `harmful`, applied after the same filters in the
+  same order) and the page's tokenizer and filler-word list (`hybrid.STOP`) for the *why relevant* match, so both name the
+  same matched words; the wording stays per client (plugin `Matches your search: "a", "b"` with a best-match fallback,
+  page `Matches: a, b` and no line without a match, RS37). The query qualifiers are shared too (RS4b). A shared fixture,
+  `tests/fixtures/parity_items.json` (two searches, 15 raw items: harmful, unlicensed, stale, low-star, fork, duplicate,
+  an exact tie, copyleft, a starter, emoji text), must give the same order, drops and matched words in
+  `tests/test_scout.py` and `tests/test_web_logic.js`.
 - **RS30** "Next steps" guidance for vibe coders (RS22 web page). A **menu item** (not a results-page block, to
   avoid clutter) opens a short modal that turns "a list of repos" into a build path, in three plain-English
   steps: (1) pick the 2–3 repos that fit and compare their license verdict + last-updated date, (2) generate a
@@ -334,7 +372,11 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
 
 - **RS33** Privacy notice. `PRIVACY.md` (linked from README and the web page) and a one-line web notice under the
   search bar describe data handling exactly as built — no broader promise. Facts it must state: the maintainers run
-  no server, database, account or analytics and receive no searches; searches go from the user's browser or computer
+  no database or account and keep no searches; the host's **Cloudflare Web Analytics** is on (owner's Pages dashboard
+  setting, found by peer review 2026-10-18 while the copy still said "no visitor analytics"): a cookieless page-view
+  counter whose script Cloudflare injects from `static.cloudflareinsights.com`, recording page address, referrer,
+  browser/OS/device type, country and load timings, never the searches — the notice names it, what it records and
+  Cloudflare's policy, and no copy may claim "no analytics" while it is on; searches go from the user's browser or computer
   to the GitHub API (GitHub sees the words and IP); fonts and the animation library are served from the site itself
   (no third-party font/CDN requests); the page host (Cloudflare Pages) serves the page but never receives searches (they are never put in the URL); the browser keeps
   the last search + results + filters + theme in localStorage until ✕/the logo clears them; an uploaded plan is read
@@ -373,8 +415,8 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   keyword results. The page learns the site key from
   `GET /api/relevance` and loads Turnstile from `challenges.cloudflare.com` only when a key is set (the one exception
   to RS33's no-third-party-script rule, disclosed in `PRIVACY.md`). Every browser-side wait (config, script, token) has a deadline and a failed load retries on the next search;
-  an interactive challenge gets 90 s. Without the secret the check is off and behaviour
-  is unchanged. **Status:** switched on in production 2026-10-14 (owner created a dedicated "Replore" Turnstile
+  an interactive challenge gets 90 s. Without the secret every POST is refused (RS34g; was: check off), unless the
+  owner sets `ALLOW_NO_TURNSTILE=1` for local or Preview use. **Status:** switched on in production 2026-10-14 (owner created a dedicated "Replore" Turnstile
   widget, Managed mode, hostnames `replore.cardzo.co.in` and `replore.pages.dev`; keys set as Pages variables). A per-IP Cloudflare rate-limiting rule on `/api/relevance` is the owner's dashboard setting, not code.
   Limits of this: an agent driving a real browser slowly can still pass; on the Workers Free plan the worst case of
   abuse is a day of keyword-only results, never a bill. The page shows only the kept repos and puts no note about the
@@ -430,6 +472,25 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   (static dots, no label cycling) under prefers-reduced-motion, is aria-hidden decoration (the label text stays
   readable), stops once removed, and makes no network call.
 
+- **RS34f** Verdict-shaped repo text (peer review 2026-10-18, prompt injection). Before the prompt is built, any text in
+  a repo description or the query that imitates a verdict (`{"drop":`, `{drop:`, any case and spacing) is cut out, so a
+  description cannot hand the model an answer to copy. A drop-share cap (ignore verdicts dropping more than 60%) was tried
+  and removed after a second review: in `evals/relevance_set.json` 7 of 11 labelled queries are more than 60% off-topic
+  (four are 100%), so the cap rejected correct verdicts, cost a second paid provider call and was never cached. Any
+  in-range, de-duplicated drop list is accepted, including "drop everything"; a test asserts every labelled verdict in
+  the set parses as a drop list.
+- **RS34g** Spend gate in code (peer review 2026-10-18: production was safe only because the owner set
+  `TURNSTILE_SECRET`; the code's default was "no bot check"). (1) Fail closed: with no `TURNSTILE_SECRET` every POST is
+  refused 403 `bot_check_failed`, unless the variable `ALLOW_NO_TURNSTILE` is exactly `1` (for `wrangler pages dev` and
+  Preview deployments only, never Production; a configured secret always wins). (2) A best-effort per-IP limit in code: at
+  most 10 POSTs per 10 s per `CF-Connecting-IP`, kept in the isolate's memory (no binding, at most 5,000 addresses);
+  over it the reply is 429 `rate_limited` with `Retry-After`, before the body is read. Each Cloudflare isolate has its
+  own memory, so this only blunts a burst; the WAF rule (RS41) stays the authority. (3) Callers that cannot run
+  Turnstile may send a server-held secret (at least 16 characters, compared in constant time, never logged or returned).
+  Two keys, split after the second review (one key handed to plugin users must not open the paid judge): `PLUGIN_KEY` in
+  `X-Replore-Plugin-Key` opens only the semantic route (the plugin's `--semantic`); `EVAL_KEY` in `X-Replore-Eval-Key`
+  opens the judge and the semantic route, for the live eval and `ops/rag_smoke.py` (kept in CI as `REPLORE_EVAL_KEY`).
+  A request with a valid key skips the per-IP limit, so a CI run from one address is not throttled. The page treats 429 like any failed check (keyword results, no note).
 - **RS34e** Relevance-check diagnosis and model choice. Live eval (2026-10-14, production chain): 6/9 queries timed
   out at 7 s, 2/9 returned unparseable output, and the one that ran dropped 4/6 relevant SaaS starters. Fixes: the
   model replies with indices only (`{"drop":[2,5]}`, max 120 tokens — the per-repo reasons were never shown and made
@@ -522,6 +583,11 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   read a half-typed line. The search placeholder matches its label ("What are you building?"). A footer link is named
   after the window it opens ("About the results"). On the desktop home screen the GitHub credit line sits centred under
   the footer line. Copy is cut to what the visitor needs: no "start shipping", "just", or "the smart version" filler.
+  Peer review 2026-10-18 added: the status line is `role="status" aria-live="polite"`; every dialog is named by its heading (`aria-labelledby`); the window close ✕ is a 32px target and
+  the copy buttons at least 24px; the results area is NOT a live region (second review: 60 cards would be read out); a
+  visually hidden `#srStatus` (`role="status"`) says "N results" or the error line after each render; the light theme's verdict colours are `--good:#426832` and `--warn:#855816` (5.3:1 and
+  5.1:1 on their tints, were 4.1:1), and the GitHub credit and privacy line are no longer faded (5.0:1, was 3.7:1). A test
+  computes these ratios from the CSS.
 
 - **RS45** Empty descriptions (owner 2026-10-14: "why is this blank"). GitHub gives some repos no description. The
   page and the plugin's text/markdown output say "No description on GitHub" (muted), never "—" and never an invented
@@ -625,8 +691,10 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
     **Cards** are capped at 100 description characters and 5 topics everywhere (client payload, server, ingester), so all
     vectors sit on one scale. **One confirm search** per run in both clients (rate limit, RS41); indexed repos past it
     are dropped (fail closed).
-    `mode:"semantic"` returns meaning scores and indexed repos only — no AI judge, no Turnstile (it is cheap and the
-    `/api/relevance` path is under the RS41 rate limit). Because it has no bot check it has its own switch, `RAG_PLUGIN=1`,
+    `mode:"semantic"` returns meaning scores and indexed repos only — no AI judge. Since RS34g it sits behind the same gate
+    as the judge: the origin check, the per-IP limit, and a Turnstile token, the server's `PLUGIN_KEY` in
+    `X-Replore-Plugin-Key` or the CI-only `EVAL_KEY` (the plugin sends `REPLORE_PLUGIN_KEY` from the user's environment; without it the public
+    plugin's `--semantic` gets 403 and keeps its keyword + BM25 order, RS7). It still has its own switch, `RAG_PLUGIN=1`,
     off by default even when the web switches are on, and answers 404 `semantic_off` until it is set. Known risk when on: a
     script can spend the shared Workers AI allowance (about 1 neuron per call at the card caps); turn it on only with a
     budget alert, and turn it off if the allowance drains. Indexed repos returned to the plugin are not AI-checked by the
@@ -652,6 +720,41 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   embedding call per fixed search), sends fixed searches through the plugin route (needs `RAG_PLUGIN=1`, Preview only)
   and exits 1 if meaning scores or indexed repos are missing or malformed. Production switches go on only after a clean
   smoke run on a preview.
+
+- **RS48** Runs the same on Windows (peer review 2026-10-18: `scout.py` crashed with UnicodeEncodeError on a cp1252
+  console when a repo description held an emoji, and six unit tests failed on Windows). Every entry point that prints
+  (`scripts/scout.py`, `scripts/mcp_server.py`, `hooks/security_log.py`) switches its standard streams to UTF-8 with
+  `errors="replace"` at start-up when the stream supports it, so a character the console cannot show never ends a run.
+  `mcp_server.py` stdout stays pure JSON-RPC. Every test and script reads repo files as UTF-8 explicitly, and CI runs the
+  unit tests and Node tests on `windows-latest` as well as Linux.
+
+- **RS49** Security headers (peer review 2026-10-18). `web/_headers` (Cloudflare Pages format) sends, for every path:
+  a Content-Security-Policy (`default-src 'self'`; scripts only from the site, `challenges.cloudflare.com` for Turnstile
+  and `static.cloudflareinsights.com` for the host's analytics beacon, with no `'unsafe-inline'` or `'unsafe-eval'`;
+  connections to the site, `api.github.com`, `api.web3forms.com`, `challenges.cloudflare.com` and
+  `cloudflareinsights.com`; frames only from Turnstile; images from the site, `data:` and GitHub avatars; inline styles
+  allowed; `base-uri 'self'`; forms to the site and Web3Forms; `frame-ancestors 'none'`), HSTS for a year with
+  subdomains, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, and a Permissions-Policy that turns off camera,
+  microphone and geolocation. So that the policy needs no `'unsafe-inline'`, the page has no inline `<script>` and no
+  inline event handler: its code lives in `web/app.js` and `web/theme.js`, and buttons that open a window carry
+  `data-open="<modal id>"`, handled by one delegated listener (saved results are re-keyed, `CACHE_V` 10, so old markup
+  with `onclick` is dropped). A test checks that every host the code fetches or loads is in the policy. Adding a new
+  third-party script or API means updating `_headers` in the same change.
+
+- **RS50** Release hygiene (peer review 2026-10-18). One version everywhere: `.claude-plugin/plugin.json` `version` equals
+  the MCP server's `SERVER_INFO` version (0.3.0). Every GitHub Action in `.github/workflows/` is pinned to a full commit
+  SHA with the tag as a comment (`@<40 hex>  # v4`), so a moved tag cannot change what CI runs. Dev dependencies are pinned
+  exactly (`pytest==9.1.1`, which supports Python 3.10–3.14). The repo's own Claude Code instructions live in
+  `.claude/CLAUDE.md`, not at the plugin root, where `claude plugin validate` warned that a root `CLAUDE.md` is not loaded
+  as plugin context. A test checks all four.
+
+- **RS51** Explore links on result cards (web). Right under the repo name (the GitHub link) each card has a row of
+  four equal-width buttons (at least 34px tall, accent-tinted, so they read as clickable) that open in a new tab (`rel="noopener noreferrer"`): Diagram → `https://gitdiagram.com/<owner>/<repo>`, Digest →
+  `https://gitingest.com/<owner>/<repo>`, Browse → `https://github1s.com/<owner>/<repo>`, Edit →
+  `https://github.dev/<owner>/<repo>`. Each has a title saying what the tool does. The path is the repo's `full_name`
+  from the GitHub API, used only when it matches `owner/repo` (owner `[A-Za-z0-9-]{1,39}`, repo `[A-Za-z0-9._-]{1,100}`,
+  not `.` or `..`); otherwise the row is left out (RS9). They are navigations only: the page fetches nothing from these
+  sites, so the CSP (RS49) is unchanged. Saved results are re-keyed (`CACHE_V` 11) so cards render with the row.
 
 ## RX — Deliberately excluded (v0.1)
 

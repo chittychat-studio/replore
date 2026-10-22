@@ -8,6 +8,7 @@ Fusion: reciprocal rank fusion (RRF) of the fit order, the BM25 order and, when 
 """
 import json
 import math
+import os
 import re
 import urllib.error
 import urllib.request
@@ -87,8 +88,11 @@ def semantic(description, rows, endpoint=ENDPOINT, timeout=12, opener=urllib.req
                        "repos": [{"name": r["full_name"], "description": (r.get("description") or "")[:100],
                                   "topics": list(r.get("topics") or [])[:5]} for r in rows[:30]]},
                       ensure_ascii=False).encode("utf-8")   # non-ASCII stays one character, so the body fits the server cap
-    req = urllib.request.Request(endpoint, data=body, method="POST",
-                                 headers={"Content-Type": "application/json", "User-Agent": "replore-plugin"})
+    headers = {"Content-Type": "application/json", "User-Agent": "replore-plugin"}
+    key = os.environ.get("REPLORE_PLUGIN_KEY")   # RS34g: the server's shared plugin key, if the owner gave you one; never printed
+    if key:
+        headers["X-Replore-Plugin-Key"] = key
+    req = urllib.request.Request(endpoint, data=body, method="POST", headers=headers)
     try:
         with opener(req, timeout=timeout) as r:
             j = json.load(r)

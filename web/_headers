@@ -1,0 +1,12 @@
+# SPEC RS49: security headers for every page Cloudflare Pages serves from web/ (Pages `_headers` format).
+# script-src has no 'unsafe-inline': all page code lives in app.js / theme.js. Third-party hosts allowed, and why:
+#   challenges.cloudflare.com     Turnstile bot check (RS34c): script, iframe, verification calls
+#   static.cloudflareinsights.com Cloudflare Web Analytics beacon the host injects (RS33); reports to cloudflareinsights.com
+#   api.github.com                the search itself (RS2); api.web3forms.com feedback form (RS39)
+# If Web Analytics is switched off in the Pages dashboard, drop both cloudflareinsights hosts here.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com; connect-src 'self' https://api.github.com https://api.web3forms.com https://challenges.cloudflare.com https://cloudflareinsights.com; frame-src https://challenges.cloudflare.com; img-src 'self' data: https://avatars.githubusercontent.com; style-src 'self' 'unsafe-inline'; font-src 'self'; base-uri 'self'; form-action 'self' https://api.web3forms.com; frame-ancestors 'none'
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Permissions-Policy: camera=(), microphone=(), geolocation=()

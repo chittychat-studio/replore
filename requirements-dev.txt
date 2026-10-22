@@ -1,2 +1,3 @@
 # Dev/test only. The plugin itself is stdlib-only (RS11).
-pytest>=8
+# Exact pin (RS50): pytest 9.1.1 supports Python 3.10-3.14, covering the 3.11 floor and the 3.14 used locally.
+pytest==9.1.1

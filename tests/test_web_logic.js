@@ -1,7 +1,11 @@
 // RS22: exercise the web page's pure logic in Node (no browser, no network).
 const fs = require("fs"), path = require("path"), assert = require("assert");
+// RS49: the page's code lives in web/app.js (no inline script, so the CSP needs no 'unsafe-inline')
 const html = fs.readFileSync(path.join(__dirname, "..", "web", "index.html"), "utf8");
-const code = html.match(/<script>([\s\S]*)<\/script>/)[1].replace('"use strict";', "");
+const code = fs.readFileSync(path.join(__dirname, "..", "web", "app.js"), "utf8").replace('"use strict";', "");
+assert.ok(!/<script(?![^>]*\bsrc=)[^>]*>/i.test(html), "index.html must have no inline <script>");
+assert.ok(!/\son[a-z]+\s*=/i.test(html) && !/javascript:/i.test(html), "no inline event handlers or javascript: URLs in index.html");
+assert.ok(!/\son(click|load|error|input|change|submit)\s*=\s*\\?["']/i.test(code), "no inline handlers in markup built by app.js");
 // fake DOM: elements support the methods the page's load-time code calls (chips, modals, theme, RS21-RS24)
 const el = () => ({value:"",checked:false,textContent:"",innerHTML:"",type:"",className:"",dataset:{},style:{},
                    addEventListener(){}, appendChild(){}, focus(){}, querySelector:()=>el(), querySelectorAll:()=>[],
@@ -13,8 +17,8 @@ global.fetch = () => Promise.reject(new Error("no network in tests"));   // RS35
 global.window = global;
 const s = {};
 new Function("document", "localStorage",
-  code + "; this.keywordQueries=keywordQueries; this.rankByFit=rankByFit; this.fitScore=fitScore; this.whyRelevant=whyRelevant; this.esc=esc; this.lu=lu; this.freeText=freeText;" +
-  " this.keep=keep; this.ragRan=ragRan; this.hasDesc=hasDesc; this.descHtml=descHtml; this.tipUrlOk=tipUrlOk; this.clean=clean; this.harmful=harmful; this.harmfulRepo=harmfulRepo; this.prdFeatures=prdFeatures; this.trendingQuery=trendingQuery; this.trendRows=trendRows; this.feedbackUrl=feedbackUrl; this.feedbackPayload=feedbackPayload; this.agoText=agoText; this.cardHtml=cardHtml; this.recentKey=recentKey; this.recentFind=recentFind; this.recentAdd=recentAdd; this.CACHE_V=CACHE_V; this.bm25Scores=bm25Scores; this.repoText=repoText; this.rrfOrder=rrfOrder; this.hybridOrder=hybridOrder; this.confirmQueries=confirmQueries;").call(s, document, global.localStorage || {getItem:()=>null,setItem(){},removeItem(){}});
+  code + "; this.keywordQueries=keywordQueries; this.exploreLinks=exploreLinks; this.rankByFit=rankByFit; this.fitScore=fitScore; this.whyRelevant=whyRelevant; this.esc=esc; this.lu=lu; this.freeText=freeText;" +
+  " this.keep=keep; this.ragRan=ragRan; this.hasDesc=hasDesc; this.descHtml=descHtml; this.tipUrlOk=tipUrlOk; this.clean=clean; this.harmful=harmful; this.harmfulRepo=harmfulRepo; this.prdFeatures=prdFeatures; this.trendingQuery=trendingQuery; this.trendRows=trendRows; this.feedbackUrl=feedbackUrl; this.feedbackPayload=feedbackPayload; this.agoText=agoText; this.cardHtml=cardHtml; this.recentKey=recentKey; this.recentFind=recentFind; this.recentAdd=recentAdd; this.CACHE_V=CACHE_V; this.bm25Scores=bm25Scores; this.repoText=repoText; this.rrfOrder=rrfOrder; this.hybridOrder=hybridOrder; this.confirmQueries=confirmQueries; this.ghQuery=ghQuery; this.sigTokens=sigTokens; this.resultSummary=resultSummary;").call(s, document, global.localStorage || {getItem:()=>null,setItem(){},removeItem(){}});
 
 // RS16: iOS excludes macOS
 // RS16: expansions are specific on-topic phrases, never a bare category (live regression: "website" -> "frontend framework"
@@ -164,6 +168,32 @@ const xdup = L1.find(r => r.name === "x/dup");
 assert.strictEqual(xdup.rel, 1, "first query sees x/dup at index 1");
 s.keep([{full_name:"x/dup",stargazers_count:1000,license:{spdx_id:"MIT"},pushed_at:now,description:"d"}], 50, "", xex, xseen);
 assert.strictEqual(xdup.rel, 0, "dup rel drops to the better position found by a later query");
+// RS4b/RS29b: the page builds exactly the q string scout.py builds (shared cases, asserted in tests/test_scout.py too)
+{ const fx = JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures", "qualifier_cases.json"), "utf8"));
+  const now = Date.parse(fx.now);
+  for (const c of fx.cases) assert.strictEqual(s.ghQuery(c.q, c.max_age_months, c.min_stars, now), c.expect, c.name); }
+// RS46: the screen-reader summary is a count or the error line, never the card text
+{ const box = (cards, err) => ({ querySelectorAll: () => ({ length: cards }), querySelector: () => err ? { textContent: err } : null });
+  assert.strictEqual(s.resultSummary(box(22)), "22 results"); assert.strictEqual(s.resultSummary(box(1)), "1 result");
+  assert.strictEqual(s.resultSummary(box(0, "No repository matched.")), "No repository matched.");
+  assert.strictEqual(s.resultSummary(box(0)), ""); }
+// RS5c: tail matches (best-match position >= 20) rank after every head match, exactly as scout.py
+{ const mk = (name, stars, rel) => ({ name, stars, spdx: "MIT", starter: false, rel, pushed: "2026-10-01" });
+  const head = Array.from({ length: 20 }, (_, i) => mk("head/r" + i, 60, i));
+  const order = s.rankByFit([head.concat([mk("tail/giant", 90000, 20), mk("tail/small", 70, 21)])], false).map(r => r.name);
+  assert.deepStrictEqual(order.slice(20), ["tail/giant", "tail/small"]); assert.deepStrictEqual(order.slice(0, 20), head.map(r => r.name)); }
+// RS29b parity fixture: the page's keep / rankByFit / whyRelevant give the order, matched words and drops scout.py gives
+{ const P = JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures", "parity_items.json"), "utf8"));
+  const raw = x => { const y = Object.assign({}, x); y.pushed_at = new Date(Date.now() - y.pushed_days_ago * 864e5).toISOString().slice(0, 19) + "Z";
+    delete y.pushed_days_ago; return y; };
+  const ex = { license: 0, stale: 0, low: 0, fork: 0, harm: 0 }, seen = {}, qOf = {};
+  const lists = P.lists.map((l, qi) => { const k = s.keep(l.map(raw), P.min_stars, "", ex, seen); k.forEach(r => { qOf[r.name] = P.queries[qi]; }); return k; });
+  const ranked = s.rankByFit(lists, P.prefer_starters);
+  assert.deepStrictEqual(ranked.map(r => r.name), P.expect.order, "web/plugin order parity");
+  const E = P.expect.excluded;
+  assert.deepStrictEqual(ex, { license: E.license, stale: E.stale, low: E.low_stars, fork: E.fork_or_archived, harm: E.harmful });
+  for (const r of ranked) { const h = P.expect.hits[r.name];
+    assert.strictEqual(s.whyRelevant(r, s.sigTokens(qOf[r.name])), h.length ? "Matches: " + h.join(", ") : "", r.name); } }
 console.log("web logic ok");
 
 // RS23: PRD feature extraction (client-side, capped for the rate limit)
@@ -179,7 +209,7 @@ console.log("prd ok:", f.join(" | "));
 { const src = fs.readFileSync(path.join(__dirname, "..", "functions", "api", "relevance.js"), "utf8");
   const block = src.match(/EXAMPLE_QUERIES = \[([\s\S]*?)\];/)[1];
   const fnList = [...block.matchAll(/"((?:[^"\\]|\\.)*)"/g)].map(m => m[1]);
-  const pageList = [...html.match(/var EXAMPLES=\[([\s\S]*?)\];/)[1].matchAll(/text:"((?:[^"\\]|\\.)*)"/g)].map(m => m[1]);
+  const pageList = [...code.match(/var EXAMPLES=\[([\s\S]*?)\];/)[1].matchAll(/text:"((?:[^"\\]|\\.)*)"/g)].map(m => m[1]);
   assert.deepStrictEqual(fnList, pageList);
   console.log("example list in sync"); }
 
@@ -228,3 +258,11 @@ console.log("prd ok:", f.join(" | "));
   assert.ok(!h.includes("<img") && !h.includes("<bad>") && !h.includes("ow<n>"), "repo text must be escaped");
   assert.ok(h.includes("class=\"topics\"") && h.includes("top1") && h.includes("pick-cb"));   // fake DOM: esc() yields "" here, so check structure only
   console.log("card ok"); }
+
+// RS51 Explore links: same owner/repo path on four tools; malformed names get none
+{ const x = s.exploreLinks("vercel/next.js");
+  assert.deepStrictEqual(x.map(e => e.url), ["https://gitdiagram.com/vercel/next.js", "https://gitingest.com/vercel/next.js",
+    "https://github1s.com/vercel/next.js", "https://github.dev/vercel/next.js"]);
+  ["", "noslash", "a/b/c", "a/..", "a/.", "o w/r", "a/b?x=1", "a/b#x", "\"a/b", "javascript:a/b"].forEach(n =>
+    assert.deepStrictEqual(s.exploreLinks(n), [], n));
+  console.log("explore ok"); }

@@ -1,0 +1,262 @@
+{
+ "_about": "SPEC RS29b parity fixture: raw GitHub items for two searches. pushed_days_ago is turned into pushed_at relative to the test's own clock in both suites. tests/test_scout.py (scout.py) and tests/test_web_logic.js (web/app.js keep/rankByFit/whyRelevant) must both produce `expect`. Covers: a harmful repo in each list, no licence, stale, below min stars, fork, a duplicate across searches, an exact tie broken by name (tie/alpha, tie/beta), GPL and MPL, a starter, emoji text.",
+ "queries": [
+  "calorie counter",
+  "diet tracker"
+ ],
+ "min_stars": 50,
+ "max_age_months": 24,
+ "prefer_starters": false,
+ "lists": [
+  [
+   {
+    "full_name": "good/calorie-counter",
+    "stargazers_count": 2500,
+    "license": {
+     "spdx_id": "MIT"
+    },
+    "pushed_days_ago": 10,
+    "description": "A simple calorie counter for iOS and Android 🍎",
+    "html_url": "https://github.com/good/calorie-counter",
+    "topics": [],
+    "fork": false,
+    "archived": false
+   },
+   {
+    "full_name": "evil/calorie-hack",
+    "stargazers_count": 900,
+    "license": {
+     "spdx_id": "MIT"
+    },
+    "pushed_days_ago": 10,
+    "description": "Calorie app with account takeover tools for Instagram",
+    "html_url": "https://github.com/evil/calorie-hack",
+    "topics": [],
+    "fork": false,
+    "archived": false
+   },
+   {
+    "full_name": "nolic/calorie-pro",
+    "stargazers_count": 3000,
+    "license": null,
+    "pushed_days_ago": 10,
+    "description": "Calorie counter pro",
+    "html_url": "https://github.com/nolic/calorie-pro",
+    "topics": [],
+    "fork": false,
+    "archived": false
+   },
+   {
+    "full_name": "stale/calorie-old",
+    "stargazers_count": 4000,
+    "license": {
+     "spdx_id": "MIT"
+    },
+    "pushed_days_ago": 1500,
+    "description": "Old calorie counter",
+    "html_url": "https://github.com/stale/calorie-old",
+    "topics": [],
+    "fork": false,
+    "archived": false
+   },
+   {
+    "full_name": "tiny/counter",
+    "stargazers_count": 10,
+    "license": {
+     "spdx_id": "MIT"
+    },
+    "pushed_days_ago": 10,
+    "description": "calorie counter",
+    "html_url": "https://github.com/tiny/counter",
+    "topics": [],
+    "fork": false,
+    "archived": false
+   },
+   {
+    "full_name": "tie/alpha",
+    "stargazers_count": 1200,
+    "license": {
+     "spdx_id": "MIT"
+    },
+    "pushed_days_ago": 30,
+    "description": "Calorie tracker for the web",
+    "html_url": "https://github.com/tie/alpha",
+    "topics": [],
+    "fork": false,
+    "archived": false
+   },
+   {
+    "full_name": "gpl/nutri-log",
+    "stargazers_count": 800,
+    "license": {
+     "spdx_id": "GPL-3.0"
+    },
+    "pushed_days_ago": 5,
+    "description": "Nutrition and calorie log, self-hosted",
+    "html_url": "https://github.com/gpl/nutri-log",
+    "topics": [],
+    "fork": false,
+    "archived": false
+   },
+   {
+    "full_name": "fork/calorie",
+    "stargazers_count": 5000,
+    "license": {
+     "spdx_id": "MIT"
+    },
+    "pushed_days_ago": 10,
+    "description": "a fork",
+    "html_url": "https://github.com/fork/calorie",
+    "topics": [],
+    "fork": true,
+    "archived": false
+   }
+  ],
+  [
+   {
+    "full_name": "diet/tracker",
+    "stargazers_count": 1200,
+    "license": {
+     "spdx_id": "Apache-2.0"
+    },
+    "pushed_days_ago": 30,
+    "description": "Diet tracker with charts",
+    "html_url": "https://github.com/diet/tracker",
+    "topics": [],
+    "fork": false,
+    "archived": false
+   },
+   {
+    "full_name": "good/calorie-counter",
+    "stargazers_count": 2500,
+    "license": {
+     "spdx_id": "MIT"
+    },
+    "pushed_days_ago": 10,
+    "description": "dup",
+    "html_url": "https://github.com/good/calorie-counter",
+    "topics": [],
+    "fork": false,
+    "archived": false
+   },
+   {
+    "full_name": "tpl/diet-starter",
+    "stargazers_count": 300,
+    "license": {
+     "spdx_id": "MIT"
+    },
+    "pushed_days_ago": 10,
+    "description": "Next.js diet tracker starter template",
+    "html_url": "https://github.com/tpl/diet-starter",
+    "topics": [
+     "starter",
+     "nextjs"
+    ],
+    "fork": false,
+    "archived": false,
+    "is_template": true
+   },
+   {
+    "full_name": "mpl/meal-plan",
+    "stargazers_count": 600,
+    "license": {
+     "spdx_id": "MPL-2.0"
+    },
+    "pushed_days_ago": 200,
+    "description": "Meal planner and diet app, the best app for diets.",
+    "html_url": "https://github.com/mpl/meal-plan",
+    "topics": [],
+    "fork": false,
+    "archived": false
+   },
+   {
+    "full_name": "wifi/hacker",
+    "stargazers_count": 700,
+    "license": {
+     "spdx_id": "MIT"
+    },
+    "pushed_days_ago": 10,
+    "description": "WiFi hacker that cracks any password",
+    "html_url": "https://github.com/wifi/hacker",
+    "topics": [],
+    "fork": false,
+    "archived": false
+   },
+   {
+    "full_name": "tie/beta",
+    "stargazers_count": 1200,
+    "license": {
+     "spdx_id": "MIT"
+    },
+    "pushed_days_ago": 30,
+    "description": "Calorie tracker for the web",
+    "html_url": "https://github.com/tie/beta",
+    "topics": [],
+    "fork": false,
+    "archived": false
+   },
+   {
+    "full_name": "noisy/emoji",
+    "stargazers_count": 450,
+    "license": {
+     "spdx_id": "MIT"
+    },
+    "pushed_days_ago": 10,
+    "description": "🥗 Salad ✨ tracker - track meals 🚀",
+    "html_url": "https://github.com/noisy/emoji",
+    "topics": [],
+    "fork": false,
+    "archived": false
+   }
+  ]
+ ],
+ "expect": {
+  "order": [
+   "good/calorie-counter",
+   "diet/tracker",
+   "tpl/diet-starter",
+   "tie/alpha",
+   "tie/beta",
+   "mpl/meal-plan",
+   "noisy/emoji",
+   "gpl/nutri-log"
+  ],
+  "hits": {
+   "good/calorie-counter": [
+    "calorie",
+    "counter"
+   ],
+   "diet/tracker": [
+    "diet",
+    "tracker"
+   ],
+   "tpl/diet-starter": [
+    "diet",
+    "tracker"
+   ],
+   "tie/alpha": [
+    "calorie"
+   ],
+   "tie/beta": [
+    "tracker"
+   ],
+   "mpl/meal-plan": [
+    "diet"
+   ],
+   "noisy/emoji": [
+    "tracker"
+   ],
+   "gpl/nutri-log": [
+    "calorie"
+   ]
+  },
+  "excluded": {
+   "fork_or_archived": 1,
+   "license": 1,
+   "stale": 1,
+   "low_stars": 1,
+   "harmful": 2,
+   "duplicate": 1
+  }
+ }
+}

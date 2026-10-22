@@ -38,16 +38,22 @@ export function validate(body) {
   return null;
 }
 
+// RS34f: repo text that imitates a verdict ({"drop": …}) is cut out before the prompt, so a description can't hand the
+// model a ready-made answer to copy.
+const VERDICT_LIKE = /\{\s*"?drop"?\s*:/gi;
+export const noVerdict = s => String(s).replace(VERDICT_LIKE, " ").replace(/\s+/g, " ").trim();
+
 export function buildMessages(query, repos) {
   const lines = repos.map((r, i) => {
     const topics = (r.topics || []).slice(0, 8).map(t => clean(t, 30)).filter(Boolean).join(", ");
-    return `${i}. ${clean(r.name, 140)} — ${clean(r.description, MAX_DESC) || "(no description)"}${topics ? " [" + topics + "]" : ""}`;
+    return `${i}. ${clean(r.name, 140)} — ${noVerdict(clean(r.description, MAX_DESC)) || "(no description)"}${topics ? " [" + topics + "]" : ""}`;
   });
   return [
     { role: "system", content: SYSTEM_PROMPT },
-    { role: "user", content: `<project>${clean(query, MAX_QUERY)}</project>\n<repos>\n${lines.join("\n")}\n</repos>` },
+    { role: "user", content: `<project>${noVerdict(clean(query, MAX_QUERY))}</project>\n<repos>\n${lines.join("\n")}\n</repos>` },
   ];
 }
+
 
 // Parse the model's reply; anything malformed is ignored (keep everything) rather than trusted.
 export function parseDrops(text, n) {
@@ -189,7 +195,7 @@ export async function judgeChain(query, repos, env, fetchImpl = fetch, budgetMs 
 
 // RS34b: answers for the built-in example searches are cached at Cloudflare's edge for a day, so repeat visitors
 // tapping the same quick pick don't spend AI allowance. Only these fixed texts are cached — never what a visitor
-// types — so nothing a user writes is stored. Must match EXAMPLES in web/index.html (tested).
+// types — so nothing a user writes is stored. Must match EXAMPLES in web/app.js (tested).
 export const EXAMPLE_QUERIES = [
   "a portfolio website with smooth scroll animations",
   "landing page for my SaaS in Next.js, I'll sell it",
@@ -227,9 +233,9 @@ export async function cachedJudge(query, repos, env, fetchImpl = fetch, cache = 
   return out;
 }
 
-const json = (status, obj, meta = {}) => {
+const json = (status, obj, meta = {}, extra = {}) => {
   const r = new Response(JSON.stringify(obj), {
-    status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" },
+    status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", ...extra },
   });
   r.__code = obj && obj.error; r.__trail = meta.trail; r.__example = meta.example;   // RS34d log fields, never serialised
   return r;
@@ -242,8 +248,10 @@ export function sameOrigin(request) {
   if (!o) return true;   // non-browser callers send none; the Turnstile check below is what stops scripts
   try { return new URL(o).host === new URL(request.url).host; } catch { return false; }
 }
+// RS34g: fail closed. Without TURNSTILE_SECRET every POST is refused, unless the owner explicitly opts out with the
+// variable ALLOW_NO_TURNSTILE=1 (local `wrangler pages dev` and Preview deployments only, never Production).
 export async function verifyTurnstile(request, env, fetchImpl = fetch) {
-  if (!env.TURNSTILE_SECRET) return true;
+  if (!env.TURNSTILE_SECRET) return env.ALLOW_NO_TURNSTILE === "1";
   const token = request.headers.get("CF-Turnstile-Token") || "";
   if (!token || token.length > 2048) return false;
   const form = new FormData();
@@ -256,6 +264,38 @@ export async function verifyTurnstile(request, env, fetchImpl = fetch) {
     return !!(j && j.success === true && j.hostname === new URL(request.url).hostname);   // token issued for this site
   } catch { return false; } finally { clearTimeout(timer); }
 }
+
+// RS34g: two server-held keys for callers that can't run Turnstile, each compared in constant time (unset or < 16
+// characters = closed). PLUGIN_KEY (header X-Replore-Plugin-Key) may be handed to plugin users and opens ONLY the cheap
+// semantic route. EVAL_KEY (header X-Replore-Eval-Key) stays in CI / the owner's machine (live eval, ops/rag_smoke.py) and
+// opens the paid judge route as well. A caller with a valid key also skips the per-IP limit (CI runs from one address).
+function keyMatches(want, got) {
+  want = String(want || ""); got = String(got || "");
+  if (want.length < 16 || got.length !== want.length) return false;
+  let diff = 0;
+  for (let i = 0; i < want.length; i++) diff |= want.charCodeAt(i) ^ got.charCodeAt(i);
+  return diff === 0;
+}
+export function pluginKeyOk(request, env) { return keyMatches(env.PLUGIN_KEY, request.headers.get("X-Replore-Plugin-Key")); }
+export function evalKeyOk(request, env) { return keyMatches(env.EVAL_KEY, request.headers.get("X-Replore-Eval-Key")); }
+export async function botCheck(request, env, fetchImpl = fetch, semantic = false) {
+  return evalKeyOk(request, env) || (semantic && pluginKeyOk(request, env)) || verifyTurnstile(request, env, fetchImpl);
+}
+
+// RS34g: best-effort per-IP rate limit, kept in this isolate's memory (no binding). Cloudflare runs many isolates, so
+// this only blunts a burst that lands on one of them; the WAF rate-limiting rule (RS41, dashboard) stays the authority.
+export const RATE_MAX = 10, RATE_WINDOW_MS = 10000, RATE_MAX_IPS = 5000;
+const RATE = new Map();
+export function rateLimit(ip, now = Date.now(), store = RATE) {   // 0 = allowed, else seconds to wait
+  if (!ip) return 0;   // Cloudflare always sends CF-Connecting-IP in production; local dev has none
+  const recent = (store.get(ip) || []).filter(t => now - t < RATE_WINDOW_MS);
+  if (recent.length >= RATE_MAX) { store.set(ip, recent); return Math.max(1, Math.ceil((recent[0] + RATE_WINDOW_MS - now) / 1000)); }
+  recent.push(now); store.set(ip, recent);
+  if (store.size > RATE_MAX_IPS) for (const [k, v] of store) if (now - v[v.length - 1] >= RATE_WINDOW_MS) store.delete(k);
+  if (store.size > RATE_MAX_IPS) store.delete(store.keys().next().value);   // still full: forget the oldest entry
+  return 0;
+}
+export function resetRateLimit() { RATE.clear(); }
 
 // RS34d: one record per failed check — codes and timings only. Never the query, repos, IP, token or provider text.
 const CODE = s => String(s == null ? "" : s).replace(/[^a-z0-9_:]/gi, "").slice(0, 40);
@@ -282,6 +322,9 @@ export async function onRequestPost(context, fetchImpl = fetch) {
 async function handlePost(request, env, fetchImpl, waitUntil) {
   if (!env.LLM_API_KEY && !(env.AI && typeof env.AI.run === "function")) return json(503, { error: "not_configured" });
   if (!sameOrigin(request)) return json(403, { error: "bad_origin" });
+  const keyed = evalKeyOk(request, env) || pluginKeyOk(request, env);   // RS34g: valid-key callers skip the per-IP limit
+  const wait = keyed ? 0 : rateLimit(request.headers.get("CF-Connecting-IP"));   // before the body is read or anything is spent
+  if (wait) return json(429, { error: "rate_limited", resetsInSec: wait }, {}, { "Retry-After": String(wait) });
   const ct = request.headers.get("Content-Type") || "";
   if (ct.split(";")[0].trim().toLowerCase() !== "application/json") return json(415, { error: "json_only" });
   if (Number(request.headers.get("Content-Length") || 0) > MAX_BODY) return json(413, { error: "too_large" });   // RS41: before reading
@@ -290,14 +333,15 @@ async function handlePost(request, env, fetchImpl, waitUntil) {
   let body; try { body = JSON.parse(raw); } catch { return json(400, { error: "invalid_json" }); }
   const bad = validate(body);
   if (bad) return json(400, { error: bad });
-  if (body.mode === "semantic") {   // RS42 plugin opt-in: meaning scores + indexed repos only, no AI judge, no bot check
+  if (body.mode === "semantic") {   // RS42 plugin opt-in: meaning scores + indexed repos only, no AI judge
     const f = ragFlags(env);
     if (!f.plugin || (!f.rerank && !f.index)) return json(404, { error: "semantic_off" });
+    if (!(await botCheck(request, env, fetchImpl, true))) return json(403, { error: "bot_check_failed" });   // RS34g: plugin key, eval key or Turnstile
     const sem = await semanticScores(body.query, body.repos, env);
     return sem ? json(200, { ...(sem.sim ? { sim: sem.sim } : {}), ...(sem.neighbors ? { neighbors: publicNeighbors(sem.neighbors) } : {}) })
       : json(503, { error: "semantic_unavailable" });
   }
-  if (!(await verifyTurnstile(request, env, fetchImpl))) return json(403, { error: "bot_check_failed" });
+  if (!(await botCheck(request, env, fetchImpl))) return json(403, { error: "bot_check_failed" });
   const t1 = Date.now(), f = ragFlags(env), origin = new URL(request.url).origin;
   let out, sem = null;
   if (f.index) {   // RS42: indexed repos first (≤ SEM_BUDGET_MS), then ONE AI check over keyword results + indexed repos

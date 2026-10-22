@@ -16,6 +16,11 @@ import scout  # noqa: E402
 NOW = dt.datetime(2026, 10, 12, tzinfo=dt.timezone.utc)
 
 
+def _page():
+    """The whole web page as shipped: markup + its scripts (RS49 moved the code out of index.html into app.js)."""
+    return "\n".join((ROOT / "web" / f).read_text(encoding="utf-8") for f in ("index.html", "theme.js", "app.js"))
+
+
 def repo(name, stars, spdx="MIT", pushed="2026-09-01T00:00:00Z", **kw):
     return {"full_name": name, "stargazers_count": stars, "license": {"spdx_id": spdx} if spdx else None,
             "pushed_at": pushed, "html_url": f"https://github.com/{name}", "description": f"{name} desc",
@@ -108,6 +113,16 @@ def test_why_relevant_whole_word_and_ignores_qualifiers():
     assert scout.why_relevant("ai chat", "me/mailer", "a fast email client", 0) == "Top match for your search"
     assert scout.why_relevant("ios app -topic:macos", "a/b", "a macOS and iOS helper", 0) == 'Matches your search: "ios"'
     assert scout.why_relevant("rag chatbot", "me/rag", "a RAG chatbot", 0) == 'Matches your search: "rag", "chatbot"'
+
+
+def test_tail_matches_rank_after_the_head():
+    """RS5c (second review, live: zensical at best-match position 32 beat 11ty/lume at 21-29 on stars alone): a repo found
+    only past GitHub's first 20 best matches ranks after every head match; the page does the same (test_web_logic.js)."""
+    head = [repo(f"head/r{i}", 60) for i in range(20)]
+    res, _ = run([head + [repo("tail/giant", 90000), repo("tail/small", 70)]])
+    names = [r["full_name"] for r in res["all"]]
+    assert names[:20] == [f"head/r{i}" for i in range(20)] and names[20:] == ["tail/giant", "tail/small"]
+    assert scout.PER_PAGE == 50 and scout.REL_SPAN == 20
 
 
 def test_duplicate_keeps_best_relevance_position():
@@ -203,7 +218,7 @@ def test_cli_rank_and_starter_flags(monkeypatch, capsys):
 
 def test_skill_vibe_coder_rules():
     """RS16, RS17, RS14, RS15."""
-    skill = (ROOT / "skills" / "find" / "SKILL.md").read_text()
+    skill = (ROOT / "skills" / "find" / "SKILL.md").read_text(encoding="utf-8")
     assert "-topic:macos" in skill and "--prefer-starters" in skill
     assert "winget install Python.Python.3.12" in skill and "Add python.exe to PATH" in skill
     assert "license_use" in skill and "start_hint" in skill and "stars can be bought" in skill
@@ -211,7 +226,7 @@ def test_skill_vibe_coder_rules():
 
 def test_workflow_passes_rank_and_starters_via_env():
     """RS13, RS5, RS15."""
-    wf = (ROOT / ".github" / "workflows" / "find.yml").read_text()
+    wf = (ROOT / ".github" / "workflows" / "find.yml").read_text(encoding="utf-8")
     assert "RANK: ${{ inputs.rank }}" in wf and "PREFER_STARTERS: ${{ inputs.prefer_starters }}" in wf
     assert '"--rank", os.environ["RANK"]' in wf
 
@@ -223,9 +238,29 @@ def test_top_and_candidates_limits():
 
 
 def test_query_always_excludes_forks_and_archived():
-    """RS2."""
+    """RS2, RS4b: forks/archived out, and the staleness + star filters go into the GitHub query itself."""
     _, f = run([[]])
-    assert f.calls[0][0] == "q0 fork:false archived:false is:public"
+    assert f.calls[0][0] == "q0 fork:false archived:false is:public pushed:>=2024-10-11"
+    _, f = run([[]], min_stars=50, max_age_months=0)
+    assert f.calls[0][0] == "q0 fork:false archived:false is:public stars:>=50"
+
+
+def test_query_qualifiers_match_the_web_page():
+    """RS4b, RS29b: the same inputs give the same q string in scout.py and the page (Node test reads the same file)."""
+    fx = json.loads((ROOT / "tests" / "fixtures" / "qualifier_cases.json").read_text(encoding="utf-8"))
+    now = dt.datetime.fromisoformat(fx["now"].replace("Z", "+00:00"))
+    for c in fx["cases"]:
+        got = scout.build_query(c["q"], c["max_age_months"], c["min_stars"], now)
+        assert got == c["expect"], c["name"]
+        assert len(got) <= scout.GH_MAX_QUERY and not re.search(r"\b(AND|OR|NOT)\b", got)
+
+
+def test_client_filters_still_apply_when_github_ignores_qualifiers():
+    """RS4b: defence in depth: a stale / low-star / forked repo in the reply is still excluded and counted."""
+    res, _ = run([[repo("a/old", 900, pushed="2020-01-01T00:00:00Z"), repo("a/tiny", 3), repo("a/f", 900, fork=True),
+                   repo("a/ok", 900)]], min_stars=50)
+    assert [r["full_name"] for r in res["top"]] == ["a/ok"]
+    assert (res["excluded"]["stale"], res["excluded"]["low_stars"], res["excluded"]["fork_or_archived"]) == (1, 1, 1)
 
 
 def test_forks_archived_disabled_excluded():
@@ -333,6 +368,40 @@ def test_main_exit_codes(monkeypatch, capsys):
     assert "Could not reach GitHub" in err.err and err.out == ""
 
 
+def test_parity_fixture_order_why_and_filters():
+    """RS29b: scout.py ranks, filters and explains the shared fixture exactly as the page does (tests/test_web_logic.js)."""
+    fx = json.loads((ROOT / "tests" / "fixtures" / "parity_items.json").read_text(encoding="utf-8"))
+    now = dt.datetime.now(dt.timezone.utc)
+
+    def raw(x):
+        y = dict(x)
+        y["pushed_at"] = (now - dt.timedelta(days=y.pop("pushed_days_ago"))).strftime("%Y-%m-%dT%H:%M:%SZ")
+        return y
+    pages = iter([[raw(x) for x in lst] for lst in fx["lists"]])
+    res = scout.scout(fx["queries"], fetcher=lambda q, t=None: {"items": next(pages)}, now=now, top=None, candidates=None,
+                      min_stars=fx["min_stars"], max_age_months=fx["max_age_months"], prefer_starters=fx["prefer_starters"])
+    assert [r["full_name"] for r in res["all"]] == fx["expect"]["order"]
+    assert res["excluded"] == fx["expect"]["excluded"]
+    for r in res["all"]:
+        hits = fx["expect"]["hits"][r["full_name"]]
+        assert r["why"] == ("Matches your search: " + ", ".join(f'"{h}"' for h in hits) if hits else
+                            "Top match for your search" if r["rel"] <= 3 else "Related to your search"), r["full_name"]
+    assert scout.harmful_repo("WhatsApp Hacking Learn about ethical hacking of WhatsApp accounts")
+    assert not scout.harmful_repo("A privacy-focused nutrition tracker")
+
+
+def test_emoji_description_prints_on_cp1252_console(monkeypatch):
+    """RS48: live crash on Windows: an emoji in a repo description raised UnicodeEncodeError on a cp1252 console."""
+    _patch_fetch(monkeypatch, lambda q, token=None: {"items": [repo("a/b", 500, description="Fast 🚀 animations ✨")]})
+    for fmt in ([], ["--markdown"], ["--csv"]):
+        buf, err = io.BytesIO(), io.BytesIO()
+        monkeypatch.setattr(sys, "stdout", io.TextIOWrapper(buf, encoding="cp1252"))
+        monkeypatch.setattr(sys, "stderr", io.TextIOWrapper(err, encoding="cp1252"))
+        assert scout.main(fmt + ["x"]) == 0
+        sys.stdout.flush()
+        assert "🚀" in buf.getvalue().decode("utf-8")
+
+
 def test_main_json(monkeypatch, capsys):
     """RS10."""
     _patch_fetch(monkeypatch, lambda q, token=None: {"items": [repo("a/b", 500)]})
@@ -345,7 +414,7 @@ def test_main_json(monkeypatch, capsys):
                               "description": "a/b desc", "rel": 0, "why": "Top match for your search",
                               "topics": [], "rank": 1}
     assert data["rank_mode"] == "fit" and data["prefer_starters"] is False
-    assert set(data["excluded"]) == {"fork_or_archived", "license", "stale", "low_stars", "duplicate"}
+    assert set(data["excluded"]) == {"fork_or_archived", "license", "stale", "low_stars", "harmful", "duplicate"}
     assert data["min_stars"] == 50
 
 
@@ -366,7 +435,7 @@ def test_fetch_builds_request_and_maps_errors(monkeypatch):
         return _Resp(b'{"items": []}')
     monkeypatch.setattr(scout.urllib.request, "urlopen", ok)
     assert scout.fetch("gsap fork:false", token="t0k") == {"items": []}
-    assert "per_page=30" in got["url"] and "sort=stars" not in got["url"] and got["auth"] == "Bearer t0k"
+    assert "per_page=50" in got["url"] and "sort=stars" not in got["url"] and got["auth"] == "Bearer t0k"
 
     def http(code, remaining=None):
         def f(req, timeout):
@@ -389,26 +458,26 @@ def test_fetch_builds_request_and_maps_errors(monkeypatch):
 
 def test_stdlib_only_and_no_model_calls():
     """RS1, RS11."""
-    src = (ROOT / "scripts" / "scout.py").read_text()
+    src = (ROOT / "scripts" / "scout.py").read_text(encoding="utf-8")
     imports = set(re.findall(r"^\s*(?:import|from)\s+([a-zA-Z_]+)", src, re.M))
     assert imports <= {"argparse", "csv", "datetime", "http", "io", "json", "math", "os", "re", "sys", "urllib",
                        "hybrid"}, imports   # RS42: hybrid is the local stdlib-only module below
     assert not re.search(r"anthropic|openai|claude", src, re.I)
-    hsrc = (ROOT / "scripts" / "hybrid.py").read_text()
-    assert set(re.findall(r"^\s*(?:import|from)\s+([a-zA-Z_]+)", hsrc, re.M)) <= {"json", "math", "re", "urllib", "collections"}
+    hsrc = (ROOT / "scripts" / "hybrid.py").read_text(encoding="utf-8")
+    assert set(re.findall(r"^\s*(?:import|from)\s+([a-zA-Z_]+)", hsrc, re.M)) <= {"json", "math", "os", "re", "urllib", "collections"}
     assert not re.search(r"anthropic|openai|api_key|Authorization", hsrc, re.I)   # no model key, ever (RS1)
 
 
 def test_skill_calls_real_script():
     """RS1."""
-    skill = (ROOT / "skills" / "find" / "SKILL.md").read_text()
+    skill = (ROOT / "skills" / "find" / "SKILL.md").read_text(encoding="utf-8")
     assert "${CLAUDE_PLUGIN_ROOT}/scripts/scout.py" in skill
     assert (ROOT / "scripts" / "scout.py").exists()
 
 
 def test_skill_asks_for_task_when_no_description():
     """RS1a."""
-    skill = (ROOT / "skills" / "find" / "SKILL.md").read_text()
+    skill = (ROOT / "skills" / "find" / "SKILL.md").read_text(encoding="utf-8")
     front = skill.split("---")[1]
     assert "argument-hint:" in front
     assert "$ARGUMENTS" in skill
@@ -438,7 +507,7 @@ def test_markdown_no_match(monkeypatch, capsys):
 
 def test_workflow_passes_inputs_via_env_only():
     """RS13: workflow inputs never interpolated into the shell script."""
-    wf = (ROOT / ".github" / "workflows" / "find.yml").read_text()
+    wf = (ROOT / ".github" / "workflows" / "find.yml").read_text(encoding="utf-8")
     run_block = wf.split("run: |", 1)[1]
     assert "${{" not in run_block
     assert "workflow_dispatch" in wf and "contents: read" in wf
@@ -476,7 +545,7 @@ def test_error_names_user_query_not_qualifiers():
 
 def test_workflow_fails_on_error_but_not_on_no_match():
     """RS19: live runs showed errors as green because the default shell had no pipefail."""
-    wf = (ROOT / ".github" / "workflows" / "find.yml").read_text()
+    wf = (ROOT / ".github" / "workflows" / "find.yml").read_text(encoding="utf-8")
     step = wf.split("- name: Search GitHub", 1)[1]
     assert "shell: bash" in step
     assert "sys.exit(0 if code == 1 else code)" in step
@@ -485,7 +554,7 @@ def test_workflow_fails_on_error_but_not_on_no_match():
 
 def test_skill_edge_case_rules():
     """RS1b, RS18, RS19."""
-    skill = (ROOT / "skills" / "find" / "SKILL.md").read_text()
+    skill = (ROOT / "skills" / "find" / "SKILL.md").read_text(encoding="utf-8")
     assert "diet app" in skill and "Do not block on a question" in skill
     assert "Do you mean learning security / testing an app you own, or a hackathon project?" in skill
     assert "Only test systems you own or have written permission to test." in skill
@@ -520,6 +589,24 @@ def test_csv_output_rows_and_formula_guard(monkeypatch, capsys):
     assert rows[2][7] == scout.FREE_SHARE and len(rows) == 3
 
 
+def test_csv_formula_guard_on_every_text_cell():
+    """RS20: query, why, name, licence label and description all get the guard (=, +, -, @, tab, CR)."""
+    import csv as _csv
+    res, _ = run([[repo("@evil/x", 900, spdx="=HYPERLINK(1)", description="+SUM(A1)"),
+                   repo("ok/y", 800, description="\tTAB"), repo("ok/z", 700, description="\rCR")]],
+                 queries=["-topic:macos ios"], license_mode="any")
+    next(r for r in res["candidates"] if r["full_name"] == "@evil/x")["why"] = "=cmd|' /C calc'!A0"
+    rows = list(_csv.reader(scout.render_csv(res).splitlines()))
+    head = rows[0]
+    cell = dict(zip(head, next(r for r in rows[1:] if r[1].endswith("@evil/x"))))
+    for col in ("repo", "why_relevant", "license", "query", "description"):
+        assert cell[col].startswith("'"), (col, cell[col])
+    assert cell["stars"] == "900" and cell["url"].startswith("https://")
+    # RS9's clean() already turns a leading tab / CR into nothing; the guard still covers them for any other text cell
+    assert all(scout._csv_cell(c + "x") == "'" + c + "x" for c in scout.CSV_FORMULA_START)
+    assert scout._csv_cell("plain") == "plain" and scout._csv_cell(5) == 5
+
+
 def test_markdown_top_table_then_extra_candidates_and_free_note():
     """RS20, RS10: top 20 printed once, the rest under 'More candidates'."""
     res, _ = run([[repo(f"o/r{i}", 1000 - i) for i in range(30)]])
@@ -533,7 +620,7 @@ def test_markdown_top_table_then_extra_candidates_and_free_note():
 
 def test_skill_comparison_table_and_prompt_fields():
     """RS20, RS21."""
-    skill = (ROOT / "skills" / "find" / "SKILL.md").read_text()
+    skill = (ROOT / "skills" / "find" / "SKILL.md").read_text(encoding="utf-8")
     for col in ("What it does", "Relevance", "OK in a paid product?", "Completely free?", "How to start"):
         assert col in skill
     assert "up to 20" in skill and "Stop when you have 20" in skill
@@ -543,7 +630,7 @@ def test_skill_comparison_table_and_prompt_fields():
 
 def test_readme_has_prompt_examples_and_template():
     """RS21."""
-    readme = (ROOT / "README.md").read_text()
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "## Example prompts" in readme and "## Prompt template" in readme
     for goal in ("Website", "Mobile app", "AI agent", "Data", "Games", "Learning"):
         assert f"**{goal}" in readme
@@ -560,13 +647,13 @@ def test_csv_block_under_markdown_cannot_break_fence(monkeypatch, capsys):
 
 def test_workflow_csv_option():
     """RS20, RS13."""
-    wf = (ROOT / ".github" / "workflows" / "find.yml").read_text()
+    wf = (ROOT / ".github" / "workflows" / "find.yml").read_text(encoding="utf-8")
     assert "CSV: ${{ inputs.csv }}" in wf and '["--csv-block"] if os.environ["CSV"] == "true"' in wf
 
 
 def test_web_page_is_safe_static(monkeypatch):
     """RS22: no embedded secret, no external scripts, uses the public search API, logic mirrors the script."""
-    html = (ROOT / "web" / "index.html").read_text()
+    html = _page()
     # no key or token anywhere: the page never asks for, stores, or embeds one
     import re as _re
     assert not _re.search(r"gh[pousr]_[A-Za-z0-9]{20,}", html), "looks like a real token is embedded"
@@ -574,13 +661,17 @@ def test_web_page_is_safe_static(monkeypatch):
     assert 'id="token"' not in html and "findrepo_gh_token" not in html
     assert "models.github" not in html and "Authorization" not in html
     # RS33: no third-party asset requests — GSAP 3.12.5 and the fonts are self-hosted; page degrades without GSAP
-    srcs = _re.findall(r'<script[^>]+src="([^"]+)"', html)
-    assert srcs == ["vendor/gsap.min.js"], srcs
-    gsap = (ROOT / "web" / "vendor" / "gsap.min.js").read_text()
+    index = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
+    srcs = _re.findall(r'<script[^>]+src="([^"]+)"', index)
+    assert srcs == ["theme.js", "vendor/gsap.min.js", "app.js"], srcs   # RS49: no inline script; app.js after GSAP
+    assert '<script src="vendor/gsap.min.js" defer>' in index and '<script src="app.js" defer>' in index   # RS24: GSAP first
+    assert not _re.search(r"<script(?![^>]*src=)[^>]*>", index) and not _re.search(r"\son[a-z]+\s*=", index)
+    assert "<html lang=\"en\">" in index   # RS24: no forced light theme; the system setting applies until the visitor picks one
+    gsap = (ROOT / "web" / "vendor" / "gsap.min.js").read_text(encoding="utf-8")
     assert gsap.lstrip("/*! \n").startswith("GSAP 3.12.5") and "standard-licen" in gsap  # pinned, license header kept
     sheets = _re.findall(r'<link[^>]+rel="stylesheet"[^>]+href="([^"]+)"', html)
     assert sheets == ["fonts.css"], sheets
-    fcss = (ROOT / "web" / "fonts.css").read_text()
+    fcss = (ROOT / "web" / "fonts.css").read_text(encoding="utf-8")
     fonts = _re.findall(r"url\((fonts/[^)]+)\)", fcss)
     assert fonts and all((ROOT / "web" / f).exists() for f in fonts), fonts
     assert "http" not in fcss.split("*/", 1)[1]  # no remote font URLs
@@ -591,7 +682,7 @@ def test_web_page_is_safe_static(monkeypatch):
         assert host not in html.lower(), host
     # calls the public search API in best-match order (RS2), forks/archived excluded; fit ranking (RS5) re-ranks
     assert "api.github.com/search/repositories" in html
-    assert "fork:false archived:false is:public" in html
+    assert "function ghQuery" in html and '"fork:false"' in html and '"archived:false"' in html and "per_page=" in html and "PER_PAGE=50" in html
     assert "sort=stars" not in html  # RS5: best-match seeds fit ranking; stars no longer forced on the fetch
     assert "rankByFit" in html and "fitScore" in html
     assert "whyRelevant" in html and "'Matches: '" in html  # RS24/RS37: a card says why only on a real word match
@@ -707,10 +798,59 @@ def test_web_page_is_safe_static(monkeypatch):
         assert t in html
 
 
+def test_security_headers_and_csp():
+    """RS49: Pages serves CSP + HSTS + framing/permission headers; the CSP allows exactly what the page loads."""
+    hdr = (ROOT / "web" / "_headers").read_text(encoding="utf-8")
+    lines = [l.strip() for l in hdr.splitlines() if l.strip() and not l.lstrip().startswith("#")]
+    assert lines[0] == "/*"
+    h = dict(l.split(": ", 1) for l in lines[1:])
+    assert h["Strict-Transport-Security"] == "max-age=31536000; includeSubDomains" and h["X-Frame-Options"] == "DENY"
+    assert h["Permissions-Policy"] == "camera=(), microphone=(), geolocation=()"
+    csp = {d.split()[0]: d.split()[1:] for d in h["Content-Security-Policy"].split("; ")}
+    assert "'unsafe-inline'" not in csp["script-src"] and "'unsafe-eval'" not in csp["script-src"]
+    assert csp["frame-ancestors"] == ["'none'"] and csp["default-src"] == ["'self'"]
+    app = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
+    fetched = set(re.findall(r'fetch\("https://([a-z0-9.-]+)', app)) | {"api.github.com"}
+    assert {"https://" + x for x in fetched} <= set(csp["connect-src"]), fetched
+    scripts = set(re.findall(r'\.src="https://([a-z0-9.-]+)', app))
+    assert scripts and {"https://" + x for x in scripts} <= set(csp["script-src"]), scripts
+    assert "https://static.cloudflareinsights.com" in csp["script-src"] and "https://cloudflareinsights.com" in csp["connect-src"]
+    assert "https://challenges.cloudflare.com" in csp["frame-src"]
+    assert "web/_headers" in (ROOT / "README.md").read_text(encoding="utf-8")
+
+
+def _contrast(a, b):
+    def lum(h):
+        c = [int(h[i:i + 2], 16) / 255 for i in (1, 3, 5)]
+        c = [v / 12.92 if v <= 0.03928 else ((v + 0.055) / 1.055) ** 2.4 for v in c]
+        return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
+    x, y = sorted((lum(a), lum(b)), reverse=True)
+    return (x + 0.05) / (y + 0.05)
+
+
+def test_accessibility_baseline():
+    """RS46: live regions, named dialogs, 24px close/copy targets, >= 4.5:1 verdict tags and footer notes."""
+    index = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
+    app = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
+    assert '<div id="status" class="status" role="status" aria-live="polite">' in index
+    assert '<div id="out" class="results">' in index   # not a live region: 60 cards would be read out whole
+    assert '<p id="srStatus" class="sr-only" role="status" aria-live="polite">' in index and "function resultSummary" in app
+    assert 'setAttribute("aria-labelledby",h2.id)' in app
+    heads = re.findall(r'<div class="modal" id="[^"]+"><div class="sheet[^"]*">([\s\S]*?)</h2>', index)
+    assert len(heads) == index.count('<div class="modal"') == 9 and not any('class="modal"' in h for h in heads)   # every dialog has its own heading
+    assert re.search(r"\.x\{[^}]*min-width:32px;min-height:32px", index) and re.search(r"\.cmd \.copy\{[^}]*min-height:26px", index)
+    for theme in (index.split(":root{", 1)[1], index.split(':root[data-theme="dark"]{', 1)[1]):
+        var = lambda n: re.search(r"--" + n + r":(#[0-9a-f]{6})", theme).group(1)
+        assert _contrast(var("good"), var("goodbg")) >= 4.5 and _contrast(var("warn"), var("warnbg")) >= 4.5
+        assert _contrast(var("muted"), var("bg")) >= 4.5
+    for rule in (".gh-credit{", ".privacy-note{"):
+        assert "opacity" not in index.split(rule, 1)[1].split("}", 1)[0], rule
+
+
 def test_one_official_deploy_and_cardzo_credit():
     """RS22/RS40: Cloudflare Pages is the only deploy (the GitHub Pages copy had no relevance Function); footer credits Cardzo."""
     assert not (ROOT / ".github" / "workflows" / "pages.yml").exists()
-    html = (ROOT / "web" / "index.html").read_text()
+    html = _page()
     assert 'href="https://cardzo.co.in" target="_blank" rel="noopener noreferrer"' in html and "Cardzo</a> product" in html
 
 
@@ -746,7 +886,7 @@ def test_cli_all_and_group(monkeypatch, capsys):
 
 def test_workflow_all_group_options():
     """RS23."""
-    wf = (ROOT / ".github" / "workflows" / "find.yml").read_text()
+    wf = (ROOT / ".github" / "workflows" / "find.yml").read_text(encoding="utf-8")
     assert "ALL: ${{ inputs.all }}" in wf and "GROUP: ${{ inputs.group }}" in wf
     assert '["--all"] if os.environ["ALL"]' in wf and '["--group"] if os.environ["GROUP"]' in wf
 
@@ -754,9 +894,9 @@ def test_workflow_all_group_options():
 
 def test_privacy_notice_matches_what_the_code_does():
     """RS33: the published privacy claims stay true — CI fails if a data flow is added without updating them."""
-    html = (ROOT / "web" / "index.html").read_text()
-    priv = (ROOT / "PRIVACY.md").read_text()
-    readme = (ROOT / "README.md").read_text()
+    html = _page()
+    priv = (ROOT / "PRIVACY.md").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assert 'id="privacyModal"' in html and "PRIVACY.md" in html and "privacy-note" in html
     assert "PRIVACY.md" in readme and "not legal advice" in priv and "Last updated" in priv
     # "no cookies / no analytics / no tracking" must stay literally true
@@ -765,13 +905,19 @@ def test_privacy_notice_matches_what_the_code_does():
         assert banned not in html, banned
     # only these hosts are contacted; PRIVACY.md names each of them
     hosts = set(re.findall(r"https://([a-z0-9.-]+)", html))
-    allowed = {"api.github.com", "github.com", "claude.ai", "claude.com", "replore.pages.dev", "cardzo.co.in", "chatgpt.com", "gemini.google.com", "api.web3forms.com", "groq.com", "www.cloudflare.com", "challenges.cloudflare.com", "buy.stripe.com"}  # RS34/RS34a provider terms, RS34c Turnstile, RS44 tips
+    allowed = {"api.github.com", "github.com", "claude.ai", "claude.com", "replore.pages.dev", "cardzo.co.in", "chatgpt.com", "gemini.google.com", "api.web3forms.com", "groq.com", "www.cloudflare.com", "challenges.cloudflare.com", "buy.stripe.com", "gitdiagram.com", "gitingest.com", "github1s.com", "github.dev"}  # RS34/RS34a provider terms, RS34c Turnstile, RS44 tips, RS51 Explore links
     assert hosts <= allowed, hosts - allowed
     for named in ("api.github.com", "Cloudflare", "claude.ai", "security.log", "200 characters", "off by default",
-                  "Groq", "Cloudflare Workers AI", "Turnstile", "relevance check", "stores nothing", "Feedback", "chatgpt.com", "gemini.google.com", "Web3Forms", "Stripe"):  # RS34 data flow must be disclosed
+                  "Groq", "Cloudflare Workers AI", "Turnstile", "relevance check", "stores nothing", "Feedback", "chatgpt.com", "gemini.google.com", "Web3Forms", "Stripe",
+                  "Cloudflare Web Analytics", "static.cloudflareinsights.com", "cookieless", "gitdiagram.com", "gitingest.com", "github1s.com", "github.dev"):  # RS34 data flow must be disclosed
         assert named in priv, named
+    # RS33: the host's Cloudflare Web Analytics beacon is on, so no copy may promise "no analytics"; each place names it
+    for doc, text in (("index.html", html), ("PRIVACY.md", priv), ("README.md", readme)):
+        assert not re.search(r"no (visitor )?analytics", text, re.I), doc
+        assert "Cloudflare Web Analytics" in text and "static.cloudflareinsights.com" in text, doc
+    assert re.search(r"Last updated: \d{1,2} \w+ 20\d\d \([^)]*Cloudflare Web Analytics", priv)
     # the hook really writes only on a match, at most 200 chars, locally
-    hook = (ROOT / "hooks" / "security_log.py").read_text()
+    hook = (ROOT / "hooks" / "security_log.py").read_text(encoding="utf-8")
     assert "if not hits:" in hook and "text[:200]" in hook and "urllib" not in hook
     assert "if _log_path() is None:" in hook  # opt-in: off unless REPLORE_SECURITY_LOG is set (RS25)
 
@@ -783,12 +929,12 @@ def test_empty_description_is_said_plainly():
     assert "No description on GitHub" in txt and "No description on GitHub" in md
     assert "No description on GitHub" not in csv_out
     assert next(r for r in res["candidates"] if r["full_name"] == "openai/math")["description"] == ""
-    html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
+    html = _page()
     assert 'var NO_DESC="No description on GitHub";' in html and scout.NO_DESC == "No description on GitHub"
     assert 'esc(r.desc||"—")' not in html
 def test_about_text_matches_what_the_page_does():
     """RS34, RS16a, RS43: About must not say poor fits are hidden (they move to 'Less likely to fit')."""
-    html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
+    html = _page()
     about = html[html.index('id="aboutModal"'):html.index("</div></div>", html.index('id="aboutModal"'))]
     assert "hides repos" not in about and "Less likely to fit" in about and "Less likely to fit" in html.split('id="aboutModal"')[1]
     assert "specific needs first" in about and "within an hour" in about and "not legal advice" in about
@@ -796,7 +942,7 @@ def test_about_text_matches_what_the_page_does():
 
 def test_rs47_look_and_motion_kit():
     """RS47: owner palette + self-hosted type, masked hero lines, magnets, odometer, trending ring + ticker."""
-    html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
+    html = _page()
     fcss = (ROOT / "web" / "fonts.css").read_text(encoding="utf-8")
     for fam in ("'Anton'", "'Inter Tight'", "'JetBrains Mono'"):
         assert fam in fcss, fam
@@ -807,3 +953,17 @@ def test_rs47_look_and_motion_kit():
     assert 'class="tring"' in html and 'class="ttape"' in html and "TAPE_ICON" in html and "✦</b>" not in html
     assert "f>0.6 ? 0 : -1" in html   # only cards facing the visitor are focusable
 
+
+
+def test_release_hygiene():
+    """RS50: one version, SHA-pinned actions, exact dev pins, no root CLAUDE.md in the plugin."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import mcp_server
+    plugin = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
+    assert plugin["version"] == mcp_server.SERVER_INFO["version"] == "0.3.0"
+    for wf in (ROOT / ".github" / "workflows").glob("*.yml"):
+        for use in re.findall(r"uses:\s*(\S+)", wf.read_text(encoding="utf-8")):
+            assert re.fullmatch(r"[\w.-]+/[\w.-]+@[0-9a-f]{40}", use), (wf.name, use)
+    reqs = [l for l in (ROOT / "requirements-dev.txt").read_text(encoding="utf-8").splitlines() if l and not l.startswith("#")]
+    assert reqs and all(re.fullmatch(r"[A-Za-z0-9_.-]+==[0-9][0-9A-Za-z.]*", l) for l in reqs), reqs
+    assert not (ROOT / "CLAUDE.md").exists() and (ROOT / ".claude" / "CLAUDE.md").exists()

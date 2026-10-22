@@ -2,6 +2,8 @@
 // against evals/relevance_set.json (91 hand-labelled repos, 11 queries). No key needed: it calls the public endpoint
 // exactly like the web page does. Spends one AI check per query (9) from the site's free daily allowance.
 //   node evals/relevance_live.mjs [https://replore.cardzo.co.in/api/relevance]
+// RS34g: the endpoint refuses requests without a bot check. Set REPLORE_EVAL_KEY (the deployment's EVAL_KEY secret)
+// or, for a single run, RELEVANCE_TURNSTILE_TOKEN; a Preview with ALLOW_NO_TURNSTILE=1 needs neither. Never printed.
 // Same pass bar as relevance_llm.mjs: keep >= 95% of relevant repos AND drop >= 80% of off-topic ones.
 import { readFileSync } from "node:fs";
 
@@ -12,13 +14,16 @@ const { items } = JSON.parse(readFileSync(new URL("./relevance_set.json", import
 const byQuery = new Map();
 for (const it of items) { if (!byQuery.has(it.query)) byQuery.set(it.query, []); byQuery.get(it.query).push(it); }
 
+const AUTH = { "Content-Type": "application/json", "X-Replore-Diag": "1",
+  ...(process.env.REPLORE_EVAL_KEY ? { "X-Replore-Eval-Key": process.env.REPLORE_EVAL_KEY } : {}),
+  ...(process.env.RELEVANCE_TURNSTILE_TOKEN ? { "CF-Turnstile-Token": process.env.RELEVANCE_TURNSTILE_TOKEN } : {}) };
 async function runOne(model) {
 let keptRel = 0, rel = 0, droppedOff = 0, off = 0, totalMs = 0, okN = 0; const misses = [], failed = [];
 for (const [query, group] of byQuery) {
   const repos = group.map(g => ({ name: g.name, description: g.text, topics: [] }));
   let res, body; const t0 = Date.now();
   try {
-    res = await fetch(ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json", "X-Replore-Diag": "1" },
+    res = await fetch(ENDPOINT, { method: "POST", headers: AUTH,
       body: JSON.stringify(model ? { query, repos, model } : { query, repos }) });
     body = await res.json();
   } catch (e) { body = { error: "unreachable: " + e.message }; res = { ok: false, status: 0 }; }

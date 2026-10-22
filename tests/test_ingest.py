@@ -87,7 +87,7 @@ def test_embed_and_upsert_shapes():
 
 def test_stdlib_only():
     import ast
-    tree = ast.parse((ROOT / "ops" / "ingest.py").read_text())
+    tree = ast.parse((ROOT / "ops" / "ingest.py").read_text(encoding="utf-8"))
     mods = {a.name.split(".")[0] for n in ast.walk(tree) if isinstance(n, ast.Import) for a in n.names}
     mods |= {n.module.split(".")[0] for n in ast.walk(tree) if isinstance(n, ast.ImportFrom) and n.module}
     assert mods <= set(sys.stdlib_module_names)

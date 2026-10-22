@@ -19,7 +19,7 @@ GOLDEN = [2.374521, 0.0, 1.871074]   # the same numbers tests/test_web_logic.js 
 
 def test_bm25_golden_and_stop_parity_with_page():
     assert hybrid.bm25_scores(DESC, DOCS) == GOLDEN
-    html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
+    html = (ROOT / "web" / "app.js").read_text(encoding="utf-8")   # RS49: the page's code lives in app.js
     page_stop = re.search(r'var STOP=new Set\("([^"]+)"', html).group(1).split(" ")
     assert set(page_stop) == hybrid.STOP, "plugin and page must drop the same filler words"
 
@@ -61,6 +61,20 @@ def test_semantic_parses_and_fails_closed():
     assert seen["body"]["mode"] == "semantic" and seen["body"]["repos"][0]["name"] == "a/b"
     def down(req, timeout): raise OSError("no network")
     assert hybrid.semantic(DESC, rows, opener=down) is None
+
+
+def test_semantic_sends_plugin_key_only_when_set(monkeypatch):
+    """RS34g: the semantic route needs the server's shared key; the plugin sends it only from REPLORE_PLUGIN_KEY."""
+    got = []
+    def cap(req, timeout):
+        got.append(req.get_header("X-replore-plugin-key"))
+        return _Resp(b'{"sim": [0.5]}')
+    rows = [{"full_name": "a/b", "description": "x"}]
+    monkeypatch.delenv("REPLORE_PLUGIN_KEY", raising=False)
+    hybrid.semantic(DESC, rows, opener=cap)
+    monkeypatch.setenv("REPLORE_PLUGIN_KEY", "pk-0123456789abcdef")
+    hybrid.semantic(DESC, rows, opener=cap)
+    assert got == [None, "pk-0123456789abcdef"]
 
 
 def _repo(name, stars, desc):

@@ -16,13 +16,14 @@ jobs:
   eval:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
         with:
           node-version: "22"
       - name: Score the endpoint
         env:
           ENDPOINT: ${{ inputs.endpoint }}   # passed as data, never pasted into the script
+          REPLORE_EVAL_KEY: ${{ secrets.REPLORE_EVAL_KEY }}   # RS34g: the deployment's EVAL_KEY (repo secret); empty = no key sent
         run: |
           case "$ENDPOINT" in https://*.pages.dev/api/relevance|https://replore.cardzo.co.in/api/relevance) ;; *) echo "endpoint must be a *.pages.dev or replore.cardzo.co.in /api/relevance URL"; exit 2;; esac
           node evals/relevance_live.mjs "$ENDPOINT"

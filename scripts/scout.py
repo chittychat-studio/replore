@@ -27,6 +27,8 @@ API = "https://api.github.com/search/repositories"
 MAX_QUERIES = 4  # RS8: unauthenticated search limit is 10 requests a minute
 MAX_TEXT = 200  # RS9
 MAX_QUERY_CHARS = 200  # RS19: GitHub rejects long queries (HTTP 422)
+PER_PAGE = 50  # RS4b: results asked per search (filters are in the query, so most of them pass)
+REL_SPAN = 20  # RS5: best-match relevance falls from 1 to 0 over the first 20 positions (the goal evals are tuned to this)
 
 # RS3: OSI-approved licenses GitHub commonly detects.
 OPEN_LICENSES = {
@@ -64,12 +66,38 @@ HINT_README = "Follow the Getting started / Installation section of its README"
 KEY = ("Key: stars = how many people bookmarked it (popularity, not quality, and stars can be bought); "
        "last push = last time anyone updated it; license labels are a plain summary, not legal advice.")
 
+# RS18 + RS29b: repo descriptions that offer account takeover, spyware, stealers, cracks, DDoS, cheats or "free premium"
+# generators are always dropped and counted as `harmful`. Same patterns, in the same order, as HARM in web/app.js
+# (tests/fixtures/parity_items.json checks both engines drop the same repos).
+_SVC = r"(whats ?app|instagram|facebook|snapchat|telegram|gmail|tiktok|email|wifi|someone'?s? account)"
+HARM = [re.compile(p, re.I) for p in (
+    r"hack(ing|er)?\s+(of\s+|a\s+|an\s+|the\s+)?" + _SVC, _SVC + r"\s+(account\s+)?(hack|hacking|hacker|cracker)",
+    r"account takeover", r"stalkerware|spyware", r"credential stealer|password stealer|stealer\b", r"\bkeygen|crack(ed)?\b",
+    r"\bddos\b", r"game (cheat|hack)|aimbot|wallhack", r"free (premium|robux|v-?bucks|coins) generator")]
+
+
+def harmful_repo(desc):
+    """RS18: True when a (cleaned) repo description matches one of the harmful-tool patterns."""
+    return any(p.search(desc or "") for p in HARM)
+
+
 _NAME = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+")
 _CTRL = re.compile(r"[\x00-\x1f\x7f-\x9f​-‏  ‪-‮⁦-⁩]")  # RS9: incl. line/para separators
 
 
 class ScoutError(Exception):
     """RS7: any failure that must end the run."""
+
+
+def utf8_stdio(*streams):
+    """RS48: a Windows console defaults to cp1252, so an emoji in a repo description crashed the print.
+    Switch the standard streams to UTF-8 (unprintable characters become '?', never an exception)."""
+    for s in streams or (sys.stdout, sys.stderr):
+        if hasattr(s, "reconfigure"):
+            try:
+                s.reconfigure(encoding="utf-8", errors="replace")
+            except (ValueError, OSError):
+                pass  # a stream that can't be switched keeps working as before
 
 
 def _u16(text):
@@ -93,15 +121,37 @@ def clean(text):
     return re.sub("[\\s,.;:\\-\u2013\u2014]+$", "", cut) + "\u2026"
 
 
-def build_query(q):
-    """RS2: always exclude forks and archived repos."""
-    return f"{q.strip()} fork:false archived:false is:public"
+GH_MAX_QUERY = 256  # GitHub's limit for the whole q string (qualifiers included)
+
+
+def _typed(q, key):
+    """True when the user already wrote this qualifier (also negated, e.g. -stars:), so we never add a second one."""
+    return re.search(r"(?:^|\s)-?" + key + ":", q, re.I) is not None
+
+
+def build_query(q, max_age_months=0, min_stars=0, now=None):
+    """RS2, RS4, RS4b: exclude forks and archived repos, and push the staleness and star filters into the search so
+    GitHub's 1,000-result window and our page of results are spent on repos that can pass. Same rule as the page's
+    ghQuery() (RS29b; shared cases in tests/fixtures/qualifier_cases.json). A qualifier the user typed is left alone;
+    one that would push the query past GitHub's 256 characters is dropped (the client-side filters still apply).
+    No AND/OR/NOT is ever added, so GitHub's limit of 5 operators is untouched."""
+    out = q.strip().strip("﻿").strip()   # RS29b: like JS trim(), which also removes a byte-order mark
+    quals = [x for k, x in (("fork", "fork:false"), ("archived", "archived:false"), ("is", "is:public")) if not _typed(out, k)]
+    if max_age_months > 0 and not _typed(out, "pushed"):
+        now = now or dt.datetime.now(dt.timezone.utc)
+        quals.append("pushed:>=" + (now - dt.timedelta(days=30.44 * max_age_months)).date().isoformat())
+    if min_stars > 0 and not _typed(out, "stars"):
+        quals.append(f"stars:>={min_stars}")
+    for x in quals:
+        if _u16(out) + 1 + len(x) <= GH_MAX_QUERY:   # RS29b: UTF-16 units, as the page's .length counts
+            out += " " + x
+    return out
 
 
 def fetch(query, token=None, timeout=20):
     """RS2, RS7, RS8: one search request; raises ScoutError on any failure."""
     # RS2: best-match (relevance) order seeds fit ranking (RS5); stars stay in each result and still weigh in RS5
-    params = urllib.parse.urlencode({"q": query, "per_page": 30})
+    params = urllib.parse.urlencode({"q": query, "per_page": PER_PAGE})   # RS4b: one page, filters already in q
     req = urllib.request.Request(f"{API}?{params}", headers={
         "Accept": "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
@@ -155,19 +205,28 @@ def _freedom(use):
 
 def fit_score(r, prefer_starters=False, floor=0.0):
     """RS5: relevant (0.45) + popular (0.35) + free to use (0.20), with the RS15 starter nudge."""
-    rel = 1 - min(1, (r.get("rel", 0) or 0) / 20)               # best-match position (RS2); top match = 1
+    rel = 1 - min(1, (r.get("rel", 0) or 0) / REL_SPAN)             # best-match position (RS2); top match = 1
     star = min(1, math.log10((r["stars"] or 0) + 1) / 5)        # log-scaled popularity (~100k stars = 1)
     free = _freedom(r["license_use"])
     bonus = 0.08 if (prefer_starters and r["starter"] and r["stars"] >= floor) else 0.0
     return 0.45 * rel + 0.35 * star + 0.20 * free + bonus
 
 
+_PAGE_SPLIT = re.compile(r"[^a-z0-9 +#.]")   # RS29b: the page's tokenizer (sigTokens / whyRelevant), character for character
+
+
+def _page_words(text):
+    return _PAGE_SPLIT.sub(" ", (text or "").lower()).split()
+
+
 def why_relevant(query, name, desc, rel):
-    """RS24: one honest line on why a repo is here — a whole-word keyword match, not an AI judgement."""
+    """RS24: one honest line on why a repo is here — a whole-word keyword match, not an AI judgement.
+    RS29b: the matched words are exactly the page's (same tokenizer, same filler words as hybrid.STOP / the page's STOP);
+    only the wording differs (the page says "Matches: a, b" and shows no line without a match, RS37)."""
     # drop search qualifiers (topic:/language:/is:…) and negated terms (-foo) so we never claim a match on them
     plain = " ".join(t for t in (query or "").split() if ":" not in t and not t.startswith("-"))
-    toks = [w for w in _WORD.findall(plain.lower()) if len(w) > 1]
-    words = set(_WORD.findall((name + " " + desc).lower()))  # match whole words, so "ai" ≠ "email"
+    toks = [w for w in _page_words(plain) if len(w) > 1 and w not in hybrid.STOP]
+    words = set(_page_words(name + " " + desc))  # match whole words, so "ai" ≠ "email"
     hits = []
     for t in toks:
         if t in words and t not in hits:
@@ -179,10 +238,15 @@ def why_relevant(query, name, desc, rel):
     return "Top match for your search" if (rel is not None and rel <= 3) else "Related to your search"
 
 
+def _tail(r):
+    """RS5c: 1 when a repo was found only past GitHub's first REL_SPAN best matches (it would compete on stars alone)."""
+    return 1 if (r.get("rel") or 0) >= REL_SPAN else 0
+
+
 def _order(rows, prefer_starters):
-    """RS5, RS15: one query's own order, by fit."""
+    """RS5, RS15: one query's own order, by fit (tail matches after the head, RS5c)."""
     floor = max((r["stars"] for r in rows), default=0) * STARTER_MIN_SHARE
-    return sorted(rows, key=lambda r: (-fit_score(r, prefer_starters, floor), -r["stars"], -r["_pushed"], r["full_name"]))
+    return sorted(rows, key=lambda r: (_tail(r), -fit_score(r, prefer_starters, floor), -r["stars"], -r["_pushed"], r["full_name"]))
 
 
 def rank(by_query, mode="fit", prefer_starters=False):
@@ -194,7 +258,7 @@ def rank(by_query, mode="fit", prefer_starters=False):
         for rows in by_query:
             floor = max((r["stars"] for r in rows), default=0) * STARTER_MIN_SHARE
             scored += [(fit_score(r, prefer_starters, floor), r) for r in rows]
-        scored.sort(key=lambda t: (-t[0], -t[1]["stars"], -t[1]["_pushed"], t[1]["full_name"]))
+        scored.sort(key=lambda t: (_tail(t[1]), -t[0], -t[1]["stars"], -t[1]["_pushed"], t[1]["full_name"]))   # RS5c
         return [r for _, r in scored]
     if mode == "stars":
         return sorted(allr, key=lambda r: (-r["stars"], -r["_pushed"], r["full_name"]))
@@ -238,7 +302,7 @@ def scout(queries, fetcher=fetch, top=20, candidates=40, license_mode="open", ma
     now = now or dt.datetime.now(dt.timezone.utc)
     cutoff = now - dt.timedelta(days=30.44 * max_age_months) if max_age_months > 0 else None
 
-    excluded = {"fork_or_archived": 0, "license": 0, "stale": 0, "low_stars": 0, "duplicate": 0}
+    excluded = {"fork_or_archived": 0, "license": 0, "stale": 0, "low_stars": 0, "harmful": 0, "duplicate": 0}
     seen, by_query = {}, []  # name -> its kept row (or None if the name was seen but filtered out)
     def take(q, items, kept, rel_floor=0, ex=None, why=None):
         ex = excluded if ex is None else ex  # RS42: confirm searches don't add to the user-facing exclusion counts
@@ -271,6 +335,9 @@ def scout(queries, fetcher=fetch, top=20, candidates=40, license_mode="open", ma
                 continue
             if int(it.get("stargazers_count") or 0) < min_stars:  # RS4a
                 ex["low_stars"] += 1
+                continue
+            if harmful_repo(clean(it.get("description"))):  # RS18, RS29b: same drop as the page, after the same filters
+                ex["harmful"] += 1
                 continue
             if is_open:
                 label = spdx
@@ -306,7 +373,7 @@ def scout(queries, fetcher=fetch, top=20, candidates=40, license_mode="open", ma
         kept = []
         by_query.append(kept)
         try:
-            data = fetcher(build_query(q), token)
+            data = fetcher(build_query(q, max_age_months, min_stars, now), token)
         except ScoutError as e:  # RS19: name the user's search, never the added qualifiers
             raise ScoutError(f"Search {q!r}: {e}") from None
         items = data.get("items") if isinstance(data, dict) else None  # RS7: malformed response fails closed
@@ -424,17 +491,23 @@ def _desc(r):
     return r["description"] or NO_DESC
 
 
+CSV_FORMULA_START = ("=", "+", "-", "@", "\t", "\r")
+
+
+def _csv_cell(v):
+    """RS20: a text cell that starts like a formula gets a leading ' so Excel / Sheets show it as text, never run it."""
+    return "'" + v if isinstance(v, str) and v.startswith(CSV_FORMULA_START) else v
+
+
 def render_csv(result):
-    """RS20: spreadsheet rows (top + candidates)."""
+    """RS20: spreadsheet rows (top + candidates). Every text cell is formula-guarded: query, why, name, licence, text."""
     buf = io.StringIO()
     w = csv.writer(buf, lineterminator="\n")
     w.writerow(CSV_FIELDS)
     for r in result["candidates"]:
-        desc = r["description"]
-        if desc[:1] in "=+-@":  # keep spreadsheet apps from treating repo text as a formula
-            desc = "'" + desc
-        w.writerow([r["rank"], r["full_name"], r["why"], r["url"], r["stars"], r["license"], r["license_use"], r["free"],
-                    "yes" if r["starter"] else "no", r["start_hint"], r["pushed"], r["query"], desc])
+        w.writerow([_csv_cell(v) for v in (
+            r["rank"], r["full_name"], r["why"], r["url"], r["stars"], r["license"], r["license_use"], r["free"],
+            "yes" if r["starter"] else "no", r["start_hint"], r["pushed"], r["query"], r["description"])])
     return buf.getvalue().rstrip("\n")
 
 
@@ -485,6 +558,7 @@ def render_markdown(result):
 
 
 def main(argv=None):
+    utf8_stdio()  # RS48
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("queries", nargs="+")
     p.add_argument("--top", type=int, default=20)
