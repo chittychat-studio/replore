@@ -18,8 +18,8 @@ var STARTER_MIN_SHARE=0.10, MAX_QUERIES=4, MAX_AGE_MONTHS=24;
 var SVC="(whats ?app|instagram|facebook|snapchat|telegram|gmail|tiktok|email|wifi|someone'?s? account)";
 var HARM=[new RegExp("hack(ing|er)?\\s+(of\\s+|a\\s+|an\\s+|the\\s+)?"+SVC,"i"),
  new RegExp(SVC+"\\s+(account\\s+)?(hack|hacking|hacker|cracker)","i"),/account takeover/i,
- /stalkerware|spyware/i,/credential stealer|password stealer|stealer\b/i,/\bkeygen|crack(ed)?\b/i,
- /\bddos\b/i,/game (cheat|hack)|aimbot|wallhack/i,/free (premium|robux|v-?bucks|coins) generator/i];
+ /stalkerware|spyware/i,/credential stealer|password stealer|stealer\b/i,/\bkeygens?\b.{0,40}\b(crack|serial|patch|activat)|\b(crack|serial|patch|activat)\w*\b.{0,40}\bkeygens?\b/i,/\bcrack(ed|s)?\s+(for\s+|of\s+)?(paid\s+|premium\s+)?(software|windows|office|adobe|photoshop|games?|apps?|licen[cs]es?)\b|\bcracked\s+(version|apk|software|games?|apps?)\b|\b(software|licen[cs]e|activation|serial|game)\s+crack(s|ing|er)?\b|\bwarez\b/i,
+ /\bddos\s+(attack\s+)?(tool|script|bot|botnet|panel|flooder)s?\b|\b(ip\s+)?(stresser|booter)s?\b|\bddos(ing)?\s+(any\s+|a\s+|the\s+)?(website|server|ip|target)s?\b/i,/game (cheat|hack)|aimbot|wallhack/i,/free (premium|robux|v-?bucks|coins) generator/i];
 var HARM_INTENT=[/\bhack (into|someone|my (ex|girlfriend|boyfriend|wife|husband|partner))/i,
  /steal (passwords|accounts|credentials|data)/i,/spy on\b/i,/crack (paid|licensed) software/i,
  /take down (a )?(website|server|service)/i];

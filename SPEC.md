@@ -850,6 +850,21 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   ": no" in an `.sr-only` span, so screen readers (and the shared cases, which read the panel as text) get the
   answer that #73's icon-only version had hidden. Plugin version 0.4.0 (RS50).
 
+- **RS18a** Harmful-repo patterns need context (review 2026-10-22: bare `crack`, `ddos` and `keygen` dropped ordinary repos
+  such as "Crack the coding interview" and "Anti-DDoS protection" and counted them as harmful). A repo is dropped for
+  piracy or attacks only when the word comes with that context: crack/cracked + software, Windows, Office, Adobe, games,
+  apps or licences (or "cracked version/apk", "activation/serial/software crack", "warez"); keygen within 40 characters
+  of crack, serial, patch or activation; DDoS + tool, script, bot, botnet, panel or flooder, IP stressers and booters,
+  or "DDoSing a website/server". `scout.py` HARM and `web/app.js` HARM stay character-identical, and
+  `tests/fixtures/harm_cases.json` (must drop / must keep) is checked against both engines.
+
+- **RS34h** Keys only to Replore's hosts (review 2026-10-22: the live-eval workflow's `https://*.pages.dev/...` glob
+  matched any host, so a dispatched run could send `REPLORE_EVAL_KEY` anywhere; `ops/rag_smoke.py` sent the key to
+  whatever URL it was given and followed redirects with it). The eval and plugin keys are sent only to
+  `https://replore.cardzo.co.in`, `https://replore.pages.dev` or one preview label under it (`<x>.replore.pages.dev`),
+  with no port. The workflow checks the endpoint with an anchored regex; `evals/relevance_live.mjs` refuses other
+  hosts and treats a redirect as an error; `ops/rag_smoke.py` omits the key for other hosts and never follows redirects.
+
 ## RX — Deliberately excluded (v0.1)
 
 - **RX1** Scraping github.com HTML, or any non-API source.
