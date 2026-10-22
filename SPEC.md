@@ -945,7 +945,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   studio stage with no box: its light runs edge to edge and fades into the page at the top and bottom (owner: "blended
   not like a box"). Light theme: a cool light studio; dark theme: the dark-blue studio (owner: dark on white looked
   awkward). It holds: the RS54 pill, the tagline as the
-  title ("Find it before / you build it.", light weight, second line muted), the search, then the live demo under it. The
+  title ("Find it before / you build it.", light weight, second line muted, revealed word by word from a soft blur), the search, then the live demo under it. The
   demo: the example search typed above; a stage rail (I Searching, II Ranking by fit, III Licence check, IV Ready); the
   scout bot (RS64 art, `web/scout-*.webp`) standing beside the ASCII globe on the floor, each with a contact shadow; a tick
   dial that fills while the search runs; ‹ › buttons (44 px, labelled) that step through the RS61 example searches; and
