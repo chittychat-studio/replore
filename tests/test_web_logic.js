@@ -17,7 +17,7 @@ global.fetch = () => Promise.reject(new Error("no network in tests"));   // RS35
 global.window = global;
 const s = {};
 new Function("document", "localStorage",
-  code + "; this.keywordQueries=keywordQueries; this.rankByFit=rankByFit; this.fitScore=fitScore; this.whyRelevant=whyRelevant; this.esc=esc; this.lu=lu; this.freeText=freeText;" +
+  code + "; this.keywordQueries=keywordQueries; this.exploreLinks=exploreLinks; this.rankByFit=rankByFit; this.fitScore=fitScore; this.whyRelevant=whyRelevant; this.esc=esc; this.lu=lu; this.freeText=freeText;" +
   " this.keep=keep; this.ragRan=ragRan; this.hasDesc=hasDesc; this.descHtml=descHtml; this.tipUrlOk=tipUrlOk; this.clean=clean; this.harmful=harmful; this.harmfulRepo=harmfulRepo; this.prdFeatures=prdFeatures; this.trendingQuery=trendingQuery; this.trendRows=trendRows; this.feedbackUrl=feedbackUrl; this.feedbackPayload=feedbackPayload; this.agoText=agoText; this.cardHtml=cardHtml; this.recentKey=recentKey; this.recentFind=recentFind; this.recentAdd=recentAdd; this.CACHE_V=CACHE_V; this.bm25Scores=bm25Scores; this.repoText=repoText; this.rrfOrder=rrfOrder; this.hybridOrder=hybridOrder; this.confirmQueries=confirmQueries; this.ghQuery=ghQuery; this.sigTokens=sigTokens; this.resultSummary=resultSummary;").call(s, document, global.localStorage || {getItem:()=>null,setItem(){},removeItem(){}});
 
 // RS16: iOS excludes macOS
@@ -258,3 +258,11 @@ console.log("prd ok:", f.join(" | "));
   assert.ok(!h.includes("<img") && !h.includes("<bad>") && !h.includes("ow<n>"), "repo text must be escaped");
   assert.ok(h.includes("class=\"topics\"") && h.includes("top1") && h.includes("pick-cb"));   // fake DOM: esc() yields "" here, so check structure only
   console.log("card ok"); }
+
+// RS51 Explore links: same owner/repo path on four tools; malformed names get none
+{ const x = s.exploreLinks("vercel/next.js");
+  assert.deepStrictEqual(x.map(e => e.url), ["https://gitdiagram.com/vercel/next.js", "https://gitingest.com/vercel/next.js",
+    "https://github1s.com/vercel/next.js", "https://github.dev/vercel/next.js"]);
+  ["", "noslash", "a/b/c", "a/..", "a/.", "o w/r", "a/b?x=1", "a/b#x", "\"a/b", "javascript:a/b"].forEach(n =>
+    assert.deepStrictEqual(s.exploreLinks(n), [], n));
+  console.log("explore ok"); }

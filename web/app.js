@@ -210,6 +210,14 @@ function licenseVerdict(spdx){
 function ownerHue(o){ var h=0; for(var k=0;k<o.length;k++) h=(h*31+o.charCodeAt(k))>>>0; return [14,24,32,198,152,268,340][h%7]; }
 function agoText(d){ var t=Date.parse(d); if(!t) return ""; var days=Math.floor((Date.now()-t)/864e5);
   return days<1?"today":days<2?"yesterday":days<31?days+" days ago":days<365?Math.round(days/30)+" mo ago":Math.round(days/365)+" yr ago"; }
+// RS51: "Explore" links — each tool takes the same owner/repo path as github.com; only a well-formed name gets links
+var EXPLORE=[["Diagram","https://gitdiagram.com/","See the repo as an architecture diagram (GitDiagram)"],
+  ["Digest","https://gitingest.com/","Turn the code into one text digest to paste into an AI chat (Gitingest)"],
+  ["Browse","https://github1s.com/","Read the code in a VS Code-style viewer (GitHub1s)"],
+  ["Edit","https://github.dev/","Open in github.dev, the web editor (sign in to GitHub)"]];
+function exploreLinks(name){ name=String(name||"");
+  if(!/^[A-Za-z0-9-]{1,39}\/[A-Za-z0-9._-]{1,100}$/.test(name) || /\/\.\.?$/.test(name)) return [];
+  return EXPLORE.map(function(e){ return {label:e[0], url:e[1]+name, title:e[2]}; }); }
 function cardHtml(r,i,qtokens){
   var free=freeText(r.spdx), paid=lu(r.spdx), v=licenseVerdict(r.spdx);
   var okCom=v.c==="t-good"?1:0;   // one "free for commercial use" flag = the green verdict (permissive + weak copyleft)
@@ -222,6 +230,8 @@ function cardHtml(r,i,qtokens){
         '<div class="name"><a href="'+esc(r.url)+'" target="_blank" rel="noopener" title="'+esc(r.name)+'">'+esc(repo)+'</a></div></div>'+
       (i!=null?'<span class="rank">#'+(i+1)+'</span>':'')+
     '</div>'+
+    (function(xs){ return xs.length?'<nav class="explore" aria-label="Explore '+esc(r.name)+'">'+
+      xs.map(function(x){ return '<a href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer" title="'+esc(x.title)+'">'+esc(x.label)+'</a>'; }).join("")+'</nav>':''; })(exploreLinks(r.name))+
     '<div class="rc-stats"><span class="stars">★ <span class="cnt" data-v="'+r.stars+'">'+kstars(r.stars)+'</span></span>'+
       (r.forks?'<span class="forks" title="Forks">⑂ '+kstars(r.forks)+'</span>':'')+
       (r.starter?'<span class="tag t-star" title="A ready-made template to start your project from">Starter</span>':'')+'</div>'+
@@ -1241,7 +1251,7 @@ function tipUrlOk(u, host){ u=String(u||"");
 (function(){ if(typeof location==="undefined" || !tipUrlOk(TIP_URL, location.hostname)) return;
   document.querySelectorAll(".tip-link").forEach(function(a){ a.href=TIP_URL; });
   document.querySelectorAll(".tip-el").forEach(function(el){ el.hidden=false; }); })();
-var LAST="findrepo_last", CACHE_V="10";   // 10: saved markup no longer carries inline onclick (RS49)  // bump when saved markup changes, so stale caches are dropped
+var LAST="findrepo_last", CACHE_V="11";   // 11: cards carry Explore links (RS51); 10: no inline onclick (RS49)  // bump when saved markup changes, so stale caches are dropped
 // RS43 A: the visitor's own last 10 searches for 1 hour, in their browser only. Pure functions (tested) + thin wrappers.
 var RECENT="replore_recent", RECENT_TTL_MS=3600000, RECENT_MAX=10;
 function recentKey(f){ return JSON.stringify([String(f.q||"").trim().toLowerCase().replace(/\s+/g," "), f.platform||"", String(f.minstars||""),

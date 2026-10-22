@@ -905,17 +905,17 @@ def test_privacy_notice_matches_what_the_code_does():
         assert banned not in html, banned
     # only these hosts are contacted; PRIVACY.md names each of them
     hosts = set(re.findall(r"https://([a-z0-9.-]+)", html))
-    allowed = {"api.github.com", "github.com", "claude.ai", "claude.com", "replore.pages.dev", "cardzo.co.in", "chatgpt.com", "gemini.google.com", "api.web3forms.com", "groq.com", "www.cloudflare.com", "challenges.cloudflare.com", "buy.stripe.com"}  # RS34/RS34a provider terms, RS34c Turnstile, RS44 tips
+    allowed = {"api.github.com", "github.com", "claude.ai", "claude.com", "replore.pages.dev", "cardzo.co.in", "chatgpt.com", "gemini.google.com", "api.web3forms.com", "groq.com", "www.cloudflare.com", "challenges.cloudflare.com", "buy.stripe.com", "gitdiagram.com", "gitingest.com", "github1s.com", "github.dev"}  # RS34/RS34a provider terms, RS34c Turnstile, RS44 tips, RS51 Explore links
     assert hosts <= allowed, hosts - allowed
     for named in ("api.github.com", "Cloudflare", "claude.ai", "security.log", "200 characters", "off by default",
                   "Groq", "Cloudflare Workers AI", "Turnstile", "relevance check", "stores nothing", "Feedback", "chatgpt.com", "gemini.google.com", "Web3Forms", "Stripe",
-                  "Cloudflare Web Analytics", "static.cloudflareinsights.com", "cookieless"):  # RS34 data flow must be disclosed
+                  "Cloudflare Web Analytics", "static.cloudflareinsights.com", "cookieless", "gitdiagram.com", "gitingest.com", "github1s.com", "github.dev"):  # RS34 data flow must be disclosed
         assert named in priv, named
     # RS33: the host's Cloudflare Web Analytics beacon is on, so no copy may promise "no analytics"; each place names it
     for doc, text in (("index.html", html), ("PRIVACY.md", priv), ("README.md", readme)):
         assert not re.search(r"no (visitor )?analytics", text, re.I), doc
         assert "Cloudflare Web Analytics" in text and "static.cloudflareinsights.com" in text, doc
-    assert re.search(r"Last updated: \d{1,2} \w+ 20\d\d \(Cloudflare Web Analytics", priv)
+    assert re.search(r"Last updated: \d{1,2} \w+ 20\d\d \([^)]*Cloudflare Web Analytics", priv)
     # the hook really writes only on a match, at most 200 chars, locally
     hook = (ROOT / "hooks" / "security_log.py").read_text(encoding="utf-8")
     assert "if not hits:" in hook and "text[:200]" in hook and "urllib" not in hook
