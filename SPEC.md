@@ -749,12 +749,13 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   as plugin context. A test checks all four.
 
 - **RS51** Explore links on result cards (web). Right under the repo name (the GitHub link) each card has a row of
-  four equal-width buttons (at least 34px tall, accent-tinted, so they read as clickable) that open in a new tab (`rel="noopener noreferrer"`): Diagram → `https://gitdiagram.com/<owner>/<repo>`, Digest →
-  `https://gitingest.com/<owner>/<repo>`, Browse → `https://github1s.com/<owner>/<repo>`, Edit →
+  five equal-width buttons (at least 34px tall, accent-tinted, so they read as clickable) that open in a new tab (`rel="noopener noreferrer"`): Diagram → `https://gitdiagram.com/<owner>/<repo>`, Digest →
+  `https://gitingest.com/<owner>/<repo>`, Wiki → `https://deepwiki.com/<owner>/<repo>` (AI-written docs
+  you can ask questions), Browse → `https://github1s.com/<owner>/<repo>`, Edit →
   `https://github.dev/<owner>/<repo>`. Each has a title saying what the tool does. The path is the repo's `full_name`
   from the GitHub API, used only when it matches `owner/repo` (owner `[A-Za-z0-9-]{1,39}`, repo `[A-Za-z0-9._-]{1,100}`,
   not `.` or `..`); otherwise the row is left out (RS9). They are navigations only: the page fetches nothing from these
-  sites, so the CSP (RS49) is unchanged. Saved results are re-keyed (`CACHE_V` 11) so cards render with the row.
+  sites, so the CSP (RS49) is unchanged. Saved results are re-keyed (`CACHE_V` 12, since the Wiki button was added) so cards render with the row.
 
 ## RX — Deliberately excluded (v0.1)
 

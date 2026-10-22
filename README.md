@@ -49,6 +49,31 @@ open-source match that passes the filters, not every repo on GitHub.
 **Try it live: [replore.cardzo.co.in](https://replore.cardzo.co.in)** — type a project and see the top repos in your
 browser, no Claude and no Python needed.
 
+What you can do there:
+
+- **Search in plain words.** Describe what you're building; filters (tech stack, minimum stars) are optional.
+  Repos an AI check thinks don't fit move to the end, under "Less likely to fit".
+- **Read each result at a glance.** Every card shows stars and forks, a "Matches:" line with the words it matched,
+  what the repo does, when it was last updated, and one license verdict ("✅ Free for commercial use", "⚠ Must
+  open-source your app", …). Filter to **Free for commercial use** or **Starters** (ready-made templates).
+- **Look inside a repo before you pick it.** Each card has five buttons under the repo name, each opening a free tool
+  in a new tab (SPEC RS51):
+  - **Diagram** ([GitDiagram](https://gitdiagram.com)): the repo as an architecture diagram.
+  - **Digest** ([Gitingest](https://gitingest.com)): all the code as one text file to paste into an AI chat.
+  - **Wiki** ([DeepWiki](https://deepwiki.com)): AI-written docs for the repo that you can ask questions.
+  - **Browse** ([GitHub1s](https://github1s.com)): read the code in a VS Code-style viewer.
+  - **Edit** ([github.dev](https://github.dev)): open the repo in GitHub's web editor.
+- **Find similar repos.** Paste a repo you like (`owner/repo` or its GitHub link) and get others like it.
+- **Match a whole plan.** Upload a plan or PRD; it's read in your browser (never uploaded) and searched feature by
+  feature.
+- **Turn picks into a build plan.** Tick **＋ Add to plan** on the repos you want (or **Select all shown**), then
+  **Copy prompt**, **Open in Claude**, **Open in ChatGPT** or **Open in Gemini** to have your own AI write the plan.
+  The page itself calls no AI and holds no key for this.
+- **Browse what's popular.** The **🔥 Trending** view lists Rising, Most stars and Most forks repos without a search.
+- **Pick up where you left off.** A refresh brings your last results back; repeat searches within an hour come from
+  your browser instead of GitHub. Tap ✕ or the logo to clear them.
+- Light and dark themes, keyboard and screen-reader friendly, and a **Feedback** form for bugs and ideas.
+
 A static page at `web/index.html` powers it. It auto-deploys (Cloudflare Pages) to [replore.cardzo.co.in](https://replore.cardzo.co.in)
 (Cloudflare Pages) on every push to `main`. To self-host it elsewhere, it also deploys free on GitHub Pages:
 
@@ -66,7 +91,7 @@ described, and moves them to the end under a "Less likely to fit" divider. If th
 results. The page shows no note either way; the outcome is in the results' `data-gate` attribute for debugging.
 Failed checks are logged as codes and timings only (SPEC RS34d) to the Cloudflare log (Pages → your project → the
 deployment → Functions → Real-time logs; live only, not stored). To keep them, enable Workers Analytics Engine on the
-account, then uncomment the `[[analytics_engine_datasets]]` block in `wrangler.toml`. AI-written searches and the feature-by-feature PRD mode live in the plugin.
+account, then uncomment the `[[analytics_engine_datasets]]` block in `wrangler.toml`. The plugin goes further: your AI writes the searches, and its PRD mode returns every suitable repo per feature.
 
 **How the relevance check runs (maintainer, SPEC RS34a):** `wrangler.toml` binds Cloudflare Workers AI as `AI`, so
 the check works on deploy with no key (optional variable `WORKERS_AI_MODEL`, comma-separated; default `@cf/meta/llama-3.1-8b-instruct-fp8`, then `@cf/meta/llama-3.3-70b-instruct-fp8-fast` if Cloudflare has retired the first).

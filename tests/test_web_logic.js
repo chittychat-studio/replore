@@ -261,7 +261,7 @@ console.log("prd ok:", f.join(" | "));
 
 // RS51 Explore links: same owner/repo path on four tools; malformed names get none
 { const x = s.exploreLinks("vercel/next.js");
-  assert.deepStrictEqual(x.map(e => e.url), ["https://gitdiagram.com/vercel/next.js", "https://gitingest.com/vercel/next.js",
+  assert.deepStrictEqual(x.map(e => e.url), ["https://gitdiagram.com/vercel/next.js", "https://gitingest.com/vercel/next.js", "https://deepwiki.com/vercel/next.js",
     "https://github1s.com/vercel/next.js", "https://github.dev/vercel/next.js"]);
   ["", "noslash", "a/b/c", "a/..", "a/.", "o w/r", "a/b?x=1", "a/b#x", "\"a/b", "javascript:a/b"].forEach(n =>
     assert.deepStrictEqual(s.exploreLinks(n), [], n));
