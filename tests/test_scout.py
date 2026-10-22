@@ -974,6 +974,13 @@ def test_release_hygiene():
     reqs = [l for l in (ROOT / "requirements-dev.txt").read_text(encoding="utf-8").splitlines() if l and not l.startswith("#")]
     assert reqs and all(re.fullmatch(r"[A-Za-z0-9_.-]+==[0-9][0-9A-Za-z.]*", l) for l in reqs), reqs
     assert not (ROOT / "CLAUDE.md").exists() and (ROOT / ".claude" / "CLAUDE.md").exists()
+    # the `protect main` ruleset requires a check named `ci`: a job of that name that waits for every test job,
+    # always runs (skipped would count as passing) and fails unless they all succeeded
+    ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8").replace("\r\n", "\n")
+    job = re.search(r"^  ci:\n((?:    .*\n|\s*\n)+)", ci + "\n", re.M)
+    assert job, "ci.yml needs a job named ci (the required status check)"
+    body = job.group(1)
+    assert "needs: test" in body and "if: always()" in body and 'needs.test.result }}" = "success"' in body, body
 
 
 def test_script_urls_carry_the_current_file_hash():
