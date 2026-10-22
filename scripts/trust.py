@@ -124,7 +124,8 @@ def shape_version(j, system, name, version):
             "advisories": ids[:MAX_ADVISORIES], "advisoryCount": len(ids)}
 
 
-def scorecard_part(repo, get=get_json):
+def scorecard_part(repo, get=None):
+    get = get or get_json   # looked up at call time, so tests can swap it
     try:
         status, j, _ = get(SCORECARD + repo)
     except Exception:
@@ -135,7 +136,8 @@ def scorecard_part(repo, get=get_json):
     return dict(status="ok", **sc) if sc else {"status": "error"}
 
 
-def package_part(repo, lang, get=get_json):
+def package_part(repo, lang, get=None):
+    get = get or get_json   # looked up at call time, so tests can swap it
     system = ECOSYSTEM.get(lang) if isinstance(lang, str) else None
     root = package_candidate(repo, system)
     if not root:
@@ -170,8 +172,9 @@ def package_part(repo, lang, get=get_json):
     return dict(status="ok", **shape_version(j, system, name, version))
 
 
-def trust_for(repo, lang, get=get_json):
+def trust_for(repo, lang, get=None):
     """The same answer the web's GET /api/trust gives: {repo, scorecard, package}."""
+    get = get or get_json   # looked up at call time, so tests can swap it
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as ex:
         sc, pk = ex.submit(scorecard_part, repo, get), ex.submit(package_part, repo, lang, get)
         return {"repo": repo, "scorecard": sc.result(), "package": pk.result()}
@@ -203,7 +206,8 @@ def gh_shape(raw):
             "release": rel, "gfi": gfi}
 
 
-def github_part(repo, token=None, get=get_json):
+def github_part(repo, token=None, get=None):
+    get = get or get_json   # looked up at call time, so tests can swap it
     paths = ["/community/profile", "/releases/latest", "/issues?labels=good%20first%20issue&state=open&per_page=1"]
 
     def one(p):
@@ -217,8 +221,9 @@ def github_part(repo, token=None, get=get_json):
     return gh_shape({"community": c, "release": r, "gfi": g})
 
 
-def repo_meta(repo, token=None, get=get_json):
+def repo_meta(repo, token=None, get=None):
     """Language and license for a repo named on the command line (scout.py already has both)."""
+    get = get or get_json   # looked up at call time, so tests can swap it
     try:
         s, j, _ = get(GH + repo, token)
     except Exception:
@@ -234,8 +239,9 @@ def repo_meta(repo, token=None, get=get_json):
     return {"status": "ok", "language": lang, "spdx": lic if isinstance(lic, str) and LICENSE_RE.fullmatch(lic) else ""}
 
 
-def check(repo, lang, spdx, token=None, get=get_json):
+def check(repo, lang, spdx, token=None, get=None):
     """One repo, both halves: {repo, language, license, github, scorecard, package}."""
+    get = get or get_json   # looked up at call time, so tests can swap it
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as ex:
         gh, tr = ex.submit(github_part, repo, token, get), ex.submit(trust_for, repo, lang, get)
         tr = tr.result()
@@ -243,8 +249,9 @@ def check(repo, lang, spdx, token=None, get=get_json):
                 "scorecard": tr["scorecard"], "package": tr["package"]}
 
 
-def check_many(rows, token=None, get=get_json):
+def check_many(rows, token=None, get=None):
     """rows: [(repo, lang, spdx)] -> results in the same order, at most MAX_REPOS, checked in parallel."""
+    get = get or get_json   # looked up at call time, so tests can swap it
     rows = list(rows)[:MAX_REPOS]
     with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, len(rows))) as ex:
         return list(ex.map(lambda r: check(r[0], r[1], r[2], token, get), rows))

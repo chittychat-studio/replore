@@ -16,6 +16,14 @@ import trust  # noqa: E402
 CASES = json.loads((ROOT / "tests" / "fixtures" / "trust_cases.json").read_text(encoding="utf-8"))
 
 
+@pytest.fixture(autouse=True)
+def no_network(monkeypatch):
+    """Unit tests never reach the network: a real call fails loudly instead of quietly depending on live quota."""
+    def refuse(*a, **k):
+        raise AssertionError("unit test tried to use the network")
+    monkeypatch.setattr(trust.urllib.request, "urlopen", refuse)
+
+
 def fake(routes, calls=None):
     """routes: url -> [status, body]; a str body is not JSON (like deps.dev's 404 text). Unlisted -> 404 text."""
     def get(url, token=None, timeout=None):
