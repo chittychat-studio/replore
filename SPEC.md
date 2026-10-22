@@ -996,6 +996,10 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   tags, stars and licence, a dark Details button. Hover or keyboard focus turns a card dark. Details opens a side panel
   with the rest of card A (why it fits, Open on GitHub, Diagram / Wiki / Code, the trust check); the card's own extras
   move into the panel and back, so "Add to plan" stays one checkbox.
+- **RS68** The tagline ("The repo scout for vibe coders", RS54) sits under the Replore wordmark in the header, in small
+  mono type, instead of as a pill above the hero title (owner 2026-10-23). Leo and the globe are bigger now that the hero has room
+  (laptops: the stage size runs 190 to 310 px with the window height; phones: Leo 156 px). A card added to the plan
+  keeps the opposite colour (the hover look), so picked repos stand out (owner 2026-10-23).
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
 - **RX3** Ranking by forks, trending or download counts. (Relevance, stars and license-freedom are the only
