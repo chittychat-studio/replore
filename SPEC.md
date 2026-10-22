@@ -858,6 +858,15 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   ": no" in an `.sr-only` span, so screen readers (and the shared cases, which read the panel as text) get the
   answer that #73's icon-only version had hidden. Plugin version 0.4.0 (RS50).
 
+- **RS57** Link preview and README banner (owner 2026-10-22: rich look, no AI-slop art). The page carries Open Graph and
+  Twitter card tags (title and description from RS54) pointing at `https://replore.cardzo.co.in/og.jpg` (1200×630, JPEG,
+  under 250 KB because WhatsApp skips previews over ~300 KB). The README opens with `docs/banner.png` (1280×640), which
+  the owner can also set as the GitHub social preview (repo Settings → Social preview; there is no API for it). Both are
+  rendered from one source, `ops/share/card.html`: brand colours, the site's own fonts, a topographic "scout's map"
+  backdrop and a stack of result cards drawn like the real UI (no real repo names, no emoji, no generated art), by
+  `python ops/render_share.py` (headless Chrome or Edge, 60 s limit per render, throwaway profile). A commissioned
+  illustration can replace the cards later without changing the tags.
+
 - **RS18a** Harmful-repo patterns need context (review 2026-10-22: bare `crack`, `ddos` and `keygen` dropped ordinary repos
   such as "Crack the coding interview" and "Anti-DDoS protection" and counted them as harmful). A repo is dropped for
   piracy or attacks only when the word comes with that context: crack/cracked + software, Windows, Office, Adobe, games,

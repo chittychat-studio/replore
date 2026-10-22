@@ -911,7 +911,7 @@ def test_privacy_notice_matches_what_the_code_does():
         assert banned not in html, banned
     # only these hosts are contacted; PRIVACY.md names each of them
     hosts = set(re.findall(r"https://([a-z0-9.-]+)", html))
-    allowed = {"api.github.com", "github.com", "claude.ai", "claude.com", "replore.pages.dev", "cardzo.co.in", "chatgpt.com", "gemini.google.com", "api.web3forms.com", "groq.com", "www.cloudflare.com", "challenges.cloudflare.com", "buy.stripe.com", "gitdiagram.com", "gitingest.com", "deepwiki.com", "github1s.com", "github.dev",
+    allowed = {"api.github.com", "github.com", "claude.ai", "claude.com", "replore.pages.dev", "cardzo.co.in", "chatgpt.com", "gemini.google.com", "api.web3forms.com", "groq.com", "www.cloudflare.com", "challenges.cloudflare.com", "buy.stripe.com", "replore.cardzo.co.in", "gitdiagram.com", "gitingest.com", "deepwiki.com", "github1s.com", "github.dev",
                "scorecard.dev", "osv.dev"}  # RS53 trust links (navigations); RS34/RS34a provider terms, RS34c Turnstile, RS44 tips, RS51 Explore links
     assert hosts <= allowed, hosts - allowed
     for named in ("api.github.com", "Cloudflare", "claude.ai", "security.log", "200 characters", "off by default",
@@ -1016,6 +1016,33 @@ def test_spec_rule_ids_are_unique():
     ids = re.findall(r"^\s*- \*\*(R[SX]\d+[a-z]?)\b", spec, re.M)
     dupes = sorted({i for i in ids if ids.count(i) > 1})
     assert len(ids) > 50 and not dupes, f"duplicate SPEC rule IDs: {dupes}"
+
+
+def _jpeg_size(data):
+    """(width, height) from a baseline or progressive JPEG's SOF marker, standard library only."""
+    i = 2
+    while i < len(data):
+        if data[i] != 0xFF:
+            i += 1
+            continue
+        marker, seg = data[i + 1], int.from_bytes(data[i + 2:i + 4], "big")
+        if marker in (0xC0, 0xC1, 0xC2):
+            return int.from_bytes(data[i + 7:i + 9], "big"), int.from_bytes(data[i + 5:i + 7], "big")
+        i += 2 + seg
+    return None
+
+
+def test_link_preview_tags_and_image():
+    """RS57: Open Graph / Twitter tags point at a 1200x630 JPEG small enough for WhatsApp; README shows the banner."""
+    html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
+    for tag in ('property="og:title"', 'property="og:description"', 'property="og:url"', 'name="twitter:card" content="summary_large_image"',
+                'property="og:image" content="https://replore.cardzo.co.in/og.jpg"', 'name="twitter:image" content="https://replore.cardzo.co.in/og.jpg"'):
+        assert tag in html, tag
+    og = (ROOT / "web" / "og.jpg").read_bytes()
+    assert og[:2] == b"\xff\xd8" and len(og) < 250_000 and _jpeg_size(og) == (1200, 630)
+    assert (ROOT / "docs" / "banner.png").read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
+    assert "](docs/banner.png)" in (ROOT / "README.md").read_text(encoding="utf-8")
+    assert (ROOT / "ops" / "share" / "card.html").exists()
 
 
 def test_harm_filter_shared_cases():

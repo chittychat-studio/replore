@@ -1,0 +1,99 @@
+<!doctype html>
+<!-- SPEC RS57: source of the link-preview image (web/og.png, 1200x630) and the README banner (docs/banner.png,
+     1280x640). Brand colours and the site's own fonts only; no AI art, no emoji. Re-render: python ops/render_share.py -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../web/fonts.css">
+<style>
+  :root{--navy:#22374a;--slate:#3f6f8e;--sky:#5b88a6;--mist:#c7d6e2;--paper:#f4f6f8;--ink:#1e2a36;--muted:#5f6b78;
+    --line:#dde3e9;--good:#426832;--goodbg:#e4eddc}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:100vw;height:100vh;overflow:hidden}
+  body{background:linear-gradient(128deg,#1b2d3d 0%,var(--navy) 38%,#2c4f68 72%,var(--slate) 100%);color:#fff;
+    font-family:"Inter Tight",Arial,sans-serif;position:relative}
+  /* topographic contour lines: the scout's map */
+  .topo{position:absolute;inset:0;width:100%;height:100%;opacity:.16}
+  .grain{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.05) 1px,transparent 1px);
+    background-size:4px 4px;mix-blend-mode:overlay}
+  .wrap{position:absolute;inset:0;display:flex;align-items:center;padding:0 6.2vw;gap:3vw}
+  .copy{flex:0 0 54%;display:flex;flex-direction:column;gap:2.6vh}
+  .brand{display:flex;align-items:center;gap:1.6vw}
+  .brand svg{width:9.4vh;height:9.4vh}
+  .brand b{font-family:"Anton",Impact,sans-serif;font-weight:400;font-size:9.6vh;letter-spacing:.01em;line-height:1}
+  .pill{align-self:flex-start;font-family:"JetBrains Mono",monospace;font-weight:500;font-size:2.5vh;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--mist);border:1.5px solid rgba(199,214,226,.45);border-radius:999px;padding:1.1vh 2.2vh}
+  h1{font-family:"Anton",Impact,sans-serif;font-weight:400;font-size:12.4vh;line-height:1.02;letter-spacing:.005em}
+  h1 em{font-style:normal;color:var(--mist)}
+  .sub{font-size:3.3vh;line-height:1.38;color:rgba(255,255,255,.82);max-width:92%}
+  .url{font-family:"JetBrains Mono",monospace;font-size:2.6vh;color:var(--mist);letter-spacing:.02em;margin-top:.8vh}
+  /* right: a fanned stack of result cards, drawn like the real UI (no real repo names) */
+  .stack{flex:1;position:relative;height:74vh}
+  .card{position:absolute;width:34vw;max-width:440px;background:#fff;color:var(--ink);border-radius:2.6vh;padding:2.6vh;
+    box-shadow:0 3vh 6vh -2vh rgba(5,15,25,.55);border:1px solid rgba(255,255,255,.6)}
+  .c1{top:9vh;left:5%;transform:rotate(-7deg);opacity:.55}
+  .c2{top:16vh;left:12%;transform:rotate(-2.5deg);opacity:.8}
+  .c3{top:24vh;left:20%;transform:rotate(3deg)}
+  .head{display:flex;align-items:center;gap:1.6vh}
+  .av{width:5.4vh;height:5.4vh;border-radius:1.4vh;background:linear-gradient(135deg,var(--sky),var(--slate));flex:0 0 auto}
+  .bars{flex:1;display:flex;flex-direction:column;gap:1vh}
+  .bar{height:1.3vh;border-radius:99px;background:var(--line)}
+  .bar.b{height:2vh;width:72%;background:#c9d3dc}
+  .rank{font-family:"Anton",Impact,sans-serif;font-size:2.3vh;background:var(--navy);color:#fff;border-radius:99px;padding:.4vh 1.3vh}
+  .ex{display:grid;grid-template-columns:repeat(5,1fr);gap:.8vh;margin:2.2vh 0 1.8vh}
+  .ex span{font-size:1.75vh;font-weight:700;color:#22374a;text-align:center;border:1.5px solid #a9bfcf;border-radius:1vh;
+    padding:.9vh 0;background:#eef3f7}
+  .lines .bar{margin-bottom:1vh}
+  .foot{display:flex;align-items:center;justify-content:space-between;margin-top:2vh;padding-top:1.8vh;border-top:1px solid var(--line)}
+  .ok{font-size:1.85vh;font-weight:700;color:var(--good);background:var(--goodbg);border-radius:99px;padding:.8vh 1.6vh;
+    display:flex;align-items:center;gap:.7vh}
+  .ok svg{width:1.9vh;height:1.9vh}
+  .add{font-size:1.85vh;font-weight:700;color:var(--navy);border:1.5px solid var(--slate);border-radius:99px;padding:.8vh 1.8vh}
+</style>
+</head>
+<body>
+<svg class="topo" viewBox="0 0 1200 630" preserveAspectRatio="xMidYMid slice" aria-hidden="true" fill="none" stroke="#c7d6e2" stroke-width="1.4">
+  <g transform="translate(930 330)">
+    <path d="M-60 -10c10-60 90-80 130-40s20 110-40 120-100-20-90-80z"/>
+    <path d="M-110 -20c20-100 150-130 210-70s40 170-60 190-170-30-150-120z"/>
+    <path d="M-165 -25c25-140 215-185 300-100s60 240-90 265-235-40-210-165z"/>
+    <path d="M-225 -30c35-185 285-245 395-130s75 310-125 345-305-55-270-215z"/>
+    <path d="M-290 -35c45-230 355-305 490-160s95 385-160 430-380-70-330-270z"/>
+    <path d="M-360 -40c55-280 430-370 590-195s115 465-195 520-460-85-395-325z"/>
+  </g>
+  <g transform="translate(140 600)">
+    <path d="M-80 -20c20-70 120-90 170-40s10 110-60 120-130-20-110-80z"/>
+    <path d="M-150 -30c35-120 210-150 290-70s20 190-100 205-220-35-190-135z"/>
+    <path d="M-225 -40c50-170 300-215 410-100s30 270-145 290-310-50-265-190z"/>
+  </g>
+</svg>
+<div class="grain"></div>
+<div class="wrap">
+  <div class="copy">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="none" stroke="#c7d6e2" stroke-width="2.2"/>
+        <path d="M21.8 10.2 L17.4 17.4 L10.2 21.8 L14.6 14.6 Z" fill="#ffffff"/><circle cx="16" cy="16" r="1.8" fill="#22374a" stroke="#ffffff" stroke-width="1.2"/></svg>
+      <b>Replore</b>
+    </div>
+    <span class="pill">The repo scout for vibe coders</span>
+    <h1>Find it before<br><em>you build it.</em></h1>
+    <p class="sub">Describe your idea in plain words. Get the open-source GitHub repos that fit, with a plain license verdict.</p>
+    <p class="url">replore.cardzo.co.in</p>
+  </div>
+  <div class="stack" aria-hidden="true">
+    <div class="card c1"><div class="head"><span class="av"></span><div class="bars"><span class="bar" style="width:40%"></span><span class="bar b"></span></div><span class="rank">#3</span></div>
+      <div class="lines" style="margin-top:2vh"><div class="bar"></div><div class="bar" style="width:80%"></div></div></div>
+    <div class="card c2"><div class="head"><span class="av" style="background:linear-gradient(135deg,#8fae6e,#426832)"></span><div class="bars"><span class="bar" style="width:36%"></span><span class="bar b" style="width:64%"></span></div><span class="rank">#2</span></div>
+      <div class="lines" style="margin-top:2vh"><div class="bar"></div><div class="bar" style="width:70%"></div></div></div>
+    <div class="card c3">
+      <div class="head"><span class="av" style="background:linear-gradient(135deg,#c79a5b,#9a6a2e)"></span>
+        <div class="bars"><span class="bar" style="width:34%"></span><span class="bar b"></span></div><span class="rank">#1</span></div>
+      <div class="ex"><span>Diagram</span><span>Digest</span><span>Wiki</span><span>Browse</span><span>Edit</span></div>
+      <div class="lines"><div class="bar"></div><div class="bar" style="width:88%"></div><div class="bar" style="width:56%"></div></div>
+      <div class="foot"><span class="ok"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.6l3.1 3L13 4.6"/></svg>Free for commercial use</span>
+        <span class="add">Add to plan</span></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
