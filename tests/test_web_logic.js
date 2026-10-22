@@ -18,7 +18,7 @@ global.window = global;
 const s = {};
 new Function("document", "localStorage",
   code + "; this.keywordQueries=keywordQueries; this.exploreLinks=exploreLinks; this.rankByFit=rankByFit; this.fitScore=fitScore; this.whyRelevant=whyRelevant; this.esc=esc; this.lu=lu; this.freeText=freeText;" +
-  " this.keep=keep; this.ragRan=ragRan; this.hasDesc=hasDesc; this.descHtml=descHtml; this.tipUrlOk=tipUrlOk; this.clean=clean; this.harmful=harmful; this.harmfulRepo=harmfulRepo; this.prdFeatures=prdFeatures; this.trendingQuery=trendingQuery; this.trendRows=trendRows; this.feedbackUrl=feedbackUrl; this.feedbackPayload=feedbackPayload; this.agoText=agoText; this.cardHtml=cardHtml; this.recentKey=recentKey; this.recentFind=recentFind; this.recentAdd=recentAdd; this.CACHE_V=CACHE_V; this.bm25Scores=bm25Scores; this.repoText=repoText; this.rrfOrder=rrfOrder; this.hybridOrder=hybridOrder; this.confirmQueries=confirmQueries; this.ghQuery=ghQuery; this.sigTokens=sigTokens; this.resultSummary=resultSummary; this.trustRow=trustRow; this.trustHtml=trustHtml; this.ghShape=ghShape; this.lastPage=lastPage; this.installCmd=installCmd; this.snapHtml=snapHtml;").call(s, document, global.localStorage || {getItem:()=>null,setItem(){},removeItem(){}});
+  " this.keep=keep; this.ragRan=ragRan; this.hasDesc=hasDesc; this.descHtml=descHtml; this.plainDesc=plainDesc; this.tipUrlOk=tipUrlOk; this.clean=clean; this.harmful=harmful; this.harmfulRepo=harmfulRepo; this.prdFeatures=prdFeatures; this.trendingQuery=trendingQuery; this.trendRows=trendRows; this.feedbackUrl=feedbackUrl; this.feedbackPayload=feedbackPayload; this.agoText=agoText; this.cardHtml=cardHtml; this.recentKey=recentKey; this.recentFind=recentFind; this.recentAdd=recentAdd; this.CACHE_V=CACHE_V; this.bm25Scores=bm25Scores; this.repoText=repoText; this.rrfOrder=rrfOrder; this.hybridOrder=hybridOrder; this.confirmQueries=confirmQueries; this.ghQuery=ghQuery; this.sigTokens=sigTokens; this.resultSummary=resultSummary; this.trustRow=trustRow; this.trustHtml=trustHtml; this.ghShape=ghShape; this.lastPage=lastPage; this.installCmd=installCmd; this.snapHtml=snapHtml;").call(s, document, global.localStorage || {getItem:()=>null,setItem(){},removeItem(){}});
 
 // RS16: iOS excludes macOS
 // RS16: expansions are specific on-topic phrases, never a bare category (live regression: "website" -> "frontend framework"
@@ -195,6 +195,14 @@ assert.strictEqual(xdup.rel, 0, "dup rel drops to the better position found by a
   for (const r of ranked) { const h = P.expect.hits[r.name];
     assert.strictEqual(s.whyRelevant(r, s.sigTokens(qOf[r.name])), h.length ? "Matches: " + h.join(", ") : "", r.name); } }
 console.log("web logic ok");
+
+// RS58: emoji are dropped from shown descriptions; words, numbers and punctuation stay
+{ assert.strictEqual(s.plainDesc("⚡ A minimal portfolio template for Developers"), "A minimal portfolio template for Developers");
+  assert.strictEqual(s.plainDesc("Fast 🚀 animations ✨ for React 18"), "Fast animations for React 18");
+  assert.strictEqual(s.plainDesc("🇮🇳 Made in India 👍🏽 #1 tool"), "Made in India #1 tool");
+  assert.strictEqual(s.plainDesc("👨‍💻 Dev tools: CLI & API © 2026"), "Dev tools: CLI & API © 2026");
+  assert.ok(!s.hasDesc({desc: "🚀✨"}) && s.hasDesc({desc: "ok"}));
+  console.log("plain desc ok"); }
 
 // RS18, RS29b: shared harm cases (also checked against scout.py in tests/test_scout.py)
 { const H = JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures", "harm_cases.json"), "utf8"));

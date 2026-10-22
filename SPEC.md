@@ -858,6 +858,13 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   ": no" in an `.sr-only` span, so screen readers (and the shared cases, which read the panel as text) get the
   answer that #73's icon-only version had hidden. Plugin version 0.4.0 (RS50).
 
+- **RS58** Emoji-free descriptions on cards (owner 2026-10-22, follows RS55). Where the page shows a repo's own GitHub
+  description (result cards, the Trending carousel), emoji are removed: pictographs, flags, skin-tone modifiers,
+  keycaps, variation selectors and joiners; leftover leading dashes or bullets and double spaces are tidied. Letters,
+  numbers and ordinary symbols such as © or # stay. Display only: ranking, the harm check and the build-plan prompt use
+  the description as GitHub sent it, so web/plugin parity (RS29b) is unchanged. A description that is only emoji
+  counts as empty and shows the RS45 "no description" line.
+
 - **RS57** Link preview and README banner (owner 2026-10-22: rich look, no AI-slop art). The page carries Open Graph and
   Twitter card tags (title and description from RS54) pointing at `https://replore.cardzo.co.in/og.jpg` (1200×630, JPEG,
   under 250 KB because WhatsApp skips previews over ~300 KB). The README opens with `docs/banner.png` (1280×640), which
