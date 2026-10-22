@@ -1071,7 +1071,7 @@ def test_home_demo_is_the_real_product_and_honest():
     assert "max-width: 999px" in block and "prefers-reduced-motion" in block and "isConnected" in block
     # RS65: the studio stage: bot beside the globe, stage rail, dial, arrows, slot under the search
     assert 'class="st-pair"' in block and "scout-hero.webp" in block and "st-pills" in block and "st-rail" not in block and "st-dial" not in block
-    assert 'aria-label="Next example search"' in block and 'id="stageSlot"' in _page()
+    assert "st-arrow" not in block and 'id="stageSlot"' in _page() and 'id="deckSlot"' in _page()
     assert (ROOT / "web" / "scout-hero.webp").exists() and (ROOT / "web" / "scout-search.webp").exists()
 
 

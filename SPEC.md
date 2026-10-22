@@ -965,7 +965,12 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   (owner wording 2026-10-23), and "On it! Searching GitHub for you…" while a real search runs. Leo is interactive (owner 2026-10-23): he
   waves while he says hello, answers "Sounds good! Press Enter and I'll go look." while you type (the example search
   pauses), and plays his magnifier sweep while your search runs. The wave and sweep are sprite sheets cut from the RS64
-  Veo clips (`web/scout-wave.webp`, `web/scout-searching.webp`), so they play in every browser without video alpha. No gradients or glass rule is
+  Veo clips (`web/scout-wave.webp`, `web/scout-searching.webp`), so they play in every browser without video alpha.
+  **v2 (owner 2026-10-23):** Leo and the globe greet first, above the search; the example cards sit under the search
+  bar. Leo and the globe are bigger, the globe's ASCII is bolder, and the ‹ › arrows and count line are gone. The peek is
+  a Flow/Veo clip (`web/leo-peek.webm`, see-through VP9): Leo peeks out from behind the globe, looks around, hops out and
+  lands on his spot; Safari, which cannot show see-through video, keeps the CSS peek. The greeting is plain text beside
+  Leo, no bubble: "Hello there!" (heavy), "I'm Leo." (serif accent), the short line, and the stage pills. No gradients or glass rule is
   lifted for this stage only, by the owner's pick.
 - **RS66** No em dashes in site copy (owner 2026-10-23: "check no em dashes across site"). Nothing a visitor reads on
   the web page (text, titles, tooltips, aria labels, the plan prompt) uses an em dash; a colon, comma, full stop or
