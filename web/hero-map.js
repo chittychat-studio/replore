@@ -58,12 +58,16 @@ void main(){
   float x0=.06, x=vUv.x;
   float pd=abs(vUv.y-route(x));
   float on=step(x0,x)*step(x,uPath);
-  float path=on*(smoothstep(.006,.0,pd)+.32*exp(-pd*70.));
-  float head=uPath>x0?exp(-pow(distance(vUv*asp,vec2(uPath,route(uPath))*asp)*26.,2.)):0.;
+  // a thin dashed trail in map ink, like a route drawn on paper: no glow, no bloom
+  float w=fwidth(pd)*1.2+.0012;
+  float dash=step(.45,fract(x*46.-uTime*.6));
+  float path=on*dash*(1.-smoothstep(w*.5,w,pd));
+  float hd=distance(vUv*asp,vec2(uPath,route(uPath))*asp);
+  float head=uPath>x0?1.-smoothstep(.006,.006+fwidth(hd)*1.5,hd):0.;
   // distance and side fade, so the map melts into the page
   float fade=(1.-smoothstep(5.5,11.,vDepth))*smoothstep(0.,.12,vUv.x)*smoothstep(1.,.88,vUv.x)*smoothstep(0.,.18,vUv.y);
-  vec3 col=mix(uLine,uGlow,clamp(ring*1.6+path+head,0.,1.));
-  float a=(lines*.5+ring*lines*1.4+path*.75+head*.8)*fade*uAlpha;
+  vec3 col=mix(uLine,uGlow,clamp(ring*1.2+path*.6+head*.6,0.,1.));
+  float a=(lines*.5+ring*lines*1.1+path*.85+head)*fade*uAlpha;
   gl_FragColor=vec4(col,clamp(a,0.,1.));
 }`;
 
