@@ -789,7 +789,10 @@ def test_web_page_is_safe_static(monkeypatch):
     assert 'class="left-div"' in html and "Less likely to fit" in html and 'data-left="1"' in html
     assert 'id="showLeft"' not in html and "more we left out" not in html
     # RS24/RS28 result card: owner tile without image fetch, prominent add-to-plan toggle, topics from the API
-    assert "function ownerHue" in html and 'class="pk-add"' in html and "ico(\"check\")+'In plan" in html and "avatars.githubusercontent" not in html
+    assert "function ownerHue" in html and 'class="pk-add"' in html and 'ico("bookmarked")' in html and "avatars.githubusercontent" not in html
+    # RS67: compact cards, a filter panel on the left (client-side only), Details in a side panel
+    assert 'class="res-body"' in html and "res-rail" in html and 'id="resSort"' in html and 'id="rcDrawer"' in html
+    assert "function openDrawer" in html and "function closeDrawer" in html and "function sortCards" in html
     # RS38: below-the-fold cards reveal on entering the viewport; restored markup never stays invisible
     assert "function queueReveal" in html and "IntersectionObserver" in html and 'c.classList.remove("rv-wait"); });' in html
     # RS39: the owner's public Web3Forms access key is configured (UUID shape), so Send really emails Cardzo
@@ -1059,19 +1062,18 @@ def test_harm_filter_shared_cases():
 
 
 def test_home_demo_is_the_real_product_and_honest():
-    """RS61: the home demo shows real Replore results for real quick-pick searches, labelled as examples, with no
-    network call, no star counts, and the ASCII globe on desktop only."""
+    """RS61/RS67: the home demo types real quick-pick searches into the search bar's placeholder, with no network call,
+    no invented numbers and no example cards; the ASCII globe is desktop only."""
     js = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
     start = js.index("var LIVE_DEMO=")
     block = js[start:js.index("// remember the last results", start)]
-    assert "buildLiveDemo(hd)" in js and "Example: Replore" in block and "fetch(" not in block
-    assert block.count('{q:"') == 3 and "☆" not in block and "kstars(" not in block
-    for lic in re.findall(r'\["[^"]+","([^"]+)","', block):
-        assert lic in ("MIT", "Apache-2.0"), lic
+    assert "buildLiveDemo(hd)" in js and "fetch(" not in block
+    assert block.count('{q:"') == 3 and "kstars(" not in block and "repos fit" not in block
     assert "max-width: 999px" in block and "prefers-reduced-motion" in block and "isConnected" in block
-    # RS65: the studio stage: bot beside the globe, stage rail, dial, arrows, slot under the search
-    assert 'class="st-pair"' in block and "scout-hero.webp" in block and "st-pills" in block and "st-rail" not in block and "st-dial" not in block
-    assert "st-arrow" not in block and 'id="stageSlot"' in _page() and 'id="deckSlot"' in _page()
+    # RS65: the studio stage: bot beside the globe, stage pills; RS67: the search bar joins Leo, no example deck or pointer
+    assert 'class="st-pair"' in block and "scout-hero.webp" in block and "st-pills" in block and "st-rail" not in block
+    assert "st-arrow" not in block and "ld-deck" not in block and "st-cursor" not in block and 'class="st-search"' in block
+    assert 'id="stageSlot"' in _page() and 'id="deckSlot"' not in _page() and "function placeSearch" in js
     assert (ROOT / "web" / "scout-hero.webp").exists() and (ROOT / "web" / "scout-search.webp").exists()
 
 
