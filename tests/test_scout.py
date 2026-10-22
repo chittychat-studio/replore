@@ -663,8 +663,9 @@ def test_web_page_is_safe_static(monkeypatch):
     # RS33: no third-party asset requests — GSAP 3.12.5 and the fonts are self-hosted; page degrades without GSAP
     index = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
     srcs = _re.findall(r'<script[^>]+src="([^"]+)"', index)
+    srcs = [s.split("?v=")[0] for s in srcs]   # RS52: app.js / theme.js carry a ?v=<hash> stamp
     assert srcs == ["theme.js", "vendor/gsap.min.js", "app.js"], srcs   # RS49: no inline script; app.js after GSAP
-    assert '<script src="vendor/gsap.min.js" defer>' in index and '<script src="app.js" defer>' in index   # RS24: GSAP first
+    assert '<script src="vendor/gsap.min.js" defer>' in index and _re.search(r'<script src="app\.js\?v=[0-9a-f]{10}" defer>', index)   # RS24: GSAP first
     assert not _re.search(r"<script(?![^>]*src=)[^>]*>", index) and not _re.search(r"\son[a-z]+\s*=", index)
     assert "<html lang=\"en\">" in index   # RS24: no forced light theme; the system setting applies until the visitor picks one
     gsap = (ROOT / "web" / "vendor" / "gsap.min.js").read_text(encoding="utf-8")
@@ -967,3 +968,14 @@ def test_release_hygiene():
     reqs = [l for l in (ROOT / "requirements-dev.txt").read_text(encoding="utf-8").splitlines() if l and not l.startswith("#")]
     assert reqs and all(re.fullmatch(r"[A-Za-z0-9_.-]+==[0-9][0-9A-Za-z.]*", l) for l in reqs), reqs
     assert not (ROOT / "CLAUDE.md").exists() and (ROOT / ".claude" / "CLAUDE.md").exists()
+
+
+def test_script_urls_carry_the_current_file_hash():
+    """RS52: index.html loads app.js / theme.js as <name>?v=<hash of the file>, so a deploy is never hidden behind a
+    browser's cached copy (the custom domain lets browsers keep scripts for 4 hours). Fix: python ops/stamp_assets.py"""
+    sys.path.insert(0, str(ROOT / "ops"))
+    import stamp_assets
+    html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
+    for name in stamp_assets.ASSETS:
+        want = 'src="%s?v=%s"' % (name, stamp_assets.asset_hash(name))
+        assert want in html, "run: python ops/stamp_assets.py (" + want + ")"

@@ -757,6 +757,13 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   not `.` or `..`); otherwise the row is left out (RS9). They are navigations only: the page fetches nothing from these
   sites, so the CSP (RS49) is unchanged. Saved results are re-keyed (`CACHE_V` 12, since the Wiki button was added) so cards render with the row.
 
+- **RS52** Fresh code after every deploy (owner report 2026-10-22: "why can't I see wiki?"). The custom domain's
+  Cloudflare zone lets browsers keep `.js` files for 4 hours, while the page itself is never cached, so a fresh page
+  could run yesterday's `app.js`. `web/index.html` therefore loads each script as `<name>?v=<first 10 hex of the
+  SHA-256 of the file, line endings normalised to LF>` (`theme.js`, `app.js`). `ops/stamp_assets.py` (standard
+  library only) rewrites the stamps; a test fails when a stamp doesn't match its file, so a code change can't ship
+  without one. The query string changes nothing for the CSP (RS49), which matches on origin only.
+
 ## RX — Deliberately excluded (v0.1)
 
 - **RX1** Scraping github.com HTML, or any non-API source.
