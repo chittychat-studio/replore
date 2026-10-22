@@ -942,12 +942,15 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
 
 - **RS65** Studio-stage home (owner 2026-10-23, picked from live mock-ups after the CarWhisperer dashboard reference:
   version C, "bot beside the globe", darker blue, sized between the two tries). On the home screen the hero is one lit
-  dark-blue stage, dark in both themes (its tokens are set on the stage, not per theme): the RS54 pill, the tagline as the
+  studio stage with no box: its light runs edge to edge and fades into the page at the top and bottom (owner: "blended
+  not like a box"). Light theme: a cool light studio; dark theme: the dark-blue studio (owner: dark on white looked
+  awkward). It holds: the RS54 pill, the tagline as the
   title ("Find it before / you build it.", light weight, second line muted), the search, then the live demo under it. The
   demo: the example search typed above; a stage rail (I Searching, II Ranking by fit, III Licence check, IV Ready); the
   scout bot (RS64 art, `web/scout-*.webp`) standing beside the ASCII globe on the floor, each with a contact shadow; a tick
   dial that fills while the search runs; ‹ › buttons (44 px, labelled) that step through the RS61 example searches; and
-  the real top three as frosted cards under the pair. The globe now stays beside the bot while the cards show
+  the real top three as frosted cards under the pair. A demo pointer glides to one tool per card (Wiki, Diagram,
+  Code) and clicks it as it lights (owner: "cursor animation for cards"); hidden for reduced motion. The globe now stays beside the bot while the cards show
   (supersedes RS62 "globe, then cards"). Phones: no globe, rail or dial; the bot and one card, still before the search
   (RS24). Trending (RS63) follows as the gallery. Reduced motion shows the finished state. No gradients or glass rule is
   lifted for this stage only, by the owner's pick.

@@ -815,46 +815,58 @@
 
   /* RS65: the studio stage (owner pick 2026-10-23, after the CarWhisperer reference): a lit dark-blue stage holds the
      tagline, the search and the live demo. It stays dark in both themes, so its tokens are set here, not per theme. */
-  body:not(.has-results):not(.searching) .hero{position:relative;overflow:hidden;max-width:1240px;border-radius:24px;
-    padding:34px clamp(16px,3vw,40px) 26px;margin:6px auto 18px;
-    --ink:#eef3f7; --muted:#b4c4d1; --line:rgba(199,214,226,.18); --card:rgba(14,25,37,.62); --card-bg:rgba(14,25,37,.62);
-    --accent:#5b88a6; --accent-ink:#cfe0ec; --accent2:#7fa6c2; --tint:#2b3f52; --offbg:rgba(238,243,247,.08);
-    --good:#a3bf7e; --goodbg:rgba(163,191,126,.14); --warn:#d8a95c; --warnbg:rgba(216,169,92,.14);
-    color:var(--ink); color-scheme:dark;
-    background:radial-gradient(120% 70% at 78% 0%, rgba(156,192,216,.26), transparent 58%),
-      linear-gradient(180deg,#34546f 0%,#213a51 46%,#182b3d 64%,#0d1824 100%)}
-  body:not(.has-results):not(.searching) .hero::before{content:"";position:absolute;inset:0;pointer-events:none;
-    background:repeating-linear-gradient(115deg,transparent 0 90px,rgba(232,240,246,.035) 90px 150px,transparent 150px 260px);
-    -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 45%,transparent 72%);mask-image:linear-gradient(180deg,#000 0%,#000 45%,transparent 72%)}
-  body:not(.has-results):not(.searching) .hero > *{position:relative}
+  /* the stage follows the theme: a cool light studio in light mode, the dark-blue studio in dark mode */
+  :root{ --st-light:rgba(255,255,255,.75); --st-a:#d6e2eb; --st-b:#e3eaf0; --st-c:#edf2f6; --st-d:#f4f6f8; --st-ray:rgba(255,255,255,.4);
+    --st-card:rgba(255,255,255,.66); }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --st-light:rgba(156,192,216,.26); --st-a:#34546f; --st-b:#213a51;
+    --st-c:#182b3d; --st-d:#121a22; --st-ray:rgba(232,240,246,.035); --st-card:rgba(14,25,37,.62); } }
+  :root[data-theme="dark"]{ --st-light:rgba(156,192,216,.26); --st-a:#34546f; --st-b:#213a51; --st-c:#182b3d; --st-d:#121a22;
+    --st-ray:rgba(232,240,246,.035); --st-card:rgba(14,25,37,.62); }
+  body:not(.has-results):not(.searching) .hero{position:relative;isolation:isolate;max-width:1240px;
+    padding:22px clamp(16px,3vw,40px) 20px;margin:0 auto 4px;--card:var(--st-card);--card-bg:var(--st-card)}
+  /* no box: the stage light runs edge to edge and fades into the page at the top and bottom */
+  body:not(.has-results):not(.searching) .page{overflow-x:clip}
+  body:not(.has-results):not(.searching) .hero::after,
+  body:not(.has-results):not(.searching) .hero::before{content:"";position:absolute;top:-30px;bottom:-60px;left:50%;width:100vw;
+    transform:translateX(-50%);pointer-events:none}
+  body:not(.has-results):not(.searching) .hero::after{z-index:-2;
+    background:radial-gradient(70% 60% at 72% 8%, var(--st-light), transparent 62%),
+      linear-gradient(180deg,var(--st-a) 0%,var(--st-b) 42%,var(--st-c) 66%,var(--st-d) 100%);
+    -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 90px,#000 calc(100% - 160px),transparent 100%);
+    mask-image:linear-gradient(180deg,transparent 0,#000 90px,#000 calc(100% - 160px),transparent 100%)}
+  body:not(.has-results):not(.searching) .hero::before{z-index:-1;
+    background:repeating-linear-gradient(115deg,transparent 0 90px,var(--st-ray) 90px 150px,transparent 150px 260px);
+    -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 90px,#000 45%,transparent 70%);
+    mask-image:linear-gradient(180deg,transparent 0,#000 90px,#000 45%,transparent 70%)}
+  body:not(.has-results):not(.searching) .hero > *{position:relative;z-index:0}
   .hero-title{font-family:var(--f-body);font-weight:300;letter-spacing:-.02em;font-size:clamp(36px,5vw,62px);line-height:1.04}
   .hero-title em{font-style:normal;background:none;-webkit-text-fill-color:currentColor;color:var(--muted)}
   .hero-pill{background:transparent;border-color:var(--line);color:var(--muted)}
   .stage-slot:empty{display:none}
   body.has-results .stage-slot, body.searching .stage-slot{display:none}
-  .stage-slot{margin-top:6px}
-  .st{display:flex;flex-direction:column;align-items:center;gap:10px;min-height:0;padding:0}
+  .stage-slot{margin-top:0}
+  .st{display:flex;flex-direction:column;align-items:center;gap:6px;min-height:0;padding:0}
   .st .ld-q{background:none;border:0;box-shadow:none;padding:0;color:var(--muted);font-size:14px;justify-content:center;max-width:100%}
-  .st-stage{position:relative;width:100%;max-width:1100px;height:380px}
-  .st-dial{position:absolute;left:50%;transform:translateX(-50%);top:170px;width:min(860px,94%);height:200px;pointer-events:none}
-  .st-pair{position:absolute;left:50%;bottom:72px;transform:translateX(-50%);display:flex;align-items:flex-end;gap:6px}
+  .st-stage{position:relative;width:100%;max-width:1100px;height:322px}
+  .st-dial{position:absolute;left:50%;transform:translateX(-50%);top:140px;width:min(820px,94%);height:176px;pointer-events:none}
+  .st-pair{position:absolute;left:50%;bottom:62px;transform:translateX(-50%);display:flex;align-items:flex-end;gap:6px}
   .st-g,.st-b{position:relative}
-  .st-g canvas.ld-globe{position:relative;display:block;width:300px;height:300px;inset:auto;opacity:.92}
-  .st-bot{position:relative;z-index:1;display:block;width:180px;height:auto;margin-bottom:-4px;filter:drop-shadow(0 10px 8px rgba(4,8,12,.35))}
+  .st-g canvas.ld-globe{position:relative;display:block;width:262px;height:262px;inset:auto;opacity:.92}
+  .st-bot{position:relative;z-index:1;display:block;width:160px;height:auto;margin-bottom:-4px;filter:drop-shadow(0 10px 8px rgba(4,8,12,.35))}
   .st-sh{position:absolute;left:50%;bottom:-12px;transform:translateX(-50%);width:80%;height:22px;border-radius:50%;
     background:radial-gradient(closest-side,rgba(4,8,12,.6),transparent)}
   .st-ctrl{position:absolute;left:50%;bottom:4px;transform:translateX(-50%);display:flex;align-items:center;gap:16px}
-  .st-arrow{width:44px;height:44px;border-radius:50%;border:1px solid rgba(238,243,247,.5);background:transparent;color:var(--ink);
+  .st-arrow{width:44px;height:44px;border-radius:50%;border:1px solid color-mix(in srgb,var(--ink) 45%,transparent);background:transparent;color:var(--ink);
     font-size:22px;line-height:1;cursor:pointer}
-  .st-arrow:hover{background:rgba(238,243,247,.08)}
+  .st-arrow:hover{background:color-mix(in srgb,var(--ink) 8%,transparent)}
   .st-arrow:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px}
   .st-label{font-weight:300;font-size:22px;min-width:180px;text-align:center}
-  .st-rail{position:absolute;left:0;top:40px;margin:0;padding:0;list-style:none;display:grid;gap:14px;text-align:left}
+  .st-rail{position:absolute;left:0;top:24px;margin:0;padding:0;list-style:none;display:grid;gap:14px;text-align:left}
   .st-rail li{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:12px;transition:color .3s,font-size .3s}
   .st-rail i{font:500 11px var(--f-mono);font-style:normal;width:30px;height:30px;display:grid;place-items:center;border-radius:9px;
     border:1px solid var(--line);background:var(--card)}
   .st-rail li.on{color:var(--ink);font-size:20px}
-  .st-rail li.on i{background:var(--ink);color:#14202b}
+  .st-rail li.on i{background:var(--ink);color:var(--bg)}
   .st .ld-deck{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;width:100%;max-width:1160px}
   .st .ld-card{background:var(--card);border:1px solid var(--line);border-radius:18px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);text-align:left}
   .st .ld-note{color:var(--muted)}
@@ -871,6 +883,13 @@
   #heroDemo .st .ld-deck, #heroDemo .st .ld-note{max-width:1160px}
   #heroDemo .st .ld-q{max-width:100%;width:auto}
   .stage-slot .explain{padding:0;margin:0;background:none;border:0;min-height:0}
+  /* RS65: the demo pointer: glides between card tools and clicks (hidden for reduced motion) */
+  .st{position:relative}
+  .st-cursor{position:absolute;left:0;top:0;z-index:5;pointer-events:none;opacity:0;fill:#eef3f7;stroke:#0d1824;stroke-width:1.4;
+    stroke-linejoin:round;filter:drop-shadow(0 3px 4px rgba(0,0,0,.35));transition:transform .55s cubic-bezier(.3,.7,.2,1),opacity .25s}
+  .st-cursor.on{opacity:1}
+  .st-cursor.click path{transform:scale(.86);transform-origin:2px 2px;transition:transform .12s}
+  @media (prefers-reduced-motion:reduce){ .st-cursor{display:none} }
 </style>
 </head>
 <body>
@@ -1217,6 +1236,6 @@
   <p class="mut rag-only" style="margin-top:12px" hidden><b>Hybrid search:</b> repos are ranked by your words and by what you mean, so "voice notes" also finds "speech-to-text". Repos our index finds that the word search missed are checked on GitHub before you see them.</p>
 </div></div>
 
-<script src="app.js?v=0d8a64cf93" defer></script>
+<script src="app.js?v=8fc7179d29" defer></script>
 </body>
 </html>

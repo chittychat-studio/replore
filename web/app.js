@@ -1406,8 +1406,9 @@ function buildLiveDemo(host){
         '<button type="button" class="st-arrow st-next" aria-label="Next example search">&rsaquo;</button></div>'+
     '</div>'+
     '<div class="ld-deck" aria-hidden="true"></div>'+
-    '<p class="ld-note">Example: Replore’s real top results for this search</p></div>';
-  var deck=host.querySelector(".ld-deck"), typed=host.querySelector(".ld-typed"), globe=host.querySelector(".ld-globe"),
+    '<p class="ld-note">Example: Replore’s real top results for this search</p>'+
+    '<svg class="st-cursor" aria-hidden="true" width="26" height="34" viewBox="0 0 20 26"><path d="M2 2 L2 21 L7 16.5 L10.5 24 L14 22.5 L10.6 15 L17 15 Z"/></svg></div>';
+  var deck=host.querySelector(".ld-deck"), cur=host.querySelector(".st-cursor"), box=host.querySelector(".ld"), typed=host.querySelector(".ld-typed"), globe=host.querySelector(".ld-globe"),
       label=host.querySelector(".st-label"), bot=host.querySelector(".st-bot"), dial=host.querySelector(".st-dial"),
       rail=[].slice.call(host.querySelectorAll(".st-rail li"));
   if(globe) startAsciiGlobe(globe, reduce);
@@ -1416,6 +1417,9 @@ function buildLiveDemo(host){
   function clear(){ timers.forEach(clearTimeout); timers=[]; }
   function stage(i, txt){ rail.forEach(function(li,j){ li.classList.toggle("on", j===i); }); if(label) label.textContent=txt||""; }
   function pose(p){ if(bot) bot.src=p==="search"?"scout-search.webp":"scout-hero.webp"; }
+  function pointAt(el){ if(!cur||!el||!box||!el.getBoundingClientRect) return;
+    var a=box.getBoundingClientRect(), r=el.getBoundingClientRect();
+    cur.style.transform="translate("+Math.round(r.left-a.left+r.width*.55)+"px,"+Math.round(r.top-a.top+r.height*.5)+"px)"; cur.classList.add("on"); }
   function drawDial(){ var g=dial&&dial.getContext&&dial.getContext("2d"); if(!g||!dial.getBoundingClientRect) return;
     var r=dial.getBoundingClientRect(), d=Math.min(window.devicePixelRatio||1,1.5); if(!r.width) return;
     if(dial.width!==Math.round(r.width*d)||dial.height!==Math.round(r.height*d)){ dial.width=Math.round(r.width*d); dial.height=Math.round(r.height*d); }
@@ -1435,6 +1439,7 @@ function buildLiveDemo(host){
   function run(){ clear(); if(paused||!host.isConnected) return;
     var n=LIVE_DEMO.length, ex=LIVE_DEMO[((k%n)+n)%n], shown=wide?3:1; k++;
     deck.innerHTML=ex.r.slice(0,shown).map(cardHtmlMini).join(""); typed.textContent=""; prog=0; drawDial(); stage(-1,""); pose("hero");
+    if(cur) cur.classList.remove("on","click");
     if(reduce){ typed.textContent=ex.q; prog=1; drawDial(); stage(3, ex.r.length+" repos fit"); [].forEach.call(deck.children,function(c){ c.classList.add("in","lit"); }); return; }
     var step=Math.max(18,Math.min(42,1400/ex.q.length));
     for(var i=1;i<=ex.q.length;i++) (function(m){ later(function(){ typed.textContent=ex.q.slice(0,m); }, m*step); })(i);
@@ -1447,9 +1452,17 @@ function buildLiveDemo(host){
     later(function(){ stage(3, ex.r.length+" repos fit"); pose("hero"); }, t0);
     [].forEach.call(deck.children,function(c,j){ var at=t0+j*200;
       later(function(){ c.classList.add("in"); }, at);
-      later(function(){ c.classList.add("lit"); }, at+380);
-      [].forEach.call(c.querySelectorAll(".ld-ex i"),function(b,m){ later(function(){ b.classList.add("on"); }, at+560+m*110);
-        later(function(){ b.classList.remove("on"); }, at+1200+m*110); }); });
+      later(function(){ c.classList.add("lit"); }, at+380); });
+    // RS65: a pointer glides to one tool on each card and clicks it (Wiki, Diagram, Code), so visitors see what to press
+    var visits=[[0,1],[1,0],[2,2]].filter(function(v){ return v[0]<deck.children.length; });
+    if(!wide) visits=[[0,1],[0,0],[0,2]];
+    visits.forEach(function(v,n){ var at=t0+1000+n*900;
+      later(function(){ var c=deck.children[v[0]], b=c&&c.querySelectorAll(".ld-ex i")[v[1]]; pointAt(b); }, at);
+      later(function(){ var c=deck.children[v[0]], b=c&&c.querySelectorAll(".ld-ex i")[v[1]]; if(!b) return;
+        b.classList.add("on"); if(cur) cur.classList.add("click"); }, at+560);
+      later(function(){ var c=deck.children[v[0]], b=c&&c.querySelectorAll(".ld-ex i")[v[1]]; if(b) b.classList.remove("on");
+        if(cur) cur.classList.remove("click"); }, at+880); });
+    later(function(){ if(cur) cur.classList.remove("on"); }, t0+1000+visits.length*900+300);
     later(function(){ [].forEach.call(deck.children,function(c){ c.classList.add("out"); }); }, t0+6200);
     later(run, t0+6800); }
   function go(d){ k+=d-1; paused=false; run(); }
