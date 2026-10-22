@@ -1,0 +1,130 @@
+<template>
+  <style>
+    @font-face { font-family: "Anton"; src: url("assets/fonts/anton-latin.woff2") format("woff2"); }
+    @font-face { font-family: "Inter Tight"; font-weight: 100 900; src: url("assets/fonts/intertight-latin.woff2") format("woff2"); }
+    @font-face { font-family: "JetBrains Mono"; font-weight: 500; src: url("assets/fonts/jbmono-latin-500.woff2") format("woff2"); }
+    #root { position: absolute; inset: 0; overflow: hidden; background: #22374a; font-family: "Inter Tight", sans-serif; color: #1e2a36; }
+    #po-open { position: absolute; left: 960px; top: 540px; width: 10px; height: 10px; margin: -5px 0 0 -5px; background: #f4f6f8; border-radius: 4px; }
+    #po-res { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; background: #f4f6f8; }
+    .po-top { position: absolute; left: 192px; top: 70px; width: 1536px; height: 92px; background: #fff; border: 2px solid #dde3e9; border-radius: 18px;
+      font-size: 34px; font-weight: 600; line-height: 88px; padding-left: 30px; }
+    .po-card { position: absolute; left: 192px; width: 1536px; height: 196px; background: #fff; border: 2px solid #dde3e9; border-radius: 18px; }
+    .po-av { position: absolute; left: 28px; top: 28px; width: 72px; height: 72px; border-radius: 14px; }
+    .po-name { position: absolute; left: 124px; top: 24px; font-size: 42px; font-weight: 700; color: #22374a; }
+    .po-name small { font-size: 30px; font-weight: 500; color: #5f6b78; }
+    .po-rank { position: absolute; right: 32px; top: 22px; font: 400 44px "Anton", sans-serif; color: #3f6f8e; }
+    .po-desc { position: absolute; left: 124px; top: 84px; font-size: 30px; color: #5f6b78; white-space: nowrap; }
+    .po-tag { position: absolute; left: 124px; top: 136px; background: #e4ecdc; color: #426832; font-weight: 700; font-size: 28px; padding: 4px 14px; border-radius: 8px; }
+    .po-pick { position: absolute; right: 32px; top: 112px; height: 60px; padding: 0 22px; border-radius: 12px; font-size: 30px; font-weight: 700; line-height: 56px;
+      border: 2px solid #3f6f8e; color: #22374a; background: #fff; }
+    .po-pick .pb { position: absolute; left: 0; right: 0; text-align: center; color: #fff; opacity: 0; }
+    #po-bar { position: absolute; left: 192px; top: 880px; width: 1536px; height: 92px; background: #22374a; border-radius: 18px; color: #fff; }
+    #po-bar b { position: absolute; left: 32px; top: 22px; font-size: 34px; }
+    #po-gen { position: absolute; right: 16px; top: 12px; height: 68px; padding: 0 28px; background: #c7d6e2; color: #22374a; border-radius: 12px;
+      font-size: 32px; font-weight: 700; line-height: 68px; }
+    #po-modal { position: absolute; left: 340px; top: 170px; width: 1240px; height: 680px; background: #fff; border: 2px solid #dde3e9; border-radius: 22px;
+      box-shadow: 0 18px 0 rgba(30,42,54,0.18); padding: 44px 56px; }
+    #po-modal h3 { margin: 0 0 22px; font-size: 48px; font-weight: 800; color: #22374a; letter-spacing: -0.01em; }
+    #po-modal pre { margin: 0; background: #f4f6f8; border-radius: 14px; padding: 22px 26px; font: 500 28px/1.5 "JetBrains Mono", monospace; color: #1e2a36; white-space: pre-wrap; }
+    .po-btns { position: absolute; left: 56px; bottom: 44px; display: flex; gap: 18px; }
+    .po-btns span { height: 72px; padding: 0 28px; border-radius: 14px; font-size: 32px; font-weight: 700; line-height: 68px; border: 2px solid #3f6f8e; color: #22374a; }
+    .po-btns span.pri { background: #22374a; color: #fff; border-color: #22374a; }
+    #po-dim { position: absolute; inset: 0; background: rgba(18,26,34,0.45); }
+    #po-cursor { position: absolute; left: 0; top: 0; z-index: 9; }
+    #po-desk { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+    #po-plate { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+    #po-screen { position: absolute; left: 0; top: 0; width: 1190px; height: 690px; z-index: 2; overflow: hidden; background: #f4f6f8;
+      transform-origin: 0 0; transform: matrix3d(0.42475318,-0.02656401,0.00000000,-0.00006864,-0.05241887,0.59450009,0.00000000,-0.00001936,0.00000000,0.00000000,1.00000000,0.00000000,861.00000000,387.00000000,0.00000000,1.00000000); }
+    .po-sbar { position: absolute; left: 0; top: 0; right: 0; height: 48px; background: #e3e9ee; border-bottom: 1px solid #d2dae1; }
+    .po-sbar i { position: absolute; top: 17px; width: 14px; height: 14px; border-radius: 50%; background: #c2ccd5; }
+    #po-clock { position: absolute; right: 22px; top: 9px; font: 500 26px "JetBrains Mono", monospace; color: #1e2a36; }
+    .po-ask { position: absolute; right: 40px; top: 74px; width: 760px; background: #22374a; color: #fff; font-weight: 600; font-size: 24px; line-height: 1.4;
+      padding: 16px 22px; border-radius: 20px 20px 4px 20px; }
+    .po-who { position: absolute; left: 40px; top: 300px; font: 500 22px "JetBrains Mono", monospace; color: #5f6b78; }
+    #po-reply { position: absolute; left: 40px; top: 336px; width: 1050px; font-size: 30px; font-weight: 600; line-height: 1.4; color: #1e2a36; }
+    #po-reply b { color: #426832; }
+    #po-line { position: absolute; left: 120px; top: 880px; font-weight: 700; font-size: 56px; color: #eef3f7; z-index: 5;
+      background: rgba(15, 27, 40, 0.86); padding: 10px 26px; border-radius: 14px; }
+    #po-line span { display: inline-block; }
+  </style>
+  <div data-hf-id="hf-s4vk" id="root" data-composition-id="payoff" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-jjwo" id="po-open" data-layout-allow-overflow></div>
+    <div data-hf-id="hf-thxz" id="po-res">
+      <div data-hf-id="hf-kuw7" class="po-top">a chatbot that answers questions from my PDFs</div>
+      <div data-hf-id="hf-coql" class="po-card" id="po-c1" style="top:200px"><div data-hf-id="hf-32rc" class="po-av" style="background:#3f6f8e"></div>
+        <div data-hf-id="hf-gueb" class="po-name">kotaemon <small data-hf-id="hf-4nb0">by Cinnamon</small></div><div data-hf-id="hf-gg0m" class="po-rank">#1</div>
+        <div data-hf-id="hf-1ns4" class="po-desc">An open-source RAG-based tool for chatting with your documents.</div>
+        <div data-hf-id="hf-ftdw" class="po-tag">Apache-2.0 &middot; Free for commercial use</div><div data-hf-id="hf-ollu" class="po-pick" id="po-p1"><span data-hf-id="hf-b2pj" class="pa">Add to plan</span><span data-hf-id="hf-x1un" class="pb">In plan</span></div></div>
+      <div data-hf-id="hf-5vz2" class="po-card" id="po-c2" style="top:420px"><div data-hf-id="hf-de79" class="po-av" style="background:#426832"></div>
+        <div data-hf-id="hf-xs52" class="po-name">pdfGPT <small data-hf-id="hf-aus4">by bhaskatripathi</small></div><div data-hf-id="hf-gubn" class="po-rank">#2</div>
+        <div data-hf-id="hf-jmyf" class="po-desc">PDF GPT allows you to chat with the contents of your PDF file.</div>
+        <div data-hf-id="hf-k88p" class="po-tag">MIT &middot; Free for commercial use</div><div data-hf-id="hf-knht" class="po-pick" id="po-p2"><span data-hf-id="hf-esfr" class="pa">Add to plan</span><span data-hf-id="hf-5dlr" class="pb">In plan</span></div></div>
+      <div data-hf-id="hf-ilnr" class="po-card" id="po-c3" style="top:640px"><div data-hf-id="hf-9z85" class="po-av" style="background:#22374a"></div>
+        <div data-hf-id="hf-buwm" class="po-name">pdftochat <small data-hf-id="hf-fkwk">by Nutlope</small></div><div data-hf-id="hf-h8mo" class="po-rank">#3</div>
+        <div data-hf-id="hf-1ogf" class="po-desc">Chat with your PDFs with AI</div>
+        <div data-hf-id="hf-0ya5" class="po-tag">MIT &middot; Free for commercial use</div><div data-hf-id="hf-4hsy" class="po-pick">Add to plan</div></div>
+      <div data-hf-id="hf-e45m" id="po-bar"><b data-hf-id="hf-e28u">2 selected</b><div data-hf-id="hf-5mwl" id="po-gen">Generate plan &rarr;</div></div>
+      <div data-hf-id="hf-fpg7" id="po-dim"></div>
+      <div data-hf-id="hf-9p6o" id="po-modal" data-layout-allow-occlusion><h3 data-hf-id="hf-9esg">Turn your picks into a build plan</h3>
+        <pre data-hf-id="hf-mndd">I'm building: a chatbot that answers questions from my PDFs
+
+Write a PRD built on these open-source GitHub repos:
+1. Cinnamon/kotaemon
+2. bhaskatripathi/pdfGPT</pre>
+        <div data-hf-id="hf-1dob" class="po-btns"><span data-hf-id="hf-5boz" class="pri" id="po-claude">Open in Claude</span><span data-hf-id="hf-kupn">Open in ChatGPT</span><span data-hf-id="hf-ioyr">Open in Gemini</span></div></div>
+    </div>
+    <div data-hf-id="hf-ao4z" id="po-desk" data-layout-allow-overflow>
+      <img id="po-plate" src="assets/desk.jpg" alt="">
+      <div data-hf-id="hf-b3sf" id="po-screen">
+        <div data-hf-id="hf-dnky" class="po-sbar"><i data-hf-id="hf-ri6r" style="left:18px"></i><i data-hf-id="hf-qtum" style="left:42px"></i><i data-hf-id="hf-ktdg" style="left:66px"></i><span data-hf-id="hf-2wjn" id="po-clock">1:44 AM</span></div>
+        <div data-hf-id="hf-85ur" class="po-ask">I'm building: a chatbot that answers questions from my PDFs. Write a PRD built on these repos: 1. Cinnamon/kotaemon 2. bhaskatripathi/pdfGPT</div>
+        <div data-hf-id="hf-vgbs" class="po-who">Assistant</div>
+        <div data-hf-id="hf-czuh" id="po-reply"></div>
+      </div>
+    </div>
+    <div data-hf-id="hf-rfh5" id="po-line"><span data-hf-id="hf-qsam">Six minutes,</span> <span data-hf-id="hf-v3gt">on proven code.</span></div>
+    <svg data-hf-id="hf-8ltl" id="po-cursor" width="40" height="52" viewBox="0 0 20 26"><path data-hf-id="hf-bvxg" d="M2 2 L2 21 L7 16.5 L10.5 24 L14 22.5 L10.6 15 L17 15 Z" fill="#1e2a36" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>
+  </div>
+  <script>
+    (function () {
+      var desk = document.getElementById("po-desk");
+      var tl = gsap.timeline({ paused: true });
+      // the satchel opens: its inside becomes her screen
+      tl.fromTo("#po-open", { scaleX: 1, scaleY: 1 }, { scaleX: 200, scaleY: 112, duration: 0.7, ease: "power2.in" }, 0.1);
+      tl.fromTo("#po-res", { opacity: 0, scale: 1.06 }, { opacity: 1, scale: 1, duration: 0.45, ease: "expo.out" }, 0.62);
+      // the cards print in, left to right, one after another
+      ["#po-c1", "#po-c2", "#po-c3"].forEach(function (c, k) {
+        tl.fromTo(c, { clipPath: "inset(0 100% 0 0 round 18px)" }, { clipPath: "inset(0 0% 0 0 round 18px)", duration: 0.4, ease: "power3.out" }, 0.8 + k * 0.14);
+      });
+      // the two packed repos are already in the plan
+      [["#po-p1", 1.6], ["#po-p2", 1.8]].forEach(function (p) {
+        tl.fromTo(p[0], { backgroundColor: "#ffffff", scale: 0.9 }, { backgroundColor: "#22374a", scale: 1, duration: 0.35, ease: "back.out(2)" }, p[1]);
+        tl.fromTo(p[0] + " .pa", { opacity: 1 }, { opacity: 0, duration: 0.1 }, p[1]);
+        tl.fromTo(p[0] + " .pb", { opacity: 0 }, { opacity: 1, duration: 0.1 }, p[1]);
+      });
+      tl.fromTo("#po-bar", { y: 200 }, { y: 0, duration: 0.45, ease: "expo.out" }, 2.1);
+      // Generate plan, then Open in Claude
+      tl.fromTo("#po-cursor", { x: 1300, y: 760, opacity: 0 }, { x: 1560, y: 920, opacity: 1, duration: 0.6, ease: "power2.inOut" }, 2.3);
+      tl.to("#po-gen", { scale: 0.94, duration: 0.08, yoyo: true, repeat: 1 }, 2.95);
+      tl.fromTo("#po-dim", { opacity: 0 }, { opacity: 1, duration: 0.25 }, 3.15);
+      tl.fromTo("#po-modal", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.4, ease: "expo.out" }, 3.15);
+      tl.to("#po-cursor", { x: 520, y: 790, duration: 0.6, ease: "power2.inOut" }, 3.5);
+      tl.to("#po-claude", { scale: 0.94, duration: 0.08, yoyo: true, repeat: 1 }, 4.15);
+      tl.to("#po-cursor", { opacity: 0, duration: 0.1 }, 4.3);
+      // whip: the page leaves left, her chat arrives (camera close on the laptop)
+      tl.to("#po-res", { x: -1920, filter: "blur(14px)", duration: 0.3, ease: "power3.in" }, 4.35);
+      tl.set(desk, { transformOrigin: "0 0" }, 0);
+      tl.fromTo(desk, { x: 960 - 1160 * 2.15 + 2400, y: 540 - 640 * 2.15, scale: 2.15, opacity: 0, filter: "blur(14px)" }, { x: 960 - 1160 * 2.15, opacity: 1, filter: "blur(0px)", duration: 0.35, ease: "power3.out" }, 4.6);
+      var R = '<b>USE:</b> Cinnamon/kotaemon. It already has PDF upload, indexing and chat with sources. We build on it.<br><b>REFERENCE ONLY:</b> bhaskatripathi/pdfGPT.';
+      var plain = R.replace(/<[^>]+>/g, ""), reply = document.getElementById("po-reply"), rp = { n: 0 };
+      function upto(n) { var out = "", seen = 0, i = 0; while (i < R.length && seen < n) { if (R[i] === "<") { var j = R.indexOf(">", i); out += R.slice(i, j + 1); i = j + 1; } else { out += R[i]; i++; seen++; } }
+        return out; }
+      tl.fromTo(rp, { n: 0 }, { n: plain.length, duration: 1.8, ease: "none", onUpdate: function () { reply.innerHTML = upto(Math.round(rp.n)); } }, 5.0);
+      // pull back to her desk
+      tl.to(desk, { x: 0, y: 0, scale: 1, duration: 1.0, ease: "power2.inOut" }, 6.9);
+      tl.fromTo("#po-line", { opacity: 0 }, { opacity: 1, duration: 0.15 }, 7.65);
+      tl.fromTo("#po-line span", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.16, stagger: 0.3, ease: "power3.out" }, 7.7);
+      window.__timelines["payoff"] = tl;
+    })();
+  </script>
+</template>

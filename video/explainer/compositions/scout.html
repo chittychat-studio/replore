@@ -1,0 +1,137 @@
+<template>
+  <style>
+    @font-face { font-family: "Anton"; src: url("assets/fonts/anton-latin.woff2") format("woff2"); }
+    @font-face { font-family: "Inter Tight"; font-weight: 100 900; src: url("assets/fonts/intertight-latin.woff2") format("woff2"); }
+    @font-face { font-family: "JetBrains Mono"; font-weight: 500; src: url("assets/fonts/jbmono-latin-500.woff2") format("woff2"); }
+    #root { position: absolute; inset: 0; overflow: hidden; background: #0f1b28; font-family: "Inter Tight", sans-serif; }
+    #sc-world { position: absolute; left: 0; top: 0; width: 3600px; height: 2000px;
+      background: radial-gradient(60% 45% at 70% 8%, rgba(156,192,216,0.18), transparent 70%), linear-gradient(180deg, #2b4560 0%, #1f3549 30%, #16273a 62%, #0f1b28 100%); }
+    #sc-map { position: absolute; left: 0; top: 0; }
+    .sc-board { position: absolute; background: #c7d6e2; color: #22374a; border: 3px solid #0b1117; border-radius: 10px; }
+    #sc-sign { left: 780px; top: 800px; width: 480px; height: 160px; padding: 20px 26px; font-weight: 700; font-size: 36px; line-height: 1.25; }
+    #sc-signtxt { display: block; }
+    #sc-post { position: absolute; left: 1004px; top: 958px; width: 22px; height: 302px; background: #8a6a48; border: 3px solid #0b1117; }
+    .sc-plate { position: absolute; font: 500 30px "JetBrains Mono", monospace; padding: 10px 18px; white-space: nowrap; }
+    .sc-lic { position: absolute; background: #e4ecdc; color: #426832; border: 3px solid #0b1117; border-radius: 10px;
+      font-weight: 700; font-size: 30px; padding: 10px 18px; white-space: nowrap; display: flex; align-items: center; gap: 10px; }
+    .sc-flagnum { font: 400 64px "Anton", sans-serif; fill: #121a22; }
+    #sc-wiki { position: absolute; left: 1860px; top: 640px; width: 470px; background: #f4f6f8; border: 3px solid #0b1117; border-radius: 12px; padding: 18px 22px; }
+    #sc-wiki h4 { margin: 0 0 12px; font: 500 28px "JetBrains Mono", monospace; color: #3f6f8e; }
+    #sc-wiki p { margin: 0; font-size: 30px; font-weight: 600; color: #1e2a36; line-height: 1.45; }
+    #sc-bot { position: absolute; left: 0; top: 0; width: 0; height: 0; }
+    #sc-bot .m { position: absolute; }
+    #sc-bot video.m { left: -190px; top: -350px; width: 380px; height: 360px; }
+    #sc-bot img.m { left: -188px; top: -362px; width: 375px; height: 384px; }
+    #sc-bot .mir { transform: scaleX(-1); }
+    #sc-pool { position: absolute; left: -330px; top: -120px; width: 660px; height: 240px; }
+    #sc-plate1, #sc-plate2 { z-index: 2; }
+    .sc-status { position: absolute; left: 192px; top: 862px; z-index: 6; display: flex; align-items: center; gap: 16px;
+      background: #17212b; border: 2px solid #2b3a48; border-radius: 12px; padding: 14px 24px; font: 500 32px "JetBrains Mono", monospace; color: #c7d6e2; }
+    .sc-status i { width: 14px; height: 14px; background: #5b88a6; }
+  </style>
+  <div data-hf-id="hf-5eq7" id="root" data-composition-id="scout" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-eg59" id="sc-world" data-layout-allow-overflow>
+      <svg data-hf-id="hf-kgch" id="sc-map" width="3600" height="2000" viewBox="0 0 3600 2000"></svg>
+      <div data-hf-id="hf-2spa" id="sc-post"></div>
+      <div data-hf-id="hf-kyd1" class="sc-board" id="sc-sign"><span data-hf-id="hf-gria" id="sc-signtxt">a chatbot that answers questions from my PDFs</span></div>
+      <div data-hf-id="hf-nmus" id="sc-wiki"><h4 data-hf-id="hf-m8oy">Wiki: ask about it</h4><p data-hf-id="hf-uhvh">kotaemon, explained</p><p data-hf-id="hf-uo1w" style="font-weight:500;color:#5f6b78">Upload PDFs &rarr; index &rarr; chat with sources</p></div>
+      <div data-hf-id="hf-076f" id="sc-bot">
+        <svg data-hf-id="hf-42rw" id="sc-pool" viewBox="0 0 660 240"><ellipse data-hf-id="hf-u1lv" cx="330" cy="120" rx="330" ry="120" fill="#e7a95a" fill-opacity="0.08"/><ellipse data-hf-id="hf-84ew" cx="330" cy="120" rx="190" ry="70" fill="#e7a95a" fill-opacity="0.14"/></svg>
+        <img data-hf-id="hf-zdjd" class="m clip" id="sc-b-read1" src="assets/scout/cut/reading.png" data-start="0" data-duration="3" data-track-index="2" alt="">
+        <video data-hf-id="hf-cyh7" class="m clip" id="sc-b-search" src="assets/scout/cut/search.webm" data-start="3" data-duration="4.4" data-media-start="0.5" data-track-index="2" muted playsinline></video>
+        <video data-hf-id="hf-h2rq" class="m clip mir" id="sc-b-walk1" src="assets/scout/cut/walk.webm" data-start="7.4" data-duration="1.7" data-track-index="2" muted playsinline></video>
+        <img data-hf-id="hf-7fdt" class="m clip" id="sc-b-read2" src="assets/scout/cut/reading.png" data-start="9.1" data-duration="2" data-track-index="2" alt="">
+        <img data-hf-id="hf-opsy" class="m clip" id="sc-b-peek" src="assets/scout/cut/hero.png" data-start="11.1" data-duration="2.1" data-track-index="2" alt="">
+        <video data-hf-id="hf-61zw" class="m clip" id="sc-b-pack1" src="assets/scout/cut/pack.webm" data-start="13.2" data-duration="1.8" data-media-start="1.0" data-track-index="2" muted playsinline></video>
+        <video data-hf-id="hf-rugq" class="m clip mir" id="sc-b-walk2" src="assets/scout/cut/walk.webm" data-start="15" data-duration="1.4" data-media-start="2" data-track-index="2" muted playsinline></video>
+        <video data-hf-id="hf-wuhw" class="m clip" id="sc-b-pack2" src="assets/scout/cut/pack.webm" data-start="16.4" data-duration="1" data-media-start="1.4" data-track-index="2" muted playsinline></video>
+        <img data-hf-id="hf-048q" class="m clip" id="sc-b-hand" src="assets/scout/cut/handoff.png" data-start="17.4" data-duration="0.6" data-track-index="2" alt="">
+      </div>
+    </div>
+    <div data-hf-id="hf-0tpp" class="sc-status" id="sc-s1"><i data-hf-id="hf-wt6k"></i>Searching GitHub</div>
+    <div data-hf-id="hf-0fmx" class="sc-status" id="sc-s2"><i data-hf-id="hf-zeb8"></i>Ranking by fit</div>
+    <div data-hf-id="hf-311b" class="sc-status" id="sc-s3"><i data-hf-id="hf-y7e5"></i>Add to plan</div>
+  </div>
+  <script>
+    (function () {
+      var NS = "http://www.w3.org/2000/svg", map = document.getElementById("sc-map"), world = document.getElementById("sc-world");
+      function hash(n) { var x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
+      function el(tag, a, p) { var n = document.createElementNS(NS, tag); for (var k in a) n.setAttribute(k, a[k]); (p || map).appendChild(n); return n; }
+      // survey stakes: every repo on the map
+      var C = [[1720, 1240], [2560, 1520], [3060, 1000]], stakes = [];
+      for (var i = 0; i < 54; i++) {
+        var sx = 300 + hash(i) * 3100, sy = 300 + hash(i + 50) * 1550;
+        if (Math.abs(sx - 900) < 380 && Math.abs(sy - 1100) < 300) continue;
+        var g = el("g", { transform: "translate(" + sx.toFixed(0) + " " + sy.toFixed(0) + ")" });
+        el("line", { x1: 0, y1: 0, x2: 0, y2: -34, stroke: "#c7d6e2", "stroke-width": 4, "stroke-linecap": "round" }, g);
+        el("circle", { cx: 0, cy: -38, r: 8, fill: "#c7d6e2" }, g);
+        stakes.push({ g: g, d: Math.hypot(sx - 620, sy - 1260) });
+      }
+      // three ranked cairns: stones, a pole, an amber flag with the rank
+      var cairns = C.map(function (c, k) {
+        var g = el("g", { transform: "translate(" + c[0] + " " + c[1] + ")" });
+        var inner = el("g", {}, g);
+        el("ellipse", { cx: 0, cy: -22, rx: 74, ry: 30, fill: "#2b3a48", stroke: "#0b1117", "stroke-width": 3 }, inner);
+        el("ellipse", { cx: -6, cy: -62, rx: 54, ry: 24, fill: "#3a4c5c", stroke: "#0b1117", "stroke-width": 3 }, inner);
+        el("ellipse", { cx: 4, cy: -94, rx: 36, ry: 18, fill: "#2b3a48", stroke: "#0b1117", "stroke-width": 3 }, inner);
+        el("rect", { x: -5, y: -440, width: 10, height: 340, fill: "#8a6a48", stroke: "#0b1117", "stroke-width": 3 }, inner);
+        el("path", { d: "M5 -436 L140 -406 L5 -350 Z", fill: "#e7a95a", stroke: "#0b1117", "stroke-width": 3, "stroke-linejoin": "round" }, inner);
+        var n = el("text", { x: 38, y: -372, class: "sc-flagnum" }, inner); n.textContent = String(k + 1);
+        return inner;
+      });
+      // name plates and licence signs (HTML in world space)
+      function board(id, html, x, y, cls) { var d = document.createElement("div"); d.id = id; d.className = cls; d.innerHTML = html; d.style.left = x + "px"; d.style.top = y + "px"; world.appendChild(d); return d; }
+      var CHK = '<svg width="26" height="26" viewBox="0 0 16 16" fill="none" stroke="#426832" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3L13 4.5"/></svg>';
+      board("sc-plate1", "Cinnamon/kotaemon", 1720 - 190, 1240 - 330, "sc-board sc-plate");
+      board("sc-lic1", CHK + "Apache-2.0 &middot; Free for commercial use", 1720 - 40, 1240 - 250, "sc-lic");
+      board("sc-plate2", "bhaskatripathi/pdfGPT", 2560 - 220, 1520 - 330, "sc-board sc-plate");
+      board("sc-lic2", CHK + "MIT &middot; Free for commercial use", 2560 - 40, 1520 - 250, "sc-lic");
+      var bot = document.getElementById("sc-bot"), wiki = document.getElementById("sc-wiki");
+      world.appendChild(bot);
+
+      var tl = gsap.timeline({ paused: true });
+      function cam(t, cx, cy, s, d, ease) {
+        var v = { x: 960 - cx * s, y: 540 - cy * s, scale: s };
+        if (d) tl.to(world, Object.assign(v, { duration: d, ease: ease || "power2.inOut" }), t); else tl.set(world, v, t);
+      }
+      tl.set(world, { transformOrigin: "0 0" }, 0);
+      cam(0, 860, 1040, 1.3);
+      cam(2.8, 1850, 1180, 0.55, 1.4);
+      cam(7.3, 1660, 1030, 1.25, 1.6);
+      cam(14.9, 2470, 1290, 1.25, 1.5);
+      cam(17.35, 2330, 1350, 4.2, 0.65, "power3.in");
+      // the bot: where its feet stand
+      tl.set(bot, { x: 620, y: 1260 }, 0);
+      tl.to(bot, { x: 1460, y: 1250, duration: 1.7, ease: "power1.inOut" }, 7.4);
+      tl.to(bot, { x: 2320, y: 1530, duration: 1.4, ease: "power1.inOut" }, 15.0);
+      // the lantern clicks on: a flat pool of light on the ground
+      tl.fromTo("#sc-pool", { opacity: 0 }, { opacity: 1, duration: 0.04, ease: "steps(1)" }, 0.3);
+      // the sentence is painted onto the signpost
+      tl.fromTo("#sc-signtxt", { clipPath: "inset(0 100% 0 0)" }, { clipPath: "inset(0 0% 0 0)", duration: 0.7, ease: "power2.inOut" }, 0.5);
+      // searching: the stakes come up across the map, nearest first
+      stakes.forEach(function (s) { tl.fromTo(s.g, { scale: 0, transformOrigin: "50% 100%" }, { scale: 1, duration: 0.35, ease: "back.out(2)" }, 3.2 + s.d / 1700); });
+      tl.fromTo("#sc-s1", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.18 }, 3.3);
+      tl.to("#sc-s1", { opacity: 0, filter: "blur(8px)", duration: 0.15 }, 5.5);
+      // ranking: the rest sink, three cairns rise with their rank
+      stakes.forEach(function (s, k) { tl.to(s.g, { opacity: 0.12, scale: 0.6, duration: 0.3, ease: "power2.in" }, 5.3 + (k % 6) * 0.02); });
+      cairns.forEach(function (c, k) { tl.fromTo(c, { scale: 0, transformOrigin: "50% 100%" }, { scale: 1, duration: 0.55, ease: "elastic.out(1, 0.55)" }, 5.6 + k * 0.15); });
+      tl.fromTo("#sc-s2", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.18 }, 5.65);
+      tl.to("#sc-s2", { opacity: 0, filter: "blur(8px)", duration: 0.15 }, 7.6);
+      // at #1: the plate shows, the licence sign drops and swings
+      tl.fromTo("#sc-plate1", { opacity: 0, y: -10 }, { opacity: 1, y: 0, duration: 0.3, ease: "power3.out" }, 8.6);
+      tl.fromTo("#sc-lic1", { opacity: 0, y: -40, rotation: -6, transformOrigin: "50% 0" }, { opacity: 1, y: 0, rotation: 0, duration: 0.7, ease: "elastic.out(1, 0.55)" }, 9.2);
+      // peek inside: the wiki page unfolds
+      tl.fromTo(wiki, { scaleY: 0, opacity: 0, transformOrigin: "50% 100%" }, { scaleY: 1, opacity: 1, duration: 0.45, ease: "expo.out" }, 11.2);
+      tl.to(wiki, { scaleY: 0, opacity: 0, duration: 0.25, ease: "power3.in" }, 13.0);
+      // pack it: the plate flies into the satchel
+      tl.to("#sc-plate1", { x: -190, y: 150, scale: 0.15, opacity: 0, duration: 0.6, ease: "power2.in" }, 13.6);
+      tl.fromTo("#sc-s3", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.18 }, 13.7);
+      tl.to("#sc-s3", { opacity: 0, filter: "blur(8px)", duration: 0.15 }, 17.2);
+      // at #2: plate, licence, packed in one motion
+      tl.fromTo("#sc-plate2", { opacity: 0, y: -10 }, { opacity: 1, y: 0, duration: 0.3, ease: "power3.out" }, 15.6);
+      tl.fromTo("#sc-lic2", { opacity: 0, y: -40, rotation: -6, transformOrigin: "50% 0" }, { opacity: 1, y: 0, rotation: 0, duration: 0.7, ease: "elastic.out(1, 0.55)" }, 15.8);
+      tl.to("#sc-plate2", { x: -210, y: 150, scale: 0.15, opacity: 0, duration: 0.5, ease: "power2.in" }, 16.6);
+      window.__timelines["scout"] = tl;
+    })();
+  </script>
+</template>
