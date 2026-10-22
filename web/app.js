@@ -1398,7 +1398,7 @@ function buildLiveDemo(host){
     '<div class="st-stage">'+
       '<div class="st-pair" aria-hidden="true">'+
         (wide?'<div class="st-g"><canvas class="ld-globe"></canvas><span class="st-sh"></span></div>':'')+
-        '<div class="st-b"><img class="st-bot" src="scout-hero.webp" alt="" width="180" height="184" decoding="async"><span class="st-sh"></span></div></div>'+
+        '<div class="st-b"><img class="st-bot" src="scout-hero.webp" alt="" width="180" height="184" decoding="async"><span class="st-sprite"></span><span class="st-sh"></span></div></div>'+
       '<p class="st-say"><b>Hello there! I’m Leo.</b><span class="st-say-t">Let’s explore what free GitHub repos have to offer for your idea. Then I’ll help you plan it.</span>'+
         '<span class="st-pills" aria-hidden="true">'+STAGES.map(function(t){ return '<i>'+t+'</i>'; }).join("")+'</span></p>'+   // the search stages, as pills   // RS65: Leo, the scout
       '<div class="st-ctrl"><button type="button" class="st-arrow st-prev" aria-label="Previous example search">&lsaquo;</button>'+
@@ -1414,9 +1414,31 @@ function buildLiveDemo(host){
   if(globe) startAsciiGlobe(globe, reduce);
   var sb=bot&&bot.parentNode, say=host.querySelector(".st-say"), sayT=host.querySelector(".st-say-t"), SAY=sayT?sayT.textContent:"";
   function speak(txt){ if(sayT) sayT.textContent=txt; if(say&&say.classList) say.classList.add("on"); }
-  setTimeout(function(){ speak(SAY); }, reduce?0:2700);   // after the peek
-  if(bot&&globe&&!reduce&&bot.classList&&sb&&sb.classList&&bot.addEventListener){ bot.classList.add("peek"); sb.classList.add("peeking");   // RS65: peek, then hop out
-    bot.addEventListener("animationend",function(){ bot.classList.remove("peek"); sb.classList.remove("peeking"); },{once:true}); }
+  // RS65: Leo is interactive. He peeks out, waves hello, reacts while you type, and searches (magnifier sweep) when you
+  // press Enter. Animations are sprite sheets cut from the Veo clips (work in every browser, no video alpha needed).
+  var spr=sb&&sb.querySelector&&sb.querySelector(".st-sprite"), canAnim=!!(bot&&globe&&!reduce&&bot.classList&&sb&&sb.classList&&bot.addEventListener);
+  var SPR={wave:["scout-wave.webp",31,2.6], search:["scout-searching.webp",36,3]};
+  function sprite(name, loop, done){ if(!canAnim||!spr) { if(done) done(); return; } var d=SPR[name];
+    spr.style.backgroundImage="url("+d[0]+")"; spr.style.backgroundSize=(d[1]*100)+"% 100%";
+    spr.style.animation="none"; void spr.offsetWidth;
+    spr.style.animation="leoSprite "+d[2]+"s steps("+(d[1]-1)+") "+(loop?"infinite":"1 forwards");
+    sb.classList.add("animating");
+    if(!loop&&done) spr.addEventListener("animationend",function f(){ spr.removeEventListener("animationend",f); done(); }); }
+  function still(){ if(spr) spr.style.animation="none"; if(sb&&sb.classList) sb.classList.remove("animating"); }
+  var greeted=false, started=false;
+  function startDemo(){ if(started) return; started=true; run(); }
+  function greet(){ if(greeted) return; greeted=true; speak(SAY); sprite("wave", false, function(){ still(); startDemo(); }); }
+  if(canAnim){ bot.classList.add("peek"); sb.classList.add("peeking");   // peek, then hop out, then wave hello
+    bot.addEventListener("animationend",function(){ bot.classList.remove("peek"); sb.classList.remove("peeking"); greet(); },{once:true});
+    setTimeout(greet, 3400); setTimeout(startDemo, 7000); }   // fallbacks if an animation event never fires
+  else { speak(SAY); }
+  // typing: Leo pauses the example and answers you
+  var qin=document.getElementById("q");
+  if(qin&&qin.addEventListener){
+    qin.addEventListener("input",function(){ if(document.body.classList.contains("searching")) return;
+      if(qin.value.trim()){ paused=true; clear(); still(); pose("hero"); stage(-1,""); speak("Sounds good! Press Enter and I’ll go look."); }
+      else { speak(SAY); } });
+    qin.addEventListener("blur",function(){ if(!qin.value.trim()&&paused&&!document.body.classList.contains("searching")){ paused=false; speak(SAY); run(); } }); }
   var timers=[], k=0, paused=false;
   function later(f,ms){ timers.push(setTimeout(f,ms)); }
   function clear(){ timers.forEach(clearTimeout); timers=[]; }
@@ -1467,14 +1489,14 @@ function buildLiveDemo(host){
   var busy=false;
   function onSearch(){ var on=document.body.classList.contains("searching");
     if(on&&!busy){ busy=true; clear(); var qv=document.getElementById("q");
-      typed.textContent=(qv&&qv.value||"").trim(); stage(0,"Searching GitHub"); pose("search"); speak("On it! Searching GitHub for you…"); if(cur) cur.classList.remove("on","click");
+      typed.textContent=(qv&&qv.value||"").trim(); stage(0,"Searching GitHub"); pose("search"); speak("On it! Searching GitHub for you…"); sprite("search", true); if(cur) cur.classList.remove("on","click");
       [].forEach.call(deck.children,function(c){ c.classList.add("out"); });
       later(function(){ stage(1,"Ranking by fit"); }, 1400); later(function(){ stage(2,"Licence check"); }, 2800); }
-    else if(!on&&busy){ busy=false; speak(SAY); if(!document.body.classList.contains("has-results")&&host.isConnected){ paused=false; run(); } } }
+    else if(!on&&busy){ busy=false; still(); speak(SAY); if(!document.body.classList.contains("has-results")&&host.isConnected){ paused=false; run(); } } }
   if(window.MutationObserver) new MutationObserver(onSearch).observe(document.body,{attributes:true,attributeFilter:["class"]});
   host.__stopDemo=function(){ paused=true; clear(); };   // the globe keeps turning on the stage; it stops itself once removed
   host.__playDemo=function(){ if(paused){ paused=false; run(); } };
-  run();
+  if(!canAnim) startDemo();
 }
 // remember the last results so a page refresh brings them back (cached locally, no new API call)
 // RS44: the owner's Stripe Payment Link (public URL, no key). Empty = all tip elements stay hidden.

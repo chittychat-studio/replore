@@ -962,7 +962,10 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   separate list crowded the bubble). On arrival the bot peeks
   out from behind the globe with a head tilt, then hops out to its spot (reduced motion: no peek). The bot is named Leo; after the peek a speech bubble beside his head says
   "Hello there! I'm Leo. Let's explore what free GitHub repos have to offer for your idea. Then I'll help you plan it."
-  (owner wording 2026-10-23), and "On it! Searching GitHub for you…" while a real search runs. No gradients or glass rule is
+  (owner wording 2026-10-23), and "On it! Searching GitHub for you…" while a real search runs. Leo is interactive (owner 2026-10-23): he
+  waves while he says hello, answers "Sounds good! Press Enter and I'll go look." while you type (the example search
+  pauses), and plays his magnifier sweep while your search runs. The wave and sweep are sprite sheets cut from the RS64
+  Veo clips (`web/scout-wave.webp`, `web/scout-searching.webp`), so they play in every browser without video alpha. No gradients or glass rule is
   lifted for this stage only, by the owner's pick.
 - **RS66** No em dashes in site copy (owner 2026-10-23: "check no em dashes across site"). Nothing a visitor reads on
   the web page (text, titles, tooltips, aria labels, the plan prompt) uses an em dash; a colon, comma, full stop or
