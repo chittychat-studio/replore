@@ -213,6 +213,7 @@ function agoText(d){ var t=Date.parse(d); if(!t) return ""; var days=Math.floor(
 // RS51: "Explore" links — each tool takes the same owner/repo path as github.com; only a well-formed name gets links
 var EXPLORE=[["Diagram","https://gitdiagram.com/","See the repo as an architecture diagram (GitDiagram)"],
   ["Digest","https://gitingest.com/","Turn the code into one text digest to paste into an AI chat (Gitingest)"],
+  ["Wiki","https://deepwiki.com/","Read AI-written docs for the repo and ask it questions (DeepWiki)"],
   ["Browse","https://github1s.com/","Read the code in a VS Code-style viewer (GitHub1s)"],
   ["Edit","https://github.dev/","Open in github.dev, the web editor (sign in to GitHub)"]];
 function exploreLinks(name){ name=String(name||"");
@@ -1251,7 +1252,7 @@ function tipUrlOk(u, host){ u=String(u||"");
 (function(){ if(typeof location==="undefined" || !tipUrlOk(TIP_URL, location.hostname)) return;
   document.querySelectorAll(".tip-link").forEach(function(a){ a.href=TIP_URL; });
   document.querySelectorAll(".tip-el").forEach(function(el){ el.hidden=false; }); })();
-var LAST="findrepo_last", CACHE_V="11";   // 11: cards carry Explore links (RS51); 10: no inline onclick (RS49)  // bump when saved markup changes, so stale caches are dropped
+var LAST="findrepo_last", CACHE_V="12";   // 12: Wiki (DeepWiki) Explore button; 11: cards carry Explore links (RS51); 10: no inline onclick (RS49)  // bump when saved markup changes, so stale caches are dropped
 // RS43 A: the visitor's own last 10 searches for 1 hour, in their browser only. Pure functions (tested) + thin wrappers.
 var RECENT="replore_recent", RECENT_TTL_MS=3600000, RECENT_MAX=10;
 function recentKey(f){ return JSON.stringify([String(f.q||"").trim().toLowerCase().replace(/\s+/g," "), f.platform||"", String(f.minstars||""),
