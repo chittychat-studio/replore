@@ -1392,15 +1392,15 @@ function buildLiveDemo(host){
   // RS65: the studio stage. The scout bot stands beside the ASCII globe of GitHub; the rail names the
   // stage of the search, and the real top results land as frosted cards under the pair.
   // The arrows step through the example searches. Phones get the bot and one card (no globe, no rail).
-  var STAGES="Searching|Ranking by fit|Licence check|Ready".split("|"), NUM="I|II|III|IV".split("|");
+  var STAGES="Searching|Ranking by fit|Licence check|Ready".split("|");
   host.innerHTML='<div class="ld st">'+
     '<div class="ld-q" aria-hidden="true">'+ico("search")+'<span class="ld-typed"></span><span class="ld-caret"></span></div>'+
     '<div class="st-stage">'+
-      (wide?'<ol class="st-rail" aria-hidden="true">'+STAGES.map(function(t,i){ return '<li><i>'+NUM[i]+'</i>'+t+'</li>'; }).join("")+'</ol>':'')+
       '<div class="st-pair" aria-hidden="true">'+
         (wide?'<div class="st-g"><canvas class="ld-globe"></canvas><span class="st-sh"></span></div>':'')+
         '<div class="st-b"><img class="st-bot" src="scout-hero.webp" alt="" width="180" height="184" decoding="async"><span class="st-sh"></span></div></div>'+
-      '<p class="st-say"><b>Hello there! I’m Leo.</b><span class="st-say-t">Let’s explore what free GitHub repos have to offer for your idea. Then I’ll help you plan it.</span></p>'+   // RS65: Leo, the scout
+      '<p class="st-say"><b>Hello there! I’m Leo.</b><span class="st-say-t">Let’s explore what free GitHub repos have to offer for your idea. Then I’ll help you plan it.</span>'+
+        '<span class="st-pills" aria-hidden="true">'+STAGES.map(function(t){ return '<i>'+t+'</i>'; }).join("")+'</span></p>'+   // the search stages, as pills   // RS65: Leo, the scout
       '<div class="st-ctrl"><button type="button" class="st-arrow st-prev" aria-label="Previous example search">&lsaquo;</button>'+
         '<b class="st-label" aria-hidden="true"></b>'+
         '<button type="button" class="st-arrow st-next" aria-label="Next example search">&rsaquo;</button></div>'+
@@ -1410,7 +1410,7 @@ function buildLiveDemo(host){
     '<svg class="st-cursor" aria-hidden="true" width="26" height="34" viewBox="0 0 20 26"><path d="M2 2 L2 21 L7 16.5 L10.5 24 L14 22.5 L10.6 15 L17 15 Z"/></svg></div>';
   var deck=host.querySelector(".ld-deck"), cur=host.querySelector(".st-cursor"), box=host.querySelector(".ld"), typed=host.querySelector(".ld-typed"), globe=host.querySelector(".ld-globe"),
       label=host.querySelector(".st-label"), bot=host.querySelector(".st-bot"),
-      rail=[].slice.call(host.querySelectorAll(".st-rail li"));
+      rail=[].slice.call(host.querySelectorAll(".st-pills i"));
   if(globe) startAsciiGlobe(globe, reduce);
   var sb=bot&&bot.parentNode, say=host.querySelector(".st-say"), sayT=host.querySelector(".st-say-t"), SAY=sayT?sayT.textContent:"";
   function speak(txt){ if(sayT) sayT.textContent=txt; if(say&&say.classList) say.classList.add("on"); }

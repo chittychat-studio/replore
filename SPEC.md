@@ -958,7 +958,8 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   top-right corner, and the cards end above the fold at 1366x768. Type (owner reference 2026-10-23): the title's first half is heavy, tight
   Inter Tight (800), the second half Instrument Serif (self-hosted, SIL OFL) in a muted tone; the same heavy Inter Tight
   replaces Anton everywhere else (logo, headings, Trending numbers, card avatars) so the site uses one family
-  (owner: "maintain similar font throughout site"). The stage rail sits right beside the bot. On arrival the bot peeks
+  (owner: "maintain similar font throughout site"). The search stages show as a row of pills inside Leo's speech bubble, to his right (owner: the
+  separate list crowded the bubble). On arrival the bot peeks
   out from behind the globe with a head tilt, then hops out to its spot (reduced motion: no peek). The bot is named Leo; after the peek a speech bubble beside his head says
   "Hello there! I'm Leo. Let's explore what free GitHub repos have to offer for your idea. Then I'll help you plan it."
   (owner wording 2026-10-23), and "On it! Searching GitHub for you…" while a real search runs. No gradients or glass rule is

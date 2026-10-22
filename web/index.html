@@ -858,12 +858,6 @@
   .st-arrow:hover{background:color-mix(in srgb,var(--ink) 8%,transparent)}
   .st-arrow:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px}
   .st-label{font-weight:300;font-size:22px;min-width:180px;text-align:center}
-  .st-rail{position:absolute;left:0;top:24px;margin:0;padding:0;list-style:none;display:grid;gap:14px;text-align:left}
-  .st-rail li{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:12px;transition:color .3s,font-size .3s}
-  .st-rail i{font:500 11px var(--f-mono);font-style:normal;width:30px;height:30px;display:grid;place-items:center;border-radius:9px;
-    border:1px solid var(--line);background:var(--card)}
-  .st-rail li.on{color:var(--ink);font-size:20px}
-  .st-rail li.on i{background:var(--ink);color:var(--bg)}
   .st .ld-deck{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;width:100%;max-width:1160px}
   .st .ld-card{background:var(--card);border:1px solid var(--line);border-radius:18px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);text-align:left}
   .st .ld-note{color:var(--muted)}
@@ -873,7 +867,6 @@
   .demo-slot .st-bot{width:130px}
   .demo-slot .st .ld-deck{grid-template-columns:minmax(0,1fr)}
   @media (max-width:999px){ .st .ld-deck{grid-template-columns:minmax(0,1fr)} .st-label{font-size:18px;min-width:140px} }
-  @media (prefers-reduced-motion:reduce){ .st-rail li{transition:none} }
   /* RS65: the stage demo spans the stage (the old side-panel caps no longer apply) */
   .stage-slot .demo, body:not(.has-results):not(.searching) .stage-slot #heroDemo{max-width:none;overflow:visible}
   #heroDemo .st .ld-deck, #heroDemo .st .ld-note{max-width:1160px}
@@ -905,10 +898,6 @@
     .st-ctrl{bottom:0}
     .st-arrow{width:38px;height:38px;font-size:19px}
     .st-label{font-size:19px}
-    .st-rail{top:calc(var(--gs) * .22);gap:9px;right:auto;left:calc(50% + var(--gs) * .8 + 30px)}   /* beside the bot */
-    .st-rail i{width:26px;height:26px}
-    .st-rail li.on{font-size:17px}
-    .st .ld-card{padding:10px 12px;gap:6px}
     .st .ld-ex i{padding-top:3px;padding-bottom:3px}
     .st .ld-note{font-size:11.5px}
     .st .ld-card{position:relative}
@@ -931,15 +920,19 @@
   }
   @media (prefers-reduced-motion:reduce){ .st-bot.peek{animation:none} }
   /* RS65: Leo's speech bubble, beside his head; pops in after the peek */
-  .st-say{position:absolute;z-index:3;top:0;left:calc(50% + var(--gs,262px) * .45);max-width:250px;margin:0;padding:10px 14px;
-    text-align:left;font-size:13.5px;line-height:1.4;color:var(--ink);background:var(--card);border:1px solid var(--line);
-    border-radius:14px 14px 14px 4px;box-shadow:0 10px 24px rgba(var(--shadow),.18);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  .st-say{position:absolute;z-index:3;top:calc(var(--gs,262px) * .18);left:calc(50% + var(--gs,262px) * .8 + 16px);width:min(392px,40vw);margin:0;
+    padding:12px 14px;text-align:left;font-size:13.5px;line-height:1.4;color:var(--ink);background:var(--card);border:1px solid var(--line);
+    border-radius:16px 16px 16px 4px;box-shadow:0 10px 24px rgba(var(--shadow),.18);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
     opacity:0;transform:translateY(6px) scale(.96);transform-origin:0 100%;transition:opacity .35s,transform .45s cubic-bezier(.3,1.4,.5,1)}
+  .st-pills{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+  .st-pills i{font-style:normal;font-size:11px;font-weight:600;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 8px;white-space:nowrap;
+    transition:background-color .3s,color .3s,border-color .3s}
+  .st-pills i.on{background:var(--ink);border-color:var(--ink);color:var(--bg)}
   .st-say.on{opacity:1;transform:none}
   .st-say b{display:block;font-weight:700}
   .st-say-t{color:var(--muted)}
-  @media (min-width:1000px){ .st-rail{top:calc(var(--gs) * .5)} }
-  .demo-slot .st-say{left:calc(50% + 50px);top:4px;max-width:170px;font-size:12.5px}
+  .demo-slot .st-say{left:calc(50% + 50px);top:4px;width:170px;font-size:12.5px}
+  .demo-slot .st-pills{display:none}
   @media (prefers-reduced-motion:reduce){ .st-say{transition:none} }
 </style>
 </head>
@@ -1287,6 +1280,6 @@
   <p class="mut rag-only" style="margin-top:12px" hidden><b>Hybrid search:</b> repos are ranked by your words and by what you mean, so "voice notes" also finds "speech-to-text". Repos our index finds that the word search missed are checked on GitHub before you see them.</p>
 </div></div>
 
-<script src="app.js?v=5511edb07d" defer></script>
+<script src="app.js?v=8cd5dbe8e1" defer></script>
 </body>
 </html>
