@@ -1010,6 +1010,11 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   (not the agents' logos), how it connects, one line and a Get button. Claude Code is marked "Best results" (only the
   plugin reads a whole PRD). Get swaps in that agent's numbered steps (RS31/RS32 content), commands with the usual Copy button; "All
   agents" goes back. The grid and every step are plain page markup (no network call).
+- **RS71** Fixes from owner review 2026-10-23. Leo's peek clip never cuts his head or magnifier: the source jump (where
+  Veo framed his head out of the picture) is skipped with a short dissolve from standing to landed, and the crop is wider
+  (1010 px). A tap anywhere on a result card (not a link or button) adds it to the plan or takes it out. The card has
+  one top row (owner left; Updated and the bookmark right) and the rank beside the name. The plugin steps view hides
+  the intro and is tighter, so one agent's steps fit one screen.
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
 - **RX3** Ranking by forks, trending or download counts. (Relevance, stars and license-freedom are the only

@@ -961,7 +961,7 @@
   }
   /* RS65: the peek clip (Flow/Veo), placed so Leo emerges from behind the globe and lands on his spot */
   .st-peekvid{position:absolute;z-index:2;left:calc(50% - var(--gs,262px) * .81);bottom:calc(var(--gs,262px) * -.01);
-    width:calc(var(--gs,262px) * 1.156);height:auto;pointer-events:none;display:none}
+    width:calc(var(--gs,262px) * 1.256);height:auto;pointer-events:none;display:none}   /* RS71: a wider crop (1010 px), same scale */
   .st-b.videopeek .st-peekvid{display:block}
   .st-b.videopeek .st-bot,.st-b.videopeek .st-sh{visibility:hidden}
   /* no bubble (owner reference): plain text beside Leo */
@@ -1187,6 +1187,27 @@
   @media (max-width:860px){ .ag-grid{grid-template-columns:repeat(2,minmax(0,1fr))} }
   @media (max-width:560px){ .ag-grid{grid-template-columns:minmax(0,1fr)} }
   @media (prefers-reduced-motion:reduce){ .ag-card,.ag-detail{transition:none;animation:none} .ag-card:hover{transform:none} }
+
+  /* RS71: one top row on the card (owner left; Updated and the bookmark right); the rank beside the name; the card is tappable */
+  .rcard.rc2{cursor:pointer}
+  .rc2 .rc-top .rc-who{flex:1;min-width:0}
+  .rc2 .rc-top .owner{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rc2 .rc-top .rc-date{flex:none;font-size:11.5px;padding:4px 10px}
+  .rc2 .rc-nmrow{display:flex;align-items:flex-start;gap:8px}
+  .rc2 .rc-nmrow .name{flex:1;min-width:0}
+  .rc2 .rc-nmrow .rank{flex:none;margin-top:3px}
+  .rc2 :is(a,button,label){cursor:pointer}
+  /* RS71: the plugin steps view is compact so one agent's steps fit one screen */
+  #pluginModal.ag-on .ag-sheet > h2, #pluginModal.ag-on .ag-sheet > h2 + p.mut{display:none}
+  #pluginModal.ag-on .ag-detail{margin-top:0;gap:10px}
+  .ag-detail{grid-template-columns:auto 1fr;align-items:center;column-gap:14px}
+  .ag-detail .ag-steps{grid-column:1/-1}
+  .ag-dh .ag-ic{width:44px;height:44px}
+  .ag-steps{gap:8px}
+  .ag-steps li{padding:10px 14px 10px 48px;font-size:13.5px;line-height:1.45}
+  .ag-steps li::before{top:10px}
+  .ag-cmd{margin-top:6px}
+  @media (max-width:560px){ .ag-detail{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
@@ -1525,6 +1546,6 @@
   <p class="mut rag-only" style="margin-top:12px" hidden><b>Hybrid search:</b> repos are ranked by your words and by what you mean, so "voice notes" also finds "speech-to-text". Repos our index finds that the word search missed are checked on GitHub before you see them.</p>
 </div></div>
 
-<script src="app.js?v=f2994d8092" defer></script>
+<script src="app.js?v=ddd877d6b8" defer></script>
 </body>
 </html>

@@ -321,13 +321,14 @@ function cardHtml(r,i,qtokens){
   return '<article class="rcard rc2'+(i!=null&&i<3?' top'+(i+1):'')+'" data-com="'+okCom+'" data-starter="'+(r.starter?1:0)+'" data-lang="'+esc(lang)+
       '" data-stars="'+(+r.stars||0)+'" data-pushed="'+esc(r.pushed||"")+'" data-i="'+(i==null?0:i)+'"'+(r.left?' data-left="1"':'')+'>'+
     '<div class="rc-in">'+
-      '<div class="rc-top"><span class="rc-date" title="Last code change '+esc(r.pushed)+'">Updated '+esc(agoText(r.pushed)||r.pushed)+'</span>'+
+      '<div class="rc-top"><div class="rc-who"><span class="avatar" aria-hidden="true" style="--h:'+ownerHue(owner||repo)+'">'+esc((owner||repo).charAt(0).toUpperCase())+'</span>'+
+        '<span class="owner">'+esc(owner)+'</span></div>'+   // RS71: the owner and the Updated pill share one row
+        '<span class="rc-date" title="Last code change '+esc(r.pushed)+'">Updated '+esc(agoText(r.pushed)||r.pushed)+'</span>'+
         '<label class="pick rc-bm" title="Add to plan"><input type="checkbox" class="pick-cb" data-name="'+esc(r.name)+'" data-url="'+esc(r.url)+
         '" data-desc="'+esc(r.desc||"")+'"><span class="pk-add">'+ico("bookmark")+'<span class="sr-only">Add '+esc(r.name)+' to plan</span></span>'+
         '<span class="pk-in">'+ico("bookmarked")+'<span class="sr-only">In plan</span></span></label></div>'+
-      '<div class="rc-who"><span class="avatar" aria-hidden="true" style="--h:'+ownerHue(owner||repo)+'">'+esc((owner||repo).charAt(0).toUpperCase())+'</span>'+
-        '<span class="owner">'+esc(owner)+'</span>'+(i!=null?'<span class="rank">#'+(i+1)+'</span>':'')+'</div>'+
-      '<h3 class="name"><a href="'+esc(r.url)+'" target="_blank" rel="noopener" title="'+esc(r.name)+'">'+esc(repo)+'</a></h3>'+
+      '<div class="rc-nmrow"><h3 class="name"><a href="'+esc(r.url)+'" target="_blank" rel="noopener" title="'+esc(r.name)+'">'+esc(repo)+'</a></h3>'+
+        (i!=null?'<span class="rank">#'+(i+1)+'</span>':'')+'</div>'+
       '<p class="desc">'+descHtml(r)+'</p>'+
       '<div class="rc-tags"><span class="tag '+v.c+'" title="License: '+esc(r.spdx)+' · '+esc(paid)+' · Completely free? '+esc(free)+'">'+esc(v.t)+'</span>'+
         (r.starter?'<span class="tag t-star" title="A ready-made template to start your project from">Starter</span>':'')+
@@ -965,13 +966,14 @@ document.addEventListener("click",function(e){ var t=e.target&&e.target.closest&
 (function(){ var pm=document.getElementById("pluginModal"), grid=document.getElementById("agGrid"); if(!pm||!grid||!pm.addEventListener) return;
   function show(key, from){ var d=key&&document.getElementById("ag-"+key);
     pm.querySelectorAll(".ag-detail").forEach(function(x){ x.hidden=x!==d; }); grid.hidden=!!d;
+    pm.classList.toggle("ag-on", !!d);   // RS71: the steps view hides the intro, so it fits one screen
     var f=d?d.querySelector(".ag-back"):(from||grid.querySelector(".ag-get")); if(f&&f.focus) f.focus(); }
   pm.addEventListener("click",function(e){ var t=e.target, g=t.closest&&t.closest(".ag-get");
     if(g){ pm.__from=g.getAttribute("data-ag"); show(pm.__from); return; }
     if(t.closest&&t.closest(".ag-back")){ show(null, grid.querySelector('.ag-get[data-ag="'+pm.__from+'"]')); return; }
     });
   document.addEventListener("click",function(e){ var o=e.target&&e.target.closest&&e.target.closest('[data-open="pluginModal"],#pluginBtn');
-    if(o){ pm.querySelectorAll(".ag-detail").forEach(function(x){ x.hidden=true; }); grid.hidden=false; } }, true);
+    if(o){ pm.querySelectorAll(".ag-detail").forEach(function(x){ x.hidden=true; }); grid.hidden=false; pm.classList.remove("ag-on"); } }, true);
 })();
 // Filters chip and "Find similar repos" tile each open a popup window
 document.getElementById("optsBtn").addEventListener("click",function(){ openModal("filtersModal"); });
@@ -1083,6 +1085,9 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
     if(tg){ var rl=tg.closest(".res-rail"), op=!rl.classList.contains("open"); rl.classList.toggle("open",op); tg.setAttribute("aria-expanded",String(op)); return; }
     var det=t.closest&&t.closest(".rc-det");
     if(det){ openDrawer(det.closest(".rcard"), det); return; }
+    var card=t.closest&&t.closest(".rcard.rc2");   // RS71: tap a card to add it to the plan (links, buttons and the bookmark keep their own job)
+    if(card && !(t.closest("a,button,label,input,select,summary,.rc-more")) && !(window.getSelection&&String(window.getSelection()).trim())){
+      var pcb=card.querySelector(".pick-cb"); if(pcb){ pcb.click(); return; } }
     if(t.closest&&t.closest(".trend-tab")){ showTrending(t.closest(".trend-tab").getAttribute("data-trend")); return; }
     if(t.closest&&(t.closest("#resClear")||t.closest(".rf-clear"))){ rfReset(); window.__resLimit=10; applyResultFilter(); checkMore(); return; }
     if(t.closest&&t.closest("#resSelAll")){ var bx=shownPickBoxes(), all=bx.every(function(x){ return x.checked; });
