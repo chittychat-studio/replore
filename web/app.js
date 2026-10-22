@@ -1167,8 +1167,12 @@ async function fetchTrending(kind){
 }
 // RS45: GitHub gives some repos no description. Say so plainly (never "—", never an invented one).
 var NO_DESC="No description on GitHub";
-function hasDesc(r){ return !!String((r&&r.desc)||"").trim(); }
-function descHtml(r){ return hasDesc(r)?esc(r.desc):'<span class="no-desc">'+NO_DESC+'</span>'; }
+// RS58: emoji in a repo's own description are dropped where it is shown (pictographs, flags, skin tones, keycaps,
+// joiners), so cards stay free of emoji (RS55). Display only: ranking and the plan prompt keep the text as GitHub sent it.
+var EMOJI_RE=/(?![\u00A9\u00AE\u2122])[\p{Extended_Pictographic}\u{1F1E6}-\u{1F1FF}\u{1F3FB}-\u{1F3FF}\uFE0E\uFE0F\u200D\u20E3]/gu;   // (c), (R) and TM are pictographic in Unicode but ordinary text here
+function plainDesc(s){ return String(s||"").replace(EMOJI_RE," ").replace(/\s{2,}/g," ").replace(/^[\s\-–—|:·•]+/,"").trim(); }
+function hasDesc(r){ return !!plainDesc(r&&r.desc); }
+function descHtml(r){ return hasDesc(r)?esc(plainDesc(r.desc)):'<span class="no-desc">'+NO_DESC+'</span>'; }
 function trendRows(items, kind){
   var excluded={license:0,stale:0,low:0,fork:0,harm:0};
   var rows=keep(items,0,"",excluded,{});
@@ -1254,7 +1258,7 @@ function buildTrendCarousel(){
     var card=function(r){ var v=licenseVerdict(r.spdx);
       return '<a class="tcard" href="'+esc(r.url)+'" target="_blank" rel="noopener" draggable="false">'+
         '<span class="tc-top"><span class="tc-name">'+esc(r.name)+'</span><span class="tc-stars">'+ico("star")+kstars(r.stars)+'</span></span>'+
-        '<span class="tc-desc">'+esc(r.desc)+'</span>'+
+        '<span class="tc-desc">'+esc(plainDesc(r.desc))+'</span>'+
         '<span class="tc-meta">'+esc(v.t||"")+(r.forks?' · '+kstars(r.forks)+' forks':'')+'</span></a>'; };
     spin.innerHTML=rows.map(card).join("");
     // RS47 ticker: the same names on a tape; written twice so the -50% loop has no seam
