@@ -62,6 +62,15 @@
   .bg-shapes{position:absolute;top:0;left:0;right:0;height:640px;overflow:hidden;pointer-events:none;z-index:-1;opacity:.6;
     -webkit-mask-image:linear-gradient(to bottom,#000 35%,transparent 100%);mask-image:linear-gradient(to bottom,#000 35%,transparent 100%)}
   .bg-shapes .sh{position:absolute;display:block;animation:drift 18s ease-in-out infinite alternate}
+  /* RS59: Paper Shaders mesh gradient under the shapes, same fade-out as the shapes (hero-shader.js) */
+  .hero-shader{position:absolute;top:0;left:0;right:0;height:760px;overflow:hidden;pointer-events:none;z-index:-1;
+    opacity:0;transition:opacity 1.2s ease;
+    -webkit-mask-image:linear-gradient(to bottom,#000 45%,transparent 100%);mask-image:linear-gradient(to bottom,#000 45%,transparent 100%)}
+  .hero-shader.on{opacity:var(--hs-op,1)}
+  .hero-shader canvas{width:100%!important;height:100%!important}
+  body.has-hero-shader .bg-shapes .sh.s3,body.has-hero-shader .bg-shapes .sh.s4{display:none}   /* the filled blobs fight the gradient */
+  body.has-results .hero-shader{opacity:0}
+  @media (prefers-reduced-motion:reduce){ .hero-shader{transition:none} }
   .sh.s1{width:240px;left:-150px;top:430px;opacity:.9;animation-duration:22s}
   .sh.s2{width:86px;right:7%;top:84px;opacity:.22;animation-name:driftSpin;animation-duration:26s}
   .sh.s3{width:38px;left:16%;top:470px;opacity:.12}
@@ -1071,5 +1080,6 @@
 </div></div>
 
 <script src="app.js?v=4305179f3b" defer></script>
+<script src="hero-shader.js?v=ef5d88fa1b" type="module"></script>   <!-- RS59: decorative, loads after the page is idle -->
 </body>
 </html>

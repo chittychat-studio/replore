@@ -8,7 +8,7 @@ import pathlib
 import re
 
 WEB = pathlib.Path(__file__).resolve().parent.parent / "web"
-ASSETS = ("theme.js", "app.js")
+ASSETS = ("theme.js", "app.js", "hero-shader.js")
 
 
 def asset_hash(name):

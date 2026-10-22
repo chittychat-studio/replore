@@ -889,6 +889,17 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   with no port. The workflow checks the endpoint with an anchored regex; `evals/relevance_live.mjs` refuses other
   hosts and treats a redirect as an error; `ops/rag_smoke.py` omits the key for other hosts and never follows redirects.
 
+- **RS59** Living hero backdrop (owner 2026-10-23: "cutting edge" look, chosen from a Replore search of GitHub). A slow
+  mesh gradient with film grain is drawn behind the hero by **Paper Shaders** (`paper-design/shaders`, Apache-2.0), pinned
+  to 0.0.81 (published 2026-09-17; the newest 0.0.82 was two days old) and self-hosted as the six ES modules it needs in
+  `web/vendor/paper-shaders-0.0.81/` with its LICENSE and NOTICE, source maps removed. `web/hero-shader.js` (a stamped
+  module, RS52) loads it after the page is idle. It is decoration only: it is skipped on data-saver, devices reporting
+  under 4 GB of memory and browsers without WebGL2; "reduce motion" gets one still frame; it renders at one device pixel
+  per CSS pixel, at most ~1.3 MP; ShaderMount pauses it off-screen and in hidden tabs, and it stops once results show.
+  Light and dark palettes are brand colours and follow the theme toggle. Two filled backdrop shapes are hidden while it
+  runs. No new host: the CSP (RS49) is unchanged (`script-src 'self'`, and `style-src` already allows the small style
+  block ShaderMount adds). A test checks the pinned copy, its licence, and that none of it makes network calls.
+
 ## RX — Deliberately excluded (v0.1)
 
 - **RX1** Scraping github.com HTML, or any non-API source.

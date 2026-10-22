@@ -668,7 +668,7 @@ def test_web_page_is_safe_static(monkeypatch):
     index = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
     srcs = _re.findall(r'<script[^>]+src="([^"]+)"', index)
     srcs = [s.split("?v=")[0] for s in srcs]   # RS52: app.js / theme.js carry a ?v=<hash> stamp
-    assert srcs == ["theme.js", "vendor/gsap.min.js", "app.js"], srcs   # RS49: no inline script; app.js after GSAP
+    assert srcs == ["theme.js", "vendor/gsap.min.js", "app.js", "hero-shader.js"], srcs   # RS49: no inline script; app.js after GSAP; RS59 last
     assert '<script src="vendor/gsap.min.js" defer>' in index and _re.search(r'<script src="app\.js\?v=[0-9a-f]{10}" defer>', index)   # RS24: GSAP first
     assert not _re.search(r"<script(?![^>]*src=)[^>]*>", index) and not _re.search(r"\son[a-z]+\s*=", index)
     assert "<html lang=\"en\">" in index   # RS24: no forced light theme; the system setting applies until the visitor picks one
@@ -1054,3 +1054,21 @@ def test_harm_filter_shared_cases():
     js = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
     for p in scout.HARM[2:]:   # the first two are built from the service list; the rest must be character-identical
         assert "/" + p.pattern + "/i" in js, p.pattern
+
+
+def test_hero_shader_is_self_hosted_pinned_and_optional():
+    """RS59: Paper Shaders is a pinned, licensed copy on our own origin; the hero script is a stamped module that fetches
+    nothing, bails out on weak devices, and never animates under reduced motion."""
+    vend = ROOT / "web" / "vendor" / "paper-shaders-0.0.81"
+    for f in ("LICENSE", "NOTICE", "shader-mount.js", "vertex-shader.js", "shader-sizing.js", "shader-utils.js",
+              "get-shader-color-from-string.js", "shaders/mesh-gradient.js"):
+        assert (vend / f).exists(), f
+    assert "Apache License" in (vend / "LICENSE").read_text(encoding="utf-8")
+    js = (ROOT / "web" / "hero-shader.js").read_text(encoding="utf-8")
+    for code in [js] + [p.read_text(encoding="utf-8") for p in vend.rglob("*.js")]:
+        assert not re.search(r"fetch\(|XMLHttpRequest|sendBeacon|document\.cookie|eval\(|new Function", code)
+        assert "sourceMappingURL" not in code
+    assert "./vendor/paper-shaders-0.0.81/" in js and "saveData" in js and "deviceMemory" in js and "prefers-reduced-motion" in js
+    assert "reduce ? 0 : SPEED" in js and "has-results" in js
+    html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
+    assert re.search(r'<script src="hero-shader\.js\?v=[0-9a-f]{10}" type="module">', html)
