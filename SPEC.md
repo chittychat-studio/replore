@@ -756,7 +756,11 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   SHA with the tag as a comment (`@<40 hex>  # v4`), so a moved tag cannot change what CI runs. Dev dependencies are pinned
   exactly (`pytest==9.1.1`, which supports Python 3.10–3.14). The repo's own Claude Code instructions live in
   `.claude/CLAUDE.md`, not at the plugin root, where `claude plugin validate` warned that a root `CLAUDE.md` is not loaded
-  as plugin context. A test checks all four.
+  as plugin context. **Required check (2026-10-22):** the `protect main` ruleset requires a status check named `ci`,
+  but the workflow's jobs reported only as `test (ubuntu-latest)` / `test (windows-latest)`, so the check never
+  arrived and every PR (#68–#74) needed the admin bypass. `ci.yml` now ends with a job named `ci` that needs `test`,
+  runs `if: always()` (a skipped required check counts as passing on GitHub, so it must never be skipped) and fails
+  unless every test job succeeded. A test checks all five.
 
 - **RS51** Explore links on result cards (web). Right under the repo name (the GitHub link) each card has a row of
   five equal-width buttons (at least 34px tall, accent-tinted, so they read as clickable) that open in a new tab (`rel="noopener noreferrer"`): Diagram → `https://gitdiagram.com/<owner>/<repo>`, Digest →
@@ -853,6 +857,21 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   contributing guide: no", "none known", "2 known". The web keeps its decorative line icon and puts the ": yes" /
   ": no" in an `.sr-only` span, so screen readers (and the shared cases, which read the panel as text) get the
   answer that #73's icon-only version had hidden. Plugin version 0.4.0 (RS50).
+
+- **RS18a** Harmful-repo patterns need context (review 2026-10-22: bare `crack`, `ddos` and `keygen` dropped ordinary repos
+  such as "Crack the coding interview" and "Anti-DDoS protection" and counted them as harmful). A repo is dropped for
+  piracy or attacks only when the word comes with that context: crack/cracked + software, Windows, Office, Adobe, games,
+  apps or licences (or "cracked version/apk", "activation/serial/software crack", "warez"); keygen within 40 characters
+  of crack, serial, patch or activation; DDoS + tool, script, bot, botnet, panel or flooder, IP stressers and booters,
+  or "DDoSing a website/server". `scout.py` HARM and `web/app.js` HARM stay character-identical, and
+  `tests/fixtures/harm_cases.json` (must drop / must keep) is checked against both engines.
+
+- **RS34h** Keys only to Replore's hosts (review 2026-10-22: the live-eval workflow's `https://*.pages.dev/...` glob
+  matched any host, so a dispatched run could send `REPLORE_EVAL_KEY` anywhere; `ops/rag_smoke.py` sent the key to
+  whatever URL it was given and followed redirects with it). The eval and plugin keys are sent only to
+  `https://replore.cardzo.co.in`, `https://replore.pages.dev` or one preview label under it (`<x>.replore.pages.dev`),
+  with no port. The workflow checks the endpoint with an anchored regex; `evals/relevance_live.mjs` refuses other
+  hosts and treats a redirect as an error; `ops/rag_smoke.py` omits the key for other hosts and never follows redirects.
 
 ## RX — Deliberately excluded (v0.1)
 
