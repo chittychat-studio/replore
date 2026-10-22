@@ -953,7 +953,9 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   (supersedes RS62 "globe, then cards"). Phones: no globe or rail; the bot and one card, still before the search
   (RS24). Trending (RS63) follows as the gallery. Reduced motion shows the finished state. A real search takes over the stage instead of
   dropping it (owner: "transitions smooth?"): the stage stays, the bot switches to its search pose, the globe spins up,
-  the rail and label follow the search, and the example cards leave; the results then replace the stage. No gradients or glass rule is
+  the rail and label follow the search, and the example cards leave; the results then replace the stage. On laptops and up the whole stage fits the first screen (owner: "show in first screen, not after
+  scrolling"): the title runs on one line, the pair scales with the window height, the licence pill sits in each card's
+  top-right corner, and the cards end above the fold at 1366x768. No gradients or glass rule is
   lifted for this stage only, by the owner's pick.
 - **RS66** No em dashes in site copy (owner 2026-10-23: "check no em dashes across site"). Nothing a visitor reads on
   the web page (text, titles, tooltips, aria labels, the plan prompt) uses an em dash; a colon, comma, full stop or
