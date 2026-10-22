@@ -1003,7 +1003,7 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
       syncSelAll(); } });
   function buildPrompt(){
     var q=(document.getElementById("q").value||"").trim() || "my project";
-    var list=picks.map(function(r,i){ return (i+1)+". "+r.name+" — "+r.url+(r.desc?"\n   "+r.desc:""); }).join("\n");
+    var list=picks.map(function(r,i){ return (i+1)+". "+r.name+": "+r.url+(r.desc?"\n   "+r.desc:""); }).join("\n");
     return "You are the principal architect for my vibe coding app, with 15+ years of experience building similar apps.\n\n"+   // RS28e
       "I'm building: "+q+"\n\n"+
       "Write a product requirements document (PRD) for it, built on these open-source GitHub repos:\n\n"+list+"\n\n"+
@@ -1084,9 +1084,9 @@ var ART={
     '<rect x="16" y="52" width="28" height="34" rx="5" fill="var(--card)" stroke="var(--line)" stroke-width="2"/>'+
     '<rect x="46" y="34" width="28" height="52" rx="5" fill="var(--accent)"/>'+
     '<rect x="76" y="62" width="28" height="24" rx="5" fill="var(--card)" stroke="var(--line)" stroke-width="2"/>'+
-    '<text x="60" y="68" text-anchor="middle" font-family="Anton,Impact,sans-serif" font-weight="400" font-size="20" fill="#fff">1</text>'+
-    '<text x="30" y="76" text-anchor="middle" font-family="Anton,Impact,sans-serif" font-weight="400" font-size="16" fill="var(--muted)">2</text>'+
-    '<text x="90" y="80" text-anchor="middle" font-family="Anton,Impact,sans-serif" font-weight="400" font-size="14" fill="var(--muted)">3</text>'+
+    '<text x="60" y="68" text-anchor="middle" font-family="Inter Tight,Segoe UI,sans-serif" font-weight="800" font-size="20" fill="#fff">1</text>'+
+    '<text x="30" y="76" text-anchor="middle" font-family="Inter Tight,Segoe UI,sans-serif" font-weight="800" font-size="16" fill="var(--muted)">2</text>'+
+    '<text x="90" y="80" text-anchor="middle" font-family="Inter Tight,Segoe UI,sans-serif" font-weight="800" font-size="14" fill="var(--muted)">3</text>'+
     '<path d="M60 6l4.4 9 9.9 1.4-7.2 7 1.7 9.8L60 28.6l-8.8 4.6 1.7-9.8-7.2-7 9.9-1.4z" fill="var(--accent2)"/></svg>',
   plan:'<svg viewBox="0 0 120 96" aria-hidden="true">'+
     '<ellipse cx="60" cy="88" rx="38" ry="5" fill="var(--line)" opacity=".7"/>'+
@@ -1312,7 +1312,9 @@ var DEMO_MQ=window.matchMedia?matchMedia("(max-width: 999px)"):null;
 function placeDemo(){
   var ex=document.querySelector(".explain"), slot=document.getElementById("demoSlot"), out=document.getElementById("out");
   if(!ex||!slot||!out) return;
+  var stage=document.getElementById("stageSlot");   // RS65: on wide screens the demo sits on the studio stage under the search
   if(DEMO_MQ&&DEMO_MQ.matches){ if(ex.parentNode!==slot) slot.appendChild(ex); }
+  else if(stage){ if(ex.parentNode!==stage) stage.appendChild(ex); }
   else if(ex.parentNode!==out && !out.querySelector(".rcard, .group-h, .err")) out.appendChild(ex);
   [].forEach.call(ex.querySelectorAll(".demo-dot"),function(d){ d.tabIndex=(DEMO_MQ&&DEMO_MQ.matches)?-1:0; });   // search comes first for keyboards
 }
@@ -1354,10 +1356,10 @@ function startAsciiGlobe(canvas, reduce){
   if(!canvas || !canvas.getContext) return;   // no canvas: the cards alone carry the demo
   var g=canvas.getContext("2d"); if(!g) return;
   var t=0, spin=.22, boost=0, live=true, raf=0, last=0;
-  function css(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim()||"#5b88a6"; }
+  function css(n){ return getComputedStyle(canvas).getPropertyValue(n).trim()||"#5b88a6"; }   // RS65: the stage tokens
   function draw(){ var r=canvas.getBoundingClientRect(), d=Math.min(window.devicePixelRatio||1,1.5);
     if(!r.width||!r.height) return;
-    if(canvas.width!==Math.round(r.width*d)){ canvas.width=Math.round(r.width*d); canvas.height=Math.round(r.height*d); }
+    if(canvas.width!==Math.round(r.width*d)||canvas.height!==Math.round(r.height*d)){ canvas.width=Math.round(r.width*d); canvas.height=Math.round(r.height*d); }   // RS65: height too
     var W=canvas.width, H=canvas.height, cell=Math.max(8,Math.round(Math.min(W,H)/40)), cols=Math.floor(W/cell), rows=Math.floor(H/(cell*1.6));
     g.clearRect(0,0,W,H); g.font=Math.round(cell*1.3)+"px "+(css("--f-mono")||"monospace"); g.textBaseline="top";
     var ink=css("--accent-ink"), dim=css("--accent2");
@@ -1387,50 +1389,114 @@ function buildLiveDemo(host){
   if(!host || host.dataset.built) return; host.dataset.built="1";
   var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches;
   var wide=!(window.matchMedia&&matchMedia("(max-width: 999px)").matches);
-  // RS62: globe, then cards. The globe fills the stage while the search types and runs, then fades out as the cards
-  // land in the same place; it comes back for the next search. They never overlap.
-  host.innerHTML='<div class="ld">'+
+  // RS65: the studio stage. The scout bot stands beside the ASCII globe of GitHub; the rail names the
+  // stage of the search, and the real top results land as frosted cards under the pair.
+  // The arrows step through the example searches. Phones get the bot and one card (no globe, no rail).
+  var STAGES="Searching|Ranking by fit|Licence check|Ready".split("|");
+  host.innerHTML='<div class="ld st">'+
     '<div class="ld-q" aria-hidden="true">'+ico("search")+'<span class="ld-typed"></span><span class="ld-caret"></span></div>'+
-    '<p class="ld-status" aria-hidden="true"><span class="ld-status-t"></span><span class="ld-dots"><i></i><i></i><i></i></span></p>'+
-    '<div class="ld-stage">'+(wide?'<canvas class="ld-globe" aria-hidden="true"></canvas>':'')+
-    '<div class="ld-deck" aria-hidden="true"></div></div>'+
-    '<p class="ld-note">Example: Replore’s real top results for this search</p></div>';   // no orb pill: the globe already says "searching"
-  var ld=host.querySelector(".ld"), deck=host.querySelector(".ld-deck"), typed=host.querySelector(".ld-typed"), globe=host.querySelector(".ld-globe"),
-      status=host.querySelector(".ld-status"), statusT=host.querySelector(".ld-status-t");
-  function say(txt){ if(!status) return; if(!txt){ status.classList.remove("on"); return; } statusT.textContent=txt; status.classList.add("on"); }
+    '<div class="st-stage">'+
+      '<div class="st-pair" aria-hidden="true">'+
+        (wide?'<div class="st-g"><canvas class="ld-globe"></canvas><span class="st-sh"></span></div>':'')+
+        '<div class="st-b"><img class="st-bot" src="scout-hero.webp" alt="" width="180" height="184" decoding="async"><span class="st-sprite"></span><span class="st-sh"></span></div></div>'+
+      '<p class="st-say"><b>Hello there! I’m Leo.</b><span class="st-say-t">Let’s explore what free GitHub repos have to offer for your idea. Then I’ll help you plan it.</span>'+
+        '<span class="st-pills" aria-hidden="true">'+STAGES.map(function(t){ return '<i>'+t+'</i>'; }).join("")+'</span></p>'+   // the search stages, as pills   // RS65: Leo, the scout
+      '<div class="st-ctrl"><button type="button" class="st-arrow st-prev" aria-label="Previous example search">&lsaquo;</button>'+
+        '<b class="st-label" aria-hidden="true"></b>'+
+        '<button type="button" class="st-arrow st-next" aria-label="Next example search">&rsaquo;</button></div>'+
+    '</div>'+
+    '<div class="ld-deck" aria-hidden="true"></div>'+
+    '<p class="ld-note">Example: Replore’s real top results for this search</p>'+
+    '<svg class="st-cursor" aria-hidden="true" width="26" height="34" viewBox="0 0 20 26"><path d="M2 2 L2 21 L7 16.5 L10.5 24 L14 22.5 L10.6 15 L17 15 Z"/></svg></div>';
+  var deck=host.querySelector(".ld-deck"), cur=host.querySelector(".st-cursor"), box=host.querySelector(".ld"), typed=host.querySelector(".ld-typed"), globe=host.querySelector(".ld-globe"),
+      label=host.querySelector(".st-label"), bot=host.querySelector(".st-bot"),
+      rail=[].slice.call(host.querySelectorAll(".st-pills i"));
   if(globe) startAsciiGlobe(globe, reduce);
+  var sb=bot&&bot.parentNode, say=host.querySelector(".st-say"), sayT=host.querySelector(".st-say-t"), SAY=sayT?sayT.textContent:"";
+  function speak(txt){ if(sayT) sayT.textContent=txt; if(say&&say.classList) say.classList.add("on"); }
+  // RS65: Leo is interactive. He peeks out, waves hello, reacts while you type, and searches (magnifier sweep) when you
+  // press Enter. Animations are sprite sheets cut from the Veo clips (work in every browser, no video alpha needed).
+  var spr=sb&&sb.querySelector&&sb.querySelector(".st-sprite"), canAnim=!!(bot&&globe&&!reduce&&bot.classList&&sb&&sb.classList&&bot.addEventListener);
+  var SPR={wave:["scout-wave.webp",31,2.6], search:["scout-searching.webp",36,3]};
+  function sprite(name, loop, done){ if(!canAnim||!spr) { if(done) done(); return; } var d=SPR[name];
+    spr.style.backgroundImage="url("+d[0]+")"; spr.style.backgroundSize=(d[1]*100)+"% 100%";
+    spr.style.animation="none"; void spr.offsetWidth;
+    spr.style.animation="leoSprite "+d[2]+"s steps("+(d[1]-1)+") "+(loop?"infinite":"1 forwards");
+    sb.classList.add("animating");
+    if(!loop&&done) spr.addEventListener("animationend",function f(){ spr.removeEventListener("animationend",f); done(); }); }
+  function still(){ if(spr) spr.style.animation="none"; if(sb&&sb.classList) sb.classList.remove("animating"); }
+  var greeted=false, started=false;
+  function startDemo(){ if(started) return; started=true; run(); }
+  function greet(){ if(greeted) return; greeted=true; speak(SAY); sprite("wave", false, function(){ still(); startDemo(); }); }
+  if(canAnim){ bot.classList.add("peek"); sb.classList.add("peeking");   // peek, then hop out, then wave hello
+    bot.addEventListener("animationend",function(){ bot.classList.remove("peek"); sb.classList.remove("peeking"); greet(); },{once:true});
+    setTimeout(greet, 3400); setTimeout(startDemo, 7000); }   // fallbacks if an animation event never fires
+  else { speak(SAY); }
+  // typing: Leo pauses the example and answers you
+  var qin=document.getElementById("q");
+  if(qin&&qin.addEventListener){
+    qin.addEventListener("input",function(){ if(document.body.classList.contains("searching")) return;
+      if(qin.value.trim()){ paused=true; clear(); still(); pose("hero"); stage(-1,""); speak("Sounds good! Press Enter and I’ll go look."); }
+      else { speak(SAY); } });
+    qin.addEventListener("blur",function(){ if(!qin.value.trim()&&paused&&!document.body.classList.contains("searching")){ paused=false; speak(SAY); run(); } }); }
   var timers=[], k=0, paused=false;
   function later(f,ms){ timers.push(setTimeout(f,ms)); }
   function clear(){ timers.forEach(clearTimeout); timers=[]; }
+  function stage(i, txt){ rail.forEach(function(li,j){ li.classList.toggle("on", j===i); }); if(label) label.textContent=txt||""; }
+  function pose(p){ if(bot) bot.src=p==="search"?"scout-search.webp":"scout-hero.webp"; }
+  function pointAt(el){ if(!cur||!el||!box||!el.getBoundingClientRect) return;
+    var a=box.getBoundingClientRect(), r=el.getBoundingClientRect();
+    cur.style.transform="translate("+Math.round(r.left-a.left+r.width*.55)+"px,"+Math.round(r.top-a.top+r.height*.5)+"px)"; cur.classList.add("on"); }
   function cardHtmlMini(r){ var p=r[0].split("/"), v=licenseVerdict(r[1]);
     return '<div class="ld-card"><div class="ld-top"><span class="avatar" style="--h:'+ownerHue(p[0])+'">'+esc(p[0].charAt(0).toUpperCase())+'</span>'+
       '<span class="ld-name"><span class="owner">'+esc(p[0])+' /</span> '+esc(p.slice(1).join("/"))+'</span></div>'+
       '<p class="ld-desc">'+esc(r[2])+'</p>'+
       '<div class="ld-ex"><i>Diagram</i><i>Wiki</i><i>Code</i></div>'+   // RS63: the same three tools as card A
       '<span class="tag '+v.c+' ld-lic">'+ico(v.i)+esc(v.t)+'</span></div>'; }
-  function run(){ clear(); if(paused||!host.isConnected) return;
-    var ex=LIVE_DEMO[k%LIVE_DEMO.length], shown=wide?3:1; k++;
-    deck.innerHTML=ex.r.slice(0,shown).map(cardHtmlMini).join(""); typed.textContent=""; say(""); ld.classList.remove("show-cards");
-    if(reduce){ typed.textContent=ex.q; ld.classList.add("show-cards"); [].forEach.call(deck.children,function(c){ c.classList.add("in","lit"); }); return; }
+  function run(){ clear(); if(paused||!host.isConnected||document.body.classList.contains("searching")) return;
+    var n=LIVE_DEMO.length, ex=LIVE_DEMO[((k%n)+n)%n], shown=wide?3:1; k++;
+    deck.innerHTML=ex.r.slice(0,shown).map(cardHtmlMini).join(""); typed.textContent=""; stage(-1,""); pose("hero");
+    if(cur) cur.classList.remove("on","click");
+    if(reduce){ typed.textContent=ex.q; stage(3, ex.r.length+" repos fit"); [].forEach.call(deck.children,function(c){ c.classList.add("in","lit"); }); return; }
     var step=Math.max(18,Math.min(42,1400/ex.q.length));
-    for(var i=1;i<=ex.q.length;i++) (function(n){ later(function(){ typed.textContent=ex.q.slice(0,n); }, n*step); })(i);
+    for(var i=1;i<=ex.q.length;i++) (function(m){ later(function(){ typed.textContent=ex.q.slice(0,m); }, m*step); })(i);
     var t0=ex.q.length*step+250;
-    later(function(){ say("Searching GitHub"); if(globe&&globe.__boost) globe.__boost(2.2); }, t0);
-    later(function(){ say("Ranking by fit"); }, t0+1100);
-    later(function(){ say(""); }, t0+2050);
-    t0+=1000;   // cards land after the two steps have been seen
-    [].forEach.call(deck.children,function(c,j){ var at=t0+1100+j*240;
-      later(function(){ if(j===0) ld.classList.add("show-cards"); c.classList.add("in"); }, at);
-      later(function(){ c.classList.add("lit"); }, at+380);
-      [].forEach.call(c.querySelectorAll(".ld-ex i"),function(b,m){ later(function(){ b.classList.add("on"); }, at+560+m*110);
-        later(function(){ b.classList.remove("on"); }, at+1200+m*110); }); });
-    later(function(){ [].forEach.call(deck.children,function(c){ c.classList.add("out"); }); ld.classList.remove("show-cards"); }, t0+5600);
-    later(run, t0+6200); }
-  host.__stopDemo=function(){ paused=true; clear(); if(globe&&globe.__stop) globe.__stop(); };
+    later(function(){ stage(0,"Searching GitHub"); pose("search"); if(globe&&globe.__boost) globe.__boost(2.4); }, t0);
+    later(function(){ stage(1,"Ranking by fit"); }, t0+800);
+    later(function(){ stage(2,"Licence check"); }, t0+1450);
+    t0+=2000;
+    later(function(){ stage(3, ex.r.length+" repos fit"); pose("hero"); }, t0);
+    [].forEach.call(deck.children,function(c,j){ var at=t0+j*200;
+      later(function(){ c.classList.add("in"); }, at);
+      later(function(){ c.classList.add("lit"); }, at+380); });
+    // RS65: a pointer glides to one tool on each card and clicks it (Wiki, Diagram, Code), so visitors see what to press
+    var visits=[[0,1],[1,0],[2,2]].filter(function(v){ return v[0]<deck.children.length; });
+    if(!wide) visits=[[0,1],[0,0],[0,2]];
+    visits.forEach(function(v,n){ var at=t0+1000+n*900;
+      later(function(){ var c=deck.children[v[0]], b=c&&c.querySelectorAll(".ld-ex i")[v[1]]; pointAt(b); }, at);
+      later(function(){ var c=deck.children[v[0]], b=c&&c.querySelectorAll(".ld-ex i")[v[1]]; if(!b) return;
+        b.classList.add("on"); if(cur) cur.classList.add("click"); }, at+560);
+      later(function(){ var c=deck.children[v[0]], b=c&&c.querySelectorAll(".ld-ex i")[v[1]]; if(b) b.classList.remove("on");
+        if(cur) cur.classList.remove("click"); }, at+880); });
+    later(function(){ if(cur) cur.classList.remove("on"); }, t0+1000+visits.length*900+300);
+    later(function(){ [].forEach.call(deck.children,function(c){ c.classList.add("out"); }); }, t0+6200);
+    later(run, t0+6800); }
+  function go(d){ k+=d-1; paused=false; run(); }
+  var prev=host.querySelector(".st-prev"), next=host.querySelector(".st-next");
+  if(prev&&prev.addEventListener) prev.addEventListener("click",function(){ go(-1); });
+  if(next&&next.addEventListener) next.addEventListener("click",function(){ go(1); });
+  // RS65: a real search takes over the stage: the bot searches, the rail and label follow it, the example cards leave
+  var busy=false;
+  function onSearch(){ var on=document.body.classList.contains("searching");
+    if(on&&!busy){ busy=true; clear(); var qv=document.getElementById("q");
+      typed.textContent=(qv&&qv.value||"").trim(); stage(0,"Searching GitHub"); pose("search"); speak("On it! Searching GitHub for you…"); sprite("search", true); if(cur) cur.classList.remove("on","click");
+      [].forEach.call(deck.children,function(c){ c.classList.add("out"); });
+      later(function(){ stage(1,"Ranking by fit"); }, 1400); later(function(){ stage(2,"Licence check"); }, 2800); }
+    else if(!on&&busy){ busy=false; still(); speak(SAY); if(!document.body.classList.contains("has-results")&&host.isConnected){ paused=false; run(); } } }
+  if(window.MutationObserver) new MutationObserver(onSearch).observe(document.body,{attributes:true,attributeFilter:["class"]});
+  host.__stopDemo=function(){ paused=true; clear(); };   // the globe keeps turning on the stage; it stops itself once removed
   host.__playDemo=function(){ if(paused){ paused=false; run(); } };
-  host.addEventListener("mouseenter",function(){ paused=true; });
-  host.addEventListener("mouseleave",function(){ if(paused){ paused=false; if(!timers.length) run(); } });
-  run();
+  if(!canAnim) startDemo();
 }
 // remember the last results so a page refresh brings them back (cached locally, no new API call)
 // RS44: the owner's Stripe Payment Link (public URL, no key). Empty = all tip elements stay hidden.
@@ -1564,8 +1630,12 @@ document.getElementById("tourBtn").addEventListener("click",function(){ openModa
     r.innerHTML='<span></span><span aria-hidden="true"></span>'; r.firstChild.textContent=label; r.lastChild.textContent=label;
     b.replaceChild(r,t); });
   if(!G||reduce) return;
-  var lines=document.querySelectorAll("#heroTitle .in");
-  if(lines.length) G.from(lines,{yPercent:115,rotateX:-80,opacity:0,duration:1.6,ease:"expo.out",stagger:.12,delay:.1});
+  // RS65: the title reveals word by word, each word sharpening from a soft blur (the h2 keeps its aria-label)
+  var lines=document.querySelectorAll("#heroTitle .in"), words=[];
+  [].forEach.call(lines,function(ln){ var parts=ln.textContent.split(" ");
+    ln.textContent=""; parts.forEach(function(w,i){ var sp=document.createElement("span"); sp.className="hw"; sp.textContent=w;
+      ln.appendChild(sp); words.push(sp); if(i<parts.length-1) ln.appendChild(document.createTextNode(" ")); }); });
+  if(words.length) G.from(words,{opacity:0,y:18,filter:"blur(10px)",duration:.9,ease:"expo.out",stagger:.11,delay:.15,clearProps:"filter"});
   if(!fine) return;
   document.querySelectorAll("[data-magnet]").forEach(function(el){
     var xTo=G.quickTo(el,"x",{duration:.9,ease:"elastic.out(1,0.35)"}), yTo=G.quickTo(el,"y",{duration:.9,ease:"elastic.out(1,0.35)"});

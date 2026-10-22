@@ -957,7 +957,7 @@ def test_rs47_look_and_motion_kit():
     for fam in ("'Anton'", "'Inter Tight'", "'JetBrains Mono'"):
         assert fam in fcss, fam
     assert "--accent:#3f6f8e" in html and "--btn-grad:" in html and "192,83,44" not in html
-    assert 'class="ln" aria-hidden="true"' in html and 'aria-label="Describe it. Get repos that fit."' in html and "var segs=" not in html
+    assert 'class="ln" aria-hidden="true"' in html and 'aria-label="Find it before you build it."' in html and "var segs=" not in html
     assert "data-magnet" in html and 'G.quickTo(el,"x"' in html and "(hover:hover) and (pointer:fine)" in html
     assert "function odometer(" in html and "function snapHtml(" in html and "html:out.innerHTML" not in html
     assert 'class="tring"' not in html and 'class="ttape"' not in html and "TAPE_ICON" not in html and "✦</b>" not in html   # RS62
@@ -1069,6 +1069,10 @@ def test_home_demo_is_the_real_product_and_honest():
     for lic in re.findall(r'\["[^"]+","([^"]+)","', block):
         assert lic in ("MIT", "Apache-2.0"), lic
     assert "max-width: 999px" in block and "prefers-reduced-motion" in block and "isConnected" in block
+    # RS65: the studio stage: bot beside the globe, stage rail, dial, arrows, slot under the search
+    assert 'class="st-pair"' in block and "scout-hero.webp" in block and "st-pills" in block and "st-rail" not in block and "st-dial" not in block
+    assert 'aria-label="Next example search"' in block and 'id="stageSlot"' in _page()
+    assert (ROOT / "web" / "scout-hero.webp").exists() and (ROOT / "web" / "scout-search.webp").exists()
 
 
 def test_rs28h_plugin_shows_visuals_before_prd():
@@ -1076,3 +1080,19 @@ def test_rs28h_plugin_shows_visuals_before_prd():
     skill = (ROOT / "skills" / "find" / "SKILL.md").read_text(encoding="utf-8")
     assert "RS28h" in skill and "design mockup of the main screens" in skill
     assert "write the PRD only after they approve it" in skill
+
+
+
+def test_rs66_no_em_dashes_in_site_copy():
+    """RS66: no em dash anywhere a visitor reads: page markup (outside comments, styles and scripts) and JS strings."""
+    dash = "—"
+    html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
+    visible = re.sub(r"<!--.*?-->|<style.*?</style>|<script.*?</script>", "", html, flags=re.S)
+    assert dash not in visible, [l.strip() for l in visible.splitlines() if dash in l][:5]
+    js = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
+    string_lit = re.compile(r'"(?:[^"\\n]|\.)*"|' + r"'(?:[^'\\n]|\.)*'")
+    hits = []
+    for line in js.splitlines():
+        code = re.split(r"\s//\s|^\s*//", line)[0]
+        hits += [m for m in string_lit.findall(code) if dash in m]
+    assert hits == [], hits[:5]

@@ -940,6 +940,36 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
 
 ## RX — Deliberately excluded (v0.1)
 
+- **RS65** Studio-stage home (owner 2026-10-23, picked from live mock-ups after the CarWhisperer dashboard reference:
+  version C, "bot beside the globe", darker blue, sized between the two tries). On the home screen the hero is one lit
+  studio stage with no box: its light runs edge to edge and fades into the page at the top and bottom (owner: "blended
+  not like a box"). Light theme: a cool light studio; dark theme: the dark-blue studio (owner: dark on white looked
+  awkward). It holds: the RS54 pill, the tagline as the
+  title ("Find it before / you build it.", light weight, second line muted, revealed word by word from a soft blur), the search, then the live demo under it. The
+  demo: the example search typed above; a stage rail (I Searching, II Ranking by fit, III Licence check, IV Ready); the
+  scout bot (RS64 art, `web/scout-*.webp`) standing beside the ASCII globe on the floor, each with a contact shadow; ‹ › buttons (44 px, labelled) that step through the RS61 example searches; and
+  the real top three as frosted cards under the pair. A demo pointer glides to one tool per card (Wiki, Diagram,
+  Code) and clicks it as it lights (owner: "cursor animation for cards"); hidden for reduced motion. The globe now stays beside the bot while the cards show
+  (supersedes RS62 "globe, then cards"). Phones: no globe or rail; the bot and one card, still before the search
+  (RS24). Trending (RS63) follows as the gallery. Reduced motion shows the finished state. A real search takes over the stage instead of
+  dropping it (owner: "transitions smooth?"): the stage stays, the bot switches to its search pose, the globe spins up,
+  the rail and label follow the search, and the example cards leave; the results then replace the stage. On laptops and up the whole stage fits the first screen (owner: "show in first screen, not after
+  scrolling"): the title runs on one line, the pair scales with the window height, the licence pill sits in each card's
+  top-right corner, and the cards end above the fold at 1366x768. Type (owner reference 2026-10-23): the title's first half is heavy, tight
+  Inter Tight (800), the second half Instrument Serif (self-hosted, SIL OFL) in a muted tone; the same heavy Inter Tight
+  replaces Anton everywhere else (logo, headings, Trending numbers, card avatars) so the site uses one family
+  (owner: "maintain similar font throughout site"). The search stages show as a row of pills inside Leo's speech bubble, to his right (owner: the
+  separate list crowded the bubble). On arrival the bot peeks
+  out from behind the globe with a head tilt, then hops out to its spot (reduced motion: no peek). The bot is named Leo; after the peek a speech bubble beside his head says
+  "Hello there! I'm Leo. Let's explore what free GitHub repos have to offer for your idea. Then I'll help you plan it."
+  (owner wording 2026-10-23), and "On it! Searching GitHub for you…" while a real search runs. Leo is interactive (owner 2026-10-23): he
+  waves while he says hello, answers "Sounds good! Press Enter and I'll go look." while you type (the example search
+  pauses), and plays his magnifier sweep while your search runs. The wave and sweep are sprite sheets cut from the RS64
+  Veo clips (`web/scout-wave.webp`, `web/scout-searching.webp`), so they play in every browser without video alpha. No gradients or glass rule is
+  lifted for this stage only, by the owner's pick.
+- **RS66** No em dashes in site copy (owner 2026-10-23: "check no em dashes across site"). Nothing a visitor reads on
+  the web page (text, titles, tooltips, aria labels, the plan prompt) uses an em dash; a colon, comma, full stop or
+  brackets carry the pause instead. Code comments are not copy and may keep them. A test scans the page for any.
 - **RS64** Explainer video (owner 2026-10-23). A 52 s, 16:9 HyperFrames project in `video/explainer/` (storylines A + C
   mixed: "11:40 pm, then the scout"). Her desk is one Google Flow 3D still with the real chat and Replore screens warped
   onto the laptop; the scout is an original 3D bot (white shell, black visor, arc eyes, navy satchel, brass magnifier),
