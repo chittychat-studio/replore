@@ -1,4 +1,4 @@
-"""SPEC RS54: the plugin's trust check (scripts/trust.py), kept in sync with the web's (RS53). No network."""
+"""SPEC RS56: the plugin's trust check (scripts/trust.py), kept in sync with the web's (RS53). No network."""
 import json
 import os
 import re
@@ -34,7 +34,7 @@ def fake(routes, calls=None):
     return get
 
 
-# ---- RS54: the shared cases the web runs too (tests/test_trust_fn.mjs, tests/test_web_logic.js) ----
+# ---- RS56: the shared cases the web runs too (tests/test_trust_fn.mjs, tests/test_web_logic.js) ----
 @pytest.mark.parametrize("case", CASES["server"], ids=[c["name"] for c in CASES["server"]])
 def test_shared_server_cases(case):
     got = trust.trust_for(case["repo"], case["lang"], fake(case["routes"]))
@@ -55,8 +55,17 @@ def test_shared_wording(case):
         assert w not in text, (w, text)
 
 
+def test_plugin_prints_no_glyph_icons():
+    """RS55/RS56: the plugin's lines use words, never emoji or symbol glyphs (same banned set as the web test)."""
+    banned = re.compile("[\U0001F000-\U0001FAFF☀-➿✦★⑂✕✓✗☑☐"
+                        "☰⚙↗⧉＋☼☾▸]")
+    for c in CASES["render"]:
+        text = "\n".join(trust.trust_lines(c["gh"], c["tr"], c["spdx"], c["repo"])) + trust.NOTE
+        assert not banned.search(text), (c["name"], banned.findall(text))
+
+
 def test_tables_match_the_web():
-    """RS54: the language->ecosystem map, Go majors and install commands are the same in all three places."""
+    """RS56: the language->ecosystem map, Go majors and install commands are the same in all three places."""
     fn = (ROOT / "functions" / "api" / "trust.js").read_text(encoding="utf-8")
     app = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
     eco = re.search(r"export const ECOSYSTEM = \{(.*?)\};", fn).group(1)

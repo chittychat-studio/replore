@@ -22,7 +22,7 @@ import urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import hybrid  # noqa: E402  RS42
-import trust  # noqa: E402  RS54
+import trust  # noqa: E402  RS56
 
 API = "https://api.github.com/search/repositories"
 MAX_QUERIES = 4  # RS8: unauthenticated search limit is 10 requests a minute
@@ -366,7 +366,7 @@ def scout(queries, fetcher=fetch, top=20, candidates=40, license_mode="open", ma
                 "rel": idx,  # RS2: best-match position, drives relevance in fit ranking (RS5)
                 "why": why or why_relevant(q, cname, cdesc, idx),  # RS24
                 "topics": [str(t).lower() for t in (it.get("topics") or [])][:8],  # RS42: same rule as the page
-                "language": it.get("language") if isinstance(it.get("language"), str) else "",  # RS54: picks the package ecosystem
+                "language": it.get("language") if isinstance(it.get("language"), str) else "",  # RS56: picks the package ecosystem
             }
             kept.append(row)
             seen[name] = row
@@ -456,7 +456,7 @@ def render(result):
         out.append(f"    {r['url']}  [query: {r['query']}]")
         out.append(f"    How to start: {r['start_hint']}")
         out.append(f"    {_desc(r)}")
-        if r.get("trust"):   # RS54
+        if r.get("trust"):   # RS56
             out.append("    Safe to build on?")
             out += [f"      {x}" for x in r["trust"]["lines"]]
     if any(r.get("trust") for r in result["candidates"]):
@@ -534,7 +534,7 @@ def _md(text):
 
 
 def _trust_markdown(result):
-    """RS54: the trust check for the repos it ran on, one list per repo, same words as the web panel (RS53)."""
+    """RS56: the trust check for the repos it ran on, one list per repo, same words as the web panel (RS53)."""
     rows = [r for r in result["candidates"] if r.get("trust")]
     if not rows:
         return []
@@ -547,7 +547,7 @@ def _trust_markdown(result):
 
 
 def add_trust(result, token=None, get=None):
-    """RS54: run the trust check on the top repos (at most trust.MAX_REPOS) and attach it to them. Display only."""
+    """RS56: run the trust check on the top repos (at most trust.MAX_REPOS) and attach it to them. Display only."""
     rows = result["candidates"][:trust.MAX_REPOS]
     spdx = lambda r: r["license"] if r.get("open_license") else ""
     checked = trust.check_many([(r["full_name"], r.get("language", ""), spdx(r)) for r in rows], token,
@@ -608,7 +608,7 @@ def main(argv=None):
                    help="RS42 opt-in: meaning scores + indexed repos from Replore's server (sends the description)")
     p.add_argument("--prefer-starters", action="store_true")
     p.add_argument("--trust", action="store_true",
-                   help="RS54: also check the top 5 are safe to build on (OpenSSF Scorecard, deps.dev, GitHub)")
+                   help="RS56: also check the top 5 are safe to build on (OpenSSF Scorecard, deps.dev, GitHub)")
     fmt = p.add_mutually_exclusive_group()
     fmt.add_argument("--json", action="store_true")
     fmt.add_argument("--markdown", action="store_true")
@@ -629,7 +629,7 @@ def main(argv=None):
         print(f"replore: {e}", file=sys.stderr)
         return 2
     if a.trust and res["candidates"]:
-        add_trust(res, token)   # RS54: never fails the search; a failed part says "couldn't check"
+        add_trust(res, token)   # RS56: never fails the search; a failed part says "couldn't check"
     out = (json.dumps(res, indent=2, ensure_ascii=False) if a.json
            else render_markdown_grouped(res) if (a.markdown and a.group)
            else render_markdown(res) if a.markdown else render_csv(res) if a.csv else render(res))

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Is a repo safe to build on? The plugin's trust check (SPEC RS54), in sync with the web page's (RS53).
+"""Is a repo safe to build on? The plugin's trust check (SPEC RS56), in sync with the web page's (RS53).
 
 Usage: trust.py owner/repo [owner/repo ...] [--json]     (at most 5 repos per run)
 
@@ -7,7 +7,7 @@ For each repo: security health (OpenSSF Scorecard), known vulnerabilities in its
 IDs via deps.dev), a copy-paste install command, beginner-friendly files, good first issues and the latest release
 (GitHub). Display only: it never changes a ranking. Standard library only (RS11); no model, no key (RS1). The GitHub
 token, if set, goes to api.github.com only and is never printed (RS8). Every value comes from an API answer or the line
-says "couldn't check" (RS7). Behaviour is pinned to the web's by tests/fixtures/trust_cases.json (RS54).
+says "couldn't check" (RS7). Behaviour is pinned to the web's by tests/fixtures/trust_cases.json (RS56).
 """
 import argparse
 import concurrent.futures
@@ -22,7 +22,7 @@ import urllib.parse
 import urllib.request
 
 CALL_S = 4            # RS53b: each call capped at 4 s, like the web function
-MAX_REPOS = 5         # RS54: GitHub's unauthenticated core limit is 60 calls an hour; a repo costs 4
+MAX_REPOS = 5         # RS56: GitHub's unauthenticated core limit is 60 calls an hour; a repo costs 4
 MAX_ADVISORIES = 10
 MAX_BODY = 4_000_000  # a Go package listing is ~200 KB; anything near this is not an answer we trust
 GH = "https://api.github.com/repos/"
@@ -277,7 +277,7 @@ def trust_lines(gh, tr, spdx, repo):
         ids = [i for i in (pk.get("advisories") or []) if isinstance(i, str) and ADVISORY_RE.fullmatch(i)]
         n = max(int(pk.get("advisoryCount") or 0), len(ids))
         head = f"Known vulnerabilities in {pk['name']} {pk['version']}: "
-        lines.append(head + ("✓ none known" if n == 0 else f"⚠ {n} known — "
+        lines.append(head + ("none known" if n == 0 else f"{n} known — "
                              + ", ".join(f"{i} (https://osv.dev/vulnerability/{i})" for i in ids) + (" …" if n > len(ids) else "")))
         cmd = install_cmd(pk.get("system"), pk.get("name"))
         if cmd:
@@ -293,7 +293,7 @@ def trust_lines(gh, tr, spdx, repo):
         lines.append("GitHub's hourly limit is used up — try again later (or set GITHUB_TOKEN)")
     else:
         f = (gh or {}).get("files")
-        mark = lambda b, t: ("✓ " if b else "✗ ") + t
+        mark = lambda b, t: t + (": yes" if b else ": no")   # words, not glyphs (RS55); same words as the web
         files = " · ".join([mark(f["readme"], "README"), mark(f["contributing"], "contributing guide"),
                             mark(f["coc"], "code of conduct")]) if f else na
         gfi = (gh or {}).get("gfi")
@@ -326,7 +326,7 @@ def render(results):
 
 
 def main(argv=None):
-    for s in (sys.stdout, sys.stderr):   # RS48: ✓ ✗ ⚠ print on Windows consoles too
+    for s in (sys.stdout, sys.stderr):   # RS48: em dashes and middle dots print on Windows consoles too
         try:
             s.reconfigure(encoding="utf-8", errors="replace")
         except (AttributeError, ValueError):

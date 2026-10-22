@@ -1,5 +1,5 @@
 {
- "_about": "SPEC RS54: shared trust-check cases. The web (tests/test_trust_fn.mjs, tests/test_web_logic.js; RS53) and the plugin (tests/test_trust.py; RS54) both run every case, so the two cannot drift. Unlisted URLs answer 404 'Not found'.",
+ "_about": "SPEC RS56: shared trust-check cases. The web (tests/test_trust_fn.mjs, tests/test_web_logic.js; RS53) and the plugin (tests/test_trust.py; RS56) both run every case, so the two cannot drift. Unlisted URLs answer 404 'Not found'.",
  "server": [
   {
    "name": "npm package accepted; a malformed advisory ID is dropped (RS9)",
@@ -1010,15 +1010,19 @@
     "GHSA-qw6h-vgh9-j6wx",
     "npm install express",
     "Beginner-friendly",
-    "✓ README",
-    "✗ contributing guide",
+    "README: yes",
+    "contributing guide: no",
     "37 good first issues",
     "Latest release v5.3.0",
-    "doesn't change the ranking"
+    "doesn't change the ranking",
+    "code of conduct: yes"
    ],
    "absent": [
     "<script",
-    "Package license"
+    "Package license",
+    "✓",
+    "✗",
+    "⚠"
    ]
   },
   {

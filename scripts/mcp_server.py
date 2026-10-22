@@ -2,7 +2,7 @@
 """Replore as a Model Context Protocol server over stdio (SPEC RS32).
 
 Any MCP-capable agent (Claude Code, Codex CLI, Cursor, Gemini CLI, VS Code/Copilot, Windsurf, Cline) can
-call the `find_repos` and `check_repos` tools (RS54 trust check), whatever model it runs. Standard library only (RS11); no model call, no key (RS1).
+call the `find_repos` and `check_repos` tools (RS56 trust check), whatever model it runs. Standard library only (RS11); no model call, no key (RS1).
 stdout carries only newline-delimited JSON-RPC 2.0 messages; diagnostics go to stderr.
 
 Run: python3 scripts/mcp_server.py   (the agent starts it; you don't talk to it directly)
@@ -13,7 +13,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import scout  # noqa: E402
-import trust  # noqa: E402  RS54
+import trust  # noqa: E402  RS56
 
 SERVER_INFO = {"name": "replore", "version": "0.4.0"}
 SUPPORTED_PROTOCOLS = ("2025-06-18", "2025-03-26", "2024-11-05")  # no JSON-RPC batching in any of our replies
@@ -49,7 +49,7 @@ TOOL = {
             "all": {"type": "boolean", "description": "No cap: every suitable repo (for a PRD with many needs)."},
             "group": {"type": "boolean", "description": "Group results by query/need (use with all for a PRD)."},
             "trust": {"type": "boolean", "description": "Also check whether the top 5 are safe to build on: security "
-                      "health, known vulnerabilities, install command, beginner-friendliness (RS54). Display only."},
+                      "health, known vulnerabilities, install command, beginner-friendliness (RS56). Display only."},
         },
         "required": ["queries"],
         "additionalProperties": False,
@@ -139,13 +139,13 @@ def call_find_repos(args, fetcher=None, trust_get=None):
     if not res["candidates"]:
         return _text(scout.render_markdown(res), False)  # honest "no match" with excluded counts, not an error
     if flags["trust"]:
-        scout.add_trust(res, token, trust_get)   # RS54: a failed part says "couldn't check"; the search still returns
+        scout.add_trust(res, token, trust_get)   # RS56: a failed part says "couldn't check"; the search still returns
     out = scout.render_markdown_grouped(res) if flags["group"] else scout.render_markdown(res)
     return _text(PREAMBLE + out, False)
 
 
 def call_check_repos(args, get=None):
-    """RS54: the trust check for 1-5 named repos; bad input fails closed, a failed source says "couldn't check"."""
+    """RS56: the trust check for 1-5 named repos; bad input fails closed, a failed source says "couldn't check"."""
     get = get or trust.get_json
     if not isinstance(args, dict):
         return _bad("arguments must be an object.")

@@ -146,7 +146,7 @@ Needs Python 3.11+ (the plugin tells you how to install it if it's missing). Onc
 
 After the comparison table, ask *"which of these are safe to build on?"* and the plugin runs the same check as the web
 page's **Safe to build on?**: security health, known vulnerabilities, an install command, beginner-friendliness and
-the latest release (SPEC RS54). The web page and the plugin share one set of test cases, so they give the same answer.
+the latest release (SPEC RS56). The web page and the plugin share one set of test cases, so they give the same answer.
 
 ## Use in any other AI agent
 
@@ -182,7 +182,7 @@ docs — the command and argument stay the same.
 
 **3. Ask your agent** — *"find repos for a diet app for iPhone"*. It calls Replore's `find_repos` tool and shows the
 comparison table. Then *"which of these are safe to build on?"* calls `check_repos`, the same check as the web page's
-**Safe to build on?** (SPEC RS54). Your AI writes the searches and judges which results fit; the feature-by-feature PRD mode is in the
+**Safe to build on?** (SPEC RS56). Your AI writes the searches and judges which results fit; the feature-by-feature PRD mode is in the
 Claude Code plugin.
 
 **No MCP support?** Open the cloned folder in your agent. Codex, Cursor, Copilot, Cline and Windsurf read
@@ -191,7 +191,7 @@ Claude Code plugin.
 
 ```
 python3 scripts/scout.py "diet tracker app" "calorie counter" --markdown
-python3 scripts/trust.py expressjs/express psf/requests      # is it safe to build on? (1-5 repos, SPEC RS54)
+python3 scripts/trust.py expressjs/express psf/requests      # is it safe to build on? (1-5 repos, SPEC RS56)
 ```
 
 Same filters, ranking and license labels in every path. Browser-only chats with no local tools can't run it — use

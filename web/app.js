@@ -256,7 +256,7 @@ function ghShape(raw){ var c=raw.community||{}, rl=raw.release||{}, g=raw.gfi||{
   return {limited:limited, files:f?{readme:!!f.readme, contributing:!!f.contributing, coc:!!f.code_of_conduct}:null, release:rel,
     gfi:g.s===200&&Array.isArray(g.j)?lastPage(g.link,g.j.length):null}; }
 function trustHtml(gh, tr, spdx, repo){
-  var L=[], NA='<span class="mut">couldn\'t check</span>', yes=function(b,t){ return ico(b?"check":"x")+t; };
+  var L=[], NA='<span class="mut">couldn\'t check</span>', yes=function(b,t){ return ico(b?"check":"x")+t+'<span class="sr-only">: '+(b?"yes":"no")+'</span>'; };   // RS56: the icon is aria-hidden; the words carry it
   var sc=tr&&tr.scorecard, pk=tr&&tr.package;
   if(sc&&sc.status==="ok") L.push('<b>Security health</b> '+esc(String(sc.score))+'/10'+(sc.maintained!=null?' · maintained '+esc(String(sc.maintained))+'/10':'')+
     ' · <a href="https://scorecard.dev/viewer/?uri=github.com/'+esc(repo)+'" target="_blank" rel="noopener noreferrer">OpenSSF Scorecard</a>');
