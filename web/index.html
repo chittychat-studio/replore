@@ -163,6 +163,37 @@
   /* two clean mode tiles (like the reference's cards) */
   .modes{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
   .demo-slot:empty{display:none} .demo-slot{margin:6px 0 18px;text-align:left}
+  /* RS61: home demo = the live product over an ASCII globe (desktop); one card under the typed query on phones */
+  .ld{position:relative;display:flex;flex-direction:column;gap:12px;padding:6px 4px 0;min-height:360px;text-align:left}
+  .ld-globe{position:absolute;top:34px;right:-6px;width:60%;height:400px;pointer-events:none;z-index:0}
+  #heroDemo .ld-deck,#heroDemo .ld-q{max-width:410px}
+  .ld-q{position:relative;z-index:1;display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);
+    border-radius:999px;padding:11px 16px;font-size:15px;color:var(--ink);box-shadow:0 10px 30px -18px rgba(var(--shadow),.5);max-width:520px}
+  .ld-q .ico{width:16px;height:16px;margin:0;color:var(--muted)}
+  .ld-typed{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .ld-caret{width:2px;height:18px;background:var(--accent);animation:ldBlink 1s steps(1) infinite;flex:0 0 auto}
+  @keyframes ldBlink{50%{opacity:0}}
+  .ld-deck{position:relative;z-index:1;display:grid;gap:10px;max-width:520px}
+  .ld-card{background:color-mix(in srgb,var(--card) 92%,transparent);backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:14px;
+    padding:12px 14px;display:grid;gap:8px;opacity:0;transform:translateY(14px) scale(.985);
+    transition:opacity .45s ease,transform .6s cubic-bezier(.2,.8,.2,1)}
+  .ld-card.in{opacity:1;transform:none} .ld-card.out{opacity:0;transform:translateY(-8px);transition-duration:.4s}
+  .ld-top{display:flex;align-items:center;gap:10px;min-width:0}
+  .ld-top .avatar{width:26px;height:26px;border-radius:7px;flex:0 0 auto;display:grid;place-items:center;
+    font:400 13px/1 var(--f-display);color:#fff;background:linear-gradient(135deg,hsl(var(--h) 62% 58%),hsl(calc(var(--h) + 24) 58% 40%))}
+  .ld-name{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .ld-name .owner{font-weight:500;color:var(--muted)}
+  .ld-desc{margin:0;font-size:13px;color:var(--muted);line-height:1.45;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+  .ld-ex{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}
+  .ld-ex i{font-style:normal;font-size:11.5px;font-weight:700;text-align:center;color:var(--accent-ink);border:1.5px solid color-mix(in srgb,var(--accent) 45%,var(--line));
+    border-radius:8px;padding:4px 0;transition:background .25s,color .25s,border-color .25s}
+  .ld-ex i.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .ld-lic{justify-self:start;transform:scale(.7);opacity:0;transition:transform .35s cubic-bezier(.3,1.6,.5,1),opacity .2s}
+  .ld-card.lit .ld-lic{transform:none;opacity:1}
+  .ld-note{position:relative;z-index:1;margin:0;font-size:12px;color:var(--muted)}
+  /* phones: the demo sits above the real search box, so it shows result cards only, no typed query (owner 2026-10-23) */
+  .demo-slot .ld{min-height:0;gap:8px} .demo-slot .ld-q{display:none}
+  @media (prefers-reduced-motion:reduce){ .ld-card,.ld-lic,.ld-ex i{transition:none} .ld-caret{animation:none} }
   .left-div{grid-column:1/-1;margin:14px 4px 2px;font-size:13px;font-weight:700;color:var(--muted);
     display:flex;align-items:center;gap:10px}
   .left-div::after{content:"";flex:1;height:1px;background:var(--line)}
@@ -1070,6 +1101,6 @@
   <p class="mut rag-only" style="margin-top:12px" hidden><b>Hybrid search:</b> repos are ranked by your words and by what you mean, so "voice notes" also finds "speech-to-text". Repos our index finds that the word search missed are checked on GitHub before you see them.</p>
 </div></div>
 
-<script src="app.js?v=4305179f3b" defer></script>
+<script src="app.js?v=63fc79e011" defer></script>
 </body>
 </html>

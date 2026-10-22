@@ -211,7 +211,8 @@ var ICONS={
   alert:'<path d="M8 2.2l6 10.6H2z"/><path d="M8 6.6v2.9M8 11.2v.01"/>',
   ban:'<circle cx="8" cy="8" r="5.8"/><path d="M3.9 12.1l8.2-8.2"/>',
   sun:'<circle cx="8" cy="8" r="2.8"/><path d="M8 1.5v1.6M8 12.9v1.6M1.5 8h1.6M12.9 8h1.6M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1"/>',
-  moon:'<path d="M13.2 9.6A5.6 5.6 0 0 1 6.4 2.8a5.6 5.6 0 1 0 6.8 6.8z"/>'
+  moon:'<path d="M13.2 9.6A5.6 5.6 0 0 1 6.4 2.8a5.6 5.6 0 1 0 6.8 6.8z"/>',
+  search:'<circle cx="7" cy="7" r="4.6"/><path d="M10.4 10.4l3.4 3.4"/>'
 };
 function ico(n,cls){ return '<svg class="ico'+(cls?' '+cls:'')+'" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor"'+
   ' stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'+ICONS[n]+'</svg>'; }
@@ -1328,11 +1329,108 @@ function showHome(){
   out.innerHTML='<div class="explain">'+
     '<div id="heroDemo" class="demo"></div>'+
     '</div>';
-  var hd=document.getElementById("heroDemo"); buildDemo(hd);
+  var hd=document.getElementById("heroDemo"); buildLiveDemo(hd);   // RS61: the real product, live
   var slot=hd&&hd.querySelector(".demo-think");   // RS36: the orb lives inside the demo card's footer — one component
   if(slot){ slot.id="homeThink"; slot.innerHTML=thinkPill(STEPS[0].doing); startHomeThinking(slot, hd); }
   placeDemo();
   if(window.__resetPicks) window.__resetPicks();
+}
+// ---- RS61: home demo = the real product, live. A quick-pick search types itself, then Replore's real top results for
+// it land as cards (licence verdict pops, Explore buttons light in turn), over an ASCII globe of GitHub (desktop only).
+// The cards are what scout.py returned for these searches on 2026-10-23 (site keyword queries, fit ranking); they are
+// examples of the output, refreshed by hand, and say so. No network call, so the home screen costs no GitHub quota.
+var LIVE_DEMO=[
+  {q:"a portfolio website with smooth scroll animations", r:[
+    ["cobiwave/simplefolio","MIT","A minimal portfolio template for Developers"],
+    ["hsnaydd/moveTo","MIT","A lightweight scroll animation javascript library without any dependency"],
+    ["academicpages/academicpages.github.io","MIT","Github Pages template based upon HTML and Markdown for personal, portfolio-based websites."]]},
+  {q:"a chatbot that answers questions from my PDFs, Python", r:[
+    ["Cinnamon/kotaemon","Apache-2.0","An open-source RAG-based tool for chatting with your documents."],
+    ["bhaskatripathi/pdfGPT","MIT","PDF GPT allows you to chat with the contents of your PDF file by using GPT capabilities."],
+    ["Nutlope/pdftochat","MIT","Chat with your PDFs with AI"]]},
+  {q:"dashboard to show my sales spreadsheet as charts", r:[
+    ["ColorlibHQ/AdminLTE","MIT","AdminLTE - Free admin dashboard template based on Bootstrap 5"],
+    ["coreui/coreui-free-bootstrap-admin-template","MIT","Free Bootstrap Admin & Dashboard Template Built for AI-Assisted Development"],
+    ["vercel/nextjs-postgres-nextauth-tailwindcss-template","MIT","Admin dashboard template."]]}];
+var ASCII_RAMP=" .:-=+*#%@";
+function asciiNoise(x,y){ function h(a,b){ var s=Math.sin(a*127.1+b*311.7)*43758.5453; return s-Math.floor(s); }
+  var xi=Math.floor(x), yi=Math.floor(y), xf=x-xi, yf=y-yi, u=xf*xf*(3-2*xf), v=yf*yf*(3-2*yf);
+  var a=h(xi,yi), b=h(xi+1,yi), c=h(xi,yi+1), d=h(xi+1,yi+1); return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v; }
+// the ASCII globe: GitHub as a world of characters; spins up while a search runs (demo or real)
+function startAsciiGlobe(canvas, reduce){
+  if(!canvas || !canvas.getContext) return;   // no canvas: the cards alone carry the demo
+  var g=canvas.getContext("2d"); if(!g) return;
+  var t=0, spin=.22, boost=0, live=true, raf=0, last=0;
+  function css(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim()||"#5b88a6"; }
+  function draw(){ var r=canvas.getBoundingClientRect(), d=Math.min(window.devicePixelRatio||1,1.5);
+    if(!r.width||!r.height) return;
+    if(canvas.width!==Math.round(r.width*d)){ canvas.width=Math.round(r.width*d); canvas.height=Math.round(r.height*d); }
+    var W=canvas.width, H=canvas.height, cell=Math.max(8,Math.round(Math.min(W,H)/40)), cols=Math.floor(W/cell), rows=Math.floor(H/(cell*1.6));
+    g.clearRect(0,0,W,H); g.font=Math.round(cell*1.3)+"px "+(css("--f-mono")||"monospace"); g.textBaseline="top";
+    var ink=css("--accent-ink"), dim=css("--accent2");
+    var cx=cols*.5, cy=rows*.5, R=Math.min(rows*.47, cols*.29);
+    for(var j=0;j<rows;j++) for(var i=0;i<cols;i++){ var x=(i-cx)/R*.62, y=(j-cy)/R, r2=x*x+y*y; if(r2>1) continue;
+      var z=Math.sqrt(1-r2), lon=Math.atan2(x,z)+t, lat=Math.asin(y), light=.3+.7*z;
+      var land=asciiNoise(lon*2.2+10,lat*3+4)>.52, grid=Math.abs(Math.sin(lon*6))<.06||Math.abs(Math.sin(lat*6))<.05;
+      var v=land?.5+.5*light:grid?.3*light:.12*light;
+      g.globalAlpha=land?.25+.45*light:.15+.25*light; g.fillStyle=land?ink:dim;
+      g.fillText(ASCII_RAMP[Math.min(ASCII_RAMP.length-1,Math.floor(v*ASCII_RAMP.length))],i*cell,j*cell*1.6); }
+    g.globalAlpha=1; }
+  function frame(now){ if(!live) return; if(!canvas.isConnected){ live=false; return; }   // home screen replaced: stop for good
+    var dt=last?Math.min(.1,(now-last)/1000):0; last=now;
+    var busy=boost>0||document.body.classList.contains("searching");
+    spin+=((busy?1.6:.22)-spin)*(1-Math.exp(-dt*2.5)); t+=dt*spin; if(boost>0) boost-=dt;
+    draw(); raf=requestAnimationFrame(frame); }
+  canvas.__boost=function(s){ boost=Math.max(boost,s||1.4); };
+  canvas.__stop=function(){ live=false; cancelAnimationFrame(raf); };
+  if(reduce){ draw(); return; }
+  if(window.IntersectionObserver) new IntersectionObserver(function(es){ var v=es[0].isIntersecting;
+    if(v&&!live){ live=true; last=0; raf=requestAnimationFrame(frame); } else if(!v){ live=false; cancelAnimationFrame(raf); } }).observe(canvas);
+  document.addEventListener("visibilitychange",function(){ if(document.hidden){ live=false; cancelAnimationFrame(raf); } });
+  raf=requestAnimationFrame(frame);
+}
+function buildLiveDemo(host){
+  if(!host || host.dataset.built) return; host.dataset.built="1";
+  var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches;
+  var wide=!(window.matchMedia&&matchMedia("(max-width: 999px)").matches);
+  host.innerHTML='<div class="ld">'+(wide?'<canvas class="ld-globe" aria-hidden="true"></canvas>':'')+
+    '<div class="ld-q" aria-hidden="true">'+ico("search")+'<span class="ld-typed"></span><span class="ld-caret"></span></div>'+
+    '<div class="ld-deck" aria-hidden="true"></div>'+
+    '<p class="ld-note">Example: Replore’s real top results for this search</p></div>'+
+    '<div class="demo-foot"><span class="demo-think"></span></div>';
+  var deck=host.querySelector(".ld-deck"), typed=host.querySelector(".ld-typed"), globe=host.querySelector(".ld-globe");
+  if(globe) startAsciiGlobe(globe, reduce);
+  var timers=[], k=0, paused=false;
+  function later(f,ms){ timers.push(setTimeout(f,ms)); }
+  function clear(){ timers.forEach(clearTimeout); timers=[]; }
+  function cardHtmlMini(r){ var p=r[0].split("/"), v=licenseVerdict(r[1]);
+    return '<div class="ld-card"><div class="ld-top"><span class="avatar" style="--h:'+ownerHue(p[0])+'">'+esc(p[0].charAt(0).toUpperCase())+'</span>'+
+      '<span class="ld-name"><span class="owner">'+esc(p[0])+' /</span> '+esc(p.slice(1).join("/"))+'</span></div>'+
+      '<p class="ld-desc">'+esc(r[2])+'</p>'+
+      '<div class="ld-ex">'+EXPLORE.map(function(e){ return '<i>'+esc(e[0])+'</i>'; }).join("")+'</div>'+
+      '<span class="tag '+v.c+' ld-lic">'+ico(v.i)+esc(v.t)+'</span></div>'; }
+  function run(){ clear(); if(paused||!host.isConnected) return;
+    var ex=LIVE_DEMO[k%LIVE_DEMO.length], shown=wide?3:1; k++;
+    deck.innerHTML=ex.r.slice(0,shown).map(cardHtmlMini).join(""); typed.textContent="";
+    if(host.__onStep) host.__onStep(0);
+    if(reduce){ typed.textContent=ex.q; [].forEach.call(deck.children,function(c){ c.classList.add("in","lit"); }); return; }
+    var step=Math.max(18,Math.min(42,1400/ex.q.length));
+    for(var i=1;i<=ex.q.length;i++) (function(n){ later(function(){ typed.textContent=ex.q.slice(0,n); }, n*step); })(i);
+    var t0=ex.q.length*step+250;
+    later(function(){ if(host.__onStep) host.__onStep(1); if(globe&&globe.__boost) globe.__boost(1.6); }, t0);
+    later(function(){ if(host.__onStep) host.__onStep(2); }, t0+1100);
+    [].forEach.call(deck.children,function(c,j){ var at=t0+1100+j*240;
+      later(function(){ c.classList.add("in"); }, at);
+      later(function(){ c.classList.add("lit"); }, at+380);
+      [].forEach.call(c.querySelectorAll(".ld-ex i"),function(b,m){ later(function(){ b.classList.add("on"); }, at+560+m*110);
+        later(function(){ b.classList.remove("on"); }, at+1200+m*110); }); });
+    later(function(){ [].forEach.call(deck.children,function(c){ c.classList.add("out"); }); }, t0+5600);
+    later(run, t0+6200); }
+  host.__stopDemo=function(){ paused=true; clear(); if(globe&&globe.__stop) globe.__stop(); };
+  host.__playDemo=function(){ if(paused){ paused=false; run(); } };
+  host.addEventListener("mouseenter",function(){ paused=true; });
+  host.addEventListener("mouseleave",function(){ if(paused){ paused=false; if(!timers.length) run(); } });
+  run();
 }
 // remember the last results so a page refresh brings them back (cached locally, no new API call)
 // RS44: the owner's Stripe Payment Link (public URL, no key). Empty = all tip elements stay hidden.

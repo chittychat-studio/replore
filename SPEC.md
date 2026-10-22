@@ -889,6 +889,19 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   with no port. The workflow checks the endpoint with an anchored regex; `evals/relevance_live.mjs` refuses other
   hosts and treats a redirect as an error; `ops/rag_smoke.py` omits the key for other hosts and never follows redirects.
 
+- **RS61** Home demo shows the real product, over an ASCII globe (owner 2026-10-23 picked directions 2 and 4 from the
+  hero comparison). The home screen's step carousel is replaced by a live demo: a quick-pick search types itself, then
+  that search's real top 3 results land as cards (owner initial, name, one-line description), their licence verdict pops
+  in and the Explore buttons (RS51) light in turn; then the next search. The cards are what `scout.py` returned for those
+  searches on 2026-10-23 with the site's own keyword queries, held in `LIVE_DEMO` in `web/app.js`; they are labelled
+  "Example: Replore's real top results for this search", make no network call (the home screen costs no GitHub quota),
+  and are refreshed by hand. No star counts, since a fixed number would go stale. On desktop an ASCII globe of GitHub
+  (canvas, the site's mono font and accent colours) turns behind the cards and spins up while a search runs; it is left
+  out on screens under 1000 px, where the demo sits above the search box and shows one card at a time with no typed query
+  (owner: the text entry looked wrong on phones). Reduced motion shows the finished state with no typing, no spin. Hovering pauses the demo; the
+  globe pauses off-screen and in hidden tabs, and stops for good once the home screen is replaced. The "How it works"
+  window keeps the four-step carousel.
+
 ## RX — Deliberately excluded (v0.1)
 
 - **RX1** Scraping github.com HTML, or any non-API source.

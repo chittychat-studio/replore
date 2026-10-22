@@ -1054,3 +1054,16 @@ def test_harm_filter_shared_cases():
     js = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
     for p in scout.HARM[2:]:   # the first two are built from the service list; the rest must be character-identical
         assert "/" + p.pattern + "/i" in js, p.pattern
+
+
+def test_home_demo_is_the_real_product_and_honest():
+    """RS61: the home demo shows real Replore results for real quick-pick searches, labelled as examples, with no
+    network call, no star counts, and the ASCII globe on desktop only."""
+    js = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
+    start = js.index("var LIVE_DEMO=")
+    block = js[start:js.index("// remember the last results", start)]
+    assert "buildLiveDemo(hd)" in js and "Example: Replore" in block and "fetch(" not in block
+    assert block.count('{q:"') == 3 and "☆" not in block and "kstars(" not in block
+    for lic in re.findall(r'\["[^"]+","([^"]+)","', block):
+        assert lic in ("MIT", "Apache-2.0"), lic
+    assert "max-width: 999px" in block and "prefers-reduced-motion" in block and "isConnected" in block
