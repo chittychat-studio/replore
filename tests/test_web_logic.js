@@ -18,7 +18,7 @@ global.window = global;
 const s = {};
 new Function("document", "localStorage",
   code + "; this.keywordQueries=keywordQueries; this.exploreLinks=exploreLinks; this.rankByFit=rankByFit; this.fitScore=fitScore; this.whyRelevant=whyRelevant; this.esc=esc; this.lu=lu; this.freeText=freeText;" +
-  " this.keep=keep; this.ragRan=ragRan; this.hasDesc=hasDesc; this.descHtml=descHtml; this.plainDesc=plainDesc; this.tipUrlOk=tipUrlOk; this.clean=clean; this.harmful=harmful; this.harmfulRepo=harmfulRepo; this.prdFeatures=prdFeatures; this.trendingQuery=trendingQuery; this.trendRows=trendRows; this.feedbackUrl=feedbackUrl; this.feedbackPayload=feedbackPayload; this.agoText=agoText; this.cardHtml=cardHtml; this.recentKey=recentKey; this.recentFind=recentFind; this.recentAdd=recentAdd; this.CACHE_V=CACHE_V; this.bm25Scores=bm25Scores; this.repoText=repoText; this.rrfOrder=rrfOrder; this.hybridOrder=hybridOrder; this.confirmQueries=confirmQueries; this.ghQuery=ghQuery; this.sigTokens=sigTokens; this.resultSummary=resultSummary; this.trustRow=trustRow; this.trustHtml=trustHtml; this.ghShape=ghShape; this.lastPage=lastPage; this.installCmd=installCmd; this.snapHtml=snapHtml;").call(s, document, global.localStorage || {getItem:()=>null,setItem(){},removeItem(){}});
+  " this.keep=keep; this.ragRan=ragRan; this.hasDesc=hasDesc; this.descHtml=descHtml; this.plainDesc=plainDesc; this.tipUrlOk=tipUrlOk; this.clean=clean; this.harmful=harmful; this.harmfulRepo=harmfulRepo; this.prdFeatures=prdFeatures; this.trendingQuery=trendingQuery; this.trendRows=trendRows; this.feedbackUrl=feedbackUrl; this.feedbackPayload=feedbackPayload; this.agoText=agoText; this.cardHtml=cardHtml; this.recentKey=recentKey; this.recentFind=recentFind; this.recentAdd=recentAdd; this.CACHE_V=CACHE_V; this.bm25Scores=bm25Scores; this.repoText=repoText; this.rrfOrder=rrfOrder; this.hybridOrder=hybridOrder; this.confirmQueries=confirmQueries; this.ghQuery=ghQuery; this.sigTokens=sigTokens; this.resultSummary=resultSummary; this.trustRow=trustRow; this.trustHtml=trustHtml; this.ghShape=ghShape; this.lastPage=lastPage; this.installCmd=installCmd; this.snapHtml=snapHtml; this.cleanLang=cleanLang;").call(s, document, global.localStorage || {getItem:()=>null,setItem(){},removeItem(){}});
 
 // RS16: iOS excludes macOS
 // RS16: expansions are specific on-topic phrases, never a bare category (live regression: "website" -> "frontend framework"
@@ -273,6 +273,11 @@ console.log("prd ok:", f.join(" | "));
   assert.ok(!h.includes("class=\"topics\"") && h.includes("top1") && h.includes("pick-cb") && h.includes("rc-gh") && !h.includes("rc-tools"));   // RS63 card A; a bad name gets no tools
   const ok = s.cardHtml({name:"vercel/next.js", stars:1, forks:9, spdx:"MIT", pushed:"2026-10-01", url:"https://github.com/vercel/next.js", desc:"x", topics:[], starter:false, rel:0}, 0, []);
   assert.ok(ok.includes("rc-tools") && (ok.match(/class="rc-tool"/g) || []).length === 3 && ok.includes("rc-also") && !ok.includes("forks"));   // fake DOM blanks esc(): structure only   // fake DOM: esc() yields "" here, so check structure only
+  // RS67 compact card: bookmark = Add to plan, a Details button, extras kept hidden for the side panel, safe filter data
+  const c2 = s.cardHtml({name:"vercel/next.js", stars:1500, spdx:"MIT", pushed:"2026-10-01", url:"https://github.com/vercel/next.js", desc:"x", topics:[], starter:true, rel:0, lang:"TypeScript"}, 0, []);
+  assert.ok(c2.includes("rc2") && c2.includes("rc-bm") && c2.includes("rc-det") && c2.includes('class="rc-more" hidden') && c2.includes('data-stars="1500"'));
+  assert.ok(c2.indexOf("rc-tools") > c2.indexOf("rc-more") && c2.indexOf('class="trust"') > c2.indexOf("rc-more"));   // tools and trust live in Details
+  assert.strictEqual(s.cleanLang("constructor"), ""); assert.strictEqual(s.cleanLang("<x>"), ""); assert.strictEqual(s.cleanLang("C#"), "C#");
   console.log("card ok"); }
 
 // RS51 Explore links: same owner/repo path on four tools; malformed names get none
@@ -337,7 +342,7 @@ console.log("prd ok:", f.join(" | "));
   const root = { cloneNode: () => ({ innerHTML: "saved", querySelectorAll: q => q === "details.trust" ? [det] : [] }) };
   assert.strictEqual(s.snapHtml(root), "saved");
   assert.ok(!("open" in det.attrs) && body.innerHTML === "" && !("data-done" in body.attrs));
-  assert.strictEqual(s.CACHE_V, "15");   // 15: card A (RS63)
+  assert.strictEqual(s.CACHE_V, "16");   // 16: compact card + filter panel (RS67)
   console.log("trust ok"); }
 
 // RS56: the shared web/plugin cases — GitHub shaping and the panel's wording (tests/test_trust.py runs the same file)

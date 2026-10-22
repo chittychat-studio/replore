@@ -212,7 +212,9 @@ var ICONS={
   ban:'<circle cx="8" cy="8" r="5.8"/><path d="M3.9 12.1l8.2-8.2"/>',
   sun:'<circle cx="8" cy="8" r="2.8"/><path d="M8 1.5v1.6M8 12.9v1.6M1.5 8h1.6M12.9 8h1.6M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1"/>',
   moon:'<path d="M13.2 9.6A5.6 5.6 0 0 1 6.4 2.8a5.6 5.6 0 1 0 6.8 6.8z"/>',
-  search:'<circle cx="7" cy="7" r="4.6"/><path d="M10.4 10.4l3.4 3.4"/>'
+  search:'<circle cx="7" cy="7" r="4.6"/><path d="M10.4 10.4l3.4 3.4"/>',
+  bookmark:'<path d="M4.2 2.4h7.6v11.2L8 10.9l-3.8 2.7z"/>',
+  bookmarked:'<path d="M4.2 2.4h7.6v11.2L8 10.9l-3.8 2.7z" fill="currentColor"/>'
 };
 function ico(n,cls){ return '<svg class="ico'+(cls?' '+cls:'')+'" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor"'+
   ' stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'+ICONS[n]+'</svg>'; }
@@ -303,41 +305,46 @@ document.addEventListener("click",function(e){ var b=e.target&&e.target.closest&
   var t=b.getAttribute("data-cmd")||""; function ok(){ b.innerHTML=ico("check"); setTimeout(function(){ b.innerHTML=ico("copy"); },1400); }
   if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(ok,function(){});
 });
+function cleanLang(l){ return typeof l==="string" && /^[A-Za-z0-9+#. -]{1,30}$/.test(l) && l!=="constructor" ? l : ""; }
 function cardHtml(r,i,qtokens){
-  // RS63 card A ("essentials, then act"): what it does, one line of facts, two big actions, three labelled tools.
-  // Dropped as noise for most people: the forks chip, topic hashtags and the raw SPDX line (still in the licence tooltip).
+  // RS67 compact card (owner pick 2026-10-23, after a job-board reference): an "Updated" pill and a bookmark (= Add to plan),
+  // the owner, the repo name in bold, a two-line description, tags, then stars and a dark Details button. Details opens a
+  // side panel with the rest of card A (RS63): why it fits, Open on GitHub, Diagram / Wiki / Code, and the trust check (RS53).
   var free=freeText(r.spdx), paid=lu(r.spdx), v=licenseVerdict(r.spdx);
   var okCom=v.c==="t-good"?1:0;   // one "free for commercial use" flag = the green verdict (permissive + weak copyleft)
   var parts=String(r.name).split("/"), owner=parts.length>1?parts[0]:"", repo=parts.length>1?parts.slice(1).join("/"):r.name;
+  var lang=cleanLang(r.lang), lic=/^[A-Za-z0-9.+-]{1,40}$/.test(r.spdx||"")&&r.spdx!=="NOASSERTION"?r.spdx+" licence":"Licence unclear";
   var xs=exploreLinks(r.name), pick=function(l){ for(var k=0;k<xs.length;k++) if(xs[k].label===l) return xs[k]; return null; };
   var tool=function(l,name,hint){ var x=pick(l); return x?'<a class="rc-tool" href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer" title="'+esc(x.title)+'">'+
     esc(name)+'<small>'+esc(hint)+'</small></a>':''; };
   var also=function(l,name){ var x=pick(l); return x?'<a href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer" title="'+esc(x.title)+'">'+esc(name)+'</a>':''; };
-  return '<article class="rcard'+(i!=null&&i<3?' top'+(i+1):'')+'" data-com="'+okCom+'" data-starter="'+(r.starter?1:0)+'"'+(r.left?' data-left="1"':'')+'>'+
-    '<div class="rc-head">'+
-      '<span class="avatar" aria-hidden="true" style="--h:'+ownerHue(owner||repo)+'">'+esc((owner||repo).charAt(0).toUpperCase())+'</span>'+
-      '<div class="rc-title"><div class="name"><a href="'+esc(r.url)+'" target="_blank" rel="noopener" title="'+esc(r.name)+'">'+esc(repo)+'</a></div>'+
-        (owner?'<span class="owner">by '+esc(owner)+'</span>':'')+'</div>'+
-      (i!=null?'<span class="rank">#'+(i+1)+'</span>':'')+
+  return '<article class="rcard rc2'+(i!=null&&i<3?' top'+(i+1):'')+'" data-com="'+okCom+'" data-starter="'+(r.starter?1:0)+'" data-lang="'+esc(lang)+
+      '" data-stars="'+(+r.stars||0)+'" data-pushed="'+esc(r.pushed||"")+'" data-i="'+(i==null?0:i)+'"'+(r.left?' data-left="1"':'')+'>'+
+    '<div class="rc-in">'+
+      '<div class="rc-top"><span class="rc-date" title="Last code change '+esc(r.pushed)+'">Updated '+esc(agoText(r.pushed)||r.pushed)+'</span>'+
+        '<label class="pick rc-bm" title="Add to plan"><input type="checkbox" class="pick-cb" data-name="'+esc(r.name)+'" data-url="'+esc(r.url)+
+        '" data-desc="'+esc(r.desc||"")+'"><span class="pk-add">'+ico("bookmark")+'<span class="sr-only">Add '+esc(r.name)+' to plan</span></span>'+
+        '<span class="pk-in">'+ico("bookmarked")+'<span class="sr-only">In plan</span></span></label></div>'+
+      '<div class="rc-who"><span class="avatar" aria-hidden="true" style="--h:'+ownerHue(owner||repo)+'">'+esc((owner||repo).charAt(0).toUpperCase())+'</span>'+
+        '<span class="owner">'+esc(owner)+'</span>'+(i!=null?'<span class="rank">#'+(i+1)+'</span>':'')+'</div>'+
+      '<h3 class="name"><a href="'+esc(r.url)+'" target="_blank" rel="noopener" title="'+esc(r.name)+'">'+esc(repo)+'</a></h3>'+
+      '<p class="desc">'+descHtml(r)+'</p>'+
+      '<div class="rc-tags"><span class="tag '+v.c+'" title="License: '+esc(r.spdx)+' · '+esc(paid)+' · Completely free? '+esc(free)+'">'+esc(v.t)+'</span>'+
+        (r.starter?'<span class="tag t-star" title="A ready-made template to start your project from">Starter</span>':'')+
+        (lang?'<span class="tag t-lang">'+esc(lang)+'</span>':'')+'</div>'+
     '</div>'+
-    '<p class="desc">'+descHtml(r)+'</p>'+
-    (function(w){ return w?'<div class="why">'+esc(w)+'</div>':''; })(whyRelevant(r,qtokens))+
-    '<div class="rc-facts">'+
-      '<span class="tag '+v.c+'" title="License: '+esc(r.spdx)+' · '+esc(paid)+' · Completely free? '+esc(free)+'">'+ico(v.i)+esc(v.t)+'</span>'+
-      '<span class="stars">'+ico("star")+'<span class="cnt" data-v="'+r.stars+'">'+kstars(r.stars)+'</span> stars</span>'+
-      '<span class="upd" title="'+esc(r.pushed)+'">Updated '+esc(agoText(r.pushed)||r.pushed)+'</span>'+
-      (r.starter?'<span class="tag t-star" title="A ready-made template to start your project from">Starter</span>':'')+
-    '</div>'+
-    '<div class="rc-foot">'+
-      '<label class="pick"><input type="checkbox" class="pick-cb" data-name="'+esc(r.name)+'" data-url="'+esc(r.url)+
-        '" data-desc="'+esc(r.desc||"")+'"><span class="pk-add">'+ico("plus")+'Add to plan</span><span class="pk-in">'+ico("check")+'In plan</span></label>'+
+    '<div class="rc-bot"><span class="rc-stats"><span class="stars">'+ico("star")+'<span class="cnt" data-v="'+(+r.stars||0)+'">'+kstars(r.stars)+'</span> stars</span>'+
+      '<span class="rc-lic">'+esc(lic)+'</span></span>'+
+      '<button type="button" class="rc-det" aria-haspopup="dialog">Details</button></div>'+
+    '<div class="rc-more" hidden>'+
+      (function(w){ return w?'<div class="why">'+esc(w)+'</div>':''; })(whyRelevant(r,qtokens))+
       '<a class="rc-gh" href="'+esc(r.url)+'" target="_blank" rel="noopener">Open on GitHub</a>'+
+      (xs.length?'<div class="rc-look"><span class="rc-look-h">Look inside</span>'+
+        '<nav class="rc-tools" aria-label="Look inside '+esc(r.name)+'">'+tool("Diagram","Diagram","see the structure")+tool("Wiki","Wiki","ask about it")+
+          tool("Browse","Code","read the files")+'</nav>'+
+        '<p class="rc-also">Also: '+also("Digest","Digest for an AI chat")+' · '+also("Edit","Edit in the browser")+'</p></div>':'')+
+      trustRow(r)+
     '</div>'+
-    (xs.length?'<div class="rc-look"><span class="rc-look-h">Look inside</span>'+
-      '<nav class="rc-tools" aria-label="Look inside '+esc(r.name)+'">'+tool("Diagram","Diagram","see the structure")+tool("Wiki","Wiki","ask about it")+
-        tool("Browse","Code","read the files")+'</nav>'+
-      '<p class="rc-also">Also: '+also("Digest","Digest for an AI chat")+' · '+also("Edit","Edit in the browser")+'</p></div>':'')+
-    trustRow(r)+
   '</article>';
 }
 // RS38: cards ease in when they scroll into view (not off-screen, where the animation would be missed)
@@ -388,17 +395,69 @@ function attachTilt(container, reduce){
   });
 }
 
+// RS67: Details opens a side panel. The card's hidden extras (.rc-more) move into it while it is open and move back on
+// close, so the trust check keeps its answer and "Add to plan" stays one checkbox (the card's own).
+var __drw=null;
+function closeDrawer(){ var d=document.getElementById("rcDrawer"); if(!d||d.hidden) return;
+  var more=d.querySelector(".rc-more"); if(__drw&&__drw.card&&more&&__drw.card.isConnected){ more.hidden=true; __drw.card.appendChild(more); }
+  d.hidden=true; var sc=document.getElementById("rcScrim"); if(sc) sc.hidden=true; document.body.classList.remove("drawer-open");
+  var back=__drw&&__drw.from; __drw=null; if(back&&back.isConnected&&back.focus) back.focus(); }
+function openDrawer(card, from){ var d=document.getElementById("rcDrawer"); if(!d||!card) return; closeDrawer();
+  var more=card.querySelector(".rc-more"), body=d.querySelector(".rcd-body"), head=d.querySelector(".rcd-head"), cb=card.querySelector(".pick-cb");
+  var name=card.querySelector(".name"), who=card.querySelector(".rc-who"), desc=card.querySelector(".desc"), tags=card.querySelector(".rc-tags"), stats=card.querySelector(".rc-stats");
+  head.innerHTML=(who?who.outerHTML:"")+(name?'<h2 class="name" id="rcdName">'+name.innerHTML+'</h2>':'');
+  d.querySelector(".rcd-info").innerHTML=(desc?'<p class="desc">'+desc.innerHTML+'</p>':'')+(tags?tags.outerHTML:'')+(stats?stats.outerHTML:'');
+  body.innerHTML=""; if(more){ body.appendChild(more); more.hidden=false; }
+  __drw={card:card, from:from}; syncDrawerPick();
+  d.hidden=false; var sc=document.getElementById("rcScrim"); if(sc) sc.hidden=false; document.body.classList.add("drawer-open");
+  var x=d.querySelector(".rcd-x"); if(x&&x.focus) x.focus(); }
+function syncDrawerPick(){ var b=document.querySelector("#rcDrawer .rcd-pick"), cb=__drw&&__drw.card.querySelector(".pick-cb"); if(!b||!cb) return;
+  b.classList.toggle("on",cb.checked); b.setAttribute("aria-pressed",String(cb.checked));
+  b.innerHTML=ico(cb.checked?"bookmarked":"bookmark")+(cb.checked?"In your plan":"Add to plan"); }
+(function(){ var d=document.getElementById("rcDrawer"); if(!d||!d.addEventListener) return;
+  d.addEventListener("click",function(e){ var t=e.target;
+    if(t.closest&&t.closest(".rcd-x")){ closeDrawer(); return; }
+    if(t.closest&&t.closest(".rcd-pick")&&__drw){ var cb=__drw.card.querySelector(".pick-cb"); if(cb){ cb.click(); syncDrawerPick(); } } });
+  var sc=document.getElementById("rcScrim"); if(sc) sc.addEventListener("click",closeDrawer);
+  document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeDrawer(); });
+  document.addEventListener("change",function(e){ if(__drw&&e.target&&e.target.classList&&e.target.classList.contains("pick-cb")) syncDrawerPick(); });
+})();
 var PLUGIN_CTA='<p class="cta-inline">MORE_LINENeed every match? <button type="button" class="link-btn" data-open="pluginModal">Use the plugin →</button></p>';
 
-// result-side filter chips (filter the already-fetched cards, no new API calls — RS29)
-// RS29d: one row. Each filter is an on/off switch (both can be on); none on = every result, so there is no "All" chip.
-var RES_FILTERS=[["com","Free for commercial use"],["starter","Starters"]];
-function resFlags(){ var f=window.__resFilter||"all"; return {com:f.indexOf("com")>=0, starter:f.indexOf("starter")>=0}; }
-function filterBar(){ return '<div class="res-filter" role="group" aria-label="Filter results">'+
-  RES_FILTERS.map(function(f){ return '<button type="button" class="rfilter" data-f="'+f[0]+'" aria-pressed="false">'+
-    '<span class="rf-on">'+ico("check")+'</span>'+f[1]+'</button>'; }).join("")+
-  '<button type="button" class="rsel" id="resSelAll" title="Tick every repo shown, for a build plan (RS28a)">Select all shown</button>'+
-  '</div>'; }
+// RS67: the result filters sit in a panel on the left (owner reference). They only narrow the cards already fetched
+// (RS29: no new API calls). Licence and Starters are on/off switches that combine (RS29d); languages come from the results.
+function rfReset(){ window.__rf={com:false, starter:false, langs:Object.create(null), stars:0, upd:0}; }
+function resFlags(){ if(!window.__rf) rfReset(); return window.__rf; }
+var RF_STARS=[[0,"Any"],[1000,"1k+"],[10000,"10k+"]], RF_UPD=[[0,"Any"],[365,"Year"],[31,"Month"]];
+function filterBar(top){ top=top||[];
+  var nCom=0, nSt=0, langs=Object.create(null);
+  top.forEach(function(r){ if(licenseVerdict(r.spdx).c==="t-good") nCom++; if(r.starter) nSt++;
+    var l=cleanLang(r.lang); if(l) langs[l]=(langs[l]||0)+1; });
+  var L=Object.keys(langs).sort(function(a,b){ return langs[b]-langs[a] || (a<b?-1:1); }).slice(0,6);
+  var opt=function(f,v,label,n){ return '<label class="rr-opt"><input type="checkbox" class="rf-cb" data-f="'+f+'"'+(v?' data-v="'+esc(v)+'"':'')+'>'+
+    '<span>'+esc(label)+'</span><small>'+n+'</small></label>'; };
+  var seg=function(f,list,label){ return '<div class="rr-seg" role="group" aria-label="'+label+'">'+list.map(function(o){
+    return '<button type="button" class="rr-sb" data-f="'+f+'" data-v="'+o[0]+'" aria-pressed="false">'+o[1]+'</button>'; }).join("")+'</div>'; };
+  return '<aside class="res-filter res-rail" aria-label="Filter results">'+
+    '<div class="rr-h"><b>Filters</b><button type="button" class="rr-toggle" aria-expanded="false">Filters</button>'+
+      '<button type="button" class="link-btn rf-clear">Clear all</button></div>'+
+    '<div class="rr-body">'+
+      '<div class="rr-g"><b>Licence</b>'+opt("com","","Free for commercial use",nCom)+'</div>'+
+      '<div class="rr-g"><b>Type</b>'+opt("starter","","Starters and templates",nSt)+'</div>'+
+      (L.length?'<div class="rr-g"><b>Language</b>'+L.map(function(l){ return opt("lang",l,l,langs[l]); }).join("")+'</div>':'')+
+      '<div class="rr-g"><b>Stars</b>'+seg("stars",RF_STARS,"Minimum stars")+'</div>'+
+      '<div class="rr-g"><b>Updated</b>'+seg("upd",RF_UPD,"Last updated")+'</div>'+
+    '</div></aside>'; }
+function sortBox(){ return '<label class="res-sort"><span class="sr-only">Sort by</span><select id="resSort">'+
+  '<option value="fit">Best fit</option><option value="stars">Most stars</option><option value="new">Recently updated</option></select></label>'; }
+// RS67: sort the cards already on screen; repos the AI check left out always stay last (RS34)
+function sortCards(how){ var g=document.querySelector("#out .grid"); if(!g) return;
+  var cards=[].slice.call(g.querySelectorAll(".rcard")), key=function(c){ return how==="stars"?-(+c.getAttribute("data-stars")||0)
+    : how==="new"?-(Date.parse(c.getAttribute("data-pushed"))||0) : +c.getAttribute("data-i")||0; };
+  cards.sort(function(a,b){ var la=a.getAttribute("data-left")?1:0, lb=b.getAttribute("data-left")?1:0; return la-lb || key(a)-key(b); });
+  var div=g.querySelector(".left-div"), seen=false;
+  cards.forEach(function(c){ if(div && !seen && c.getAttribute("data-left")){ g.appendChild(div); seen=true; } g.appendChild(c); });
+  window.__resLimit=10; applyResultFilter(); checkMore(); }
 
 function render(top, queries, excluded, totalMatches, qtokens, heading, note, gate){
   if(!top.length){ return '<div class="panel"><p class="err">No repository matched.</p>'+
@@ -406,13 +465,15 @@ function render(top, queries, excluded, totalMatches, qtokens, heading, note, ga
   var more=(totalMatches||top.length)-top.length;   // >0 only if we hit the render cap (rare)
   var n=top.length;
   var h='<div class="res-head"><h2>'+(heading?esc(heading):'Top matches')+'</h2>'+
-      '<span class="res-count mut">'+n+' result'+(n===1?'':'s')+'</span></div>'+
+      '<span class="res-count mut">'+n+' result'+(n===1?'':'s')+'</span>'+
+      '<span class="res-tools">'+sortBox()+'<button type="button" class="rsel" id="resSelAll" title="Tick every repo shown, for a build plan (RS28a)">Select all shown</button></span></div>'+
     (note?'<p class="res-note mut">'+note+'</p>':'')+  /* note is pre-built HTML: repo name already escaped, rest is our own markup */
-    filterBar()+
+    '<div class="res-body">'+filterBar(top)+'<div class="res-main">'+   // RS67: filter panel on the left, cards on the right
     '<div class="grid">'+top.map(function(r,i){   // RS34: AI-dropped repos follow the kept ones under a quiet divider, shown automatically
       return (r.left && !(i && top[i-1].left) ? '<p class="left-div" hidden>Less likely to fit</p>' : '')+cardHtml(r,i,qtokens);}).join("")+'</div>'+
-    '<div id="resEmpty" class="res-empty" hidden>No results match this filter. <button type="button" class="link-btn" id="resClear">Clear filter</button></div>'+
+    '<div id="resEmpty" class="res-empty" hidden>No results match these filters. <button type="button" class="link-btn" id="resClear">Clear filters</button></div>'+
     '<div id="resMore" class="res-more-hint" aria-live="polite" hidden></div>'+   /* scroll sentinel: auto-reveals more (RS29) */
+    '</div></div>'+
     '<details class="excl"><summary>How we searched</summary>Searches: '+esc(queries.join("; "))+'. Left out — not open-source: '+excluded.license+
     ', inactive: '+excluded.stale+', too few stars: '+excluded.low+', forks/archived: '+excluded.fork+
     ', harmful: '+excluded.harm+'.</details>';
@@ -425,9 +486,13 @@ function render(top, queries, excluded, totalMatches, qtokens, heading, note, ga
 function applyResultFilter(){
   var out=document.getElementById("out"); if(!out || !out.querySelector(".res-filter")) return;  // only the top-matches view
   var cards=out.querySelectorAll(".rcard"), fl=resFlags(), limit=window.__resLimit||10, shown=0, matched=0;
+  var langOn=Object.keys(fl.langs).filter(function(k){ return fl.langs[k]; }), now=Date.now();
   for(var i=0;i<cards.length;i++){ var c=cards[i];
     var ok = (!fl.com || c.getAttribute("data-com")==="1")
-      && (!fl.starter || c.getAttribute("data-starter")==="1");   // RS29d: switches combine; RS34: left-out repos reveal last
+      && (!fl.starter || c.getAttribute("data-starter")==="1")   // RS29d: switches combine; RS34: left-out repos reveal last
+      && (!langOn.length || fl.langs[c.getAttribute("data-lang")||""]===true)   // RS67: any ticked language
+      && ((+c.getAttribute("data-stars")||0) >= fl.stars)
+      && (!fl.upd || (Date.parse(c.getAttribute("data-pushed"))||0) >= now-fl.upd*864e5);
     if(ok){ matched++; if(shown<limit){ if(c.style.display==="none"){ c.style.display=""; if(inView(c)){ c.classList.remove("reveal"); void c.offsetWidth; c.classList.add("reveal"); } else queueReveal(c); }
         c.style.display=""; shown++; } else c.style.display="none"; }
     else c.style.display="none";
@@ -436,8 +501,11 @@ function applyResultFilter(){
   var ld=out.querySelector(".left-div"); if(ld) ld.hidden = ![].some.call(out.querySelectorAll('.rcard[data-left="1"]'), function(c){ return c.style.display!=="none"; });
   var more=out.querySelector("#resMore");
   if(more){ if(matched>shown){ more.hidden=false; more.textContent="Showing "+shown+" of "+matched+" · scroll for more"; } else more.hidden=true; }
-  var chips=out.querySelectorAll(".rfilter");
-  for(var j=0;j<chips.length;j++){ var on=!!fl[chips[j].getAttribute("data-f")]; chips[j].classList.toggle("on",on); chips[j].setAttribute("aria-pressed",String(on)); }
+  var cbs=out.querySelectorAll(".rf-cb");   // RS67: the panel shows the current filters
+  for(var j=0;j<cbs.length;j++){ var f=cbs[j].getAttribute("data-f"); cbs[j].checked = f==="lang" ? fl.langs[cbs[j].getAttribute("data-v")]===true : !!fl[f]; }
+  var sbs=out.querySelectorAll(".rr-sb");
+  for(var m=0;m<sbs.length;m++){ var on=(+sbs[m].getAttribute("data-v"))===fl[sbs[m].getAttribute("data-f")];
+    sbs[m].classList.toggle("on",on); sbs[m].setAttribute("aria-pressed",String(on)); }
   syncSelAll();
 }
 // "Select all shown" (RS28a): acts only on visible cards — respects the active filter and scroll-reveal
@@ -457,7 +525,8 @@ function watchMore(){ var s=document.querySelector("#out #resMore"); if(!s) retu
   window.__moreObs=new IntersectionObserver(function(es){
     for(var i=0;i<es.length;i++) if(es[i].isIntersecting){ revealMore(); break; } },{rootMargin:"0px 0px 400px 0px"});
   window.__moreObs.observe(s); }
-function initResultFilter(){ window.__resFilter="all"; window.__resLimit=10; applyResultFilter(); watchMore(); checkMore(); }
+function initResultFilter(){ rfReset(); window.__resLimit=10; var so=document.getElementById("resSort"); if(so) so.value="fit";
+  applyResultFilter(); watchMore(); checkMore(); }
 // RS34: ask the same-origin function which repos don't fit; "off" when not set up, {fail} on any failure (fail open, silent)
 // RS42: RAG wording appears only when the server says a RAG part is switched on (never claimed while it is off)
 function ragRan(d){ return !!(d && d!=="off" && !d.fail && d.rag && (d.rag.meaning||d.rag.index)); }
@@ -794,7 +863,7 @@ async function run(){
         }
         top=keptRows.concat(leftRows.map(function(r){ r.left=1; return r; }));
         gate={ok:true,hidden:drops.length}; } }
-    out.innerHTML=render(top,queries,excluded,ranked.length,qtok,heading,window.__likeNote||"",gate);
+    closeDrawer(); out.innerHTML=render(top,queries,excluded,ranked.length,qtok,heading,window.__likeNote||"",gate);
     // RS34: no on-screen note about the AI check; its outcome is kept as an attribute for diagnosis only
     out.setAttribute("data-gate", !gate?"off":gate.ok?"ok:"+gate.hidden:String(gate.error||"fail").replace(/[^a-z0-9_]/gi,"").slice(0,40));
     animateCards(out); initResultFilter(); st.textContent=""; saveResults(); syncClearQ();
@@ -985,6 +1054,10 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
   window.__resetPicks=function(){ picks=[]; refresh(); };
   // event delegation so it keeps working after results re-render
   out.addEventListener("change",function(e){ var cb=e.target;
+    if(cb&&cb.classList&&cb.classList.contains("rf-cb")){ var fl=resFlags(), f=cb.getAttribute("data-f");   // RS67: licence / type / language
+      if(f==="lang") fl.langs[cb.getAttribute("data-v")]=cb.checked; else fl[f]=cb.checked;
+      window.__resLimit=10; applyResultFilter(); checkMore(); return; }
+    if(cb&&cb.id==="resSort"){ sortCards(cb.value); return; }
     if(!cb||!cb.classList||!cb.classList.contains("pick-cb")) return;
     var url=cb.getAttribute("data-url"), i=idx(url);
     if(cb.checked){ if(i<0) picks.push({name:cb.getAttribute("data-name"),url:url,desc:cb.getAttribute("data-desc")}); }
@@ -992,12 +1065,14 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
     refresh(); });
   // result-filter chips + show-more + clear (delegated, survives re-render)
   out.addEventListener("click",function(e){ var t=e.target;
-    var fb=t.closest&&t.closest(".rfilter");
-    if(fb){ var fl=resFlags(), k=fb.getAttribute("data-f"); fl[k]=!fl[k];   // RS29d: a switch, tap again to turn it off
-      window.__resFilter=(fl.com&&fl.starter)?"com+starter":fl.com?"com":fl.starter?"starter":"all";
-      window.__resLimit=10; applyResultFilter(); checkMore(); return; }
+    var sb=t.closest&&t.closest(".rr-sb");   // RS67: stars / updated segments
+    if(sb){ resFlags()[sb.getAttribute("data-f")]=+sb.getAttribute("data-v")||0; window.__resLimit=10; applyResultFilter(); checkMore(); return; }
+    var tg=t.closest&&t.closest(".rr-toggle");   // phones: the panel folds behind a Filters button
+    if(tg){ var rl=tg.closest(".res-rail"), op=!rl.classList.contains("open"); rl.classList.toggle("open",op); tg.setAttribute("aria-expanded",String(op)); return; }
+    var det=t.closest&&t.closest(".rc-det");
+    if(det){ openDrawer(det.closest(".rcard"), det); return; }
     if(t.closest&&t.closest(".trend-tab")){ showTrending(t.closest(".trend-tab").getAttribute("data-trend")); return; }
-    if(t.closest&&t.closest("#resClear")){ window.__resFilter="all"; window.__resLimit=10; applyResultFilter(); checkMore(); return; }
+    if(t.closest&&(t.closest("#resClear")||t.closest(".rf-clear"))){ rfReset(); window.__resLimit=10; applyResultFilter(); checkMore(); return; }
     if(t.closest&&t.closest("#resSelAll")){ var bx=shownPickBoxes(), all=bx.every(function(x){ return x.checked; });
       bx.forEach(function(x){ if(x.checked===all){ x.checked=!all; x.dispatchEvent(new Event("change",{bubbles:true})); } });
       syncSelAll(); } });
@@ -1207,11 +1282,11 @@ async function showTrending(kind){
     var got=await fetchTrending(kind); if(gen!==window.__runGen) return;
     var t=trendRows(got.items, kind);
     out.innerHTML=render(t.rows,[got.q],t.excluded,t.rows.length,[],"Trending on GitHub","",null);
-    var bar=out.querySelector(".res-filter");   // RS29d: the list switcher opens the filter row, the note sits under it
+    var bar=out.querySelector(".res-main");   // RS67: the list switcher and its note open the cards column
     if(bar){ bar.insertAdjacentHTML("afterbegin",'<div class="trend-tabs" role="tablist" aria-label="Trending lists">'+
       Object.keys(TREND_TABS).map(function(k){ return '<button type="button" class="trend-tab'+(k===kind?' on':'')+'" data-trend="'+k+
-        '" role="tab" aria-selected="'+(k===kind)+'">'+TREND_TABS[k]+'</button>'; }).join("")+'</div><span class="rf-sep" aria-hidden="true"></span>');
-      bar.insertAdjacentHTML("afterend",'<p class="res-note mut trend-note">'+esc(TREND_NOTE[kind])+'</p>'); }
+        '" role="tab" aria-selected="'+(k===kind)+'">'+TREND_TABS[k]+'</button>'; }).join("")+'</div>'+
+        '<p class="res-note mut trend-note">'+esc(TREND_NOTE[kind])+'</p>'); }
     out.setAttribute("data-gate","trending");
     animateCards(out); initResultFilter(); st.textContent=""; saveResults(); syncClearQ();
   }catch(e){ if(gen!==window.__runGen) return; st.textContent=""; out.innerHTML='<div class="panel"><p class="err">'+esc(e.message)+'</p></div>'; }
@@ -1315,16 +1390,20 @@ function placeDemo(){
   var stage=document.getElementById("stageSlot");   // RS65: on wide screens the demo sits on the studio stage under the search
   if(DEMO_MQ&&DEMO_MQ.matches){ if(ex.parentNode!==slot) slot.appendChild(ex); }
   else if(stage){ if(ex.parentNode!==stage) stage.appendChild(ex); }
-  // RS65: on the stage, Leo and the globe greet first and the example cards sit under the search bar
-  var deckSlot=document.getElementById("deckSlot"), ld=ex.querySelector&&ex.querySelector(".ld");
-  var deck=ex.querySelector&&(ex.querySelector(".ld-deck")||(deckSlot&&deckSlot.querySelector(".ld-deck")));
-  if(deckSlot&&deck&&ld&&deckSlot.appendChild){
-    var onStage=stage&&ex.parentNode===stage, note=ld.querySelector(".ld-note")||deckSlot.querySelector(".ld-note");
-    if(onStage){ if(deck.parentNode!==deckSlot){ deckSlot.innerHTML=""; deckSlot.appendChild(deck); if(note) deckSlot.appendChild(note); } }
-    else if(deck.parentNode!==ld){ ld.appendChild(deck); if(note) ld.appendChild(note); } }
-  else if(ex.parentNode!==out && !out.querySelector(".rcard, .group-h, .err")) out.appendChild(ex);
+  if(!stage && ex.parentNode!==out && !out.querySelector(".rcard, .group-h, .err")) out.appendChild(ex);
+  placeSearch();
   [].forEach.call(ex.querySelectorAll(".demo-dot"),function(d){ d.tabIndex=(DEMO_MQ&&DEMO_MQ.matches)?-1:0; });   // search comes first for keyboards
 }
+// RS67 (owner pick, hero option A): on wide home screens the search bar sits under Leo's words, beside him. Results
+// (or a phone width) put it back under the stage. A focused search box keeps its focus through the move.
+function placeSearch(){ var q=document.getElementById("q"), s=q&&q.closest&&q.closest(".search"), stage=document.getElementById("stageSlot");
+  if(!s||!stage||!stage.parentNode) return;
+  var slot=stage.querySelector&&stage.querySelector(".st-search");
+  var home=!!slot && !document.body.classList.contains("has-results") && !(DEMO_MQ&&DEMO_MQ.matches);
+  var want=home?slot:stage.parentNode; if(s.parentNode===want) return;
+  var had=document.activeElement===q;
+  if(home) slot.appendChild(s); else stage.parentNode.insertBefore(s, stage.nextSibling);
+  if(had&&q.focus) try{ q.focus({preventScroll:true}); }catch(_){ q.focus(); } }
 if(DEMO_MQ){ try{ DEMO_MQ.addEventListener("change",placeDemo); }catch(e){ DEMO_MQ.addListener&&DEMO_MQ.addListener(placeDemo); } }
 function showHome(){
   var oldSlot=document.getElementById("demoSlot"); if(oldSlot&&oldSlot.firstChild){ stopDemo("heroDemo"); oldSlot.innerHTML=""; }
@@ -1341,19 +1420,10 @@ function showHome(){
 // it land as cards (licence verdict pops, Explore buttons light in turn), over an ASCII globe of GitHub (desktop only).
 // The cards are what scout.py returned for these searches on 2026-10-23 (site keyword queries, fit ranking); they are
 // examples of the output, refreshed by hand, and say so. No network call, so the home screen costs no GitHub quota.
-var LIVE_DEMO=[
-  {q:"a portfolio website with smooth scroll animations", r:[
-    ["cobiwave/simplefolio","MIT","A minimal portfolio template for Developers"],
-    ["hsnaydd/moveTo","MIT","A lightweight scroll animation javascript library without any dependency"],
-    ["academicpages/academicpages.github.io","MIT","Github Pages template based upon HTML and Markdown for personal, portfolio-based websites."]]},
-  {q:"a chatbot that answers questions from my PDFs, Python", r:[
-    ["Cinnamon/kotaemon","Apache-2.0","An open-source RAG-based tool for chatting with your documents."],
-    ["bhaskatripathi/pdfGPT","MIT","PDF GPT allows you to chat with the contents of your PDF file by using GPT capabilities."],
-    ["Nutlope/pdftochat","MIT","Chat with your PDFs with AI"]]},
-  {q:"dashboard to show my sales spreadsheet as charts", r:[
-    ["ColorlibHQ/AdminLTE","MIT","AdminLTE - Free admin dashboard template based on Bootstrap 5"],
-    ["coreui/coreui-free-bootstrap-admin-template","MIT","Free Bootstrap Admin & Dashboard Template Built for AI-Assisted Development"],
-    ["vercel/nextjs-postgres-nextauth-tailwindcss-template","MIT","Admin dashboard template."]]}];
+var LIVE_DEMO=[   // RS67: the example searches Leo types into the search bar (no example cards any more)
+  {q:"a portfolio website with smooth scroll animations"},
+  {q:"a chatbot that answers questions from my PDFs, Python"},
+  {q:"dashboard to show my sales spreadsheet as charts"}];
 var ASCII_RAMP=" .:-=+*#%@";
 function asciiNoise(x,y){ function h(a,b){ var s=Math.sin(a*127.1+b*311.7)*43758.5453; return s-Math.floor(s); }
   var xi=Math.floor(x), yi=Math.floor(y), xf=x-xi, yf=y-yi, u=xf*xf*(3-2*xf), v=yf*yf*(3-2*yf);
@@ -1396,27 +1466,27 @@ function buildLiveDemo(host){
   if(!host || host.dataset.built) return; host.dataset.built="1";
   var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches;
   var wide=!(window.matchMedia&&matchMedia("(max-width: 999px)").matches);
-  // RS65: the studio stage. The scout bot stands beside the ASCII globe of GitHub; the rail names the
-  // stage of the search, and the real top results land as frosted cards under the pair.
-  // The arrows step through the example searches. Phones get the bot and one card (no globe, no rail).
+  // RS65: the studio stage. Leo, the scout bot, stands beside the ASCII globe of GitHub. RS67 (hero option A): his
+  // words, the search stages (pills) and the search bar sit beside him; the example search types itself into the bar's
+  // placeholder, so there is no separate typed line and no example cards. Phones get Leo and his words (no globe).
   var STAGES="Searching|Ranking by fit|Licence check|Ready".split("|");
   host.innerHTML='<div class="ld st">'+
-    '<div class="ld-q" aria-hidden="true">'+ico("search")+'<span class="ld-typed"></span><span class="ld-caret"></span></div>'+
     '<div class="st-stage">'+
       '<div class="st-pair" aria-hidden="true">'+
         (wide?'<div class="st-g"><canvas class="ld-globe"></canvas><span class="st-sh"></span></div>':'')+
         '<div class="st-b"><img class="st-bot" src="scout-hero.webp" alt="" width="180" height="184" decoding="async"><span class="st-sprite"></span><span class="st-sh"></span>'+
         (wide&&!reduce?'<video class="st-peekvid" muted playsinline preload="auto" aria-hidden="true"></video>':'')+'</div></div>'+
-      '<p class="st-say"><b>Hello there!</b><em>I’m Leo.</em><span class="st-say-t">Let’s explore what free GitHub repos have to offer for your idea. Then I’ll help you plan it.</span>'+
-        '<span class="st-pills" aria-hidden="true">'+STAGES.map(function(t){ return '<i>'+t+'</i>'; }).join("")+'</span></p>'+   // the search stages, as pills   // RS65: Leo, the scout
     '</div>'+
-    '<div class="ld-deck" aria-hidden="true"></div>'+
-    '<p class="ld-note">Example: Replore’s real top results for this search</p>'+
-    '<svg class="st-cursor" aria-hidden="true" width="26" height="34" viewBox="0 0 20 26"><path d="M2 2 L2 21 L7 16.5 L10.5 24 L14 22.5 L10.6 15 L17 15 Z"/></svg></div>';
-  var deck=host.querySelector(".ld-deck"), cur=host.querySelector(".st-cursor"), box=host.querySelector(".ld"), typed=host.querySelector(".ld-typed"), globe=host.querySelector(".ld-globe"),
+    '<div class="st-side">'+
+      '<p class="st-say"><b>Hello there!</b><em>I’m Leo.</em><span class="st-say-t">Tell me your idea. I’ll find free GitHub repos for it and help you plan.</span>'+
+        '<span class="st-pills" aria-hidden="true">'+STAGES.map(function(t){ return '<i>'+t+'</i>'; }).join("")+'</span></p>'+   // the search stages, as pills
+      '<div class="st-search"></div>'+   // RS67: placeSearch() moves the search bar here on wide home screens
+    '</div></div>';
+  var globe=host.querySelector(".ld-globe"),
       label=host.querySelector(".st-label"), bot=host.querySelector(".st-bot"),
       rail=[].slice.call(host.querySelectorAll(".st-pills i"));
   if(globe) startAsciiGlobe(globe, reduce);
+  var qin=document.getElementById("q");
   var sb=bot&&bot.parentNode, say=host.querySelector(".st-say"), sayT=host.querySelector(".st-say-t"), SAY=sayT?sayT.textContent:"";
   function speak(txt){ if(sayT) sayT.textContent=txt; if(say&&say.classList) say.classList.add("on"); }
   // RS65: Leo is interactive. He peeks out, waves hello, reacts while you type, and searches (magnifier sweep) when you
@@ -1447,7 +1517,6 @@ function buildLiveDemo(host){
   else if(canAnim){ cssPeek(); setTimeout(startDemo, 7000); }   // fallbacks if an animation event never fires
   else { speak(SAY); }
   // typing: Leo pauses the example and answers you
-  var qin=document.getElementById("q");
   if(qin&&qin.addEventListener){
     qin.addEventListener("input",function(){ if(document.body.classList.contains("searching")) return;
       if(qin.value.trim()){ paused=true; clear(); still(); pose("hero"); stage(-1,""); speak("Sounds good! Press Enter and I’ll go look."); }
@@ -1458,53 +1527,33 @@ function buildLiveDemo(host){
   function clear(){ timers.forEach(clearTimeout); timers=[]; }
   function stage(i, txt){ rail.forEach(function(li,j){ li.classList.toggle("on", j===i); }); if(label) label.textContent=txt||""; }
   function pose(p){ if(bot) bot.src=p==="search"?"scout-search.webp":"scout-hero.webp"; }
-  function pointAt(el){ if(!cur||!el||!box||!el.getBoundingClientRect) return;
-    var a=box.getBoundingClientRect(), r=el.getBoundingClientRect();
-    cur.style.transform="translate("+Math.round(r.left-a.left+r.width*.55)+"px,"+Math.round(r.top-a.top+r.height*.5)+"px)"; cur.classList.add("on"); }
-  function cardHtmlMini(r){ var p=r[0].split("/"), v=licenseVerdict(r[1]);
-    return '<div class="ld-card"><div class="ld-top"><span class="avatar" style="--h:'+ownerHue(p[0])+'">'+esc(p[0].charAt(0).toUpperCase())+'</span>'+
-      '<span class="ld-name"><span class="owner">'+esc(p[0])+' /</span> '+esc(p.slice(1).join("/"))+'</span></div>'+
-      '<p class="ld-desc">'+esc(r[2])+'</p>'+
-      '<div class="ld-ex"><i>Diagram</i><i>Wiki</i><i>Code</i></div>'+   // RS63: the same three tools as card A
-      '<span class="tag '+v.c+' ld-lic">'+ico(v.i)+esc(v.t)+'</span></div>'; }
+  // RS67: the example search types itself into the search bar's placeholder (never over what a visitor typed)
+  var PH=(qin&&qin.getAttribute&&qin.getAttribute("placeholder"))||"What are you building?";
+  function ph(t){ if(!qin||qin.value||document.activeElement===qin) return; qin.setAttribute("placeholder",t); }
+  if(qin&&qin.addEventListener) qin.addEventListener("focus",function(){ qin.setAttribute("placeholder",PH); });
   function run(){ clear(); if(paused||!host.isConnected||document.body.classList.contains("searching")) return;
-    var n=LIVE_DEMO.length, ex=LIVE_DEMO[((k%n)+n)%n], shown=wide?3:1; k++;
-    deck.innerHTML=ex.r.slice(0,shown).map(cardHtmlMini).join(""); typed.textContent=""; stage(-1,""); pose("hero");
-    if(cur) cur.classList.remove("on","click");
-    if(reduce){ typed.textContent=ex.q; stage(3, ex.r.length+" repos fit"); [].forEach.call(deck.children,function(c){ c.classList.add("in","lit"); }); return; }
-    var step=Math.max(18,Math.min(42,1400/ex.q.length));
-    for(var i=1;i<=ex.q.length;i++) (function(m){ later(function(){ typed.textContent=ex.q.slice(0,m); }, m*step); })(i);
-    var t0=ex.q.length*step+250;
+    var n=LIVE_DEMO.length, ex=LIVE_DEMO[((k%n)+n)%n]; k++;
+    stage(-1,""); pose("hero");
+    if(reduce){ stage(3,"Ready"); return; }
+    var step=Math.max(28,Math.min(55,1700/ex.q.length));
+    later(function(){ ph(""); }, 400);
+    for(var i=1;i<=ex.q.length;i++) (function(m){ later(function(){ ph(ex.q.slice(0,m)); }, 400+m*step); })(i);
+    var t0=400+ex.q.length*step+350;
     later(function(){ stage(0,"Searching GitHub"); pose("search"); if(globe&&globe.__boost) globe.__boost(2.4); }, t0);
     later(function(){ stage(1,"Ranking by fit"); }, t0+800);
     later(function(){ stage(2,"Licence check"); }, t0+1450);
-    t0+=2000;
-    later(function(){ stage(3, ex.r.length+" repos fit"); pose("hero"); }, t0);
-    [].forEach.call(deck.children,function(c,j){ var at=t0+j*200;
-      later(function(){ c.classList.add("in"); }, at);
-      later(function(){ c.classList.add("lit"); }, at+380); });
-    // RS65: a pointer glides to one tool on each card and clicks it (Wiki, Diagram, Code), so visitors see what to press
-    var visits=[[0,1],[1,0],[2,2]].filter(function(v){ return v[0]<deck.children.length; });
-    if(!wide) visits=[[0,1],[0,0],[0,2]];
-    visits.forEach(function(v,n){ var at=t0+1000+n*900;
-      later(function(){ var c=deck.children[v[0]], b=c&&c.querySelectorAll(".ld-ex i")[v[1]]; pointAt(b); }, at);
-      later(function(){ var c=deck.children[v[0]], b=c&&c.querySelectorAll(".ld-ex i")[v[1]]; if(!b) return;
-        b.classList.add("on"); if(cur) cur.classList.add("click"); }, at+560);
-      later(function(){ var c=deck.children[v[0]], b=c&&c.querySelectorAll(".ld-ex i")[v[1]]; if(b) b.classList.remove("on");
-        if(cur) cur.classList.remove("click"); }, at+880); });
-    later(function(){ if(cur) cur.classList.remove("on"); }, t0+1000+visits.length*900+300);
-    later(function(){ [].forEach.call(deck.children,function(c){ c.classList.add("out"); }); }, t0+6200);
-    later(run, t0+6800); }
+    later(function(){ stage(3,"Ready"); pose("hero"); }, t0+2100);
+    later(function(){ ph(PH); stage(-1,""); }, t0+5600);
+    later(run, t0+7400); }
   // RS65: a real search takes over the stage: the bot searches, the rail and label follow it, the example cards leave
   var busy=false;
   function onSearch(){ var on=document.body.classList.contains("searching");
     if(on&&!busy){ busy=true; clear(); var qv=document.getElementById("q");
-      typed.textContent=(qv&&qv.value||"").trim(); stage(0,"Searching GitHub"); pose("search"); speak("On it! Searching GitHub for you…"); sprite("search", true); if(cur) cur.classList.remove("on","click");
-      [].forEach.call(deck.children,function(c){ c.classList.add("out"); });
+      if(qv) qv.setAttribute("placeholder",PH); stage(0,"Searching GitHub"); pose("search"); speak("On it! Searching GitHub for you…"); sprite("search", true);
       later(function(){ stage(1,"Ranking by fit"); }, 1400); later(function(){ stage(2,"Licence check"); }, 2800); }
     else if(!on&&busy){ busy=false; still(); speak(SAY); if(!document.body.classList.contains("has-results")&&host.isConnected){ paused=false; run(); } } }
   if(window.MutationObserver) new MutationObserver(onSearch).observe(document.body,{attributes:true,attributeFilter:["class"]});
-  host.__stopDemo=function(){ paused=true; clear(); };   // the globe keeps turning on the stage; it stops itself once removed
+  host.__stopDemo=function(){ paused=true; clear(); if(qin&&!qin.value) qin.setAttribute("placeholder",PH); };   // the globe keeps turning on the stage; it stops itself once removed
   host.__playDemo=function(){ if(paused){ paused=false; run(); } };
   if(!canAnim) startDemo();
 }
@@ -1519,7 +1568,7 @@ function tipUrlOk(u, host){ u=String(u||"");
 (function(){ if(typeof location==="undefined" || !tipUrlOk(TIP_URL, location.hostname)) return;
   document.querySelectorAll(".tip-link").forEach(function(a){ a.href=TIP_URL; });
   document.querySelectorAll(".tip-el").forEach(function(el){ el.hidden=false; }); })();
-var LAST="findrepo_last", CACHE_V="15";   // 15: card A (RS63); 14: one filter row, no "All" chip (RS29d); 13: cards carry the trust row (RS53); 12: Wiki (DeepWiki) Explore button; 11: cards carry Explore links (RS51); 10: no inline onclick (RS49)  // bump when saved markup changes, so stale caches are dropped
+var LAST="findrepo_last", CACHE_V="16";   // 16: compact card + filter panel (RS67); 15: card A (RS63); 14: one filter row, no "All" chip (RS29d); 13: cards carry the trust row (RS53); 12: Wiki (DeepWiki) Explore button; 11: cards carry Explore links (RS51); 10: no inline onclick (RS49)  // bump when saved markup changes, so stale caches are dropped
 // RS43 A: the visitor's own last 10 searches for 1 hour, in their browser only. Pure functions (tested) + thin wrappers.
 var RECENT="replore_recent", RECENT_TTL_MS=3600000, RECENT_MAX=10;
 function recentKey(f){ return JSON.stringify([String(f.q||"").trim().toLowerCase().replace(/\s+/g," "), f.platform||"", String(f.minstars||""),
@@ -1574,7 +1623,7 @@ function resetAll(){
   ["platform","starters"].forEach(function(id){ var el=document.getElementById(id); if(!el) return;
     var d=el.querySelector("option[selected]"); el.value = d ? d.value : (el.options[0]&&el.options[0].value); });
   var ms=document.getElementById("minstars"); if(ms) ms.value=ms.defaultValue;
-  setStack(""); window.__resFilter="all"; window.__resLimit=10;
+  setStack(""); rfReset(); window.__resLimit=10; closeDrawer();
   var si=document.getElementById("stackInput"); if(si) si.value="";
   var sm=document.getElementById("stackMenu"); if(sm){ sm.hidden=true; sm.innerHTML=""; }
   document.getElementById("status").textContent=""; showHome();
@@ -1587,7 +1636,8 @@ function syncClearQ(){ var x=document.getElementById("clearQ"); if(!x) return;
   document.body.classList.toggle("has-results", !!document.querySelector("#out .rcard, #out .group-h"));
   document.body.classList.toggle("view-trending", !!document.querySelector("#out .trend-tabs"));   // RS35: no Rising twice
   var ds=document.getElementById("demoSlot");   // RS24: a demo moved above the search goes once results show
-  if(ds && ds.firstChild && document.querySelector("#out .rcard, #out .group-h, #out .err")){ stopDemo("heroDemo"); ds.innerHTML=""; } }
+  if(ds && ds.firstChild && document.querySelector("#out .rcard, #out .group-h, #out .err")){ stopDemo("heroDemo"); ds.innerHTML=""; }
+  placeSearch(); }
 (function(){ var brand=document.getElementById("brandHome"), x=document.getElementById("clearQ");
   if(brand){ brand.addEventListener("click",resetAll);
     brand.addEventListener("keydown",function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); resetAll(); } }); }

@@ -983,6 +983,19 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   No contour lines anywhere (owner rejected them twice); a plain dark-blue lit studio floor instead. The rendered MP4 is
   not committed (`renders/` is ignored); rebuild it with the HyperFrames CLI. Sound effects are bundled Pixabay files
   (licence in `assets/sfx/CREDITS.md`); no music bed yet.
+- **RS67** Hero option A and job-board results (owner picks 2026-10-23, from a mock-up). Home on wide screens: Leo and
+  the globe on the left; on the right his words ("Hello there! I'm Leo. Tell me your idea. I'll find free GitHub repos
+  for it and help you plan."), the stage pills, then the search bar and quick picks. The sub-line, the typed demo line,
+  the example cards and their pointer are gone (owner: "too much text", "search bar in the middle of Leo and results");
+  the example searches type themselves into the empty, unfocused search bar's placeholder and the pills light up. No
+  invented counts: the last pill just says Ready. The peek clip's top and bottom pixel rows are transparent (they drew
+  lines). Results: a filter panel on the left (licence, starters, languages found in the results, minimum stars, last
+  updated) that only narrows the cards already fetched (RS29, no API call; folds behind a Filters button on phones), a
+  sort menu (best fit by default; stars and recently updated only reorder the view, the ranking itself is unchanged,
+  RX3), and three compact cards per row: Updated pill, bookmark = Add to plan, owner, bold name, two-line description,
+  tags, stars and licence, a dark Details button. Hover or keyboard focus turns a card dark. Details opens a side panel
+  with the rest of card A (why it fits, Open on GitHub, Diagram / Wiki / Code, the trust check); the card's own extras
+  move into the panel and back, so "Add to plan" stays one checkbox.
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
 - **RX3** Ranking by forks, trending or download counts. (Relevance, stars and license-freedom are the only
