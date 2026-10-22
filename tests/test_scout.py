@@ -412,7 +412,7 @@ def test_main_json(monkeypatch, capsys):
                               "start_hint": scout.HINT_README,
                               "pushed": "2026-09-01", "url": "https://github.com/a/b", "query": "x",
                               "description": "a/b desc", "rel": 0, "why": "Top match for your search",
-                              "topics": [], "rank": 1}
+                              "topics": [], "language": "", "rank": 1}
     assert data["rank_mode"] == "fit" and data["prefer_starters"] is False
     assert set(data["excluded"]) == {"fork_or_archived", "license", "stale", "low_stars", "harmful", "duplicate"}
     assert data["min_stars"] == 50
@@ -461,11 +461,15 @@ def test_stdlib_only_and_no_model_calls():
     src = (ROOT / "scripts" / "scout.py").read_text(encoding="utf-8")
     imports = set(re.findall(r"^\s*(?:import|from)\s+([a-zA-Z_]+)", src, re.M))
     assert imports <= {"argparse", "csv", "datetime", "http", "io", "json", "math", "os", "re", "sys", "urllib",
-                       "hybrid"}, imports   # RS42: hybrid is the local stdlib-only module below
+                       "hybrid", "trust"}, imports   # RS42/RS56: hybrid and trust are the local stdlib-only modules below
     assert not re.search(r"anthropic|openai|claude", src, re.I)
     hsrc = (ROOT / "scripts" / "hybrid.py").read_text(encoding="utf-8")
     assert set(re.findall(r"^\s*(?:import|from)\s+([a-zA-Z_]+)", hsrc, re.M)) <= {"json", "math", "os", "re", "urllib", "collections"}
     assert not re.search(r"anthropic|openai|api_key|Authorization", hsrc, re.I)   # no model key, ever (RS1)
+    tsrc = (ROOT / "scripts" / "trust.py").read_text(encoding="utf-8")   # RS56
+    assert set(re.findall(r"^\s*(?:import|from)\s+([a-zA-Z_]+)", tsrc, re.M)) <= {"argparse", "concurrent", "http", "json", "math", "os", "re", "sys", "urllib"}
+    assert not re.search(r"anthropic|openai|api_key", tsrc, re.I)
+    assert tsrc.count("Authorization") == 1 and 'if url.startswith(GH):' in tsrc   # the one header: GitHub's token, to GitHub only (RS8)
 
 
 def test_skill_calls_real_script():
@@ -963,7 +967,7 @@ def test_release_hygiene():
     sys.path.insert(0, str(ROOT / "scripts"))
     import mcp_server
     plugin = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
-    assert plugin["version"] == mcp_server.SERVER_INFO["version"] == "0.3.0"
+    assert plugin["version"] == mcp_server.SERVER_INFO["version"] == "0.4.0"
     for wf in (ROOT / ".github" / "workflows").glob("*.yml"):
         for use in re.findall(r"uses:\s*(\S+)", wf.read_text(encoding="utf-8")):
             assert re.fullmatch(r"[\w.-]+/[\w.-]+@[0-9a-f]{40}", use), (wf.name, use)
@@ -995,3 +999,12 @@ def test_web_page_has_no_emoji_or_glyph_icons():
     assert "var ICONS=" in js and "function ico(" in js
     html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
     assert '<link rel="icon" href="favicon.svg"' in html and (ROOT / "web" / "favicon.svg").exists()
+
+
+def test_spec_rule_ids_are_unique():
+    """Every SPEC rule ID names one rule (2026-10-22: parallel sessions shipped two RS52s, two RS53s, then two RS54s).
+    Before committing a new rule, take max + 1 from the latest main."""
+    spec = (ROOT / "SPEC.md").read_text(encoding="utf-8")
+    ids = re.findall(r"^\s*- \*\*(R[SX]\d+[a-z]?)\b", spec, re.M)
+    dupes = sorted({i for i in ids if ids.count(i) > 1})
+    assert len(ids) > 50 and not dupes, f"duplicate SPEC rule IDs: {dupes}"

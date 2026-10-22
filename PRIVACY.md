@@ -1,6 +1,6 @@
 # Privacy
 
-*Last updated: 22 October 2026 ("Safe to build on?" check on result cards; earlier: DeepWiki added to the Explore links; Explore links on result cards; Cloudflare Web Analytics page-view counts disclosed; off-topic repos move down, not hidden; optional tips via Stripe; bot check switched on; feedback goes by email to Cardzo). This describes how Replore handles data as built. It is not legal advice.*
+*Last updated: 22 October 2026 (the plugin can run the "Safe to build on?" check too; earlier: "Safe to build on?" check on result cards; earlier: DeepWiki added to the Explore links; Explore links on result cards; Cloudflare Web Analytics page-view counts disclosed; off-topic repos move down, not hidden; optional tips via Stripe; bot check switched on; feedback goes by email to Cardzo). This describes how Replore handles data as built. It is not legal advice.*
 
 **Short version:** Replore has no account and no database, and stores nothing you type. Our host counts page views
 with Cloudflare Web Analytics, a cookieless page-view counter that never sees what you type. The people who
@@ -33,6 +33,11 @@ pixels, ads or cookies.
 ## Plugin, MCP server and script (on your computer)
 
 - Everything runs on your own computer. Your search words go to **GitHub's API** (as above). Nothing is sent to us.
+- **Safe to build on? (only when you ask for it).** If you or your agent run the trust check (`scripts/trust.py`,
+  `scout.py --trust`, or the MCP tool `check_repos`), your computer sends the public names of up to 5 repos (and
+  their programming language) to **GitHub's API**, **OpenSSF Scorecard** (`api.securityscorecards.dev`) and **Google's
+  deps.dev** (`api.deps.dev`, vulnerability data from **OSV.dev**), with your IP address, under their own terms. Never
+  your search words. `GITHUB_TOKEN`, if set, goes to GitHub only.
 - Your AI agent and its AI provider (for example Anthropic, OpenAI or Google) process your conversation under
   **their own** terms. That is between you and them; Replore doesn't receive it.
 - If you set `GITHUB_TOKEN`, it is sent only to GitHub and is never printed or logged.

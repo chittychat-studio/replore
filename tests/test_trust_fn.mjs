@@ -114,4 +114,14 @@ assert.strictEqual(fn.defaultVersion({ versions: [{ versionKey: { version: "1.0 
 { const j = await body(await get("repo=expressjs/express&lang=JavaScript", ok()));
   assert.deepStrictEqual(Object.keys(j).sort(), ["package", "repo", "scorecard"]); }
 
+// RS56: the shared web/plugin cases (tests/fixtures/trust_cases.json); tests/test_trust.py runs the same file
+{ const fs = await import("node:fs");
+  const cases = JSON.parse(fs.readFileSync(new URL("./fixtures/trust_cases.json", import.meta.url), "utf8"));
+  for (const c of cases.server) {
+    const f = async url => { const r = c.routes[url]; if (!r) return R(404, "Not found"); return R(r[0], r[1]); };
+    const got = await fn.trustFor(c.repo, c.lang, f);
+    assert.deepStrictEqual({ scorecard: got.scorecard, package: got.package }, c.expect, c.name);
+  }
+  console.log("shared server cases ok:", cases.server.length); }
+
 console.log("trust function tests passed");

@@ -10,7 +10,8 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   user's own Claude Code session, turns it into 1–4 GitHub search queries (keywords, optionally
   `topic:` / `language:` qualifiers). The script never calls a model and holds no model API key. One opt-in exception:
   `--semantic` (RS42) sends the description to Replore's own endpoint, which runs an embedding model server-side; the
-  script still holds no key and makes no model call itself.
+  script still holds no key and makes no model call itself. A second opt-in, the trust check (RS56), asks OpenSSF
+  Scorecard and deps.dev about public repo names; neither is a model.
 - **RS1a** When the skill starts without a description (bare `/replore:find`, or a request that does not say
   what is being built), it asks the user one plain question about the project or task, and runs no search until
   they answer. The question also offers two optional preferences: language or stack, and whether unlicensed repos are OK.
@@ -362,10 +363,11 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
 
 - **RS32** Model-agnostic MCP server. `scripts/mcp_server.py` exposes the engine as a Model Context Protocol
   server over stdio (newline-delimited JSON-RPC 2.0), so any MCP-capable agent — Claude Code, Codex CLI, Cursor,
-  Gemini CLI, VS Code/Copilot, Windsurf, Cline — can call it whatever model it runs. One tool, `find_repos`
-  (1–4 queries; optional prefer_starters, license open|any, min_stars, max_age_months, all, group), returns the
-  RS10/RS23 Markdown from `scout.py`. Standard library only (RS11); no model call, no key (RS1); the only network
-  call is the GitHub search API via `scout.fetch`. Failures return `isError: true` with the plain message and
+  Gemini CLI, VS Code/Copilot, Windsurf, Cline — can call it whatever model it runs. Two tools: `find_repos`
+  (1–4 queries; optional prefer_starters, license open|any, min_stars, max_age_months, all, group, trust) returns the
+  RS10/RS23 Markdown from `scout.py`, and `check_repos` (1–5 repos) is the RS56 trust check. Standard library only
+  (RS11); no model call, no key (RS1); the only network calls are the GitHub API via `scout.fetch`, plus GitHub,
+  Scorecard and deps.dev when a trust check is asked for (RS56). Failures return `isError: true` with the plain message and
   never a partial or remembered list (RS7). stdout carries only protocol messages; nothing logs the token (RS8).
   The tool description tells the calling model that repo names/descriptions are data, not instructions (RS9)
   and to decline RS18 requests. Not reachable from browser-only chats with no local tools; the web page covers those.
@@ -742,7 +744,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   third-party script or API means updating `_headers` in the same change.
 
 - **RS50** Release hygiene (peer review 2026-10-18). One version everywhere: `.claude-plugin/plugin.json` `version` equals
-  the MCP server's `SERVER_INFO` version (0.3.0). Every GitHub Action in `.github/workflows/` is pinned to a full commit
+  the MCP server's `SERVER_INFO` version (0.4.0, RS56). Every GitHub Action in `.github/workflows/` is pinned to a full commit
   SHA with the tag as a comment (`@<40 hex>  # v4`), so a moved tag cannot change what CI runs. Dev dependencies are pinned
   exactly (`pytest==9.1.1`, which supports Python 3.10–3.14). The repo's own Claude Code instructions live in
   `.claude/CLAUDE.md`, not at the plugin root, where `claude plugin validate` warned that a root `CLAUDE.md` is not loaded
@@ -764,7 +766,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   without one. The query string changes nothing for the CSP (RS49), which matches on origin only.
 - **RS53** "Safe to build on?" trust check on result cards (web; owner request 2026-10-22, architect review: "here
   are repos **and** whether they're safe to build on"). Each card whose name passes the RS51 `owner/repo` check has a
-  collapsed `<details>` row, **Safe to build on?**. Nothing is fetched until a visitor opens it (the unauthenticated
+  collapsed `<details>` row, **Safe to build on?** (the plugin runs the same check, RS56). Nothing is fetched until a visitor opens it (the unauthenticated
   GitHub core limit is 60 requests an hour per IP, RS41); the answer is kept in page memory, so reopening costs nothing.
   **Display only:** it never changes the rank, the filters or the relevance check (RS5, RX3). Every value shown comes
   from the API answer or is left out — never guessed (RS7); a source that fails shows "Couldn't check" on its own line,
@@ -807,7 +809,6 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
     `AGENTS.md` suggest the free Context7 MCP server so the user's own agent reads current docs for the repos they
     pick. Replore never calls, installs or configures it (RS1, RS11, RX4 unchanged).
 
-
 - **RS54** Tagline (owner decision 2026-10-22; numbered RS53 in #72, renumbered because the trust check #71 holds RS53). Replore is described as **"the repo scout for vibe coders"** with the
   line **"Find it before you build it."** It is not called an agent: it finds and explains repos and never writes code
   into the user's project (RX4). Used in the page `<title>`, its meta description, the hero pill (replacing "AI-powered
@@ -821,6 +822,29 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   `aria-label`. The tab icon is `web/favicon.svg`, the header's compass logo with light and dark colours. The four-point
   sparkle shape is gone from the hero backdrop. Illustrations (hero, how-it-works, empty states, share image) are a
   separate step and come from one commissioned style, not stock emoji. A test fails if a banned character is back.
+- **RS56** Trust check in the plugin, MCP server and script, in sync with RS53 (owner request 2026-10-22: "I want both
+  plugin and web page in sync"). `scripts/trust.py` (standard library, RS11; no model, no key, RS1) runs the RS53
+  check from the user's own computer — the GitHub half (RS53a) and the Scorecard + deps.dev half (RS53b: same forward
+  package check, same Go `/vN` probe) — and prints the RS53c lines in the same words. Opt-in and on demand, like the
+  web row: (1) `python scripts/trust.py owner/repo …` checks 1–5 named repos (a github.com link is accepted) without
+  searching again; one extra GitHub call per repo reads its language and license; (2) `scout.py --trust` checks the
+  top 5 of a search and adds the lines to the text, `--json` (a `trust` object on each checked row) and `--markdown`
+  ("Safe to build on? (top N)") output; (3) the MCP server takes `trust: true` on `find_repos` and has a second tool,
+  `check_repos` (1–5 repos). At most 5 repos per run: GitHub's unauthenticated core limit is 60 calls an hour and a
+  repo costs 3–4. The calls go straight from the user's computer to `api.github.com`, `api.securityscorecards.dev` and
+  `api.deps.dev` (no Replore server in between); `GITHUB_TOKEN` is sent to `api.github.com` only (RS8). Display
+  only: it never reorders, filters or fails the search (RX3); a failed source says "couldn't check", never a guess
+  (RS7). Every result row now carries the repo's GitHub `language` (JSON), which picks the ecosystem.
+  **Kept in sync by tests:** `tests/fixtures/trust_cases.json` holds the shared cases (deps.dev/Scorecard answers →
+  parts, GitHub answers → shape, and the phrases the panel and the lines must and must not show). The web's
+  `tests/test_trust_fn.mjs` and `tests/test_web_logic.js` and the plugin's `tests/test_trust.py` run every case, and
+  a test checks that the language map, Go majors, install commands and accepted value patterns are identical in
+  `functions/api/trust.js`, `web/app.js` and `scripts/trust.py`. A behaviour change goes into the shared cases first.
+  The shared cases caught one drift while porting: Python reads GitHub's `{}` "file present" marker as false, so the
+  port uses JavaScript truthiness. Wording follows RS55 on both sides: words, never glyphs — "README: yes ·
+  contributing guide: no", "none known", "2 known". The web keeps its decorative line icon and puts the ": yes" /
+  ": no" in an `.sr-only` span, so screen readers (and the shared cases, which read the panel as text) get the
+  answer that #73's icon-only version had hidden. Plugin version 0.4.0 (RS50).
 
 ## RX — Deliberately excluded (v0.1)
 

@@ -49,7 +49,7 @@ def test_initialized_notification_gets_no_reply():
 
 def test_tools_list_has_find_repos_with_schema_and_data_warning():
     tools = mcp_server.handle(rpc("tools/list"))["result"]["tools"]
-    assert [t["name"] for t in tools] == ["find_repos"]
+    assert [t["name"] for t in tools] == ["find_repos", "check_repos"]   # RS56: check_repos is the trust check
     t = tools[0]
     assert t["inputSchema"]["required"] == ["queries"]
     assert t["inputSchema"]["properties"]["queries"]["maxItems"] == scout.MAX_QUERIES
@@ -205,8 +205,8 @@ def test_token_never_reaches_output(monkeypatch, capsys):  # RS8
 
 def test_imports_are_stdlib_only():  # RS11 (ast-based, not a string grep)
     import ast
-    for name in ("mcp_server.py", "scout.py", "hybrid.py"):   # RS42: hybrid.py is a local, stdlib-only module
+    for name in ("mcp_server.py", "scout.py", "hybrid.py", "trust.py"):   # RS42/RS56: local, stdlib-only modules
         tree = ast.parse((ROOT / "scripts" / name).read_text(encoding="utf-8"))
         mods = {a.name.split(".")[0] for n in ast.walk(tree) if isinstance(n, ast.Import) for a in n.names}
         mods |= {n.module.split(".")[0] for n in ast.walk(tree) if isinstance(n, ast.ImportFrom) and n.module}
-        assert mods - set(sys.stdlib_module_names) <= {"scout", "hybrid"}, (name, mods - set(sys.stdlib_module_names))
+        assert mods - set(sys.stdlib_module_names) <= {"scout", "hybrid", "trust"}, (name, mods - set(sys.stdlib_module_names))

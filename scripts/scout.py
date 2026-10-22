@@ -4,7 +4,7 @@
 Usage: scout.py "query one" ["query two" ...] [--top 20] [--candidates 40]
                 [--license open|any] [--max-age-months 24]
                 [--min-stars 50] [--rank fit|balanced|stars]
-                [--prefer-starters] [--all] [--group] [--json | --markdown | --csv]
+                [--prefer-starters] [--all] [--group] [--trust] [--json | --markdown | --csv]
 """
 import argparse
 import csv
@@ -22,6 +22,7 @@ import urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import hybrid  # noqa: E402  RS42
+import trust  # noqa: E402  RS56
 
 API = "https://api.github.com/search/repositories"
 MAX_QUERIES = 4  # RS8: unauthenticated search limit is 10 requests a minute
@@ -365,6 +366,7 @@ def scout(queries, fetcher=fetch, top=20, candidates=40, license_mode="open", ma
                 "rel": idx,  # RS2: best-match position, drives relevance in fit ranking (RS5)
                 "why": why or why_relevant(q, cname, cdesc, idx),  # RS24
                 "topics": [str(t).lower() for t in (it.get("topics") or [])][:8],  # RS42: same rule as the page
+                "language": it.get("language") if isinstance(it.get("language"), str) else "",  # RS56: picks the package ecosystem
             }
             kept.append(row)
             seen[name] = row
@@ -454,6 +456,11 @@ def render(result):
         out.append(f"    {r['url']}  [query: {r['query']}]")
         out.append(f"    How to start: {r['start_hint']}")
         out.append(f"    {_desc(r)}")
+        if r.get("trust"):   # RS56
+            out.append("    Safe to build on?")
+            out += [f"      {x}" for x in r["trust"]["lines"]]
+    if any(r.get("trust") for r in result["candidates"]):
+        out.append("    " + trust.NOTE)
     out += ["", KEY, FREE_NOTE]
     return "\n".join(out)
 
@@ -478,6 +485,7 @@ def render_markdown_grouped(result):
             out.append(f"| {link} | {_md(r['why'])} | {r['stars']:,} | {_md(_desc(r))} | {_md(r['license'])} | "
                        f"{r['license_use']} | {r['free']} | {'yes' if r['starter'] else 'no'} | {r['pushed']} |")
         out.append("")
+    out += _trust_markdown(result)
     out += [f"{total} open-source repos across {len(result['groups'])} needs, each group ranked by fit "
             "(relevance, stars, license). Grouped by the first search that found each; not a scan of every "
             "repository. The plugin skill adds a semantic relevance check on top.", "", KEY, "", FREE_NOTE]
@@ -525,6 +533,31 @@ def _md(text):
     return re.sub(r"([\\`*_{}\[\]()#+!|<>~])", r"\\\1", text or "")
 
 
+def _trust_markdown(result):
+    """RS56: the trust check for the repos it ran on, one list per repo, same words as the web panel (RS53)."""
+    rows = [r for r in result["candidates"] if r.get("trust")]
+    if not rows:
+        return []
+    out = ["### Safe to build on? (top %d)" % len(rows), ""]
+    for r in rows:
+        out.append(f"**#{r['rank']} {_md(r['full_name'])}**")
+        out += [f"- {_md(x)}" for x in r["trust"]["lines"]]
+        out.append("")
+    return out + [_md(trust.NOTE), ""]
+
+
+def add_trust(result, token=None, get=None):
+    """RS56: run the trust check on the top repos (at most trust.MAX_REPOS) and attach it to them. Display only."""
+    rows = result["candidates"][:trust.MAX_REPOS]
+    spdx = lambda r: r["license"] if r.get("open_license") else ""
+    checked = trust.check_many([(r["full_name"], r.get("language", ""), spdx(r)) for r in rows], token,
+                               get or trust.get_json)
+    for r, c in zip(rows, checked):
+        c["lines"] = trust.lines_for(c)
+        r["trust"] = c
+    return result
+
+
 def render_markdown(result):
     """RS10, RS13: Markdown for a GitHub Actions job summary."""
     out = ["## replore results", "",
@@ -552,6 +585,7 @@ def render_markdown(result):
                        f"{_md(r['license'])} | {r['license_use']} | {r['free']} | {'yes' if r['starter'] else 'no'} | "
                        f"{r['pushed']} | {_md(r['start_hint'])} | {_md(r['query'])} |")
         out.append("")
+    out += _trust_markdown(result)
     out += ["Ranked by fit (relevance, stars, license) among GitHub search matches, not a scan of every "
             "repository. The plugin skill adds a semantic relevance check on top.", "", KEY, "", FREE_NOTE]
     return "\n".join(out)
@@ -573,6 +607,8 @@ def main(argv=None):
     p.add_argument("--semantic", action="store_true",
                    help="RS42 opt-in: meaning scores + indexed repos from Replore's server (sends the description)")
     p.add_argument("--prefer-starters", action="store_true")
+    p.add_argument("--trust", action="store_true",
+                   help="RS56: also check the top 5 are safe to build on (OpenSSF Scorecard, deps.dev, GitHub)")
     fmt = p.add_mutually_exclusive_group()
     fmt.add_argument("--json", action="store_true")
     fmt.add_argument("--markdown", action="store_true")
@@ -592,6 +628,8 @@ def main(argv=None):
     except ScoutError as e:
         print(f"replore: {e}", file=sys.stderr)
         return 2
+    if a.trust and res["candidates"]:
+        add_trust(res, token)   # RS56: never fails the search; a failed part says "couldn't check"
     out = (json.dumps(res, indent=2, ensure_ascii=False) if a.json
            else render_markdown_grouped(res) if (a.markdown and a.group)
            else render_markdown(res) if a.markdown else render_csv(res) if a.csv else render(res))
