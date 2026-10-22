@@ -722,8 +722,9 @@ def test_web_page_is_safe_static(monkeypatch):
     assert "Generate plan" in html and "Build it with your AI agent" in html
     # RS27a: similar-repo requires text and is narrowed by it (no silent drop); "find similar" alone is blocked
     assert "RS27a" in html and "· matching" in html and "Add a few words too" in html
-    # RS29: a persistent "Clear filter" button appears when a non-All filter is active
-    assert 'id="resClearBtn"' in html and "Clear filter" in html
+    # RS29d: two on/off filters, no "All" chip; an empty filtered set still offers "Clear filter"
+    assert "function resFlags" in html and 'aria-pressed="false"' in html and '["all","All"]' not in html
+    assert 'id="resClear"' in html and "Clear filter" in html
     # search-bar ✕ resets everything (text, similar repo, filters, picks, results) — shared with the logo
     assert 'id="clearQ"' in html and "function resetAll" in html and 'addEventListener("click",resetAll)' in html
     # light/dark toggle (RS24)

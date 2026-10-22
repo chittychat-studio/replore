@@ -324,6 +324,14 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   licences and 0 otherwise, so the two chips could never differ (the paid-vs-free distinction is a copyleft
   nuance kept in the card verdict/tooltip, not two redundant filters). An empty filtered set shows a "clear
   filter" message. Filters apply only to the single top-matches list, not the grouped PRD view.
+- **RS29d** One filter row (owner 2026-10-22: "do we really need both these filters separate?"). The result filters
+  are two on/off switches, "Free for commercial use" and "Starters", which can be combined; with neither on, every result
+  shows, so there is no "All" chip and no separate "Clear filter" button (tap a switch again to turn it off; an empty
+  filtered set still offers "Clear filter"). A switch that is on is tinted with a check and has `aria-pressed="true"`.
+  In the Trending view the list switcher (Rising / Most stars / Most forks) is a segmented control at the start of the
+  same row, not a second row; its one-line note sits under the row. On phones the switcher takes the full width.
+  This supersedes the "All / … / Starters" chip row described in RS29.
+
 - **RS29c** *(retired)* A per-results "this is keyword search" banner was shown, then removed at the owner's
   call: each card's "Matches your words" line already shows the match is lexical, and the plugin stays one click
   away (menu + the "Want every suitable repo?" banner). The "About the results" modal states how the page searches: needs-first keyword search (RS16a), then an AI check that moves repos that don't fit to "Less likely to fit" (RS34; it never hides them), and the one-hour repeat cache (RS43). No copy on the page says there is no AI or no relevance check. The hero carries a small pill "✦ AI-powered repo finder" (owner decision 2026-10-14, over the maintainer's note that the AI only filters results, it doesn't find or rank them, and that results are plain keyword search when the AI check is unavailable); it folds away with the tagline once results show on single-column screens.
