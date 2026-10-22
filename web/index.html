@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Replore — the repo scout for vibe coders</title>
+<title>Replore: the repo scout for vibe coders</title>
 <meta name="description" content="Replore, the repo scout for vibe coders. Find it before you build it: describe your idea and get the open-source GitHub repos that fit, with a plain license verdict.">
 <!--
   Replore web page (SPEC RS22). Static page (this file + app.js + theme.js), no build step, no key or token.
@@ -21,14 +21,14 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Replore">
 <meta property="og:url" content="https://replore.cardzo.co.in/">
-<meta property="og:title" content="Replore — the repo scout for vibe coders">
+<meta property="og:title" content="Replore: the repo scout for vibe coders">
 <meta property="og:description" content="Find it before you build it. Describe your idea in plain words. Get the open-source GitHub repos that fit, with a plain license verdict.">
 <meta property="og:image" content="https://replore.cardzo.co.in/og.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Replore: find it before you build it. Result cards with Diagram, Digest, Wiki, Browse and Edit buttons and a license verdict.">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Replore — the repo scout for vibe coders">
+<meta name="twitter:title" content="Replore: the repo scout for vibe coders">
 <meta name="twitter:description" content="Find it before you build it. Describe your idea in plain words. Get the open-source GitHub repos that fit, with a plain license verdict.">
 <meta name="twitter:image" content="https://replore.cardzo.co.in/og.jpg">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
@@ -823,28 +823,27 @@
     --st-c:#182b3d; --st-d:#121a22; --st-card:rgba(14,25,37,.62); } }
   :root[data-theme="dark"]{ --st-light:rgba(156,192,216,.26); --st-a:#34546f; --st-b:#213a51; --st-c:#182b3d; --st-d:#121a22;
     --st-card:rgba(14,25,37,.62); }
-  body:not(.has-results):not(.searching) .hero{position:relative;isolation:isolate;max-width:1240px;
+  body:not(.has-results) .hero{position:relative;isolation:isolate;max-width:1240px;
     padding:22px clamp(16px,3vw,40px) 20px;margin:0 auto 4px;--card:var(--st-card);--card-bg:var(--st-card)}
   /* no box: the stage light runs edge to edge and fades into the page at the top and bottom */
-  body:not(.has-results):not(.searching) .page{overflow-x:clip}
-  body:not(.has-results):not(.searching) .hero::after{content:"";position:absolute;top:-30px;bottom:-60px;left:50%;width:100vw;
+  body:not(.has-results) .page{overflow-x:clip}
+  body:not(.has-results) .hero::after{content:"";position:absolute;top:-30px;bottom:-60px;left:50%;width:100vw;
     transform:translateX(-50%);pointer-events:none}
-  body:not(.has-results):not(.searching) .hero::after{z-index:-2;
+  body:not(.has-results) .hero::after{z-index:-2;
     background:radial-gradient(70% 60% at 72% 8%, var(--st-light), transparent 62%),
       linear-gradient(180deg,var(--st-a) 0%,var(--st-b) 42%,var(--st-c) 66%,var(--st-d) 100%);
     -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 90px,#000 calc(100% - 160px),transparent 100%);
     mask-image:linear-gradient(180deg,transparent 0,#000 90px,#000 calc(100% - 160px),transparent 100%)}
-  body:not(.has-results):not(.searching) .hero > *{position:relative;z-index:0}
+  body:not(.has-results) .hero > *{position:relative;z-index:0}
   .hero-title{font-family:var(--f-body);font-weight:300;letter-spacing:-.02em;font-size:clamp(36px,5vw,62px);line-height:1.04}
   .hero-title em{font-style:normal;background:none;-webkit-text-fill-color:currentColor;color:var(--muted)}
   .hero-pill{background:transparent;border-color:var(--line);color:var(--muted)}
   .stage-slot:empty{display:none}
-  body.has-results .stage-slot, body.searching .stage-slot{display:none}
+  body.has-results .stage-slot{display:none}   /* RS65: the stage carries the search; results replace it */
   .stage-slot{margin-top:0}
   .st{display:flex;flex-direction:column;align-items:center;gap:6px;min-height:0;padding:0}
   .st .ld-q{background:none;border:0;box-shadow:none;padding:0;color:var(--muted);font-size:14px;justify-content:center;max-width:100%}
   .st-stage{position:relative;width:100%;max-width:1100px;height:322px}
-  .st-dial{position:absolute;left:50%;transform:translateX(-50%);top:140px;width:min(820px,94%);height:176px;pointer-events:none}
   .st-pair{position:absolute;left:50%;bottom:62px;transform:translateX(-50%);display:flex;align-items:flex-end;gap:6px}
   .st-g,.st-b{position:relative}
   .st-g canvas.ld-globe{position:relative;display:block;width:262px;height:262px;inset:auto;opacity:.92}
@@ -867,7 +866,6 @@
   .st .ld-card{background:var(--card);border:1px solid var(--line);border-radius:18px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);text-align:left}
   .st .ld-note{color:var(--muted)}
   .demo-slot .st-stage{height:250px}
-  .demo-slot .st-dial{display:none}   /* phones: the arc crowds the bot */
   .demo-slot .st-stage{height:230px}
   .demo-slot .st-pair{bottom:62px}
   .demo-slot .st-bot{width:130px}
@@ -910,7 +908,7 @@
     <circle cx="18" cy="86" r="8" fill="var(--bg)" stroke="var(--accent-ink)" stroke-width="5"/><circle cx="44" cy="24" r="8" fill="var(--bg)" stroke="var(--accent-ink)" stroke-width="5"/></svg>
 </div>
 <header class="topbar">
-  <div class="brand" id="brandHome" role="button" tabindex="0" title="Back to the start" aria-label="Replore — back to the start"><svg class="logo" width="30" height="30" viewBox="0 0 32 32" aria-hidden="true">
+  <div class="brand" id="brandHome" role="button" tabindex="0" title="Back to the start" aria-label="Replore, back to the start"><svg class="logo" width="30" height="30" viewBox="0 0 32 32" aria-hidden="true">
       <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
         <stop offset="0" stop-color="var(--accent)"/><stop offset="1" stop-color="var(--accent-ink)"/></linearGradient></defs>
       <circle cx="16" cy="16" r="12.5" fill="none" stroke="url(#lg)" stroke-width="2.2"/>
@@ -920,7 +918,7 @@
   <nav class="nav" id="nav">
     <button id="trendBtn" class="nav-btn" title="Popular open-source repos right now">Trending</button>
     <button id="pluginBtn" class="nav-btn" title="Use the plugin in Claude Code, Codex, Cursor or any AI agent">Plugin</button>
-    <a id="starBtn" class="nav-btn nav-star" href="https://github.com/chittychat-studio/replore" target="_blank" rel="noopener" title="If Replore helped, a star on GitHub means a lot — thank you!"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.9l1.8 3.8 4.1.5-3 2.9.8 4.1L8 11.2l-3.7 2 .8-4.1-3-2.9 4.1-.5z"/></svg>Star</a>
+    <a id="starBtn" class="nav-btn nav-star" href="https://github.com/chittychat-studio/replore" target="_blank" rel="noopener" title="If Replore helped, a star on GitHub means a lot. Thank you!"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.9l1.8 3.8 4.1.5-3 2.9.8 4.1L8 11.2l-3.7 2 .8-4.1-3-2.9 4.1-.5z"/></svg>Star</a>
     <a class="nav-btn nav-tip tip-el tip-link" href="#" target="_blank" rel="noopener noreferrer" hidden
       title="Optional tip. It helps us keep Replore free and fund more open-source projects."><svg class="nav-ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6h9v4.5a3.5 3.5 0 0 1-3.5 3.5h-2a3.5 3.5 0 0 1-3.5-3.5z"/><path d="M11.5 7.5h1a2 2 0 0 1 0 4h-1.2"/><path d="M5.5 1.8v2M8 1.8v2"/></svg>Tip</a>
   </nav>
@@ -990,8 +988,8 @@
 <div class="modal" id="prdModal"><div class="sheet">
   <button class="x" data-close>&times;</button>
   <h2>Turn your picks into a build plan</h2>
-  <p class="mut">A build plan (a PRD — product requirements doc) your AI can code straight from. Replore doesn't
-    write it — your <b>own</b> AI does, free and private. Copy the prompt below into any AI agent (Claude Code,
+  <p class="mut">A build plan (a PRD, or product requirements doc) your AI can code straight from. Replore doesn't
+    write it: your <b>own</b> AI does, free and private. Copy the prompt below into any AI agent (Claude Code,
     Codex, Cursor…) or open it in Claude, ChatGPT or Gemini. It lists the repos you selected.</p>
   <div class="prd-prompt">
     <pre class="cmd" id="prdPrompt" data-copy-ready="1" style="margin:0;max-height:240px;overflow:auto;white-space:pre-wrap;padding-right:46px"></pre>
@@ -1000,9 +998,9 @@
   <div class="prd-alt">   <!-- RS28b: three assistants, equal weight -->
     <a id="prdOpen" class="ghost-cta" href="#" target="_blank" rel="noopener">Open in Claude<svg class="ico ico-after" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3.5h-3v9h9v-3"/><path d="M9 2.5h4.5V7M13.5 2.5L7.5 8.5"/></svg></a>
     <a id="prdGpt" class="ghost-cta" href="#" target="_blank" rel="noopener">Open in ChatGPT<svg class="ico ico-after" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3.5h-3v9h9v-3"/><path d="M9 2.5h4.5V7M13.5 2.5L7.5 8.5"/></svg></a>
-    <button type="button" id="prdGemini" class="ghost-cta" title="Copies the prompt, then opens Gemini — paste it there">Open in Gemini<svg class="ico ico-after" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3.5h-3v9h9v-3"/><path d="M9 2.5h4.5V7M13.5 2.5L7.5 8.5"/></svg></button>
+    <button type="button" id="prdGemini" class="ghost-cta" title="Copies the prompt, then opens Gemini. Paste it there">Open in Gemini<svg class="ico ico-after" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3.5h-3v9h9v-3"/><path d="M9 2.5h4.5V7M13.5 2.5L7.5 8.5"/></svg></button>
   </div>
-  <p id="prdGemNote" class="mut" style="margin-top:8px;text-align:center" hidden>Prompt copied — paste it into Gemini (it has no pre-fill link).</p>
+  <p id="prdGemNote" class="mut" style="margin-top:8px;text-align:center" hidden>Prompt copied. Paste it into Gemini (it has no pre-fill link).</p>
   <p id="prdLong" class="mut" style="margin-top:10px" hidden><b>Long plan:</b> each button copies the prompt first, then opens
     the assistant. Paste it there.</p>
   <p class="mut tip-el" style="margin-top:10px;text-align:center" hidden>Got a useful plan? <a class="tip-link" href="#" target="_blank"
@@ -1010,7 +1008,7 @@
   <figure class="tip-el tip-qr" hidden><img src="tip-qr.png" width="96" height="114" loading="lazy"
     alt="QR code for the Replore tip page on Stripe"><figcaption class="mut">Or scan to tip from your phone</figcaption></figure>
   <p id="prdMany" class="mut" style="margin-top:10px" hidden><b>Plans work best with 10 or fewer repos.</b> You picked
-    <span id="prdManyN"></span> — untick the weakest few for a sharper plan.</p>
+    <span id="prdManyN"></span>. Untick the weakest few for a sharper plan.</p>
   <p class="mut" style="margin-top:10px"><b>Open in Claude</b> opens a new chat on your own claude.ai account
     with the prompt ready to send. (If it doesn't pre-fill, tap the copy icon and paste.)
     New to the plugin? <button type="button" class="link-btn" data-open="pluginModal">See setup</button>.</p>
@@ -1023,9 +1021,9 @@
     <button type="button" class="mode-tile" id="fmLike"><span class="mt-ico"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="7" height="7" rx="1.6"/><rect x="6.5" y="6.5" width="7" height="7" rx="1.6"/></svg></span>
       <span class="mt-txt"><b>Find similar repos</b><small>A repo you like + a few words</small></span></button>
     <label class="mode-tile" for="prd" id="fmPrd"><span class="mt-ico"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 1.8h5.2L12.5 5v9.2H4z"/><path d="M9 1.8V5h3.5M6.3 8.3h3.9M6.3 11h3.9"/></svg></span>
-      <span class="mt-txt"><b>Match a whole plan</b><small>Upload a plan / PRD — read locally</small></span></label>
+      <span class="mt-txt"><b>Match a whole plan</b><small>Upload a plan / PRD, read locally</small></span></label>
   </div>
-  <p class="mut">Narrow your search — all optional. These apply to your next search.</p>
+  <p class="mut">Narrow your search. All optional. These apply to your next search.</p>
   <div class="field"><label for="stackInput">Tech stack</label>
     <div class="ms" id="stackMS">
       <span id="stackChips" class="ms-chips"></span>
@@ -1049,7 +1047,7 @@
 <div class="modal" id="likeModal"><div class="sheet">
   <button class="x" data-close>&times;</button>
   <h2>Find similar repos</h2>
-  <p class="mut">Paste a repo you already like — <code>owner/repo</code> or a GitHub link — then type a few words in the
+  <p class="mut">Paste a repo you already like (<code>owner/repo</code> or a GitHub link), then type a few words in the
     search box (e.g. “free ai call”) so I can narrow the similar repos to what you actually want.</p>
   <input id="like" type="text" placeholder="e.g. vercel/next.js" autocomplete="off" maxlength="120">
   <button id="likeGo" class="primary">Find similar →</button>
@@ -1058,15 +1056,15 @@
 <div class="modal" id="howModal"><div class="sheet">
   <button class="x" data-close>&times;</button>
   <h2>How Replore works</h2>
-  <p class="mut">Three steps, right in your browser — no account, no key.</p>
+  <p class="mut">Three steps, right in your browser. No account, no key.</p>
   <div id="howDemo" class="demo" style="margin:16px auto 4px"></div>
   <img src="tour.png" alt="The Replore page: describe your project, then get the open-source repos that fit"
     loading="lazy" style="width:100%;border:1px solid var(--line);border-radius:12px;margin:16px 0 4px">
-  <p class="mut" style="margin:0">Describe your project, tap Find, and get the repos that fit — relevant, popular, free to use.</p>
+  <p class="mut" style="margin:0">Describe your project, tap Find, and get the repos that fit: relevant, popular, free to use.</p>
   <p class="mut rag-only" style="margin-top:12px" hidden><b>Hybrid search:</b> repos are ranked by your words and by what you mean, so "voice notes" also finds "speech-to-text". Repos our index finds that the word search missed are checked on GitHub before you see them.</p>
   <p class="mut" style="margin-top:12px"><b>Build a plan:</b> tick the repos you like on the results, then tap <b>Generate plan</b>.
     Replore hands the picks to your <b>own</b> Claude (Copy, or Open in Claude), which writes a full build plan
-    (a PRD) you can code straight from — free and private.</p>
+    (a PRD) you can code straight from, free and private.</p>
   <p class="mut" style="margin-top:12px">For AI-written searches and a whole PRD read feature
     by feature, use the plugin (Claude Code, Codex, Cursor or any AI agent).</p>
 </div></div>
@@ -1084,29 +1082,29 @@
 
   <div class="tabpanel" data-panel="cc" role="tabpanel" id="panel-cc" aria-labelledby="tab-cc">
   <ol class="guide">
-    <li><b>Get Claude Code</b> — a free AI coding assistant for your terminal:
+    <li><b>Get Claude Code</b>: a free AI coding assistant for your terminal:
       <a href="https://claude.com/claude-code" target="_blank" rel="noopener">claude.com/claude-code</a>. Check
       Python 3.11+ with <code>python3 --version</code> (Windows: python.org, tick <i>"Add python.exe to PATH"</i>; Mac: <code>brew install python</code>).</li>
-    <li><b>Add the plugin</b> — type <code>claude</code> in any folder, then paste:
+    <li><b>Add the plugin</b>: type <code>claude</code> in any folder, then paste:
       <pre class="cmd">/plugin marketplace add chittychat-studio/replore
 /plugin install replore@replore</pre></li>
-    <li><b>Find repos</b> — <pre class="cmd">/replore:find a diet app for iPhone, starting from scratch</pre></li>
+    <li><b>Find repos</b>: <pre class="cmd">/replore:find a diet app for iPhone, starting from scratch</pre></li>
   </ol>
   </div>
 
   <div class="tabpanel" data-panel="other" role="tabpanel" id="panel-other" aria-labelledby="tab-other" hidden>
-  <p class="mut" style="margin:10px 0 0">Works with any model — Codex, Cursor, Gemini CLI, VS Code Copilot, Windsurf,
-    Cline — through MCP (Model Context Protocol), the open tool-connection standard all of them support.</p>
+  <p class="mut" style="margin:10px 0 0">Works with any model (Codex, Cursor, Gemini CLI, VS Code Copilot, Windsurf,
+    Cline) through MCP (Model Context Protocol), the open tool-connection standard all of them support.</p>
   <ol class="guide">
-    <li><b>Get Replore</b> — needs Python 3.11+ and git (or on GitHub click <i>Code → Download ZIP</i> and unzip).
+    <li><b>Get Replore</b>: needs Python 3.11+ and git (or on GitHub click <i>Code → Download ZIP</i> and unzip).
       On Windows type <code>python</code> wherever it says <code>python3</code>.
       <pre class="cmd">git clone https://github.com/chittychat-studio/replore</pre>
-      Then <code>cd replore</code> and run <code>pwd</code> (Windows: <code>cd</code>) — that prints the full path you need next.</li>
-    <li><b>Add Replore to your agent's MCP config file</b> — command <code>python3</code>, argument
+      Then <code>cd replore</code> and run <code>pwd</code> (Windows: <code>cd</code>). That prints the full path you need next.</li>
+    <li><b>Add Replore to your agent's MCP config file</b>: command <code>python3</code>, argument
       <code>&lt;that path&gt;/scripts/mcp_server.py</code>. Add the <code>replore</code> entry inside the existing list;
       don't replace the file. Then restart the agent. The exact file and snippet for each agent are in the
       <a href="https://github.com/chittychat-studio/replore#use-in-any-other-ai-agent" target="_blank" rel="noopener">README</a>.</li>
-    <li><b>Ask your agent</b> — <i>"find repos for a diet app for iPhone"</i>. It calls Replore's
+    <li><b>Ask your agent</b>: <i>"find repos for a diet app for iPhone"</i>. It calls Replore's
       <code>find_repos</code> tool and shows the comparison table.</li>
   </ol>
   <p class="mut" style="margin-top:10px">No MCP? Open the cloned folder in your agent. Codex, Cursor, Copilot, Cline
@@ -1119,14 +1117,14 @@
 
 <div class="modal" id="nextModal"><div class="sheet">
   <button class="x" data-close>&times;</button>
-  <h2>Found some repos — what now?</h2>
+  <h2>Found some repos? Here's what's next</h2>
   <p class="mut">Three steps from a shortlist to building.</p>
   <ol class="guide">
-    <li><b>Pick the ones that fit</b> — tap <i>Add to plan</i> on the 2–3 cards you like. Compare them:
+    <li><b>Pick the ones that fit</b>: tap <i>Add to plan</i> on the 2–3 cards you like. Compare them:
       check the license verdict (can you use it in a paid product?) and the <i>updated</i> date before you commit to one.</li>
-    <li><b>Get a build plan</b> — hit <i>Generate plan</i> on the bar that appears. Replore turns your picks plus
-      what you're building into a step-by-step prompt — no AI runs here, it hands the prompt to <b>your own</b> AI.</li>
-    <li><b>Build it with your AI agent</b> — paste the plan into Claude Code, Codex, Cursor or any agent.
+    <li><b>Get a build plan</b>: hit <i>Generate plan</i> on the bar that appears. Replore turns your picks plus
+      what you're building into a step-by-step prompt. No AI runs here; it hands the prompt to <b>your own</b> AI.</li>
+    <li><b>Build it with your AI agent</b>: paste the plan into Claude Code, Codex, Cursor or any agent.
       Want smarter search and a feature-by-feature plan from a whole PRD? <button type="button" class="link-btn" data-open="pluginModal">Use the plugin</button>.
       Tip: add the free <a href="https://github.com/upstash/context7" target="_blank" rel="noopener noreferrer">Context7</a> MCP server to your agent so it reads each repo's current docs instead of guessing.</li>
   </ol>
@@ -1151,7 +1149,7 @@
     <textarea id="fbDesc" maxlength="2000" rows="3" placeholder="What happened, or what would you like?"></textarea></div>
   <input id="fbBot" type="checkbox" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px">
   <p class="mut fb-err" id="fbErr" hidden>Add a title first.</p>
-  <p class="fb-ok" id="fbOk" role="status" hidden>Thanks — your feedback was sent to Cardzo.</p>
+  <p class="fb-ok" id="fbOk" role="status" hidden>Thanks, your feedback was sent to Cardzo.</p>
   <button type="button" id="fbGo" class="primary">Send feedback</button>
   <p class="mut fb-alt">Or write to <b>hello@cardzo.co.in</b>
     <button type="button" class="link-btn" id="fbCopy">Copy address</button></p>
@@ -1232,6 +1230,6 @@
   <p class="mut rag-only" style="margin-top:12px" hidden><b>Hybrid search:</b> repos are ranked by your words and by what you mean, so "voice notes" also finds "speech-to-text". Repos our index finds that the word search missed are checked on GitHub before you see them.</p>
 </div></div>
 
-<script src="app.js?v=0b1a8dfae5" defer></script>
+<script src="app.js?v=20aee7bf51" defer></script>
 </body>
 </html>
