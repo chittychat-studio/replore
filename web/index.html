@@ -1122,6 +1122,37 @@
   .brand-txt{display:flex;flex-direction:column;min-width:0;line-height:1}
   .brand-tag{margin-top:4px;font:500 11.5px/1.2 var(--f-mono);letter-spacing:.02em;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   @media (max-width:420px){ .brand-tag{font-size:10px} }
+
+  /* RS69 smooth motion (owner 2026-10-23: "as smooth as possible"; transitions should dissolve, not cut) */
+  ::view-transition-old(root),::view-transition-new(root){animation-duration:.42s;animation-timing-function:cubic-bezier(.4,0,.2,1)}
+  @media (prefers-reduced-motion:reduce){ ::view-transition-old(root),::view-transition-new(root){animation:none} }
+  /* Leo: the still, the sprites and the peek clip cross-fade */
+  .st-b .st-sprite{display:block;opacity:0;transition:opacity .35s ease}
+  .st-b.animating .st-sprite{opacity:1}
+  .st-bot{transition:opacity .35s ease}
+  .st-b.animating .st-bot{visibility:visible;opacity:0}
+  .st-peekvid{transition:opacity .4s ease}
+  .st-b.videopeek .st-sprite{visibility:hidden}
+  .st-b.videopeek.peekfade .st-sprite,.st-b.videopeek.peekfade .st-sh{visibility:visible}
+  .st-b.peekfade .st-peekvid{opacity:0}
+  .st-say-t{transition:opacity .18s ease}
+  .st-say-t.swap{opacity:0}
+  .st-ghost{pointer-events:none}
+  /* cards: every colour eases when a card is hovered or picked */
+  .rcard.rc2{transition:transform .2s ease,box-shadow .3s ease,border-color .35s ease,background-color .35s ease,color .35s ease}
+  .rc2 .rc-in,.rc2 .rc-date,.rc2 .rc-bm,.rc2 .rc-det{transition:background-color .35s ease,color .35s ease,border-color .35s ease}
+  .rc2 :is(.rc-who,.desc,.rc-stats,.stars,.tag,.name a,.rc-lic){transition:color .35s ease,background-color .35s ease,border-color .35s ease}
+  .rc2 .rc-bm:has(input:checked) .pk-in{animation:bmPop .32s cubic-bezier(.3,1.5,.5,1)}
+  @keyframes bmPop{from{transform:scale(.6)}}
+  /* the Details panel and its shade fade out as well as in */
+  .rc-scrim{animation:rcsIn .25s ease}
+  .rc-scrim.closing{animation:rcsOut .22s ease forwards}
+  .rc-drawer.closing{animation:rcdOut .22s ease forwards}
+  @keyframes rcsIn{from{opacity:0}}
+  @keyframes rcsOut{to{opacity:0}}
+  @keyframes rcdOut{to{transform:translateX(28px);opacity:0}}
+  @media (prefers-reduced-motion:reduce){ .st-b .st-sprite,.st-bot,.st-peekvid,.st-say-t,.rcard.rc2,.rc2 *{transition:none}
+    .rc-scrim,.rc-scrim.closing,.rc-drawer.closing,.rc2 .rc-bm:has(input:checked) .pk-in{animation:none} }
 </style>
 </head>
 <body>
@@ -1476,6 +1507,6 @@
   <p class="mut rag-only" style="margin-top:12px" hidden><b>Hybrid search:</b> repos are ranked by your words and by what you mean, so "voice notes" also finds "speech-to-text". Repos our index finds that the word search missed are checked on GitHub before you see them.</p>
 </div></div>
 
-<script src="app.js?v=0d28d1ab43" defer></script>
+<script src="app.js?v=4f7f236732" defer></script>
 </body>
 </html>

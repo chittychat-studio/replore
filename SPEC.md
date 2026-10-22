@@ -1000,6 +1000,11 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   mono type, instead of as a pill above the hero title (owner 2026-10-23). Leo and the globe are bigger now that the hero has room
   (laptops: the stage size runs 190 to 310 px with the window height; phones: Leo 156 px). A card added to the plan
   keeps the opposite colour (the hover look), so picked repos stand out (owner 2026-10-23).
+- **RS69** Smooth motion (owner 2026-10-23: "as smooth as possible", "dissolve"). Page-level changes (home to
+  searching, searching to results, back home, Trending) dissolve through View Transitions where the browser has them,
+  and happen at once elsewhere. Leo's peek clip dissolves into his wave, the sprites and stills cross-fade, a pose
+  change dissolves, and his words fade when they change. Card colours ease on hover and pick, the bookmark pops, and
+  the Details panel slides out as well as in. Reduced motion turns all of it off.
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
 - **RX3** Ranking by forks, trending or download counts. (Relevance, stars and license-freedom are the only
