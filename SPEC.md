@@ -756,6 +756,12 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   from the GitHub API, used only when it matches `owner/repo` (owner `[A-Za-z0-9-]{1,39}`, repo `[A-Za-z0-9._-]{1,100}`,
   not `.` or `..`); otherwise the row is left out (RS9). They are navigations only: the page fetches nothing from these
   sites, so the CSP (RS49) is unchanged. Saved results are re-keyed (`CACHE_V` 12, since the Wiki button was added) so cards render with the row.
+- **RS52** Fresh code after every deploy (owner report 2026-10-22: "why can't I see wiki?"). The custom domain's
+  Cloudflare zone lets browsers keep `.js` files for 4 hours, while the page itself is never cached, so a fresh page
+  could run yesterday's `app.js`. `web/index.html` therefore loads each script as `<name>?v=<first 10 hex of the
+  SHA-256 of the file, line endings normalised to LF>` (`theme.js`, `app.js`). `ops/stamp_assets.py` (standard
+  library only) rewrites the stamps; a test fails when a stamp doesn't match its file, so a code change can't ship
+  without one. The query string changes nothing for the CSP (RS49), which matches on origin only.
 - **RS53** "Safe to build on?" trust check on result cards (web; owner request 2026-10-22, architect review: "here
   are repos **and** whether they're safe to build on"). Each card whose name passes the RS51 `owner/repo` check has a
   collapsed `<details>` row, **Safe to build on?**. Nothing is fetched until a visitor opens it (the unauthenticated
@@ -801,12 +807,6 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
     `AGENTS.md` suggest the free Context7 MCP server so the user's own agent reads current docs for the repos they
     pick. Replore never calls, installs or configures it (RS1, RS11, RX4 unchanged).
 
-- **RS52** Fresh code after every deploy (owner report 2026-10-22: "why can't I see wiki?"). The custom domain's
-  Cloudflare zone lets browsers keep `.js` files for 4 hours, while the page itself is never cached, so a fresh page
-  could run yesterday's `app.js`. `web/index.html` therefore loads each script as `<name>?v=<first 10 hex of the
-  SHA-256 of the file, line endings normalised to LF>` (`theme.js`, `app.js`). `ops/stamp_assets.py` (standard
-  library only) rewrites the stamps; a test fails when a stamp doesn't match its file, so a code change can't ship
-  without one. The query string changes nothing for the CSP (RS49), which matches on origin only.
 
 ## RX — Deliberately excluded (v0.1)
 
