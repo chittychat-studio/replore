@@ -17,6 +17,7 @@
 -->
 <script src="theme.js?v=d156f907a3"></script>   <!-- RS24: saved light/dark choice before first paint; else the system setting -->
 <script src="vendor/gsap.min.js" defer></script>   <!-- RS49: defer keeps order: GSAP runs before app.js -->
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="fonts.css">
 <style>
   :root{
@@ -212,7 +213,14 @@
   .nav-btn:hover{border-color:var(--accent);color:var(--accent-ink);transform:translateY(-1px);
     box-shadow:0 4px 12px -4px rgba(var(--accent-rgb),.4)}
   a.nav-btn{text-decoration:none}
+  .ico-after{margin:0 0 0 .38em}
   .nav-ico{width:13px;height:13px;flex:0 0 auto}
+  /* RS55: line icons (app.js ICONS) sit inline with their label; icon-only buttons centre them */
+  .ico{width:1em;height:1em;flex:0 0 auto;vertical-align:-.14em;margin-right:.38em}
+  .vb-x .ico,.nav-toggle .ico,.theme-toggle .ico,.copy .ico,.trust-copy .ico{margin:0;vertical-align:middle}
+  .nav-toggle .ico,.theme-toggle .ico{width:17px;height:17px}
+  .vb-ico .ico{width:20px;height:20px;margin:0;display:block}
+  .mode-tile .mt-ico .ico{width:24px;height:24px;margin:0;display:block;color:var(--accent-ink)}
   a.nav-btn:hover{text-decoration:none}
   .nav-star{background:var(--btn-grad);border-color:transparent;color:#fff}
   .nav-star:hover{color:#fff;box-shadow:0 6px 16px -6px rgba(var(--accent-rgb),.7)}
@@ -340,8 +348,9 @@
   .rcard .trust summary{cursor:pointer;font-weight:700;color:var(--accent-ink);min-height:34px;display:flex;align-items:center;
     list-style:none;border-radius:8px;padding:0 4px;width:max-content;max-width:100%}
   .rcard .trust summary::-webkit-details-marker{display:none}
-  .rcard .trust summary::after{content:"▸";margin-left:6px;transition:transform .15s}
-  .rcard .trust[open] summary::after{transform:rotate(90deg)}
+  .rcard .trust summary::after{content:"";width:6px;height:6px;margin-left:9px;border-right:1.6px solid currentColor;
+    border-bottom:1.6px solid currentColor;transform:rotate(-45deg);transition:transform .15s}
+  .rcard .trust[open] summary::after{transform:rotate(45deg)}
   .rcard .trust summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   .rcard .trust ul{list-style:none;margin:4px 0 0;padding:0;display:grid;gap:5px;overflow-wrap:anywhere}
   .rcard .trust code{font-size:12px;background:var(--offbg);border-radius:6px;padding:1px 6px}
@@ -353,7 +362,7 @@
   @media (prefers-reduced-motion:reduce){ .rcard .trust summary::after{transition:none} }
   .rcard .rc-foot{margin-top:auto;padding-top:12px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);
     display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
-  /* RS28: "Add to plan" is the card's main action — an accent button; ticked = solid "✓ In plan" */
+  /* RS28: "Add to plan" is the card's main action — an accent button; ticked = solid "In plan" with a check icon */
   .rcard .rc-foot .pick{margin:0 0 0 auto;padding:8px 15px;border:1.5px solid var(--accent);border-radius:999px;
     font-size:13px;font-weight:700;color:var(--accent-ink);background:color-mix(in srgb,var(--accent) 8%,transparent);
     transition:background .18s,color .18s,box-shadow .18s,transform .12s}
@@ -368,7 +377,6 @@
   .rcard:has(.pick-cb:checked){border-color:var(--accent)}
   details.excl summary{cursor:pointer;color:var(--muted)}
   .rcard .why{font-size:12px;font-weight:600;color:var(--ink);margin:8px 0 4px;line-height:1.35}
-  .rcard .why::before{content:"✦ ";color:var(--accent-ink)}
   .rcard .desc{font-size:13.5px;line-height:1.5;color:var(--muted);margin:8px 0 10px;
     display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;min-height:2.6em}
   .rcard .tags{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
@@ -677,8 +685,8 @@
     .vibebar{gap:6px;padding:6px 6px 6px 16px}
     .vb-x{position:relative}
     .vb-x::after{content:"";position:absolute;inset:-9px}   /* ~44px tap target, same visual size */
-    .vb-chip{padding:9px 11px;font-size:0}          /* collapse to just the ⚙ glyph, free up the input */
-    .vb-chip::before{content:"⚙";font-size:15px}
+    .vb-chip{padding:9px 11px;font-size:0}          /* collapse to just the sliders icon, free up the input */
+    .vb-chip .ico{width:15px;height:15px;margin:0;vertical-align:middle}
     .go-btn{width:46px;padding:0;justify-content:center;font-size:0}  /* arrow-only, frees room for the text */
     .go-btn .arr{font-size:20px}
     .vibebar textarea{font-size:16px}
@@ -689,7 +697,7 @@
     .demo-stage{height:210px}
     .demo-card .d{max-width:none}
 
-    /* header: drop the cramped caption, fold the menu into a ☰ dropdown */
+    /* header: drop the cramped caption, fold the menu into a dropdown behind the menu button */
     .topbar{display:flex;flex-wrap:nowrap;justify-content:space-between;align-items:center;gap:8px;position:relative}
     .topbar .brand{flex:1;min-width:0}
     .nav-toggle{display:inline-flex;align-items:center;justify-content:center}
@@ -722,7 +730,6 @@
   <svg class="sh c4" viewBox="0 0 60 100"><g fill="none" stroke="var(--accent-ink)" stroke-width="5" stroke-linecap="round">
     <path d="M18 14 V86"/><path d="M18 62 C18 44 44 50 44 30"/></g><circle cx="18" cy="14" r="8" fill="var(--bg)" stroke="var(--accent-ink)" stroke-width="5"/>
     <circle cx="18" cy="86" r="8" fill="var(--bg)" stroke="var(--accent-ink)" stroke-width="5"/><circle cx="44" cy="24" r="8" fill="var(--bg)" stroke="var(--accent-ink)" stroke-width="5"/></svg>
-  <svg class="sh c5" viewBox="0 0 100 100"><path d="M50 4 C54 38 62 46 96 50 C62 54 54 62 50 96 C46 62 38 54 4 50 C38 46 46 38 50 4Z" fill="var(--accent2)"/></svg>
 </div>
 <header class="topbar">
   <div class="brand" id="brandHome" role="button" tabindex="0" title="Back to the start" aria-label="Replore — back to the start"><svg class="logo" width="30" height="30" viewBox="0 0 32 32" aria-hidden="true">
@@ -735,28 +742,28 @@
   <nav class="nav" id="nav">
     <button id="trendBtn" class="nav-btn" title="Popular open-source repos right now">Trending</button>
     <button id="pluginBtn" class="nav-btn" title="Use the plugin in Claude Code, Codex, Cursor or any AI agent">Plugin</button>
-    <a id="starBtn" class="nav-btn nav-star" href="https://github.com/chittychat-studio/replore" target="_blank" rel="noopener" title="If Replore helped, a star on GitHub means a lot — thank you!">★ Star</a>
+    <a id="starBtn" class="nav-btn nav-star" href="https://github.com/chittychat-studio/replore" target="_blank" rel="noopener" title="If Replore helped, a star on GitHub means a lot — thank you!"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.9l1.8 3.8 4.1.5-3 2.9.8 4.1L8 11.2l-3.7 2 .8-4.1-3-2.9 4.1-.5z"/></svg>Star</a>
     <a class="nav-btn nav-tip tip-el tip-link" href="#" target="_blank" rel="noopener noreferrer" hidden
       title="Optional tip. It helps us keep Replore free and fund more open-source projects."><svg class="nav-ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6h9v4.5a3.5 3.5 0 0 1-3.5 3.5h-2a3.5 3.5 0 0 1-3.5-3.5z"/><path d="M11.5 7.5h1a2 2 0 0 1 0 4h-1.2"/><path d="M5.5 1.8v2M8 1.8v2"/></svg>Tip</a>
   </nav>
   <div class="topbar-right">
-    <button id="navToggle" class="nav-toggle" aria-label="Menu" aria-controls="nav" aria-expanded="false">☰</button>
+    <button id="navToggle" class="nav-toggle" aria-label="Menu" aria-controls="nav" aria-expanded="false"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/></svg></button>
     <button id="theme" class="theme-toggle" title="Switch light / dark" aria-label="Switch light / dark"></button>
   </div>
 </header>
 <main class="page">
   <section class="hero">
-    <p class="hero-pill"><span class="rag-off">The repo scout for vibe coders</span><span class="rag-only" hidden>Search by words and meaning</span></p>   <!-- RS53: owner tagline 2026-10-22 -->
+    <p class="hero-pill"><span class="rag-off">The repo scout for vibe coders</span><span class="rag-only" hidden>Search by words and meaning</span></p>   <!-- RS54: owner tagline 2026-10-22 -->
     <h2 class="hero-title" id="heroTitle" aria-label="Describe it. Get repos that fit."><span class="ln" aria-hidden="true"><span class="in">Describe it.</span></span><span class="ln" aria-hidden="true"><em class="in">Get repos that fit.</em></span></h2>
     <p class="sub">Find it before you build it: popular, free-to-use, maintained repos for what you’re building.</p>
     <div id="demoSlot" class="demo-slot"></div>   <!-- RS24: on phones the demo sits here, before the search -->
 
     <div class="search">
       <div class="vibebar">
-        <span class="vb-ico" aria-hidden="true">✦</span>
+        <span class="vb-ico" aria-hidden="true"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="4.6"/><path d="M10.4 10.4l3.4 3.4"/></svg></span>
         <textarea id="q" rows="1" placeholder="What are you building?" aria-label="What are you building?"></textarea>
-        <button id="clearQ" class="vb-x" type="button" title="Clear search" aria-label="Clear search" hidden>✕</button>
-        <button id="optsBtn" class="vb-chip" type="button" aria-haspopup="dialog" title="Narrow by platform, stack, stars">⚙ Filters</button>
+        <button id="clearQ" class="vb-x" type="button" title="Clear search" aria-label="Clear search" hidden><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
+        <button id="optsBtn" class="vb-chip" type="button" aria-haspopup="dialog" title="Narrow by platform, stack, stars"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.5h6M11.5 4.5h2M2.5 11.5h2M7.5 11.5h6"/><circle cx="10" cy="4.5" r="1.6"/><circle cx="6" cy="11.5" r="1.6"/></svg>Filters</button>
         <button id="go" class="go-btn" title="Find repos" data-magnet><span class="roll"><span>Find</span><span aria-hidden="true">Find</span></span> <span class="arr">→</span></button>
       </div>
 
@@ -773,13 +780,13 @@
 
   <section class="out-wrap">
     <section id="trendCar" class="tcar" aria-label="Rising on GitHub this month" hidden>
-        <div class="tcar-head"><b>🔥 Rising on GitHub this month</b>
+        <div class="tcar-head"><b>Rising on GitHub this month</b>
           <button type="button" class="link-btn" id="trendHome">See all trending →</button></div>
         <div class="tring" id="tcarTrack" tabindex="0" role="group" aria-roledescription="carousel" aria-label="Rising repos: drag or use the arrow keys to turn"><div class="tring-spin"></div></div>
         <div class="ttape" aria-hidden="true"><div class="run"></div></div>
       </section>
     <div id="out" class="results"></div>
-    <p class="privacy-note">🔒 Nothing you type is stored.
+    <p class="privacy-note">Nothing you type is stored.
       <button type="button" class="link-btn" data-open="privacyModal">Privacy</button> ·
       <button type="button" class="link-btn" id="tourBtn">Tour</button> ·
       <button type="button" class="link-btn" id="aboutBtn">About the results</button> ·
@@ -806,18 +813,18 @@
     Codex, Cursor…) or open it in Claude, ChatGPT or Gemini. It lists the repos you selected.</p>
   <div class="prd-prompt">
     <pre class="cmd" id="prdPrompt" data-copy-ready="1" style="margin:0;max-height:240px;overflow:auto;white-space:pre-wrap;padding-right:46px"></pre>
-    <button id="prdCopy" class="copy" title="Copy prompt" aria-label="Copy prompt">⧉</button>
+    <button id="prdCopy" class="copy" title="Copy prompt" aria-label="Copy prompt"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="5.5" width="8" height="8" rx="1.6"/><path d="M10.5 5.5V3.9c0-.8-.6-1.4-1.4-1.4H3.9c-.8 0-1.4.6-1.4 1.4v5.2c0 .8.6 1.4 1.4 1.4h1.6"/></svg></button>
   </div>
   <div class="prd-alt">   <!-- RS28b: three assistants, equal weight -->
-    <a id="prdOpen" class="ghost-cta" href="#" target="_blank" rel="noopener">Open in Claude ↗</a>
-    <a id="prdGpt" class="ghost-cta" href="#" target="_blank" rel="noopener">Open in ChatGPT ↗</a>
-    <button type="button" id="prdGemini" class="ghost-cta" title="Copies the prompt, then opens Gemini — paste it there">Open in Gemini ↗</button>
+    <a id="prdOpen" class="ghost-cta" href="#" target="_blank" rel="noopener">Open in Claude<svg class="ico ico-after" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3.5h-3v9h9v-3"/><path d="M9 2.5h4.5V7M13.5 2.5L7.5 8.5"/></svg></a>
+    <a id="prdGpt" class="ghost-cta" href="#" target="_blank" rel="noopener">Open in ChatGPT<svg class="ico ico-after" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3.5h-3v9h9v-3"/><path d="M9 2.5h4.5V7M13.5 2.5L7.5 8.5"/></svg></a>
+    <button type="button" id="prdGemini" class="ghost-cta" title="Copies the prompt, then opens Gemini — paste it there">Open in Gemini<svg class="ico ico-after" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3.5h-3v9h9v-3"/><path d="M9 2.5h4.5V7M13.5 2.5L7.5 8.5"/></svg></button>
   </div>
   <p id="prdGemNote" class="mut" style="margin-top:8px;text-align:center" hidden>Prompt copied — paste it into Gemini (it has no pre-fill link).</p>
   <p id="prdLong" class="mut" style="margin-top:10px" hidden><b>Long plan:</b> each button copies the prompt first, then opens
     the assistant. Paste it there.</p>
   <p class="mut tip-el" style="margin-top:10px;text-align:center" hidden>Got a useful plan? <a class="tip-link" href="#" target="_blank"
-    rel="noopener noreferrer">Leave a tip ☕</a> It helps us keep Replore free and fund more open-source projects.</p>
+    rel="noopener noreferrer">Leave a tip</a> It helps us keep Replore free and fund more open-source projects.</p>
   <figure class="tip-el tip-qr" hidden><img src="tip-qr.png" width="96" height="114" loading="lazy"
     alt="QR code for the Replore tip page on Stripe"><figcaption class="mut">Or scan to tip from your phone</figcaption></figure>
   <p id="prdMany" class="mut" style="margin-top:10px" hidden><b>Plans work best with 10 or fewer repos.</b> You picked
@@ -831,16 +838,16 @@
   <button class="x" data-close>&times;</button>
   <h2>Filters</h2>
   <div class="fm-modes" aria-label="Other ways to search">
-    <button type="button" class="mode-tile" id="fmLike"><span class="mt-ico">✨</span>
+    <button type="button" class="mode-tile" id="fmLike"><span class="mt-ico"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="7" height="7" rx="1.6"/><rect x="6.5" y="6.5" width="7" height="7" rx="1.6"/></svg></span>
       <span class="mt-txt"><b>Find similar repos</b><small>A repo you like + a few words</small></span></button>
-    <label class="mode-tile" for="prd" id="fmPrd"><span class="mt-ico">📄</span>
+    <label class="mode-tile" for="prd" id="fmPrd"><span class="mt-ico"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 1.8h5.2L12.5 5v9.2H4z"/><path d="M9 1.8V5h3.5M6.3 8.3h3.9M6.3 11h3.9"/></svg></span>
       <span class="mt-txt"><b>Match a whole plan</b><small>Upload a plan / PRD — read locally</small></span></label>
   </div>
   <p class="mut">Narrow your search — all optional. These apply to your next search.</p>
   <div class="field"><label for="stackInput">Tech stack</label>
     <div class="ms" id="stackMS">
       <span id="stackChips" class="ms-chips"></span>
-      <input id="stackInput" class="ms-input" type="text" placeholder="＋ Python, React…" autocomplete="off" aria-label="Add a language or tech">
+      <input id="stackInput" class="ms-input" type="text" placeholder="Add Python, React…" autocomplete="off" aria-label="Add a language or tech">
       <div id="stackMenu" class="ms-menu" hidden></div>
     </div>
     <input id="stack" type="hidden"></div>
@@ -933,7 +940,7 @@
   <h2>Found some repos — what now?</h2>
   <p class="mut">Three steps from a shortlist to building.</p>
   <ol class="guide">
-    <li><b>Pick the ones that fit</b> — tap <i>＋ Add to plan</i> on the 2–3 cards you like. Compare them:
+    <li><b>Pick the ones that fit</b> — tap <i>Add to plan</i> on the 2–3 cards you like. Compare them:
       check the license verdict (can you use it in a paid product?) and the <i>updated</i> date before you commit to one.</li>
     <li><b>Get a build plan</b> — hit <i>Generate plan</i> on the bar that appears. Replore turns your picks plus
       what you're building into a step-by-step prompt — no AI runs here, it hands the prompt to <b>your own</b> AI.</li>
@@ -1003,8 +1010,8 @@
       country and how fast the page loaded. It sets no cookie, stores nothing on your device, never sees what you type and
       gives us only totals. Cloudflare handles it under its
       <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">privacy policy</a>.</li>
-    <li><b>On your device only:</b> your last search, results and filters, so a refresh brings them back. Tap <b>✕</b> in the
-      search bar or the Replore logo to delete them.</li>
+    <li><b>On your device only:</b> your last search, results and filters, so a refresh brings them back. Use the clear button in the
+      search bar, or the Replore logo, to delete them.</li>
     <li><b>Uploaded plans</b> are read in your browser and never uploaded; only short feature phrases are searched on GitHub.</li>
     <li><b>Open in Claude</b> or <b>Open in ChatGPT</b> sends the build-plan prompt to your own claude.ai or chatgpt.com
       account, only when you click it. <b>Open in Gemini</b> copies it and opens gemini.google.com; you paste it.</li>
@@ -1043,6 +1050,6 @@
   <p class="mut rag-only" style="margin-top:12px" hidden><b>Hybrid search:</b> repos are ranked by your words and by what you mean, so "voice notes" also finds "speech-to-text". Repos our index finds that the word search missed are checked on GitHub before you see them.</p>
 </div></div>
 
-<script src="app.js?v=7b3d308ab5" defer></script>
+<script src="app.js?v=7d0cbc4c17" defer></script>
 </body>
 </html>

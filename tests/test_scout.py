@@ -758,7 +758,7 @@ def test_web_page_is_safe_static(monkeypatch):
     # RS28g: a long prompt never hides Claude/ChatGPT; they switch to copy-then-open
     assert 'linkMode(openLink, tooLong ? "https://claude.ai/new" : url, tooLong)' in html
     assert 'openLink.setAttribute("hidden"' not in html and 'gpt.setAttribute("hidden"' not in html
-    assert 'class="hero-pill"' in html and "The repo scout for vibe coders" in html and "Find it before you build it" in html   # RS53 owner tagline
+    assert 'class="hero-pill"' in html and "The repo scout for vibe coders" in html and "Find it before you build it" in html   # RS54 owner tagline
     # RS34: the page does run an AI relevance check, so no copy may claim otherwise
     for stale in ("There is no AI in this page", "For AI-written searches, a relevance check", "runs a semantic relevance check"):
         assert stale not in html, stale
@@ -782,7 +782,7 @@ def test_web_page_is_safe_static(monkeypatch):
     assert 'class="left-div"' in html and "Less likely to fit" in html and 'data-left="1"' in html
     assert 'id="showLeft"' not in html and "more we left out" not in html
     # RS24/RS28 result card: owner tile without image fetch, prominent add-to-plan toggle, topics from the API
-    assert "function ownerHue" in html and 'class="pk-add"' in html and "✓ In plan" in html and "avatars.githubusercontent" not in html
+    assert "function ownerHue" in html and 'class="pk-add"' in html and "ico(\"check\")+'In plan" in html and "avatars.githubusercontent" not in html
     # RS38: below-the-fold cards reveal on entering the viewport; restored markup never stays invisible
     assert "function queueReveal" in html and "IntersectionObserver" in html and 'c.classList.remove("rv-wait"); });' in html
     # RS39: the owner's public Web3Forms access key is configured (UUID shape), so Send really emails Cardzo
@@ -981,3 +981,17 @@ def test_script_urls_carry_the_current_file_hash():
     for name in stamp_assets.ASSETS:
         want = 'src="%s?v=%s"' % (name, stamp_assets.asset_hash(name))
         assert want in html, "run: python ops/stamp_assets.py (" + want + ")"
+
+
+def test_web_page_has_no_emoji_or_glyph_icons():
+    """RS55: no colour emoji or symbol characters standing in for icons anywhere the page renders."""
+    banned = re.compile("[\U0001F000-\U0001FAFF☀-➿✦★⑂✕✓✗☑☐"
+                        "☰⚙↗⧉＋☼☾▸]")
+    for name in ("index.html", "app.js", "theme.js"):
+        text = (ROOT / "web" / name).read_text(encoding="utf-8")
+        hits = sorted({m.group() for m in banned.finditer(text)})
+        assert not hits, (name, hits)
+    js = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
+    assert "var ICONS=" in js and "function ico(" in js
+    html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
+    assert '<link rel="icon" href="favicon.svg"' in html and (ROOT / "web" / "favicon.svg").exists()

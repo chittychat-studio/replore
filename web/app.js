@@ -198,14 +198,32 @@ function whyRelevant(r, qtokens){
   return hit.length ? 'Matches: '+hit.join(", ") : '';   // RS37: no generic filler line
 }
 
+// RS55: one hand-drawn line-icon set (16px grid, 1.6 stroke, currentColor) in place of emoji and symbol glyphs,
+// which read as AI filler. Decorative: aria-hidden; every control keeps its text or aria-label.
+var ICONS={
+  x:'<path d="M4 4l8 8M12 4l-8 8"/>',
+  check:'<path d="M3 8.6l3.1 3L13 4.6"/>',
+  plus:'<path d="M8 3v10M3 8h10"/>',
+  star:'<path d="M8 1.9l1.8 3.8 4.1.5-3 2.9.8 4.1L8 11.2l-3.7 2 .8-4.1-3-2.9 4.1-.5z"/>',
+  fork:'<circle cx="4.5" cy="3.5" r="1.6"/><circle cx="11.5" cy="3.5" r="1.6"/><circle cx="8" cy="12.5" r="1.6"/><path d="M4.5 5.1v1.4c0 1.1.9 2 2 2h3c1.1 0 2-.9 2-2V5.1M8 8.5v2.4"/>',
+  copy:'<rect x="5.5" y="5.5" width="8" height="8" rx="1.6"/><path d="M10.5 5.5V3.9c0-.8-.6-1.4-1.4-1.4H3.9c-.8 0-1.4.6-1.4 1.4v5.2c0 .8.6 1.4 1.4 1.4h1.6"/>',
+  shield:'<path d="M8 1.8l5 1.9v3.9c0 3.2-2.1 5.6-5 6.6-2.9-1-5-3.4-5-6.6V3.7z"/><path d="M5.8 8l1.6 1.6 2.9-3"/>',
+  alert:'<path d="M8 2.2l6 10.6H2z"/><path d="M8 6.6v2.9M8 11.2v.01"/>',
+  ban:'<circle cx="8" cy="8" r="5.8"/><path d="M3.9 12.1l8.2-8.2"/>',
+  sun:'<circle cx="8" cy="8" r="2.8"/><path d="M8 1.5v1.6M8 12.9v1.6M1.5 8h1.6M12.9 8h1.6M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1"/>',
+  moon:'<path d="M13.2 9.6A5.6 5.6 0 0 1 6.4 2.8a5.6 5.6 0 1 0 6.8 6.8z"/>'
+};
+function ico(n,cls){ return '<svg class="ico'+(cls?' '+cls:'')+'" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor"'+
+  ' stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'+ICONS[n]+'</svg>'; }
+
 // ---- card rendering (3D) ----
 // one clear license verdict (replaces the redundant "Paid-use OK" + "Free" chips that both read "yes" for MIT)
 function licenseVerdict(spdx){
-  if(PERMISSIVE.has(spdx)) return {c:"t-good", t:"✅ Free for commercial use"};
-  if(WEAK.has(spdx))       return {c:"t-good", t:"✅ Paid-use OK · changes stay open"};
-  if(STRONG.has(spdx))     return {c:"t-warn", t:"⚠ Must open-source your app"};
-  if(NETWORK.has(spdx))    return {c:"t-warn", t:"⚠ Share your code, even as a web app"};
-  return {c:"t-warn", t:"⛔ No license — can't reuse"};
+  if(PERMISSIVE.has(spdx)) return {c:"t-good", i:"check", t:"Free for commercial use"};
+  if(WEAK.has(spdx))       return {c:"t-good", i:"check", t:"Paid-use OK · changes stay open"};
+  if(STRONG.has(spdx))     return {c:"t-warn", i:"alert", t:"Must open-source your app"};
+  if(NETWORK.has(spdx))    return {c:"t-warn", i:"alert", t:"Share your code, even as a web app"};
+  return {c:"t-warn", i:"ban", t:"No license — can't reuse"};
 }
 // RS24 result card helpers: owner initial tile (colour from the name, no image fetch) and "updated N ago"
 function ownerHue(o){ var h=0; for(var k=0;k<o.length;k++) h=(h*31+o.charCodeAt(k))>>>0; return [14,24,32,198,152,268,340][h%7]; }
@@ -226,7 +244,7 @@ var INSTALL={npm:"npm install ",pypi:"pip install ",cargo:"cargo add ",go:"go ge
 var PKG_RE=/^[@A-Za-z0-9._\/~+-]{1,214}$/, VER_RE=/^[A-Za-z0-9.+_~-]{1,64}$/, ADV_RE=/^[A-Z][A-Z0-9]{1,15}-[A-Za-z0-9._:-]{1,60}$/, TAG_RE=/^[A-Za-z0-9._\/+@-]{1,80}$/;
 function trustRow(r){ if(!validRepoName(r.name)) return "";
   return '<details class="trust" data-repo="'+esc(r.name)+'" data-spdx="'+esc(r.spdx||"")+'"'+(TRUST_LANGS[r.lang]===1?' data-lang="'+esc(r.lang)+'"':'')+'>'+
-    '<summary>🛡 Safe to build on?</summary><div class="trust-body"></div></details>'; }
+    '<summary>'+ico("shield")+'Safe to build on?</summary><div class="trust-body"></div></details>'; }
 function installCmd(system,name){ return INSTALL.hasOwnProperty(system) && PKG_RE.test(String(name||"")) ? INSTALL[system]+name : ""; }
 // RS53a: count = the page number of the Link header's rel="last" (per_page=1), else the items returned
 function lastPage(link,n){ var m=/<[^>]*[?&]page=(\d+)[^>]*>;\s*rel="last"/.exec(link||""); return m ? +m[1] : (n|0); }
@@ -238,17 +256,17 @@ function ghShape(raw){ var c=raw.community||{}, rl=raw.release||{}, g=raw.gfi||{
   return {limited:limited, files:f?{readme:!!f.readme, contributing:!!f.contributing, coc:!!f.code_of_conduct}:null, release:rel,
     gfi:g.s===200&&Array.isArray(g.j)?lastPage(g.link,g.j.length):null}; }
 function trustHtml(gh, tr, spdx, repo){
-  var L=[], NA='<span class="mut">couldn\'t check</span>', yes=function(b,t){ return (b?"✓ ":"✗ ")+t; };
+  var L=[], NA='<span class="mut">couldn\'t check</span>', yes=function(b,t){ return ico(b?"check":"x")+t; };
   var sc=tr&&tr.scorecard, pk=tr&&tr.package;
   if(sc&&sc.status==="ok") L.push('<b>Security health</b> '+esc(String(sc.score))+'/10'+(sc.maintained!=null?' · maintained '+esc(String(sc.maintained))+'/10':'')+
     ' · <a href="https://scorecard.dev/viewer/?uri=github.com/'+esc(repo)+'" target="_blank" rel="noopener noreferrer">OpenSSF Scorecard</a>');
   else L.push('<b>Security health</b> '+(sc&&sc.status==="none"?'<span class="mut">not scored by OpenSSF Scorecard yet</span>':NA));
   if(pk&&pk.status==="ok"&&PKG_RE.test(String(pk.name))&&VER_RE.test(String(pk.version))){
     var ids=(pk.advisories||[]).filter(function(id){ return ADV_RE.test(String(id)); }), n=Math.max(pk.advisoryCount|0, ids.length);
-    L.push('<b>Known vulnerabilities</b> in '+esc(pk.name)+' '+esc(pk.version)+': '+(n===0?'✓ none known':
-      '<span class="t-warn-ink">⚠ '+n+' known</span> — '+ids.map(function(id){ return '<a href="https://osv.dev/vulnerability/'+esc(id)+'" target="_blank" rel="noopener noreferrer">'+esc(id)+'</a>'; }).join(", ")+(n>ids.length?' …':'')));
+    L.push('<b>Known vulnerabilities</b> in '+esc(pk.name)+' '+esc(pk.version)+': '+(n===0?ico("check")+'none known':
+      '<span class="t-warn-ink">'+ico("alert")+n+' known</span> — '+ids.map(function(id){ return '<a href="https://osv.dev/vulnerability/'+esc(id)+'" target="_blank" rel="noopener noreferrer">'+esc(id)+'</a>'; }).join(", ")+(n>ids.length?' …':'')));
     var cmd=installCmd(pk.system,pk.name);
-    if(cmd) L.push('<b>Install</b> <code>'+esc(cmd)+'</code> <button type="button" class="trust-copy" data-cmd="'+esc(cmd)+'" title="Copy the command">⧉</button>');
+    if(cmd) L.push('<b>Install</b> <code>'+esc(cmd)+'</code> <button type="button" class="trust-copy" data-cmd="'+esc(cmd)+'" title="Copy the command" aria-label="Copy the command">'+ico("copy")+'</button>');
     var lic=(pk.licenses||[]).filter(function(x){ return /^[A-Za-z0-9.+() -]{1,80}$/.test(String(x)); });
     if(lic.length && lic.indexOf(spdx)<0) L.push('<b>Package license</b> '+esc(lic.join(", "))+' <span class="mut">(the repo says '+esc(spdx||"none")+')</span>');
   } else if(pk&&pk.status==="none") L.push('<b>Package</b> <span class="mut">no published package matched this repo</span>');
@@ -281,7 +299,7 @@ document.addEventListener("toggle",function(e){ var d=e.target;   // toggle does
     function(){ delete __trust[key]; body.removeAttribute("data-done"); body.innerHTML='<p class="mut">Couldn\'t check right now.</p>'; });
 },true);
 document.addEventListener("click",function(e){ var b=e.target&&e.target.closest&&e.target.closest(".trust-copy"); if(!b) return;
-  var t=b.getAttribute("data-cmd")||""; function ok(){ b.textContent="✓"; setTimeout(function(){ b.textContent="⧉"; },1400); }
+  var t=b.getAttribute("data-cmd")||""; function ok(){ b.innerHTML=ico("check"); setTimeout(function(){ b.innerHTML=ico("copy"); },1400); }
   if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(ok,function(){});
 });
 function cardHtml(r,i,qtokens){
@@ -298,8 +316,8 @@ function cardHtml(r,i,qtokens){
     '</div>'+
     (function(xs){ return xs.length?'<nav class="explore" aria-label="Explore '+esc(r.name)+'">'+
       xs.map(function(x){ return '<a href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer" title="'+esc(x.title)+'">'+esc(x.label)+'</a>'; }).join("")+'</nav>':''; })(exploreLinks(r.name))+
-    '<div class="rc-stats"><span class="stars">★ <span class="cnt" data-v="'+r.stars+'">'+kstars(r.stars)+'</span></span>'+
-      (r.forks?'<span class="forks" title="Forks">⑂ '+kstars(r.forks)+'</span>':'')+
+    '<div class="rc-stats"><span class="stars">'+ico("star")+'<span class="cnt" data-v="'+r.stars+'">'+kstars(r.stars)+'</span></span>'+
+      (r.forks?'<span class="forks" title="Forks">'+ico("fork")+kstars(r.forks)+'</span>':'')+
       (r.starter?'<span class="tag t-star" title="A ready-made template to start your project from">Starter</span>':'')+'</div>'+
     (function(w){ return w?'<div class="why">'+esc(w)+'</div>':''; })(whyRelevant(r,qtokens))+
     '<p class="desc">'+descHtml(r)+'</p>'+
@@ -307,9 +325,9 @@ function cardHtml(r,i,qtokens){
     '<div class="meta">'+esc(r.spdx)+' · updated <span title="'+esc(r.pushed)+'">'+esc(agoText(r.pushed)||r.pushed)+'</span></div>'+
     trustRow(r)+
     '<div class="rc-foot">'+
-      '<div class="tags"><span class="tag '+v.c+'" title="License: '+esc(r.spdx)+' · '+esc(paid)+' · Completely free? '+esc(free)+'">'+v.t+'</span></div>'+
+      '<div class="tags"><span class="tag '+v.c+'" title="License: '+esc(r.spdx)+' · '+esc(paid)+' · Completely free? '+esc(free)+'">'+ico(v.i)+esc(v.t)+'</span></div>'+
       '<label class="pick"><input type="checkbox" class="pick-cb" data-name="'+esc(r.name)+'" data-url="'+esc(r.url)+
-        '" data-desc="'+esc(r.desc||"")+'"><span class="pk-add">＋ Add to plan</span><span class="pk-in">✓ In plan</span></label>'+
+        '" data-desc="'+esc(r.desc||"")+'"><span class="pk-add">'+ico("plus")+'Add to plan</span><span class="pk-in">'+ico("check")+'In plan</span></label>'+
     '</div>'+
   '</article>';
 }
@@ -364,11 +382,11 @@ function attachTilt(container, reduce){
 var PLUGIN_CTA='<p class="cta-inline">MORE_LINENeed every match? <button type="button" class="link-btn" data-open="pluginModal">Use the plugin →</button></p>';
 
 // result-side filter chips (filter the already-fetched cards, no new API calls — RS29)
-var RES_FILTERS=[["all","All"],["com","✅ Free for commercial use"],["starter","🧩 Starters"]];
+var RES_FILTERS=[["all","All"],["com","Free for commercial use"],["starter","Starters"]];
 function filterBar(){ return '<div class="res-filter" role="group" aria-label="Filter results">'+
   RES_FILTERS.map(function(f,i){ return '<button type="button" class="rfilter'+(i===0?' on':'')+'" data-f="'+f[0]+'">'+f[1]+'</button>'; }).join("")+
-  '<button type="button" class="rfilter rclear" id="resClearBtn" data-f="all" title="Show all results" hidden>✕ Clear filter</button>'+
-  '<button type="button" class="rsel" id="resSelAll" title="Tick every repo shown, for a build plan (RS28a)">☑ Select all shown</button>'+
+  '<button type="button" class="rfilter rclear" id="resClearBtn" data-f="all" title="Show all results" hidden>'+ico("x")+'Clear filter</button>'+
+  '<button type="button" class="rsel" id="resSelAll" title="Tick every repo shown, for a build plan (RS28a)">Select all shown</button>'+
   '</div>'; }
 
 function render(top, queries, excluded, totalMatches, qtokens, heading, note, gate){
@@ -417,7 +435,7 @@ function shownPickBoxes(){ var out=document.getElementById("out"); if(!out) retu
     .map(function(c){ return c.querySelector(".pick-cb"); }).filter(Boolean); }
 function syncSelAll(){ var b=document.getElementById("resSelAll"); if(!b) return;
   var bx=shownPickBoxes(), all=bx.length>0 && bx.every(function(x){ return x.checked; });
-  b.textContent = all ? "☐ Deselect shown" : "☑ Select all shown ("+bx.length+")"; b.classList.toggle("on",all); b.hidden=!bx.length; }
+  b.textContent = all ? "Deselect shown" : "Select all shown ("+bx.length+")"; b.classList.toggle("on",all); b.hidden=!bx.length; }
 // infinite scroll: no button — when the sentinel nears the viewport, reveal 10 more (cards are already fetched; no API call)
 function checkMore(){ requestAnimationFrame(function(){ var s=document.querySelector("#out #resMore");
   if(s && !s.hidden && s.getBoundingClientRect().top < window.innerHeight+400) revealMore(); }); }
@@ -512,16 +530,16 @@ async function relevanceGate(query, repos){
 
 // RS21: ready-made prompts the user can click to fill the box.
 var EXAMPLES=[
-  {label:"🌐 Portfolio website with animations", text:"a portfolio website with smooth scroll animations", platform:"web", starters:"yes"},
-  {label:"🛒 SaaS landing page (Next.js)", text:"landing page for my SaaS in Next.js, I'll sell it", platform:"web", starters:"yes"},
-  {label:"📱 First iPhone app", text:"my first iPhone app, a habit tracker", platform:"ios", starters:"yes"},
-  {label:"🥗 Diet / calorie app", text:"a diet and calorie tracking app", platform:"", starters:"no"},
-  {label:"🤖 Chatbot over my PDFs", text:"a chatbot that answers questions from my PDFs, Python", platform:"", starters:"no"},
-  {label:"📊 Dashboard from a spreadsheet", text:"dashboard to show my sales spreadsheet as charts", platform:"web", starters:"no"},
-  {label:"🎮 2D browser game", text:"a simple 2D browser game engine for beginners", platform:"web", starters:"yes"},
-  {label:"🗺️ Offline maps for a trip planner", text:"offline maps for my trip planner app", platform:"", starters:"no"},
-  {label:"🔒 Learn security safely", text:"learn web security by hacking a practice app", platform:"", starters:"no"},
-  {label:"📑 PowerPoint from notes", text:"generate PowerPoint decks from my notes", platform:"", starters:"no"}
+  {label:"Portfolio website with animations", text:"a portfolio website with smooth scroll animations", platform:"web", starters:"yes"},
+  {label:"SaaS landing page (Next.js)", text:"landing page for my SaaS in Next.js, I'll sell it", platform:"web", starters:"yes"},
+  {label:"First iPhone app", text:"my first iPhone app, a habit tracker", platform:"ios", starters:"yes"},
+  {label:"Diet / calorie app", text:"a diet and calorie tracking app", platform:"", starters:"no"},
+  {label:"Chatbot over my PDFs", text:"a chatbot that answers questions from my PDFs, Python", platform:"", starters:"no"},
+  {label:"Dashboard from a spreadsheet", text:"dashboard to show my sales spreadsheet as charts", platform:"web", starters:"no"},
+  {label:"2D browser game", text:"a simple 2D browser game engine for beginners", platform:"web", starters:"yes"},
+  {label:"Offline maps for a trip planner", text:"offline maps for my trip planner app", platform:"", starters:"no"},
+  {label:"Learn security safely", text:"learn web security by hacking a practice app", platform:"", starters:"no"},
+  {label:"PowerPoint from notes", text:"generate PowerPoint decks from my notes", platform:"", starters:"no"}
 ];
 // click an example → fill the form on the left, then search straight away (RS21)
 function pickExample(ex){
@@ -1018,7 +1036,7 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
   var gemBtn=document.getElementById("prdGemini");   // RS28b: Gemini has no pre-fill link — copy, then open it
   if(gemBtn) gemBtn.addEventListener("click",function(){ copyThenOpen("Gemini","https://gemini.google.com/app"," (it has no pre-fill link)"); });
   if(copyBtn) copyBtn.addEventListener("click",function(){ var text=pre?pre.textContent:"";
-    function ok(){ copyBtn.textContent="✓"; setTimeout(function(){ copyBtn.textContent="⧉"; },1400); }
+    function ok(){ copyBtn.innerHTML=ico("check"); setTimeout(function(){ copyBtn.innerHTML=ico("copy"); },1400); }
     if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(ok,ok); }
     else { try{ var ta=document.createElement("textarea"); ta.value=text; ta.style.position="fixed"; ta.style.opacity="0";
       document.body.appendChild(ta); ta.focus(); ta.select(); document.execCommand("copy"); document.body.removeChild(ta); ok(); }catch(err){} } });
@@ -1119,7 +1137,7 @@ function buildDemo(host){
 function stopDemo(id){ var h=document.getElementById(id); if(h&&h.__stopDemo) h.__stopDemo(); }
 // empty-state in the results panel: the animated demo carousel (home view)
 // ---- RS35: trending gallery — three API-sorted lists, fetched only when opened, cached 30 min per tab ----
-var TREND_TABS={rising:"🔥 Rising", stars:"⭐ Most stars", forks:"🍴 Most forks"};
+var TREND_TABS={rising:"Rising", stars:"Most stars", forks:"Most forks"};
 var TREND_NOTE={
   rising:"Created in the last 30 days, most stars first.",
   stars:"The most-starred open-source repos on GitHub that are still maintained.",
@@ -1155,8 +1173,8 @@ function trendRows(items, kind){
   var excluded={license:0,stale:0,low:0,fork:0,harm:0};
   var rows=keep(items,0,"",excluded,{});
   rows.sort(function(a,b){ return kind==="forks" ? (b.forks-a.forks || b.stars-a.stars) : (b.stars-a.stars || b.forks-a.forks); });
-  rows.forEach(function(r){ r.whyText = kind==="forks" ? "🍴 "+kstars(r.forks)+" forks"
-    : kind==="rising" ? "🔥 New this month"+(r.forks?" · 🍴 "+kstars(r.forks)+" forks":"") : "🍴 "+kstars(r.forks)+" forks"; });
+  rows.forEach(function(r){ r.whyText = kind==="forks" ? kstars(r.forks)+" forks"
+    : kind==="rising" ? "New this month"+(r.forks?" · "+kstars(r.forks)+" forks":"") : kstars(r.forks)+" forks"; });
   return {rows:rows, excluded:excluded};
 }
 async function showTrending(kind){
@@ -1235,9 +1253,9 @@ function buildTrendCarousel(){
     var rows=trendRows(got.items,"rising").rows.filter(hasDesc).slice(0,12); if(rows.length<3) return;   // RS45: a showcase card must say what the repo does
     var card=function(r){ var v=licenseVerdict(r.spdx);
       return '<a class="tcard" href="'+esc(r.url)+'" target="_blank" rel="noopener" draggable="false">'+
-        '<span class="tc-top"><span class="tc-name">'+esc(r.name)+'</span><span class="tc-stars">★ '+kstars(r.stars)+'</span></span>'+
+        '<span class="tc-top"><span class="tc-name">'+esc(r.name)+'</span><span class="tc-stars">'+ico("star")+kstars(r.stars)+'</span></span>'+
         '<span class="tc-desc">'+esc(r.desc)+'</span>'+
-        '<span class="tc-meta">'+esc(v.t||"")+(r.forks?' · 🍴 '+kstars(r.forks):'')+'</span></a>'; };
+        '<span class="tc-meta">'+esc(v.t||"")+(r.forks?' · '+kstars(r.forks)+' forks':'')+'</span></a>'; };
     spin.innerHTML=rows.map(card).join("");
     // RS47 ticker: the same names on a tape; written twice so the -50% loop has no seam
     if(tape){ var one=rows.map(function(r){ return '<span>'+esc(r.name)+'</span>'+TAPE_ICON; }).join(""); tape.innerHTML=one+one; }
@@ -1359,13 +1377,13 @@ function restoreResults(){
   if(d.stack!=null) setStack(d.stack);
   var out=document.getElementById("out");
   cleanCards(out);   // ensure restored cards are visible even if an old cache baked in opacity:0
-  document.getElementById("status").textContent="Restored your last results — tap ✕ in the search bar to start over.";
+  document.getElementById("status").textContent="Restored your last results. Clear the search bar to start over.";
   animateCards(out); initResultFilter(); syncClearQ();
   return true;
 }
 if(!restoreResults()) showHome();
 // Home: clicking the Replore logo clears results and returns to the start; Tour: the how-it-works walkthrough
-// full reset: text, similar-repo, every filter, picked repos, results and cached search (search-bar ✕ and logo)
+// full reset: text, similar-repo, every filter, picked repos, results and cached search (search-bar clear button and logo)
 function resetAll(){
   window.__runGen++; window.__busy=false; setGoBusy(false);   // abandon any in-flight search so it can't repaint later
   if(window.__gateCtl) try{ window.__gateCtl.abort(); }catch(_){}   // RS41: and stop its AI check
@@ -1396,7 +1414,7 @@ function syncClearQ(){ var x=document.getElementById("clearQ"); if(!x) return;
 })();
 document.getElementById("tourBtn").addEventListener("click",function(){ openModal("howModal"); });
 
-// mobile menu: ☰ toggles the nav dropdown; close on pick or outside click
+// mobile menu: the menu button toggles the nav dropdown; close on pick or outside click
 (function(){ var tog=document.getElementById("navToggle"), nav=document.getElementById("nav");
   if(!tog||!nav) return;
   function close(){ nav.classList.remove("open"); tog.setAttribute("aria-expanded","false"); }
@@ -1415,7 +1433,7 @@ document.getElementById("tourBtn").addEventListener("click",function(){ openModa
   var btn=document.getElementById("theme"), root=document.documentElement, KEY="findrepo_theme";
   function sysDark(){ return window.matchMedia && matchMedia("(prefers-color-scheme:dark)").matches; }
   function current(){ return root.getAttribute("data-theme") || (sysDark()?"dark":"light"); }
-  function paint(){ btn.textContent = current()==="dark" ? "\u263C" : "\u263E"; }   // RS44a: both single-colour glyphs (☼ / ☾), never a colour emoji
+  function paint(){ btn.innerHTML = ico(current()==="dark" ? "sun" : "moon"); }   // RS44a, RS55: line icons, never a colour emoji
   var saved; try{ saved=localStorage.getItem(KEY); }catch(e){}
   if(saved==="dark"||saved==="light") root.setAttribute("data-theme",saved);
   paint();

@@ -294,12 +294,12 @@ console.log("prd ok:", f.join(" | "));
       licenses: ["MIT"], advisories: ["GHSA-qw6h-vgh9-j6wx", "<script>alert(1)</script>"], advisoryCount: 2 } };
     let h = s.trustHtml(gh, tr, "MIT", "expressjs/express");
     assert.ok(h.includes("8.9/10") && h.includes("maintained 10/10") && h.includes("scorecard.dev/viewer/?uri=github.com/expressjs/express"));
-    assert.ok(h.includes("osv.dev/vulnerability/GHSA-qw6h-vgh9-j6wx") && h.includes("⚠ 2 known") && !h.includes("<script"));
+    assert.ok(h.includes("osv.dev/vulnerability/GHSA-qw6h-vgh9-j6wx") && h.includes("</svg>2 known") && h.includes("M8 2.2l6 10.6H2z") && !h.includes("<script"));
     assert.ok(h.includes("npm install express") && h.includes("37 good first issues") && h.includes("v5.3.0"));
     assert.ok(!h.includes("Package license"), "same license as the repo: no extra line");
     assert.ok(h.includes("doesn't change the ranking"));
     h = s.trustHtml(gh, { scorecard: { status: "ok", score: 5 }, package: { ...tr.package, licenses: ["GPL-3.0"], advisories: [], advisoryCount: 0 } }, "MIT", "a/b");
-    assert.ok(h.includes("✓ none known") && h.includes("Package license") && h.includes("the repo says MIT"));
+    assert.ok(h.includes("</svg>none known") && h.includes("Package license") && h.includes("the repo says MIT"));
     h = s.trustHtml({ limited: true }, null, "MIT", "a/b");   // function down + GitHub limit
     assert.ok(h.includes("couldn't check") && h.includes("hourly limit") && !h.includes("/10"));
     h = s.trustHtml(gh, { scorecard: { status: "none" }, package: { status: "none" } }, "MIT", "a/b");
