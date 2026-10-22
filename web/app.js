@@ -960,19 +960,18 @@ document.getElementById("pluginBtn").addEventListener("click",function(){ openMo
 document.addEventListener("click",function(e){ var t=e.target&&e.target.closest&&e.target.closest("[data-open],[data-action]"); if(!t) return;
   var m=t.getAttribute("data-open"); if(m){ e.preventDefault(); openModal(m); return; }
   if(t.getAttribute("data-action")==="search-again"){ e.preventDefault(); window.__fresh=true; run(); } });
-// plugin-modal tabs: Claude Code vs any other agent (ARIA tab pattern: click, ←/→/Home/End, roving tabindex)
-(function(){ var pm=document.getElementById("pluginModal"); if(!pm) return;
-  function tabs(){ return Array.prototype.slice.call(pm.querySelectorAll(".tab")); }
-  function select(t, focus){ var which=t.getAttribute("data-tab");
-    tabs().forEach(function(b){ var on=b===t; b.classList.toggle("on",on); b.setAttribute("aria-selected",on?"true":"false"); b.tabIndex=on?0:-1; });
-    pm.querySelectorAll(".tabpanel").forEach(function(p){ p.hidden = p.getAttribute("data-panel")!==which; });
-    if(focus) t.focus(); }
-  pm.addEventListener("click",function(e){ var t=e.target.closest&&e.target.closest(".tab"); if(t) select(t,false); });
-  pm.addEventListener("keydown",function(e){ var t=e.target.closest&&e.target.closest(".tab"); if(!t) return;
-    var all=tabs(), i=all.indexOf(t), n=all.length, j=null;
-    if(e.key==="ArrowRight") j=(i+1)%n; else if(e.key==="ArrowLeft") j=(i-1+n)%n;
-    else if(e.key==="Home") j=0; else if(e.key==="End") j=n-1;
-    if(j!==null){ e.preventDefault(); select(all[j],true); } });
+// RS70: the plugin window is an add-ons grid. Get shows that agent's steps in place; "All agents" goes back (commands
+// get the site's usual Copy button). Opening the window always starts on the grid.
+(function(){ var pm=document.getElementById("pluginModal"), grid=document.getElementById("agGrid"); if(!pm||!grid||!pm.addEventListener) return;
+  function show(key, from){ var d=key&&document.getElementById("ag-"+key);
+    pm.querySelectorAll(".ag-detail").forEach(function(x){ x.hidden=x!==d; }); grid.hidden=!!d;
+    var f=d?d.querySelector(".ag-back"):(from||grid.querySelector(".ag-get")); if(f&&f.focus) f.focus(); }
+  pm.addEventListener("click",function(e){ var t=e.target, g=t.closest&&t.closest(".ag-get");
+    if(g){ pm.__from=g.getAttribute("data-ag"); show(pm.__from); return; }
+    if(t.closest&&t.closest(".ag-back")){ show(null, grid.querySelector('.ag-get[data-ag="'+pm.__from+'"]')); return; }
+    });
+  document.addEventListener("click",function(e){ var o=e.target&&e.target.closest&&e.target.closest('[data-open="pluginModal"],#pluginBtn');
+    if(o){ pm.querySelectorAll(".ag-detail").forEach(function(x){ x.hidden=true; }); grid.hidden=false; } }, true);
 })();
 // Filters chip and "Find similar repos" tile each open a popup window
 document.getElementById("optsBtn").addEventListener("click",function(){ openModal("filtersModal"); });

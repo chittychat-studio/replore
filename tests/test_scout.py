@@ -710,7 +710,8 @@ def test_web_page_is_safe_static(monkeypatch):
     assert "/plugin install replore@replore" in html and "/replore:find" in html
     assert "Use the plugin" in html and "PLUGIN_CTA" in html
     # RS31/RS32: the plugin modal has two tabs — Claude Code one-command, and any other agent via MCP / AGENTS.md
-    assert 'data-tab="cc"' in html and 'data-tab="other"' in html and "mcp_server.py" in html and "AGENTS.md" in html
+    assert 'id="agGrid"' in html and 'data-ag="cc"' in html and 'id="ag-agents"' in html and "mcp_server.py" in html and "AGENTS.md" in html   # RS70 grid
+    assert "/plugin marketplace add chittychat-studio/replore" in html and html.count('class="ag-card"') == 9
     assert "passed the filters" in html  # the "want every suitable repo?" plugin banner
     # RS29c (retired): the per-results keyword-search banner is gone
     assert "LEXICAL_NOTE" not in html
