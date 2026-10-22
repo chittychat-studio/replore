@@ -1243,12 +1243,6 @@ function think(st, text){
   if(t){ t.textContent=text; return; }
   st.innerHTML=thinkPill(text,"think-sm"); startDotOrb(st.querySelector(".think-orb"));
 }
-function startHomeThinking(wrap, demoHost){
-  if(!wrap) return; startDotOrb(wrap.querySelector(".think-orb"));
-  var txt=wrap.querySelector(".think-txt"); if(!demoHost || !txt) return;
-  demoHost.__onStep=function(i){ if(!txt.isConnected) return;          // dissolve the label with the card
-    txt.style.opacity="0"; setTimeout(function(){ txt.textContent=(STEPS[i]&&STEPS[i].doing)||""; txt.style.opacity="1"; },350); };
-}
 
 // RS35 home carousel: top Rising repos, rotates itself, pauses on hover/focus/touch, still under reduced motion
 // RS47 ticker separator: a git-branch mark (owner 2026-10-15: "change this with different icon"), single colour
@@ -1330,8 +1324,6 @@ function showHome(){
     '<div id="heroDemo" class="demo"></div>'+
     '</div>';
   var hd=document.getElementById("heroDemo"); buildLiveDemo(hd);   // RS61: the real product, live
-  var slot=hd&&hd.querySelector(".demo-think");   // RS36: the orb lives inside the demo card's footer — one component
-  if(slot){ slot.id="homeThink"; slot.innerHTML=thinkPill(STEPS[0].doing); startHomeThinking(slot, hd); }
   placeDemo();
   if(window.__resetPicks) window.__resetPicks();
 }
@@ -1396,8 +1388,7 @@ function buildLiveDemo(host){
   host.innerHTML='<div class="ld">'+(wide?'<canvas class="ld-globe" aria-hidden="true"></canvas>':'')+
     '<div class="ld-q" aria-hidden="true">'+ico("search")+'<span class="ld-typed"></span><span class="ld-caret"></span></div>'+
     '<div class="ld-deck" aria-hidden="true"></div>'+
-    '<p class="ld-note">Example: Replore’s real top results for this search</p></div>'+
-    '<div class="demo-foot"><span class="demo-think"></span></div>';
+    '<p class="ld-note">Example: Replore’s real top results for this search</p></div>';   // no orb pill: the globe already says "searching"
   var deck=host.querySelector(".ld-deck"), typed=host.querySelector(".ld-typed"), globe=host.querySelector(".ld-globe");
   if(globe) startAsciiGlobe(globe, reduce);
   var timers=[], k=0, paused=false;
@@ -1412,13 +1403,11 @@ function buildLiveDemo(host){
   function run(){ clear(); if(paused||!host.isConnected) return;
     var ex=LIVE_DEMO[k%LIVE_DEMO.length], shown=wide?3:1; k++;
     deck.innerHTML=ex.r.slice(0,shown).map(cardHtmlMini).join(""); typed.textContent="";
-    if(host.__onStep) host.__onStep(0);
     if(reduce){ typed.textContent=ex.q; [].forEach.call(deck.children,function(c){ c.classList.add("in","lit"); }); return; }
     var step=Math.max(18,Math.min(42,1400/ex.q.length));
     for(var i=1;i<=ex.q.length;i++) (function(n){ later(function(){ typed.textContent=ex.q.slice(0,n); }, n*step); })(i);
     var t0=ex.q.length*step+250;
-    later(function(){ if(host.__onStep) host.__onStep(1); if(globe&&globe.__boost) globe.__boost(1.6); }, t0);
-    later(function(){ if(host.__onStep) host.__onStep(2); }, t0+1100);
+    later(function(){ if(globe&&globe.__boost) globe.__boost(1.6); }, t0);
     [].forEach.call(deck.children,function(c,j){ var at=t0+1100+j*240;
       later(function(){ c.classList.add("in"); }, at);
       later(function(){ c.classList.add("lit"); }, at+380);

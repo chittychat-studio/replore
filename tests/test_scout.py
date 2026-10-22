@@ -779,8 +779,8 @@ def test_web_page_is_safe_static(monkeypatch):
     assert "&sort=" in html and "github.com/trending" not in html
     assert "body.view-trending .tcar, body.has-results .tcar{display:none}" in html  # no Rising list twice; results focus
     assert 'prefers-reduced-motion: reduce)").matches) return;' in html
-    # RS36 thinking orb pill: dotted sphere + label, under the home demo and as the search loading indicator
-    assert "function startDotOrb" in html and "function think(" in html and 'id="homeThink"' in html
+    # RS36 thinking orb pill: the search loading indicator (RS61: no longer under the home demo; the ASCII globe is there)
+    assert "function startDotOrb" in html and "function think(" in html and 'id="homeThink"' not in html
     assert 'class="think-orb" aria-hidden="true"' in html and "draw(); if(reduce) return;" in html and "canvas.isConnected" in html
     assert 'think(st,"Checking which repos fit")' in html and "function startOrb" not in html
     # RS34: dropped repos sit at the end under a divider and show without a click (no hidden undo button)
