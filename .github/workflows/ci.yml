@@ -25,4 +25,5 @@ jobs:
           node-version: "22"
       - run: node tests/test_web_logic.js
       - run: node tests/test_relevance_fn.mjs  # RS34 relevance function (fake LLM, no network)
+      - run: node tests/test_trust_fn.mjs  # RS52b trust function (fake Scorecard/deps.dev, no network)
       - run: python evals/run.py  # RS5: goal-based fit-ranking evals must pass

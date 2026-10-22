@@ -906,11 +906,13 @@ def test_privacy_notice_matches_what_the_code_does():
         assert banned not in html, banned
     # only these hosts are contacted; PRIVACY.md names each of them
     hosts = set(re.findall(r"https://([a-z0-9.-]+)", html))
-    allowed = {"api.github.com", "github.com", "claude.ai", "claude.com", "replore.pages.dev", "cardzo.co.in", "chatgpt.com", "gemini.google.com", "api.web3forms.com", "groq.com", "www.cloudflare.com", "challenges.cloudflare.com", "buy.stripe.com", "gitdiagram.com", "gitingest.com", "deepwiki.com", "github1s.com", "github.dev"}  # RS34/RS34a provider terms, RS34c Turnstile, RS44 tips, RS51 Explore links
+    allowed = {"api.github.com", "github.com", "claude.ai", "claude.com", "replore.pages.dev", "cardzo.co.in", "chatgpt.com", "gemini.google.com", "api.web3forms.com", "groq.com", "www.cloudflare.com", "challenges.cloudflare.com", "buy.stripe.com", "gitdiagram.com", "gitingest.com", "deepwiki.com", "github1s.com", "github.dev",
+               "scorecard.dev", "osv.dev"}  # RS52 trust links (navigations); RS34/RS34a provider terms, RS34c Turnstile, RS44 tips, RS51 Explore links
     assert hosts <= allowed, hosts - allowed
     for named in ("api.github.com", "Cloudflare", "claude.ai", "security.log", "200 characters", "off by default",
                   "Groq", "Cloudflare Workers AI", "Turnstile", "relevance check", "stores nothing", "Feedback", "chatgpt.com", "gemini.google.com", "Web3Forms", "Stripe",
-                  "Cloudflare Web Analytics", "static.cloudflareinsights.com", "cookieless", "gitdiagram.com", "gitingest.com", "deepwiki.com", "github1s.com", "github.dev"):  # RS34 data flow must be disclosed
+                  "Cloudflare Web Analytics", "static.cloudflareinsights.com", "cookieless", "gitdiagram.com", "gitingest.com", "deepwiki.com", "github1s.com", "github.dev",
+                  "OpenSSF Scorecard", "api.securityscorecards.dev", "deps.dev", "OSV.dev", "Safe to build on?"):  # RS34/RS52b data flows must be disclosed
         assert named in priv, named
     # RS33: the host's Cloudflare Web Analytics beacon is on, so no copy may promise "no analytics"; each place names it
     for doc, text in (("index.html", html), ("PRIVACY.md", priv), ("README.md", readme)):

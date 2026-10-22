@@ -63,12 +63,18 @@ What you can do there:
   - **Wiki** ([DeepWiki](https://deepwiki.com)): AI-written docs for the repo that you can ask questions.
   - **Browse** ([GitHub1s](https://github1s.com)): read the code in a VS Code-style viewer.
   - **Edit** ([github.dev](https://github.dev)): open the repo in GitHub's web editor.
+- **Check it's safe to build on.** Open **🛡 Safe to build on?** on a card (SPEC RS52) to see its security health
+  score ([OpenSSF Scorecard](https://scorecard.dev)), known vulnerabilities in its latest published package
+  ([OSV.dev](https://osv.dev), via [deps.dev](https://deps.dev)), a copy-paste install command (`npm install`,
+  `pip install`, `go get`, …), whether it has a README, contributing guide and good first issues, and its latest
+  release. Nothing is fetched until you open it, and it never changes the ranking.
 - **Find similar repos.** Paste a repo you like (`owner/repo` or its GitHub link) and get others like it.
 - **Match a whole plan.** Upload a plan or PRD; it's read in your browser (never uploaded) and searched feature by
   feature.
 - **Turn picks into a build plan.** Tick **＋ Add to plan** on the repos you want (or **Select all shown**), then
   **Copy prompt**, **Open in Claude**, **Open in ChatGPT** or **Open in Gemini** to have your own AI write the plan.
-  The page itself calls no AI and holds no key for this.
+  The page itself calls no AI and holds no key for this. Tip: give your agent the free
+  [Context7](https://github.com/upstash/context7) MCP server so it reads each repo's current docs (SPEC RS52e).
 - **Browse what's popular.** The **🔥 Trending** view lists Rising, Most stars and Most forks repos without a search.
 - **Pick up where you left off.** A refresh brings your last results back; repeat searches within an hour come from
   your browser instead of GitHub. Tap ✕ or the logo to clear them.
@@ -121,6 +127,11 @@ privacy window say so. To turn it off: Cloudflare dashboard → Workers & Pages 
 `cloudflareinsights.com` hosts from `web/_headers`.
 Before adding or switching a provider, check its data-use terms (free tiers intended for prototyping, such as GitHub
 Models, don't qualify) and update `PRIVACY.md`.
+**Trust check (maintainer, SPEC RS52):** `functions/api/trust.js` (`GET /api/trust?repo=owner/repo&lang=…`) needs no
+key, binding or setting. It asks OpenSSF Scorecard and deps.dev server-side (public repo names only, never search words
+or visitor IPs) and keeps each answer in Cloudflare's edge cache for 24 hours. It accepts a package only when the
+package itself names the repo as its source, because deps.dev's repo→package list includes spoofed claims. A per-IP
+limit of 10 requests per 10 seconds runs in memory; for a hard limit, add a WAF rate-limiting rule on `/api/trust`.
 
 ## Install (Claude Code)
 
@@ -226,6 +237,10 @@ Exit codes: 0 results, 1 no match after filtering, 2 error (network, rate limit,
 ```
 pip install -r requirements-dev.txt
 python3 -m pytest
+node tests/test_web_logic.js        # web page logic (no network)
+node tests/test_relevance_fn.mjs    # relevance check function (fake AI)
+node tests/test_trust_fn.mjs        # trust check function (fake Scorecard/deps.dev)
+python3 evals/run.py                # fit-ranking evals
 ```
 
 ## Privacy
@@ -235,12 +250,14 @@ page's host counts page views with Cloudflare Web Analytics (cookieless, script 
 it never sees your searches).
 Search words go to GitHub to run the search; on the web page they also pass through a small relevance check to an AI
 provider (Cloudflare Workers AI, with Groq as fallback) that moves off-topic repos to the end of the list. Fonts and scripts are served from the site itself. The plugin never uses
-the relevance check. Details — including what the web page keeps in your browser and the plugin's optional,
+the relevance check. Opening **Safe to build on?** sends only the repo's public name and language to our trust check,
+which asks OpenSSF Scorecard and Google's deps.dev without your IP or searches. Details — including what the web page keeps in your browser and the plugin's optional,
 off-by-default local safety log — are in [`PRIVACY.md`](PRIVACY.md).
 
 ## Credits
 
-Repository data from the GitHub API. Replore is not affiliated with or endorsed by GitHub. GitHub® is a trademark of GitHub, Inc.
+Repository data from the GitHub API. Security scores from [OpenSSF Scorecard](https://scorecard.dev); package and
+vulnerability data from [deps.dev](https://deps.dev) and [OSV.dev](https://osv.dev). Replore is not affiliated with or endorsed by GitHub. GitHub® is a trademark of GitHub, Inc.
 
 Find Replore useful? The web page has a Tip button next to ★ Star, and a QR code in the plan window (both Stripe). Tips are optional, unlock nothing, and help us keep Replore free and fund more open-source projects.
 
