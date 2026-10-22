@@ -752,6 +752,8 @@ def test_web_page_is_safe_static(monkeypatch):
     assert "Hybrid search (RAG)" in (ROOT / "README.md").read_text(encoding="utf-8")
     assert 'id="prdMany"' in html and "picks.length<=10" in html and "Plans work best with 10 or fewer repos" in html   # RS28f
     assert "ask me 5 short questions that would most improve this plan" in html and "wait for my answers" in html   # RS28d
+    assert "show me what the app will look like: make reference images or a simple" in html   # RS28h
+    assert "Write the PRD only after I approve, and match what I approved." in html   # RS28h
     skill = (ROOT / "skills" / "find" / "SKILL.md").read_text(encoding="utf-8")
     assert "Needs first, shell last (RS16a" in skill and "No good match" in skill and "RS28c" in skill   # web and plugin in sync
     assert "var GENERIC=" in html and "RS16a" in html
@@ -1067,3 +1069,10 @@ def test_home_demo_is_the_real_product_and_honest():
     for lic in re.findall(r'\["[^"]+","([^"]+)","', block):
         assert lic in ("MIT", "Apache-2.0"), lic
     assert "max-width: 999px" in block and "prefers-reduced-motion" in block and "isConnected" in block
+
+
+def test_rs28h_plugin_shows_visuals_before_prd():
+    """RS28h: the plugin skill asks for a design mockup and approval before writing a PRD."""
+    skill = (ROOT / "skills" / "find" / "SKILL.md").read_text(encoding="utf-8")
+    assert "RS28h" in skill and "design mockup of the main screens" in skill
+    assert "write the PRD only after they approve it" in skill
