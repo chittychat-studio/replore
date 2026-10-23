@@ -1056,6 +1056,21 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   your AI" reuses the plan hand-off (Claude, ChatGPT, Gemini) with the answers, checklist and picked repos. Tour is a top
   menu button; the GitHub credit line moved from the footer into Privacy.
   The top bar stacks above the page, so the phone menu's items are tappable (the hero covered them).
+- **RS80** SEO basics (Cardzo go-live playbook, RS79 checklist applied to Replore itself). `web/robots.txt` allows every
+  path and names `https://replore.cardzo.co.in/sitemap.xml`; `web/sitemap.xml` lists the canonical pages with a `lastmod`
+  (the home page, and secondary pages as they ship); `web/index.html` carries `<link rel="canonical"
+  href="https://replore.cardzo.co.in/">`, so the same page on `replore.pages.dev` is not indexed as a duplicate.
+  `web/404.html` is the not-found page in the site's look (`fonts.css`, `theme.js`, a shared `web/page.css` with the same
+  colour tokens), one line of copy and a link home; with a top-level 404.html Cloudflare Pages answers unknown paths with
+  status 404 instead of the single-page fallback (index.html with 200). Secondary pages load their files by absolute path
+  (`/theme.js`), since a 404 can be served at any depth, follow RS49 (no inline script), RS55 and RS66, and get the
+  `_headers` CSP because its rule is `/*`. **Redirect from pages.dev:** Cloudflare Pages' `_redirects` file does not
+  support domain-level redirects (a source must be a path), so there is no `web/_redirects`; the 301 from
+  `https://replore.pages.dev/*` to `https://replore.cardzo.co.in/:splat` is a Cloudflare Bulk Redirect rule, the owner's
+  dashboard setting like the RS34c rate limit (source `replore.pages.dev`, subpath matching and preserve path suffix and
+  query string on, status 301). It must name the bare `replore.pages.dev` host only: preview hosts
+  (`<x>.replore.pages.dev`, RS34h) keep working, and the canonical link covers search engines until the rule exists.
+  The trust and relevance functions (`functions/api/`) are unchanged.
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
 - **RX3** Ranking by forks, trending or download counts. (Relevance, stars and license-freedom are the only

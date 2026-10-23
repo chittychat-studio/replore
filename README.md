@@ -93,6 +93,11 @@ A static page at `web/index.html` powers it. It auto-deploys (Cloudflare Pages) 
 
 The page's code is in `web/app.js` (plus `web/theme.js`); its security headers and Content-Security-Policy are in
 `web/_headers` (SPEC RS49), so a new third-party script or API must be added there or the browser blocks it.
+`web/robots.txt`, `web/sitemap.xml`, the canonical link and `web/404.html` are the SEO basics (SPEC RS80). Pages'
+`_redirects` can't redirect a whole domain, so the 301 from `replore.pages.dev` to `replore.cardzo.co.in` is a
+Cloudflare **Bulk Redirect** rule (dashboard: Rules, Redirect Rules, Bulk Redirects; source `replore.pages.dev`,
+target `https://replore.cardzo.co.in`, 301, preserve path suffix and query string, include subpaths). Leave preview
+hosts (`*.replore.pages.dev`) out of it.
 
 It calls the public GitHub search API from the browser (about 10 searches a minute, no login, no key) and runs
 the same filters, ranking and license labels as the plugin. The searches are keyword-based; then a small server-side
