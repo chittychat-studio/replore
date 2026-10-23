@@ -882,7 +882,7 @@
   /* RS65 compact (owner: "show in first screen, not after scrolling"): on laptops and up the whole stage (title, search,
      bot and globe, the three cards) fits one screen. The pair scales with the window height. */
   @media (min-width:1000px){
-    body:not(.has-results) .hero{padding-top:8px;padding-bottom:6px;--gs:clamp(150px,calc(20vh + 10px),250px)}
+    body:not(.has-results) .hero{padding-top:8px;padding-bottom:6px;--gs:clamp(190px,calc(28vh + 10px),310px)}
     body:not(.has-results) .hero .hero-pill{margin-bottom:6px}
     body:not(.has-results) .hero-title{font-size:clamp(34px,3.4vw,52px);margin-bottom:6px}
     body:not(.has-results) .hero-title .ln{display:inline-block;vertical-align:top}
@@ -961,7 +961,7 @@
   }
   /* RS65: the peek clip (Flow/Veo), placed so Leo emerges from behind the globe and lands on his spot */
   .st-peekvid{position:absolute;z-index:2;left:calc(50% - var(--gs,262px) * .81);bottom:calc(var(--gs,262px) * -.01);
-    width:calc(var(--gs,262px) * 1.156);height:auto;pointer-events:none;display:none}
+    width:calc(var(--gs,262px) * 1.256);height:auto;pointer-events:none;display:none}   /* RS71: a wider crop (1010 px), same scale */
   .st-b.videopeek .st-peekvid{display:block}
   .st-b.videopeek .st-bot,.st-b.videopeek .st-sh{visibility:hidden}
   /* no bubble (owner reference): plain text beside Leo */
@@ -975,7 +975,9 @@
      bar on the right. Less text: the sub-line goes on wide screens (Leo says it), no typed line, no example cards. */
   .st-side{display:grid;gap:12px;min-width:0;text-align:left}
   .st-search:empty{display:none}
-  .demo-slot .st-stage{height:170px}
+  .demo-slot .st-stage{height:200px}   /* RS68: Leo a little bigger on phones too */
+  .demo-slot .st-b .st-bot{width:156px}
+  .demo-slot .st-b .st-sprite{width:184px}
   .demo-slot .st-pair{bottom:14px}
   .demo-slot .st-say{position:static;width:auto;max-width:340px;margin:0 auto;text-align:center}
   @media (min-width:1000px){
@@ -1064,16 +1066,16 @@
   .rc2 .rc-det{flex:none;min-height:40px;padding:0 18px;border:0;border-radius:999px;background:var(--ink);color:var(--bg);
     font:700 13.5px var(--f-body);cursor:pointer;transition:background-color .25s,color .25s}
   .rc2 .rc-det:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-  /* hover (and keyboard focus): the card turns dark, as in the reference */
-  .rcard.rc2:hover,.rcard.rc2:has(:focus-visible){background:var(--rc-dk);color:var(--rc-dk-ink);border-color:var(--rc-dk)}
-  .rcard.rc2:hover .rc-in,.rcard.rc2:has(:focus-visible) .rc-in{background:color-mix(in srgb,var(--rc-dk-ink) 8%,var(--rc-dk))}
-  .rcard.rc2:hover .rc-date,.rcard.rc2:has(:focus-visible) .rc-date{background:color-mix(in srgb,var(--rc-dk-ink) 16%,var(--rc-dk))}
-  .rcard.rc2:hover :is(.rc-who,.desc,.rc-stats),.rcard.rc2:has(:focus-visible) :is(.rc-who,.desc,.rc-stats){color:var(--rc-dk-mut)}
-  .rcard.rc2:hover .rc-stats .stars,.rcard.rc2:has(:focus-visible) .rc-stats .stars{color:var(--rc-dk-ink)}
-  .rcard.rc2:hover :is(.tag.t-lang,.rc-bm),.rcard.rc2:has(:focus-visible) :is(.tag.t-lang,.rc-bm){background:transparent;color:var(--rc-dk-ink);
+  /* hover (and keyboard focus): the card turns dark, as in the reference. RS68: a card in the plan stays that way */
+  .rcard.rc2:hover,.rcard.rc2:has(:focus-visible),.rcard.rc2:has(.pick-cb:checked){background:var(--rc-dk);color:var(--rc-dk-ink);border-color:var(--rc-dk)}
+  .rcard.rc2:hover .rc-in,.rcard.rc2:has(:focus-visible) .rc-in,.rcard.rc2:has(.pick-cb:checked) .rc-in{background:color-mix(in srgb,var(--rc-dk-ink) 8%,var(--rc-dk))}
+  .rcard.rc2:hover .rc-date,.rcard.rc2:has(:focus-visible) .rc-date,.rcard.rc2:has(.pick-cb:checked) .rc-date{background:color-mix(in srgb,var(--rc-dk-ink) 16%,var(--rc-dk))}
+  .rcard.rc2:hover :is(.rc-who,.desc,.rc-stats),.rcard.rc2:has(:focus-visible) :is(.rc-who,.desc,.rc-stats),.rcard.rc2:has(.pick-cb:checked) :is(.rc-who,.desc,.rc-stats){color:var(--rc-dk-mut)}
+  .rcard.rc2:hover .rc-stats .stars,.rcard.rc2:has(:focus-visible) .rc-stats .stars,.rcard.rc2:has(.pick-cb:checked) .rc-stats .stars{color:var(--rc-dk-ink)}
+  .rcard.rc2:hover :is(.tag.t-lang,.rc-bm),.rcard.rc2:has(:focus-visible) :is(.tag.t-lang,.rc-bm),.rcard.rc2:has(.pick-cb:checked) :is(.tag.t-lang,.rc-bm){background:transparent;color:var(--rc-dk-ink);
     border-color:color-mix(in srgb,var(--rc-dk-ink) 30%,transparent)}
-  .rcard.rc2:hover .rc-bm:has(input:checked),.rcard.rc2:has(:focus-visible) .rc-bm:has(input:checked){background:var(--rc-dk-ink);color:var(--rc-dk)}
-  .rcard.rc2:hover .rc-det,.rcard.rc2:has(:focus-visible) .rc-det{background:var(--rc-dk-ink);color:var(--rc-dk)}
+  .rcard.rc2:hover .rc-bm:has(input:checked),.rcard.rc2:has(:focus-visible) .rc-bm:has(input:checked),.rcard.rc2:has(.pick-cb:checked) .rc-bm:has(input:checked){background:var(--rc-dk-ink);color:var(--rc-dk)}
+  .rcard.rc2:hover .rc-det,.rcard.rc2:has(:focus-visible) .rc-det,.rcard.rc2:has(.pick-cb:checked) .rc-det{background:var(--rc-dk-ink);color:var(--rc-dk)}
   @media (max-width:1199px){ .res-main .grid{grid-template-columns:repeat(2,minmax(0,1fr))} }
   @media (max-width:999px){
     .res-body{grid-template-columns:minmax(0,1fr);gap:10px}
@@ -1116,6 +1118,117 @@
   .rcd-body .rc-more{display:grid;gap:14px}
   .rc-drawer .rc-gh{display:flex;align-items:center;justify-content:center;min-height:46px;border-radius:999px;font-weight:700;font-size:14px;
     border:1.5px solid var(--line);color:var(--ink);text-decoration:none}
+  /* RS68 (owner 2026-10-23): the tagline sits under the Replore wordmark instead of above the hero title */
+  .brand-txt{display:flex;flex-direction:column;min-width:0;line-height:1}
+  .brand-tag{margin-top:4px;font:500 11.5px/1.2 var(--f-mono);letter-spacing:.02em;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  @media (max-width:420px){ .brand-tag{font-size:10px} }
+
+  /* RS69 smooth motion (owner 2026-10-23: "as smooth as possible"; transitions should dissolve, not cut) */
+  ::view-transition-old(root),::view-transition-new(root){animation-duration:.42s;animation-timing-function:cubic-bezier(.4,0,.2,1)}
+  @media (prefers-reduced-motion:reduce){ ::view-transition-old(root),::view-transition-new(root){animation:none} }
+  /* Leo: the still, the sprites and the peek clip cross-fade */
+  .st-b .st-sprite{display:block;opacity:0;transition:opacity .35s ease}
+  .st-b.animating .st-sprite{opacity:1}
+  .st-bot{transition:opacity .35s ease}
+  .st-b.animating .st-bot{visibility:visible;opacity:0}
+  .st-peekvid{transition:opacity .4s ease}
+  .st-b.videopeek .st-sprite{visibility:hidden}
+  .st-b.videopeek.peekfade .st-sprite,.st-b.videopeek.peekfade .st-sh{visibility:visible}
+  .st-b.peekfade .st-peekvid{opacity:0}
+  .st-say-t{transition:opacity .18s ease}
+  .st-say-t.swap{opacity:0}
+  .st-ghost{pointer-events:none}
+  /* cards: every colour eases when a card is hovered or picked */
+  .rcard.rc2{transition:transform .2s ease,box-shadow .3s ease,border-color .35s ease,background-color .35s ease,color .35s ease}
+  .rc2 .rc-in,.rc2 .rc-date,.rc2 .rc-bm,.rc2 .rc-det{transition:background-color .35s ease,color .35s ease,border-color .35s ease}
+  .rc2 :is(.rc-who,.desc,.rc-stats,.stars,.tag,.name a,.rc-lic){transition:color .35s ease,background-color .35s ease,border-color .35s ease}
+  .rc2 .rc-bm:has(input:checked) .pk-in{animation:bmPop .32s cubic-bezier(.3,1.5,.5,1)}
+  @keyframes bmPop{from{transform:scale(.6)}}
+  /* the Details panel and its shade fade out as well as in */
+  .rc-scrim{animation:rcsIn .25s ease}
+  .rc-scrim.closing{animation:rcsOut .22s ease forwards}
+  .rc-drawer.closing{animation:rcdOut .22s ease forwards}
+  @keyframes rcsIn{from{opacity:0}}
+  @keyframes rcsOut{to{opacity:0}}
+  @keyframes rcdOut{to{transform:translateX(28px);opacity:0}}
+  @media (prefers-reduced-motion:reduce){ .st-b .st-sprite,.st-bot,.st-peekvid,.st-say-t,.rcard.rc2,.rc2 *{transition:none}
+    .rc-scrim,.rc-scrim.closing,.rc-drawer.closing,.rc2 .rc-bm:has(input:checked) .pk-in{animation:none} }
+
+  /* RS70: the plugin window as an add-ons grid: one card per agent; Get swaps in that agent's steps */
+  #pluginModal .ag-sheet{max-width:980px}
+  .ag-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:14px}
+  .ag-card{background:var(--offbg);border-radius:18px;padding:14px;display:grid;gap:10px;align-content:start;min-width:0;
+    transition:transform .25s ease,box-shadow .25s ease}
+  .ag-card:hover{transform:translateY(-2px);box-shadow:0 14px 26px -18px rgba(var(--shadow),.5)}
+  .ag-top,.ag-dh{display:flex;align-items:center;gap:12px;min-width:0}
+  .ag-ic{flex:none;width:44px;height:44px;border-radius:12px;display:grid;place-items:center;color:#fff;background:hsl(var(--h) 42% 44%)}
+  .ag-ic .ico{width:22px;height:22px;margin:0}
+  .ag-nm{min-width:0;flex:1}
+  .ag-nm b{display:block;font-size:15.5px;font-weight:700;line-height:1.2}
+  .ag-nm span{font-size:12.5px;color:var(--muted)}
+  .ag-get{flex:none;border:0;border-radius:999px;min-height:36px;padding:0 16px;font:700 13px var(--f-body);cursor:pointer;
+    background:var(--card);color:var(--ink);transition:background-color .2s,color .2s}
+  .ag-get.main,.ag-get:hover{background:var(--ink);color:var(--bg)}
+  .ag-card p{margin:0;font-size:13.5px;line-height:1.45;color:var(--muted)}
+  .ag-best{justify-self:start;font-size:11.5px;font-weight:700;background:var(--goodbg);color:var(--good);border-radius:999px;padding:2px 9px}
+  .ag-detail{display:grid;gap:14px;margin-top:14px;animation:agIn .32s ease}
+  .ag-back{justify-self:start;border:0;border-radius:999px;min-height:36px;padding:0 14px;background:var(--offbg);color:var(--ink);font:600 13px var(--f-body);cursor:pointer}
+  .ag-dh .ag-ic{width:52px;height:52px}
+  .ag-dh .ag-nm b{font-size:21px;font-weight:800;letter-spacing:-.02em}
+  .ag-steps{margin:0;padding:0;list-style:none;display:grid;gap:10px;counter-reset:ag}
+  .ag-steps li{position:relative;counter-increment:ag;background:var(--offbg);border-radius:16px;padding:13px 16px 13px 50px;min-width:0;font-size:14px}
+  .ag-steps li::before{content:counter(ag);position:absolute;left:15px;top:13px;width:24px;height:24px;border-radius:50%;
+    background:var(--ink);color:var(--bg);font:700 12.5px/24px var(--f-body);text-align:center}
+  .ag-steps li b{display:block;margin-bottom:3px}
+  .ag-cmd{display:flex;align-items:flex-start;gap:8px;margin-top:8px}
+  .ag-cmd pre.cmd{flex:1;min-width:0;margin:0;overflow-x:auto}
+  .ag-get:focus-visible,.ag-back:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  @keyframes agIn{from{opacity:0;transform:translateY(6px)}}
+  @media (max-width:860px){ .ag-grid{grid-template-columns:repeat(2,minmax(0,1fr))} }
+  @media (max-width:560px){ .ag-grid{grid-template-columns:minmax(0,1fr)} }
+  @media (prefers-reduced-motion:reduce){ .ag-card,.ag-detail{transition:none;animation:none} .ag-card:hover{transform:none} }
+
+  /* RS71: one top row on the card (owner left; Updated and the bookmark right); the rank beside the name; the card is tappable */
+  .rcard.rc2{cursor:pointer}
+  .rc2 .rc-top .rc-who{flex:1;min-width:0}
+  .rc2 .rc-top .owner{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rc2 .rc-top .rc-date{flex:none;font-size:11.5px;padding:4px 10px}
+  .rc2 .rc-nmrow{display:flex;align-items:flex-start;gap:8px}
+  .rc2 .rc-nmrow .name{flex:1;min-width:0}
+  .rc2 .rc-nmrow .rank{flex:none;margin-top:3px}
+  .rc2 :is(a,button,label){cursor:pointer}
+  /* RS71: the plugin steps view is compact so one agent's steps fit one screen */
+  #pluginModal.ag-on .ag-sheet > h2, #pluginModal.ag-on .ag-sheet > h2 + p.mut{display:none}
+  #pluginModal.ag-on .ag-detail{margin-top:0;gap:10px}
+  .ag-detail{grid-template-columns:auto 1fr;align-items:center;column-gap:14px}
+  .ag-detail .ag-steps{grid-column:1/-1}
+  .ag-dh .ag-ic{width:44px;height:44px}
+  .ag-steps{gap:8px}
+  .ag-steps li{padding:10px 14px 10px 48px;font-size:13.5px;line-height:1.45}
+  .ag-steps li::before{top:10px}
+  .ag-cmd{margin-top:6px}
+  @media (max-width:560px){ .ag-detail{grid-template-columns:1fr} }
+  /* RS72: the Tour plays the explainer video; Trending numbers say what they count */
+  #howModal .tour-sheet{max-width:860px}
+  .tour-video{display:block;width:100%;aspect-ratio:16/9;height:auto;margin:14px 0 8px;border-radius:14px;background:#0d1824;border:1px solid var(--line)}
+  .tb-sm .tb-nw{display:inline-flex;align-items:baseline;gap:4px}
+  .tb-sm .tb-u{font-style:normal;font-size:12px;font-weight:600;color:var(--muted)}
+
+  /* RS74: Trending counts sit top right on every card (the big one too, which also fills its empty top);
+     the search box never shows scroll arrows for a long example; feedback is a chat with Leo */
+  .tb-big{justify-content:flex-start}
+  .tb-big .tb-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+  .tb-big .tb-nw{display:inline-flex;align-items:baseline;gap:5px}
+  .tb-big .tb-top .tb-n{font:800 30px/1 var(--f-display);color:#fff;letter-spacing:-.03em}
+  .tb-big .tb-u{font-style:normal;font-size:13px;font-weight:600;color:#9cc0d8}
+  .tb-big .tb-desc{-webkit-line-clamp:3}
+  .tb-big .tb-tools{margin-top:auto}
+  .vibebar textarea:placeholder-shown{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  .vibebar textarea{scrollbar-width:thin}
+  .fb-leo{display:flex;align-items:center;gap:14px;margin:0 30px 12px 0}
+  .fb-leo img{flex:none;width:64px;height:auto;filter:drop-shadow(0 6px 6px rgba(var(--shadow),.25))}
+  #fbModal .fb-leo h2{margin:0 0 2px}
+  #fbModal .fb-leo .mut{margin:0}
 </style>
 </head>
 <body>
@@ -1146,7 +1259,7 @@
       <circle cx="16" cy="16" r="12.5" fill="none" stroke="url(#lg)" stroke-width="2.2"/>
       <path d="M21.8 10.2 L17.4 17.4 L10.2 21.8 L14.6 14.6 Z" fill="url(#lg)"/>
       <circle cx="16" cy="16" r="1.8" fill="var(--card)" stroke="url(#lg)" stroke-width="1.4"/>
-    </svg><h1>Replore</h1></div>
+    </svg><span class="brand-txt"><h1>Replore</h1><span class="brand-tag"><span class="rag-off">The repo scout for vibe coders</span><span class="rag-only" hidden>Search by words and meaning</span></span></span></div>   <!-- RS54 tagline; RS68: under the logo -->
   <nav class="nav" id="nav">
     <button id="trendBtn" class="nav-btn" title="Popular open-source repos right now">Trending</button>
     <button id="pluginBtn" class="nav-btn" title="Use the plugin in Claude Code, Codex, Cursor or any AI agent">Plugin</button>
@@ -1161,7 +1274,6 @@
 </header>
 <main class="page">
   <section class="hero">
-    <p class="hero-pill"><span class="rag-off">The repo scout for vibe coders</span><span class="rag-only" hidden>Search by words and meaning</span></p>   <!-- RS54: owner tagline 2026-10-22 -->
     <h2 class="hero-title" id="heroTitle" aria-label="Find it before you build it."><span class="ln" aria-hidden="true"><span class="in">Find it before</span></span><span class="ln" aria-hidden="true"><em class="in">you build it.</em></span></h2>   <!-- RS65 -->
     <p class="sub">Describe what you’re building. Get popular, free-to-use, maintained repos that fit.</p>
     <div id="demoSlot" class="demo-slot"></div>   <!-- RS24: on phones the demo sits here, before the search -->
@@ -1294,13 +1406,13 @@
   <button id="likeGo" class="primary">Find similar →</button>
 </div></div>
 
-<div class="modal" id="howModal"><div class="sheet">
+<div class="modal" id="howModal"><div class="sheet tour-sheet">
   <button class="x" data-close>&times;</button>
   <h2>How Replore works</h2>
   <p class="mut">Three steps, right in your browser. No account, no key.</p>
-  <div id="howDemo" class="demo" style="margin:16px auto 4px"></div>
-  <img src="tour.png" alt="The Replore page: describe your project, then get the open-source repos that fit"
-    loading="lazy" style="width:100%;border:1px solid var(--line);border-radius:12px;margin:16px 0 4px">
+  <video id="tourVideo" class="tour-video" controls muted playsinline preload="none" poster="tour-poster.jpg"
+    aria-label="Replore explainer video: from a late-night blank chat to the repos that fit, with Leo the scout">
+    <source src="tour.mp4" type="video/mp4"></video>   <!-- RS72: the HyperFrames explainer (RS64), 720p web copy -->
   <p class="mut" style="margin:0">Describe your project, tap Find, and get the repos that fit: relevant, popular, free to use.</p>
   <p class="mut rag-only" style="margin-top:12px" hidden><b>Hybrid search:</b> repos are ranked by your words and by what you mean, so "voice notes" also finds "speech-to-text". Repos our index finds that the word search missed are checked on GitHub before you see them.</p>
   <p class="mut" style="margin-top:12px"><b>Build a plan:</b> tick the repos you like on the results, then tap <b>Generate plan</b>.
@@ -1310,88 +1422,77 @@
     by feature, use the plugin (Claude Code, Codex, Cursor or any AI agent).</p>
 </div></div>
 
-<div class="modal" id="pluginModal"><div class="sheet">
+<div class="modal" id="pluginModal"><div class="sheet ag-sheet">
   <button class="x" data-close>&times;</button>
-  <h2>Use Replore in your AI agent</h2>
+  <h2>Use Replore in your AI agent</h2>   <!-- RS70: an add-ons grid (owner pick 2026-10-23); RS31/RS32 content -->
   <p class="mut">Your own AI writes the searches, judges every result and shows every repo that fits, not just this
-    page's list. In Claude Code it also reads a whole PRD feature by feature. Free and open source. Pick your agent:</p>
-
-  <div class="tabs" role="tablist" aria-label="Which AI agent">
-    <button type="button" class="tab on" data-tab="cc" role="tab" id="tab-cc" aria-controls="panel-cc" aria-selected="true">Claude Code</button>
-    <button type="button" class="tab" data-tab="other" role="tab" id="tab-other" aria-controls="panel-other" aria-selected="false" tabindex="-1">Codex, Cursor &amp; others</button>
+    page's list. Free and open source. Pick your agent:</p>
+  <div class="ag-grid" id="agGrid">
+    <article class="ag-card"><div class="ag-top"><span class="ag-ic" style="--h:205"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5l4 3-4 3M8.5 12h4.5"/></svg></span><div class="ag-nm"><b>Claude Code</b><span>Plugin · 2 steps</span></div><button type="button" class="ag-get main" data-ag="cc" aria-label="Get Replore for Claude Code">Get</button></div><span class="ag-best">Best results</span><p>The full plugin: your AI writes the searches, judges every result and reads a whole PRD feature by feature.</p></article>
+    <article class="ag-card"><div class="ag-top"><span class="ag-ic" style="--h:150"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.5c-1.6 0-2 .8-2 2v1.6c0 .9-.6 1.4-1.5 1.9.9.5 1.5 1 1.5 1.9v1.6c0 1.2.4 2 2 2M10 2.5c1.6 0 2 .8 2 2v1.6c0 .9.6 1.4 1.5 1.9-.9.5-1.5 1-1.5 1.9v1.6c0 1.2-.4 2-2 2"/></svg></span><div class="ag-nm"><b>Codex</b><span>MCP · 3 steps</span></div><button type="button" class="ag-get" data-ag="codex" aria-label="Get Replore for Codex">Get</button></div><p>Connect Replore through MCP, or just open the cloned folder: Codex reads AGENTS.md on its own.</p></article>
+    <article class="ag-card"><div class="ag-top"><span class="ag-ic" style="--h:225"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 2.5l8.5 4.6-3.6 1 2.3 4.2-1.6.9-2.3-4.2-2.6 2.6z"/></svg></span><div class="ag-nm"><b>Cursor</b><span>MCP · 3 steps</span></div><button type="button" class="ag-get" data-ag="cursor" aria-label="Get Replore for Cursor">Get</button></div><p>Add Replore to Cursor&#x27;s MCP settings, then ask for repos in the chat.</p></article>
+    <article class="ag-card"><div class="ag-top"><span class="ag-ic" style="--h:265"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.5v11M2.5 8h11M4.2 4.2l7.6 7.6M11.8 4.2l-7.6 7.6"/></svg></span><div class="ag-nm"><b>Gemini CLI</b><span>MCP · 3 steps</span></div><button type="button" class="ag-get" data-ag="gemini" aria-label="Get Replore for Gemini CLI">Get</button></div><p>Add Replore as an MCP server, then ask Gemini for repos that fit your idea.</p></article>
+    <article class="ag-card"><div class="ag-top"><span class="ag-ic" style="--h:190"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="6" r="2"/><circle cx="10.5" cy="6" r="2"/><path d="M2.5 13c.4-2 1.6-3 3-3s2.6 1 3 3M7.5 13c.4-2 1.6-3 3-3s2.6 1 3 3"/></svg></span><div class="ag-nm"><b>VS Code Copilot</b><span>MCP · 3 steps</span></div><button type="button" class="ag-get" data-ag="copilot" aria-label="Get Replore for VS Code Copilot">Get</button></div><p>Add Replore to Copilot&#x27;s MCP servers. Copilot also reads AGENTS.md in the folder.</p></article>
+    <article class="ag-card"><div class="ag-top"><span class="ag-ic" style="--h:172"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6c2-2 4 2 6 0s4-2 6 0M2 10.5c2-2 4 2 6 0s4-2 6 0"/></svg></span><div class="ag-nm"><b>Windsurf</b><span>MCP · 3 steps</span></div><button type="button" class="ag-get" data-ag="windsurf" aria-label="Get Replore for Windsurf">Get</button></div><p>Add Replore to Windsurf&#x27;s MCP settings, then ask for repos in the chat.</p></article>
+    <article class="ag-card"><div class="ag-top"><span class="ag-ic" style="--h:30"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 5.5A5 5 0 1 0 13 9.5M12.5 2.5v3h-3"/></svg></span><div class="ag-nm"><b>Cline</b><span>MCP · 3 steps</span></div><button type="button" class="ag-get" data-ag="cline" aria-label="Get Replore for Cline">Get</button></div><p>Add Replore in Cline&#x27;s MCP servers panel, then ask for repos for your project.</p></article>
+    <article class="ag-card"><div class="ag-top"><span class="ag-ic" style="--h:330"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.5v3M10 2.5v3M4.5 5.5h7v2.5a3.5 3.5 0 0 1-7 0zM8 11.5v2.5"/></svg></span><div class="ag-nm"><b>Any MCP agent</b><span>MCP · 3 steps</span></div><button type="button" class="ag-get" data-ag="mcp" aria-label="Get Replore for Any MCP agent">Get</button></div><p>Command python3, argument scripts/mcp_server.py. Works anywhere MCP (Model Context Protocol) does.</p></article>
+    <article class="ag-card"><div class="ag-top"><span class="ag-ic" style="--h:40"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2h5l3 3v9H4z"/><path d="M9 2v3h3M6 8.5h4M6 11h4"/></svg></span><div class="ag-nm"><b>No MCP</b><span>AGENTS.md · 2 steps</span></div><button type="button" class="ag-get" data-ag="agents" aria-label="Get Replore for No MCP">Get</button></div><p>Open the cloned folder and say &quot;follow AGENTS.md&quot;. Your agent runs Replore&#x27;s search (scripts/scout.py) itself.</p></article>
   </div>
-
-  <div class="tabpanel" data-panel="cc" role="tabpanel" id="panel-cc" aria-labelledby="tab-cc">
-  <ol class="guide">
-    <li><b>Get Claude Code</b>: a free AI coding assistant for your terminal:
-      <a href="https://claude.com/claude-code" target="_blank" rel="noopener">claude.com/claude-code</a>. Check
-      Python 3.11+ with <code>python3 --version</code> (Windows: python.org, tick <i>"Add python.exe to PATH"</i>; Mac: <code>brew install python</code>).</li>
-    <li><b>Add the plugin</b>: type <code>claude</code> in any folder, then paste:
-      <pre class="cmd">/plugin marketplace add chittychat-studio/replore
-/plugin install replore@replore</pre></li>
-    <li><b>Find repos</b>: <pre class="cmd">/replore:find a diet app for iPhone, starting from scratch</pre></li>
-  </ol>
-  </div>
-
-  <div class="tabpanel" data-panel="other" role="tabpanel" id="panel-other" aria-labelledby="tab-other" hidden>
-  <p class="mut" style="margin:10px 0 0">Works with any model (Codex, Cursor, Gemini CLI, VS Code Copilot, Windsurf,
-    Cline) through MCP (Model Context Protocol), the open tool-connection standard all of them support.</p>
-  <ol class="guide">
-    <li><b>Get Replore</b>: needs Python 3.11+ and git (or on GitHub click <i>Code → Download ZIP</i> and unzip).
-      On Windows type <code>python</code> wherever it says <code>python3</code>.
-      <pre class="cmd">git clone https://github.com/chittychat-studio/replore</pre>
-      Then <code>cd replore</code> and run <code>pwd</code> (Windows: <code>cd</code>). That prints the full path you need next.</li>
-    <li><b>Add Replore to your agent's MCP config file</b>: command <code>python3</code>, argument
-      <code>&lt;that path&gt;/scripts/mcp_server.py</code>. Add the <code>replore</code> entry inside the existing list;
-      don't replace the file. Then restart the agent. The exact file and snippet for each agent are in the
-      <a href="https://github.com/chittychat-studio/replore#use-in-any-other-ai-agent" target="_blank" rel="noopener">README</a>.</li>
-    <li><b>Ask your agent</b>: <i>"find repos for a diet app for iPhone"</i>. It calls Replore's
-      <code>find_repos</code> tool and shows the comparison table.</li>
-  </ol>
-  <p class="mut" style="margin-top:10px">No MCP? Open the cloned folder in your agent. Codex, Cursor, Copilot, Cline
-    and Windsurf read <code>AGENTS.md</code> automatically; with any other agent say <i>"follow AGENTS.md"</i>. It then
-    runs <code>scripts/scout.py</code> itself.</p>
-  </div>
+  <section class="ag-detail" id="ag-cc" hidden><button type="button" class="ag-back">&larr; All agents</button><div class="ag-dh"><span class="ag-ic" style="--h:205"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5l4 3-4 3M8.5 12h4.5"/></svg></span><div class="ag-nm"><b>Claude Code</b><span>Plugin · 2 steps</span></div></div><ol class="ag-steps"><li><b>Get Claude Code</b><span>A free AI coding assistant for your terminal: <a href="https://claude.com/claude-code" target="_blank" rel="noopener">claude.com/claude-code</a>. Check Python 3.11+ with <code>python3 --version</code> (Windows: python.org, tick <i>"Add python.exe to PATH"</i>; Mac: <code>brew install python</code>).</span></li><li><b>Add the plugin</b><span>Type <code>claude</code> in any folder, then paste:</span><div class="ag-cmd"><pre class="cmd">/plugin marketplace add chittychat-studio/replore
+/plugin install replore@replore</pre></div></li><li><b>Find repos</b><div class="ag-cmd"><pre class="cmd">/replore:find a diet app for iPhone, starting from scratch</pre></div></li></ol></section>
+  <section class="ag-detail" id="ag-codex" hidden><button type="button" class="ag-back">&larr; All agents</button><div class="ag-dh"><span class="ag-ic" style="--h:150"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.5c-1.6 0-2 .8-2 2v1.6c0 .9-.6 1.4-1.5 1.9.9.5 1.5 1 1.5 1.9v1.6c0 1.2.4 2 2 2M10 2.5c1.6 0 2 .8 2 2v1.6c0 .9.6 1.4 1.5 1.9-.9.5-1.5 1-1.5 1.9v1.6c0 1.2-.4 2-2 2"/></svg></span><div class="ag-nm"><b>Codex</b><span>MCP · 3 steps</span></div></div><ol class="ag-steps"><li><b>Get Replore</b><span>Needs Python 3.11+ and git (or on GitHub click <i>Code</i>, then <i>Download ZIP</i>). On Windows type <code>python</code> wherever it says <code>python3</code>. Then <code>cd replore</code> and run <code>pwd</code> (Windows: <code>cd</code>): that prints the full path you need next.</span><div class="ag-cmd"><pre class="cmd">git clone https://github.com/chittychat-studio/replore</pre></div></li><li><b>Add it to Codex's MCP settings</b><span>Command <code>python3</code>, argument <code>&lt;that path&gt;/scripts/mcp_server.py</code>. Add the <code>replore</code> entry inside the existing list; don't replace the file. Then restart Codex. The exact file and snippet for each agent are in the <a href="https://github.com/chittychat-studio/replore#use-in-any-other-ai-agent" target="_blank" rel="noopener">README</a>.</span></li><li><b>Ask for repos</b><span>Say <i>"find repos for a diet app for iPhone"</i>. Codex calls Replore's <code>find_repos</code> tool and shows the comparison table.</span></li></ol></section>
+  <section class="ag-detail" id="ag-cursor" hidden><button type="button" class="ag-back">&larr; All agents</button><div class="ag-dh"><span class="ag-ic" style="--h:225"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 2.5l8.5 4.6-3.6 1 2.3 4.2-1.6.9-2.3-4.2-2.6 2.6z"/></svg></span><div class="ag-nm"><b>Cursor</b><span>MCP · 3 steps</span></div></div><ol class="ag-steps"><li><b>Get Replore</b><span>Needs Python 3.11+ and git (or on GitHub click <i>Code</i>, then <i>Download ZIP</i>). On Windows type <code>python</code> wherever it says <code>python3</code>. Then <code>cd replore</code> and run <code>pwd</code> (Windows: <code>cd</code>): that prints the full path you need next.</span><div class="ag-cmd"><pre class="cmd">git clone https://github.com/chittychat-studio/replore</pre></div></li><li><b>Add it to Cursor's MCP settings</b><span>Command <code>python3</code>, argument <code>&lt;that path&gt;/scripts/mcp_server.py</code>. Add the <code>replore</code> entry inside the existing list; don't replace the file. Then restart Cursor. The exact file and snippet for each agent are in the <a href="https://github.com/chittychat-studio/replore#use-in-any-other-ai-agent" target="_blank" rel="noopener">README</a>.</span></li><li><b>Ask for repos</b><span>Say <i>"find repos for a diet app for iPhone"</i>. Cursor calls Replore's <code>find_repos</code> tool and shows the comparison table.</span></li></ol></section>
+  <section class="ag-detail" id="ag-gemini" hidden><button type="button" class="ag-back">&larr; All agents</button><div class="ag-dh"><span class="ag-ic" style="--h:265"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.5v11M2.5 8h11M4.2 4.2l7.6 7.6M11.8 4.2l-7.6 7.6"/></svg></span><div class="ag-nm"><b>Gemini CLI</b><span>MCP · 3 steps</span></div></div><ol class="ag-steps"><li><b>Get Replore</b><span>Needs Python 3.11+ and git (or on GitHub click <i>Code</i>, then <i>Download ZIP</i>). On Windows type <code>python</code> wherever it says <code>python3</code>. Then <code>cd replore</code> and run <code>pwd</code> (Windows: <code>cd</code>): that prints the full path you need next.</span><div class="ag-cmd"><pre class="cmd">git clone https://github.com/chittychat-studio/replore</pre></div></li><li><b>Add it to Gemini CLI's MCP settings</b><span>Command <code>python3</code>, argument <code>&lt;that path&gt;/scripts/mcp_server.py</code>. Add the <code>replore</code> entry inside the existing list; don't replace the file. Then restart Gemini CLI. The exact file and snippet for each agent are in the <a href="https://github.com/chittychat-studio/replore#use-in-any-other-ai-agent" target="_blank" rel="noopener">README</a>.</span></li><li><b>Ask for repos</b><span>Say <i>"find repos for a diet app for iPhone"</i>. Gemini CLI calls Replore's <code>find_repos</code> tool and shows the comparison table.</span></li></ol></section>
+  <section class="ag-detail" id="ag-copilot" hidden><button type="button" class="ag-back">&larr; All agents</button><div class="ag-dh"><span class="ag-ic" style="--h:190"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="6" r="2"/><circle cx="10.5" cy="6" r="2"/><path d="M2.5 13c.4-2 1.6-3 3-3s2.6 1 3 3M7.5 13c.4-2 1.6-3 3-3s2.6 1 3 3"/></svg></span><div class="ag-nm"><b>VS Code Copilot</b><span>MCP · 3 steps</span></div></div><ol class="ag-steps"><li><b>Get Replore</b><span>Needs Python 3.11+ and git (or on GitHub click <i>Code</i>, then <i>Download ZIP</i>). On Windows type <code>python</code> wherever it says <code>python3</code>. Then <code>cd replore</code> and run <code>pwd</code> (Windows: <code>cd</code>): that prints the full path you need next.</span><div class="ag-cmd"><pre class="cmd">git clone https://github.com/chittychat-studio/replore</pre></div></li><li><b>Add it to VS Code Copilot's MCP settings</b><span>Command <code>python3</code>, argument <code>&lt;that path&gt;/scripts/mcp_server.py</code>. Add the <code>replore</code> entry inside the existing list; don't replace the file. Then restart VS Code Copilot. The exact file and snippet for each agent are in the <a href="https://github.com/chittychat-studio/replore#use-in-any-other-ai-agent" target="_blank" rel="noopener">README</a>.</span></li><li><b>Ask for repos</b><span>Say <i>"find repos for a diet app for iPhone"</i>. VS Code Copilot calls Replore's <code>find_repos</code> tool and shows the comparison table.</span></li></ol></section>
+  <section class="ag-detail" id="ag-windsurf" hidden><button type="button" class="ag-back">&larr; All agents</button><div class="ag-dh"><span class="ag-ic" style="--h:172"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6c2-2 4 2 6 0s4-2 6 0M2 10.5c2-2 4 2 6 0s4-2 6 0"/></svg></span><div class="ag-nm"><b>Windsurf</b><span>MCP · 3 steps</span></div></div><ol class="ag-steps"><li><b>Get Replore</b><span>Needs Python 3.11+ and git (or on GitHub click <i>Code</i>, then <i>Download ZIP</i>). On Windows type <code>python</code> wherever it says <code>python3</code>. Then <code>cd replore</code> and run <code>pwd</code> (Windows: <code>cd</code>): that prints the full path you need next.</span><div class="ag-cmd"><pre class="cmd">git clone https://github.com/chittychat-studio/replore</pre></div></li><li><b>Add it to Windsurf's MCP settings</b><span>Command <code>python3</code>, argument <code>&lt;that path&gt;/scripts/mcp_server.py</code>. Add the <code>replore</code> entry inside the existing list; don't replace the file. Then restart Windsurf. The exact file and snippet for each agent are in the <a href="https://github.com/chittychat-studio/replore#use-in-any-other-ai-agent" target="_blank" rel="noopener">README</a>.</span></li><li><b>Ask for repos</b><span>Say <i>"find repos for a diet app for iPhone"</i>. Windsurf calls Replore's <code>find_repos</code> tool and shows the comparison table.</span></li></ol></section>
+  <section class="ag-detail" id="ag-cline" hidden><button type="button" class="ag-back">&larr; All agents</button><div class="ag-dh"><span class="ag-ic" style="--h:30"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 5.5A5 5 0 1 0 13 9.5M12.5 2.5v3h-3"/></svg></span><div class="ag-nm"><b>Cline</b><span>MCP · 3 steps</span></div></div><ol class="ag-steps"><li><b>Get Replore</b><span>Needs Python 3.11+ and git (or on GitHub click <i>Code</i>, then <i>Download ZIP</i>). On Windows type <code>python</code> wherever it says <code>python3</code>. Then <code>cd replore</code> and run <code>pwd</code> (Windows: <code>cd</code>): that prints the full path you need next.</span><div class="ag-cmd"><pre class="cmd">git clone https://github.com/chittychat-studio/replore</pre></div></li><li><b>Add it to Cline's MCP settings</b><span>Command <code>python3</code>, argument <code>&lt;that path&gt;/scripts/mcp_server.py</code>. Add the <code>replore</code> entry inside the existing list; don't replace the file. Then restart Cline. The exact file and snippet for each agent are in the <a href="https://github.com/chittychat-studio/replore#use-in-any-other-ai-agent" target="_blank" rel="noopener">README</a>.</span></li><li><b>Ask for repos</b><span>Say <i>"find repos for a diet app for iPhone"</i>. Cline calls Replore's <code>find_repos</code> tool and shows the comparison table.</span></li></ol></section>
+  <section class="ag-detail" id="ag-mcp" hidden><button type="button" class="ag-back">&larr; All agents</button><div class="ag-dh"><span class="ag-ic" style="--h:330"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.5v3M10 2.5v3M4.5 5.5h7v2.5a3.5 3.5 0 0 1-7 0zM8 11.5v2.5"/></svg></span><div class="ag-nm"><b>Any MCP agent</b><span>MCP · 3 steps</span></div></div><ol class="ag-steps"><li><b>Get Replore</b><span>Needs Python 3.11+ and git (or on GitHub click <i>Code</i>, then <i>Download ZIP</i>). On Windows type <code>python</code> wherever it says <code>python3</code>. Then <code>cd replore</code> and run <code>pwd</code> (Windows: <code>cd</code>): that prints the full path you need next.</span><div class="ag-cmd"><pre class="cmd">git clone https://github.com/chittychat-studio/replore</pre></div></li><li><b>Add it to Any MCP agent's MCP settings</b><span>Command <code>python3</code>, argument <code>&lt;that path&gt;/scripts/mcp_server.py</code>. Add the <code>replore</code> entry inside the existing list; don't replace the file. Then restart Any MCP agent. The exact file and snippet for each agent are in the <a href="https://github.com/chittychat-studio/replore#use-in-any-other-ai-agent" target="_blank" rel="noopener">README</a>.</span></li><li><b>Ask for repos</b><span>Say <i>"find repos for a diet app for iPhone"</i>. Any MCP agent calls Replore's <code>find_repos</code> tool and shows the comparison table.</span></li></ol></section>
+  <section class="ag-detail" id="ag-agents" hidden><button type="button" class="ag-back">&larr; All agents</button><div class="ag-dh"><span class="ag-ic" style="--h:40"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2h5l3 3v9H4z"/><path d="M9 2v3h3M6 8.5h4M6 11h4"/></svg></span><div class="ag-nm"><b>No MCP</b><span>AGENTS.md · 2 steps</span></div></div><ol class="ag-steps"><li><b>Get Replore</b><span>Clone it, or on GitHub click <i>Code</i>, then <i>Download ZIP</i> and unzip.</span><div class="ag-cmd"><pre class="cmd">git clone https://github.com/chittychat-studio/replore</pre></div></li><li><b>Open the folder in your agent</b><span>Codex, Cursor, Copilot, Cline and Windsurf read <code>AGENTS.md</code> automatically; with any other agent say <i>"follow AGENTS.md"</i>. It then runs <code>scripts/scout.py</code> itself.</span></li></ol></section>
   <p class="mut" style="margin-top:12px">Stuck? Full guide:
     <a href="https://github.com/chittychat-studio/replore" target="_blank" rel="noopener">github.com/chittychat-studio/replore</a>.</p>
 </div></div>
 
 <div class="modal" id="nextModal"><div class="sheet">
   <button class="x" data-close>&times;</button>
-  <h2>Found some repos? Here's what's next</h2>
+  <h2>Found some repos? Here's what's next</h2>   <!-- RS74: today's flow -->
   <p class="mut">Three steps from a shortlist to building.</p>
   <ol class="guide">
-    <li><b>Pick the ones that fit</b>: tap <i>Add to plan</i> on the 2–3 cards you like. Compare them:
-      check the license verdict (can you use it in a paid product?) and the <i>updated</i> date before you commit to one.</li>
-    <li><b>Get a build plan</b>: hit <i>Generate plan</i> on the bar that appears. Replore turns your picks plus
-      what you're building into a step-by-step prompt. No AI runs here; it hands the prompt to <b>your own</b> AI.</li>
+    <li><b>Pick the ones that fit</b>: tap a card (or its bookmark) to add it to your plan; picked cards turn dark.
+      Open <b>Details</b> to look inside (Diagram, Wiki, Code) and check <i>Is it safe to build on?</i>. 2 or 3 good
+      picks beat 10 maybes.</li>
+    <li><b>Get a build plan</b>: hit <i>Generate plan</i> on the bar that appears. Replore turns your picks and what
+      you're building into one prompt for <b>your own</b> AI (Claude, ChatGPT or Gemini; copy it or open it there).
+      No AI runs here. Your AI first asks you 5 short questions, then shows you mockups of the main screens to approve,
+      and only then writes the plan (a PRD).</li>
     <li><b>Build it with your AI agent</b>: paste the plan into Claude Code, Codex, Cursor or any agent.
       Want smarter search and a feature-by-feature plan from a whole PRD? <button type="button" class="link-btn" data-open="pluginModal">Use the plugin</button>.
       Tip: add the free <a href="https://github.com/upstash/context7" target="_blank" rel="noopener noreferrer">Context7</a> MCP server to your agent so it reads each repo's current docs instead of guessing.</li>
   </ol>
-  <p class="mut" style="margin-top:12px">Remember: stars are popularity, not quality, and a license is a plain summary, not legal advice.</p>
+  <p class="mut" style="margin-top:12px">Remember: stars are popularity, not quality, and a licence verdict is a plain summary, not legal advice.</p>
 </div></div>
 
 <!-- RS39/RS40 feedback: sent by email through Web3Forms only when the visitor presses Send -->
 <button type="button" class="fb-fab" id="fbFab">Feedback</button>
 <div class="modal" id="fbModal"><div class="sheet fb-sheet">
   <button class="x" data-close>&times;</button>
-  <h2>Send feedback</h2>
-  <p class="mut">Report a bug or suggest an improvement. It's sent to the Cardzo team (hello@cardzo.co.in).</p>
-  <div class="field"><label for="fbTitle">Title</label>
-    <input id="fbTitle" type="text" maxlength="120" autocomplete="off" placeholder="Short summary"></div>
+  <div class="fb-leo"><img src="scout-hero.webp" alt="" width="64" height="66" decoding="async">   <!-- RS74: feedback is a chat with Leo -->
+    <div><h2>Tell Leo</h2>
+    <p class="mut">Hi, it's Leo! Found a bug, or want something new? Tell me and I'll pass it straight to the Cardzo
+      team (hello@cardzo.co.in).</p></div></div>
+  <div class="field"><label for="fbTitle">What's it about?</label>
+    <input id="fbTitle" type="text" maxlength="120" autocomplete="off" placeholder="One line, like: the filters don't stick"></div>
   <div class="field-row">
-    <div class="field"><label for="fbType">Type</label>
+    <div class="field"><label for="fbType">Is it a</label>
       <select id="fbType"><option>Bug</option><option selected>Feature request</option><option>Content issue</option><option>Other</option></select></div>
     <div class="field"><label for="fbEmail">Your email <span class="mut">(optional)</span></label>
-      <input id="fbEmail" type="email" maxlength="120" autocomplete="email" placeholder="so we can reply"></div>
+      <input id="fbEmail" type="email" maxlength="120" autocomplete="email" placeholder="so we can write back"></div>
   </div>
-  <div class="field"><label for="fbDesc">Description</label>
-    <textarea id="fbDesc" maxlength="2000" rows="3" placeholder="What happened, or what would you like?"></textarea></div>
+  <div class="field"><label for="fbDesc">Tell me more</label>
+    <textarea id="fbDesc" maxlength="2000" rows="3" placeholder="What happened, or what would you like me to do?"></textarea></div>
   <input id="fbBot" type="checkbox" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px">
-  <p class="mut fb-err" id="fbErr" hidden>Add a title first.</p>
-  <p class="fb-ok" id="fbOk" role="status" hidden>Thanks, your feedback was sent to Cardzo.</p>
-  <button type="button" id="fbGo" class="primary">Send feedback</button>
+  <p class="mut fb-err" id="fbErr" hidden>Tell me what it's about first.</p>
+  <p class="fb-ok" id="fbOk" role="status" hidden>Got it, thanks! I passed it to the Cardzo team.</p>
+  <button type="button" id="fbGo" class="primary">Send to Leo</button>
   <p class="mut fb-alt">Or write to <b>hello@cardzo.co.in</b>
     <button type="button" class="link-btn" id="fbCopy">Copy address</button></p>
 </div></div>
@@ -1454,23 +1555,27 @@
 
 <div class="modal" id="aboutModal"><div class="sheet">
   <button class="x" data-close>&times;</button>
-  <h2>About the results</h2>
+  <h2>About the results</h2>   <!-- RS74: what the page does today -->
   <p class="mut">Results are ranked by <b>fit</b>: how well a repo matches your words, how popular it is (stars)
-    and how freely you can use its license. So the top pick is relevant, popular and free to use, not just the
-    most-starred. Each card says why it fits.</p>
-  <p class="mut" style="margin-top:12px"><b>How this page searches:</b> it splits what you describe into separate needs
-    and searches GitHub for each, specific needs first. An AI check then reads the top 30 and moves repos that don't
-    fit to the end, under "Less likely to fit". If the check is unavailable you get the keyword results unchanged.
-    A search you repeat within an hour comes back instantly from your own browser.</p>
-  <p class="mut" style="margin-top:12px">The <a href="https://github.com/chittychat-studio/replore" target="_blank" rel="noopener">plugin</a>
+    and how freely you can use its licence. So the top pick is relevant, popular and free to use, not just the
+    most-starred.</p>
+  <p class="mut" style="margin-top:12px"><b>How Leo searches:</b> he splits what you describe into separate needs and
+    searches GitHub for each, specific needs first. An AI check then reads the top 30 and moves repos that don't fit to
+    the end, under "Less likely to fit". If the check is unavailable you get the keyword results unchanged. A search
+    you repeat within an hour comes back instantly from your own browser.</p>
+  <p class="mut" style="margin-top:12px"><b>On each card:</b> when the code last changed, the licence in plain words
+    (free for commercial use or not), stars, the language and whether it's a starter template. The filters on the left
+    and the sort menu only narrow and reorder what was found; they never search again. <b>Details</b> shows why it
+    fits, Diagram, Wiki and Code to look inside, and <i>Is it safe to build on?</i> (OpenSSF Scorecard, known
+    vulnerabilities, releases), which is for information and never changes the ranking.</p>
+  <p class="mut" style="margin-top:12px">The <button type="button" class="link-btn" data-open="pluginModal">plugin</button>
     goes further: your own AI writes the searches, judges every result and reads a whole plan feature by feature.</p>
   <p class="mut" style="margin-top:12px"><b>Limits:</b> results are GitHub search matches, not a scan of every
-    repository. Stars measure popularity, not quality, and can be bought. "Completely free?" and "OK in a paid
-    product?" come from the license only: a plain summary, not legal advice. Some projects also sell a paid hosted
-    version or add-ons.</p>
+    repository. Stars measure popularity, not quality, and can be bought. The licence verdict comes from the licence
+    only: a plain summary, not legal advice. Some projects also sell a paid hosted version or add-ons.</p>
   <p class="mut rag-only" style="margin-top:12px" hidden><b>Hybrid search:</b> repos are ranked by your words and by what you mean, so "voice notes" also finds "speech-to-text". Repos our index finds that the word search missed are checked on GitHub before you see them.</p>
 </div></div>
 
-<script src="app.js?v=0d28d1ab43" defer></script>
+<script src="app.js?v=fff170ec93" defer></script>
 </body>
 </html>

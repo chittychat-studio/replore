@@ -996,6 +996,35 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   tags, stars and licence, a dark Details button. Hover or keyboard focus turns a card dark. Details opens a side panel
   with the rest of card A (why it fits, Open on GitHub, Diagram / Wiki / Code, the trust check); the card's own extras
   move into the panel and back, so "Add to plan" stays one checkbox.
+- **RS68** The tagline ("The repo scout for vibe coders", RS54) sits under the Replore wordmark in the header, in small
+  mono type, instead of as a pill above the hero title (owner 2026-10-23). Leo and the globe are bigger now that the hero has room
+  (laptops: the stage size runs 190 to 310 px with the window height; phones: Leo 156 px). A card added to the plan
+  keeps the opposite colour (the hover look), so picked repos stand out (owner 2026-10-23).
+- **RS69** Smooth motion (owner 2026-10-23: "as smooth as possible", "dissolve"). Page-level changes (home to
+  searching, searching to results, back home, Trending) dissolve through View Transitions where the browser has them,
+  and happen at once elsewhere. Leo's peek clip dissolves into his wave, the sprites and stills cross-fade, a pose
+  change dissolves, and his words fade when they change. Card colours ease on hover and pick, the bookmark pops, and
+  the Details panel slides out as well as in. Reduced motion turns all of it off.
+- **RS70** The Plugin window is an add-ons grid (owner pick 2026-10-23, from a mock-up): one card per agent (Claude
+  Code, Codex, Cursor, Gemini CLI, VS Code Copilot, Windsurf, Cline, any MCP agent, no MCP), each with a line-icon tile
+  (not the agents' logos), how it connects, one line and a Get button. Claude Code is marked "Best results" (only the
+  plugin reads a whole PRD). Get swaps in that agent's numbered steps (RS31/RS32 content), commands with the usual Copy button; "All
+  agents" goes back. The grid and every step are plain page markup (no network call).
+- **RS71** Fixes from owner review 2026-10-23. Leo's peek clip never cuts his head or magnifier: the source jump (where
+  Veo framed his head out of the picture) is skipped with a short dissolve from standing to landed, and the crop is wider
+  (1010 px). A tap anywhere on a result card (not a link or button) adds it to the plan or takes it out. The card has
+  one top row (owner left; Updated and the bookmark right) and the rank beside the name. The plugin steps view hides
+  the intro and is tighter, so one agent's steps fit one screen.
+- **RS72** The Tour window plays the explainer video (RS64), a 720p web copy (`web/tour.mp4`, about 2 MB, plus a poster),
+  instead of the old carousel and the outdated screenshot. It starts muted when the window opens (sound is one tap on
+  the controls) and stops when it closes; with reduced motion it waits for a tap. The small Trending cards say what
+  their big number counts (stars or forks).
+- **RS73** The explainer's scout scene is a land of code: faint code tokens (`{ }`, `</>`, `=>`, `import`, `git push`...)
+  rise across the map and a few big, soft ones drift past the camera (seeded, so every render matches; no lines).
+- **RS74** Copy and polish (owner 2026-10-23). About the results and Next steps describe today's page (cards, filters,
+  Details, the safety check, tap-to-pick, Generate plan for Claude, ChatGPT or Gemini with questions and mockups first).
+  Feedback reads as a chat with Leo ("Tell Leo", Send to Leo). Trending counts sit top right on every card. A long
+  example in the search box never shows scroll arrows.
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
 - **RX3** Ranking by forks, trending or download counts. (Relevance, stars and license-freedom are the only

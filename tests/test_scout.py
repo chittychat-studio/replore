@@ -710,7 +710,8 @@ def test_web_page_is_safe_static(monkeypatch):
     assert "/plugin install replore@replore" in html and "/replore:find" in html
     assert "Use the plugin" in html and "PLUGIN_CTA" in html
     # RS31/RS32: the plugin modal has two tabs — Claude Code one-command, and any other agent via MCP / AGENTS.md
-    assert 'data-tab="cc"' in html and 'data-tab="other"' in html and "mcp_server.py" in html and "AGENTS.md" in html
+    assert 'id="agGrid"' in html and 'data-ag="cc"' in html and 'id="ag-agents"' in html and "mcp_server.py" in html and "AGENTS.md" in html   # RS70 grid
+    assert "/plugin marketplace add chittychat-studio/replore" in html and html.count('class="ag-card"') == 9
     assert "passed the filters" in html  # the "want every suitable repo?" plugin banner
     # RS29c (retired): the per-results keyword-search banner is gone
     assert "LEXICAL_NOTE" not in html
@@ -730,7 +731,8 @@ def test_web_page_is_safe_static(monkeypatch):
     # light/dark toggle (RS24)
     assert 'id="theme"' in html and "data-theme" in html and "findrepo_theme" in html
     # RS24 Tour: a current screenshot of the live page is committed and embedded (replaces the stale gif)
-    assert 'src="tour.png"' in html and (ROOT / "web" / "tour.png").exists()
+    assert 'id="tourVideo"' in html and 'src="tour.mp4"' in html and (ROOT / "web" / "tour.mp4").exists()   # RS72: the explainer video
+    assert (ROOT / "web" / "tour-poster.jpg").exists() and (ROOT / "web" / "tour.mp4").stat().st_size < 4_000_000
     # RS28 select-to-PRD hand-off: no model call/key; copy + deep-link to the user's own Claude
     assert 'class="pick-cb"' in html and 'id="prdModal"' in html and 'id="prdPrompt"' in html
     assert "claude.ai/new?q=" in html and "Copy prompt" in html
@@ -765,7 +767,7 @@ def test_web_page_is_safe_static(monkeypatch):
     # RS28g: a long prompt never hides Claude/ChatGPT; they switch to copy-then-open
     assert 'linkMode(openLink, tooLong ? "https://claude.ai/new" : url, tooLong)' in html
     assert 'openLink.setAttribute("hidden"' not in html and 'gpt.setAttribute("hidden"' not in html
-    assert 'class="hero-pill"' in html and "The repo scout for vibe coders" in html and "Find it before you build it" in html   # RS54 owner tagline
+    assert 'class="brand-tag"' in html and 'class="hero-pill"' not in html and "The repo scout for vibe coders" in html and "Find it before you build it" in html   # RS54 owner tagline
     # RS34: the page does run an AI relevance check, so no copy may claim otherwise
     for stale in ("There is no AI in this page", "For AI-written searches, a relevance check", "runs a semantic relevance check"):
         assert stale not in html, stale

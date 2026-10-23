@@ -226,7 +226,7 @@ function licenseVerdict(spdx){
   if(WEAK.has(spdx))       return {c:"t-good", i:"check", t:"Paid-use OK · changes stay open"};
   if(STRONG.has(spdx))     return {c:"t-warn", i:"alert", t:"Must open-source your app"};
   if(NETWORK.has(spdx))    return {c:"t-warn", i:"alert", t:"Share your code, even as a web app"};
-  return {c:"t-warn", i:"ban", t:"No license — can't reuse"};
+  return {c:"t-warn", i:"ban", t:"No licence, can't reuse"};
 }
 // RS24 result card helpers: owner initial tile (colour from the name, no image fetch) and "updated N ago"
 function ownerHue(o){ var h=0; for(var k=0;k<o.length;k++) h=(h*31+o.charCodeAt(k))>>>0; return [14,24,32,198,152,268,340][h%7]; }
@@ -321,13 +321,14 @@ function cardHtml(r,i,qtokens){
   return '<article class="rcard rc2'+(i!=null&&i<3?' top'+(i+1):'')+'" data-com="'+okCom+'" data-starter="'+(r.starter?1:0)+'" data-lang="'+esc(lang)+
       '" data-stars="'+(+r.stars||0)+'" data-pushed="'+esc(r.pushed||"")+'" data-i="'+(i==null?0:i)+'"'+(r.left?' data-left="1"':'')+'>'+
     '<div class="rc-in">'+
-      '<div class="rc-top"><span class="rc-date" title="Last code change '+esc(r.pushed)+'">Updated '+esc(agoText(r.pushed)||r.pushed)+'</span>'+
+      '<div class="rc-top"><div class="rc-who"><span class="avatar" aria-hidden="true" style="--h:'+ownerHue(owner||repo)+'">'+esc((owner||repo).charAt(0).toUpperCase())+'</span>'+
+        '<span class="owner">'+esc(owner)+'</span></div>'+   // RS71: the owner and the Updated pill share one row
+        '<span class="rc-date" title="Last code change '+esc(r.pushed)+'">Updated '+esc(agoText(r.pushed)||r.pushed)+'</span>'+
         '<label class="pick rc-bm" title="Add to plan"><input type="checkbox" class="pick-cb" data-name="'+esc(r.name)+'" data-url="'+esc(r.url)+
         '" data-desc="'+esc(r.desc||"")+'"><span class="pk-add">'+ico("bookmark")+'<span class="sr-only">Add '+esc(r.name)+' to plan</span></span>'+
         '<span class="pk-in">'+ico("bookmarked")+'<span class="sr-only">In plan</span></span></label></div>'+
-      '<div class="rc-who"><span class="avatar" aria-hidden="true" style="--h:'+ownerHue(owner||repo)+'">'+esc((owner||repo).charAt(0).toUpperCase())+'</span>'+
-        '<span class="owner">'+esc(owner)+'</span>'+(i!=null?'<span class="rank">#'+(i+1)+'</span>':'')+'</div>'+
-      '<h3 class="name"><a href="'+esc(r.url)+'" target="_blank" rel="noopener" title="'+esc(r.name)+'">'+esc(repo)+'</a></h3>'+
+      '<div class="rc-nmrow"><h3 class="name"><a href="'+esc(r.url)+'" target="_blank" rel="noopener" title="'+esc(r.name)+'">'+esc(repo)+'</a></h3>'+
+        (i!=null?'<span class="rank">#'+(i+1)+'</span>':'')+'</div>'+
       '<p class="desc">'+descHtml(r)+'</p>'+
       '<div class="rc-tags"><span class="tag '+v.c+'" title="License: '+esc(r.spdx)+' · '+esc(paid)+' · Completely free? '+esc(free)+'">'+esc(v.t)+'</span>'+
         (r.starter?'<span class="tag t-star" title="A ready-made template to start your project from">Starter</span>':'')+
@@ -397,12 +398,17 @@ function attachTilt(container, reduce){
 
 // RS67: Details opens a side panel. The card's hidden extras (.rc-more) move into it while it is open and move back on
 // close, so the trust check keeps its answer and "Add to plan" stays one checkbox (the card's own).
-var __drw=null;
-function closeDrawer(){ var d=document.getElementById("rcDrawer"); if(!d||d.hidden) return;
-  var more=d.querySelector(".rc-more"); if(__drw&&__drw.card&&more&&__drw.card.isConnected){ more.hidden=true; __drw.card.appendChild(more); }
-  d.hidden=true; var sc=document.getElementById("rcScrim"); if(sc) sc.hidden=true; document.body.classList.remove("drawer-open");
-  var back=__drw&&__drw.from; __drw=null; if(back&&back.isConnected&&back.focus) back.focus(); }
-function openDrawer(card, from){ var d=document.getElementById("rcDrawer"); if(!d||!card) return; closeDrawer();
+var __drw=null, __drwT=0;
+function closeDrawer(now){ var d=document.getElementById("rcDrawer"), sc=document.getElementById("rcScrim"); if(!d||d.hidden) return;
+  function finish(){ clearTimeout(__drwT); __drwT=0; if(d.hidden) return;
+    var more=d.querySelector(".rc-more"); if(__drw&&__drw.card&&more&&__drw.card.isConnected){ more.hidden=true; __drw.card.appendChild(more); }
+    d.hidden=true; d.classList.remove("closing"); if(sc){ sc.hidden=true; sc.classList.remove("closing"); } document.body.classList.remove("drawer-open");
+    var back=__drw&&__drw.from; __drw=null; if(back&&back.isConnected&&back.focus) back.focus(); }
+  var rm=window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches;
+  if(now||rm){ finish(); return; }
+  if(__drwT) return;   // already sliding out
+  d.classList.add("closing"); if(sc) sc.classList.add("closing"); __drwT=setTimeout(finish,230); }   // RS69: slides out, then hides
+function openDrawer(card, from){ var d=document.getElementById("rcDrawer"); if(!d||!card) return; closeDrawer(true);
   var more=card.querySelector(".rc-more"), body=d.querySelector(".rcd-body"), head=d.querySelector(".rcd-head"), cb=card.querySelector(".pick-cb");
   var name=card.querySelector(".name"), who=card.querySelector(".rc-who"), desc=card.querySelector(".desc"), tags=card.querySelector(".rc-tags"), stats=card.querySelector(".rc-stats");
   head.innerHTML=(who?who.outerHTML:"")+(name?'<h2 class="name" id="rcdName">'+name.innerHTML+'</h2>':'');
@@ -764,9 +770,15 @@ function altQueries(meta, platform){
   var ex = platform==="ios"?" -topic:macos":"";
   return qs.slice(0,MAX_QUERIES).map(function(q){return (q+ex).trim();}); }
 
+// RS69: page-level changes (home, searching, results, back home) dissolve instead of cutting, where the browser has
+// View Transitions; elsewhere, and with reduced motion, they happen at once as before.
+function smoothSwap(fn){ var rm=window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches;
+  if(document.startViewTransition&&!rm&&!document.hidden){ try{ document.startViewTransition(fn); return; }catch(_){} }
+  fn(); }
 // show the searching state right on the Find button (spinner + "Searching…"), restore when done
 function setGoBusy(on){ var go=document.getElementById("go"); if(!go) return;
-  document.body.classList.toggle("searching", !!on);   // RS24: search layout from the first moment, not after results
+  if(on&&!document.body.classList.contains("searching")) smoothSwap(function(){ document.body.classList.add("searching"); });   // RS69
+  else document.body.classList.toggle("searching", !!on);   // RS24: search layout from the first moment, not after results
   if(on){ if(!go.dataset.label) go.dataset.label=go.innerHTML;
     go.innerHTML='<span class="spin" aria-hidden="true"></span><span class="go-lbl">Searching…</span>'; go.disabled=true; }
   else { if(go.dataset.label){ go.innerHTML=go.dataset.label; go.removeAttribute("data-label"); } go.disabled=false; }
@@ -863,11 +875,13 @@ async function run(){
         }
         top=keptRows.concat(leftRows.map(function(r){ r.left=1; return r; }));
         gate={ok:true,hidden:drops.length}; } }
-    closeDrawer(); out.innerHTML=render(top,queries,excluded,ranked.length,qtok,heading,window.__likeNote||"",gate);
+    smoothSwap(function(){ if(gen!==window.__runGen) return;   // RS69: the results dissolve in
+    closeDrawer(true); out.innerHTML=render(top,queries,excluded,ranked.length,qtok,heading,window.__likeNote||"",gate);
     // RS34: no on-screen note about the AI check; its outcome is kept as an attribute for diagnosis only
     out.setAttribute("data-gate", !gate?"off":gate.ok?"ok:"+gate.hidden:String(gate.error||"fail").replace(/[^a-z0-9_]/gi,"").slice(0,40));
     animateCards(out); initResultFilter(); st.textContent=""; saveResults(); syncClearQ();
     try{ cleanCards(out); var now=Date.now(); recentSave(recentAdd(recentLoad(), { k:recentKey(recentFields()), v:CACHE_V, t:now, html:snapHtml(out) }, now)); }catch(_){}   // RS43 A
+    });
   }catch(e){ if(gen!==window.__runGen) return; st.textContent=""; out.innerHTML='<div class="panel"><p class="err">'+esc(e.message)+'</p></div>'; }
   finally{ if(gen===window.__runGen){ setGoBusy(false); window.__busy=false; } }
 }
@@ -916,14 +930,15 @@ function openModal(id){ var m=document.getElementById(id); if(!m) return;
   if(already && already!==m){ already.classList.remove("open"); stopDemo("howDemo"); }
   else if(!already){ __lastFocus=document.activeElement; }   // remember opener (keep the original when switching modals)
   m.classList.add("open");
-  if(id==="howModal"){ var hd=document.getElementById("howDemo"); buildDemo(hd); if(hd&&hd.__playDemo) hd.__playDemo(); }
+  if(id==="howModal"){ var tv=document.getElementById("tourVideo");   // RS72: the Tour is the explainer video; it starts muted (browsers allow that), sound is one tap away
+    if(tv&&tv.play&&!(window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches)){ try{ tv.currentTime=0; }catch(_){} var pp=tv.play(); if(pp&&pp.catch) pp.catch(function(){}); } }
   var focusId = id==="filtersModal" ? "stackInput" : (id==="likeModal" ? "like" : (id==="fbModal" ? "fbTitle" : null)), sheet=m.querySelector(".sheet");
   setTimeout(function(){ var f=focusId&&document.getElementById(focusId);
     if(!f){ var fs=focusables(sheet); f=fs[0]||sheet; } if(f&&f.focus) f.focus(); },30);
 }
 function closeModals(){ var any=false, m=document.querySelectorAll(".modal");
   for(var i=0;i<m.length;i++){ if(m[i].classList.contains("open")) any=true; m[i].classList.remove("open"); }
-  stopDemo("howDemo");                                        // stop the Tour carousel when it closes
+  stopDemo("howDemo"); var tv=document.getElementById("tourVideo"); if(tv&&tv.pause) tv.pause();   // RS72: the Tour video stops when the window closes
   if(any && __lastFocus && __lastFocus.focus){ __lastFocus.focus(); __lastFocus=null; }
 }
 // modal a11y: mark sheets as dialogs, label the × buttons, and trap Tab within the open modal
@@ -947,19 +962,19 @@ document.getElementById("pluginBtn").addEventListener("click",function(){ openMo
 document.addEventListener("click",function(e){ var t=e.target&&e.target.closest&&e.target.closest("[data-open],[data-action]"); if(!t) return;
   var m=t.getAttribute("data-open"); if(m){ e.preventDefault(); openModal(m); return; }
   if(t.getAttribute("data-action")==="search-again"){ e.preventDefault(); window.__fresh=true; run(); } });
-// plugin-modal tabs: Claude Code vs any other agent (ARIA tab pattern: click, ←/→/Home/End, roving tabindex)
-(function(){ var pm=document.getElementById("pluginModal"); if(!pm) return;
-  function tabs(){ return Array.prototype.slice.call(pm.querySelectorAll(".tab")); }
-  function select(t, focus){ var which=t.getAttribute("data-tab");
-    tabs().forEach(function(b){ var on=b===t; b.classList.toggle("on",on); b.setAttribute("aria-selected",on?"true":"false"); b.tabIndex=on?0:-1; });
-    pm.querySelectorAll(".tabpanel").forEach(function(p){ p.hidden = p.getAttribute("data-panel")!==which; });
-    if(focus) t.focus(); }
-  pm.addEventListener("click",function(e){ var t=e.target.closest&&e.target.closest(".tab"); if(t) select(t,false); });
-  pm.addEventListener("keydown",function(e){ var t=e.target.closest&&e.target.closest(".tab"); if(!t) return;
-    var all=tabs(), i=all.indexOf(t), n=all.length, j=null;
-    if(e.key==="ArrowRight") j=(i+1)%n; else if(e.key==="ArrowLeft") j=(i-1+n)%n;
-    else if(e.key==="Home") j=0; else if(e.key==="End") j=n-1;
-    if(j!==null){ e.preventDefault(); select(all[j],true); } });
+// RS70: the plugin window is an add-ons grid. Get shows that agent's steps in place; "All agents" goes back (commands
+// get the site's usual Copy button). Opening the window always starts on the grid.
+(function(){ var pm=document.getElementById("pluginModal"), grid=document.getElementById("agGrid"); if(!pm||!grid||!pm.addEventListener) return;
+  function show(key, from){ var d=key&&document.getElementById("ag-"+key);
+    pm.querySelectorAll(".ag-detail").forEach(function(x){ x.hidden=x!==d; }); grid.hidden=!!d;
+    pm.classList.toggle("ag-on", !!d);   // RS71: the steps view hides the intro, so it fits one screen
+    var f=d?d.querySelector(".ag-back"):(from||grid.querySelector(".ag-get")); if(f&&f.focus) f.focus(); }
+  pm.addEventListener("click",function(e){ var t=e.target, g=t.closest&&t.closest(".ag-get");
+    if(g){ pm.__from=g.getAttribute("data-ag"); show(pm.__from); return; }
+    if(t.closest&&t.closest(".ag-back")){ show(null, grid.querySelector('.ag-get[data-ag="'+pm.__from+'"]')); return; }
+    });
+  document.addEventListener("click",function(e){ var o=e.target&&e.target.closest&&e.target.closest('[data-open="pluginModal"],#pluginBtn');
+    if(o){ pm.querySelectorAll(".ag-detail").forEach(function(x){ x.hidden=true; }); grid.hidden=false; pm.classList.remove("ag-on"); } }, true);
 })();
 // Filters chip and "Find similar repos" tile each open a popup window
 document.getElementById("optsBtn").addEventListener("click",function(){ openModal("filtersModal"); });
@@ -1021,7 +1036,7 @@ document.getElementById("fbGo").addEventListener("click",function(){
   var $=function(id){ return document.getElementById(id); }, go=$("fbGo"), err=$("fbErr"), ok=$("fbOk");
   var t=$("fbTitle").value, ty=$("fbType").value, d=$("fbDesc").value, em=$("fbEmail").value;
   var p=feedbackPayload(t,ty,d,em); ok.hidden=true;
-  if(!p){ err.textContent="Add a title first."; err.hidden=false; $("fbTitle").focus(); return; }
+  if(!p){ err.textContent="Tell me what it's about first."; err.hidden=false; $("fbTitle").focus(); return; }
   if($("fbBot").checked){ ok.hidden=false; return; }   // honeypot ticked: a bot — pretend, send nothing
   function fallback(msg){ err.innerHTML=msg+' <a href="'+esc(feedbackUrl(t,ty,d))+'">Email it instead</a> (opens your email app).'; err.hidden=false; }
   if(!WEB3FORMS_KEY){ fallback("Sending from the page isn't set up yet."); return; }
@@ -1031,7 +1046,7 @@ document.getElementById("fbGo").addEventListener("click",function(){
     .then(function(sent){ if(sent){ ok.hidden=false; err.hidden=true; $("fbTitle").value=""; $("fbDesc").value=""; }
       else fallback("Couldn't send just now."); },
       function(){ fallback("Couldn't send just now."); })
-    .then(function(){ go.disabled=false; go.textContent="Send feedback"; });
+    .then(function(){ go.disabled=false; go.textContent="Send to Leo"; });
 });
 document.getElementById("fbCopy").addEventListener("click",function(){ var b=this;
   try{ navigator.clipboard.writeText(FB_TO).then(function(){ b.textContent="Copied"; setTimeout(function(){ b.textContent="Copy address"; },1500); }); }catch(_){} });
@@ -1071,6 +1086,9 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
     if(tg){ var rl=tg.closest(".res-rail"), op=!rl.classList.contains("open"); rl.classList.toggle("open",op); tg.setAttribute("aria-expanded",String(op)); return; }
     var det=t.closest&&t.closest(".rc-det");
     if(det){ openDrawer(det.closest(".rcard"), det); return; }
+    var card=t.closest&&t.closest(".rcard.rc2");   // RS71: tap a card to add it to the plan (links, buttons and the bookmark keep their own job)
+    if(card && !(t.closest("a,button,label,input,select,summary,.rc-more")) && !(window.getSelection&&String(window.getSelection()).trim())){
+      var pcb=card.querySelector(".pick-cb"); if(pcb){ pcb.click(); return; } }
     if(t.closest&&t.closest(".trend-tab")){ showTrending(t.closest(".trend-tab").getAttribute("data-trend")); return; }
     if(t.closest&&(t.closest("#resClear")||t.closest(".rf-clear"))){ rfReset(); window.__resLimit=10; applyResultFilter(); checkMore(); return; }
     if(t.closest&&t.closest("#resSelAll")){ var bx=shownPickBoxes(), all=bx.every(function(x){ return x.checked; });
@@ -1281,6 +1299,7 @@ async function showTrending(kind){
   try{
     var got=await fetchTrending(kind); if(gen!==window.__runGen) return;
     var t=trendRows(got.items, kind);
+    smoothSwap(function(){ if(gen!==window.__runGen) return;   // RS69
     out.innerHTML=render(t.rows,[got.q],t.excluded,t.rows.length,[],"Trending on GitHub","",null);
     var bar=out.querySelector(".res-main");   // RS67: the list switcher and its note open the cards column
     if(bar){ bar.insertAdjacentHTML("afterbegin",'<div class="trend-tabs" role="tablist" aria-label="Trending lists">'+
@@ -1288,7 +1307,7 @@ async function showTrending(kind){
         '" role="tab" aria-selected="'+(k===kind)+'">'+TREND_TABS[k]+'</button>'; }).join("")+'</div>'+
         '<p class="res-note mut trend-note">'+esc(TREND_NOTE[kind])+'</p>'); }
     out.setAttribute("data-gate","trending");
-    animateCards(out); initResultFilter(); st.textContent=""; saveResults(); syncClearQ();
+    animateCards(out); initResultFilter(); st.textContent=""; saveResults(); syncClearQ(); });
   }catch(e){ if(gen!==window.__runGen) return; st.textContent=""; out.innerHTML='<div class="panel"><p class="err">'+esc(e.message)+'</p></div>'; }
 }
 // RS36 thinking orb: a small dotted sphere in a pill ("Solving…"-style), used under the home demo and while searching
@@ -1344,16 +1363,16 @@ function buildTrendCarousel(){
     var num=function(r){ return kstars(kind==="forks"?r.forks:r.stars); }, unit=kind==="forks"?"forks":"stars";
     var a=rows[0], an=split(a.name), av=licenseVerdict(a.spdx), xs=exploreLinks(a.name);
     var big='<div class="tb-big" role="listitem" style="--i:0"><pre class="tb-tex" aria-hidden="true">'+tex+'</pre>'+
-      '<span class="tb-lab">#1 '+LAB[kind]+'</span>'+
+      '<span class="tb-top"><span class="tb-lab">#1 '+LAB[kind]+'</span><span class="tb-nw"><span class="tb-n">'+num(a)+'</span><i class="tb-u">'+unit+'</i></span></span>'+   // RS74: count top right, like the small cards
       '<a class="tb-name" href="'+esc(a.url)+'" target="_blank" rel="noopener"><span class="owner">'+esc(an.o)+' / </span>'+esc(an.r)+'</a>'+
       '<p class="tb-desc">'+esc(plainDesc(a.desc))+'</p>'+
-      '<div class="tb-facts"><span><span class="tb-n">'+num(a)+'</span> '+unit+'</span><span class="tag '+av.c+'">'+ico(av.i)+esc(av.t)+'</span></div>'+
+      '<div class="tb-facts"><span class="tag '+av.c+'">'+ico(av.i)+esc(av.t)+'</span></div>'+
       (xs.length?'<div class="tb-tools">'+xs.filter(function(x){ return x.label==="Diagram"||x.label==="Wiki"||x.label==="Browse"; }).map(function(x){
         return '<a href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer" title="'+esc(x.title)+'">'+esc(x.label==="Browse"?"Code":x.label)+'</a>'; }).join("")+'</div>':'')+
       '</div>';
     return big+rows.slice(1).map(function(r,k){ var n=split(r.name), v=licenseVerdict(r.spdx);
       return '<a class="tb-sm" role="listitem" style="--i:'+(k+1)+'" href="'+esc(r.url)+'" target="_blank" rel="noopener">'+
-        '<span class="tb-top"><span class="tb-lab">#'+(k+2)+'</span><span class="tb-n">'+num(r)+'</span></span>'+
+        '<span class="tb-top"><span class="tb-lab">#'+(k+2)+'</span><span class="tb-nw"><span class="tb-n">'+num(r)+'</span><i class="tb-u">'+unit+'</i></span></span>'+   // RS72: say what the number is
         '<b title="'+esc(r.name)+'">'+esc(n.r)+'</b><small>'+esc(plainDesc(r.desc))+'</small>'+
         (v.c==="t-good"?'':'<span class="tag '+v.c+'">'+ico(v.i)+esc(v.t)+'</span>')+'</a>'; }).join("");
   }
@@ -1488,7 +1507,11 @@ function buildLiveDemo(host){
   if(globe) startAsciiGlobe(globe, reduce);
   var qin=document.getElementById("q");
   var sb=bot&&bot.parentNode, say=host.querySelector(".st-say"), sayT=host.querySelector(".st-say-t"), SAY=sayT?sayT.textContent:"";
-  function speak(txt){ if(sayT) sayT.textContent=txt; if(say&&say.classList) say.classList.add("on"); }
+  var sayTimer=0;
+  function speak(txt){ if(say&&say.classList) say.classList.add("on"); if(!sayT||sayT.textContent===txt) return;
+    if(reduce||!sayT.classList){ sayT.textContent=txt; return; }
+    sayT.classList.add("swap"); clearTimeout(sayTimer);   // RS69: his words fade out and back in, never jump
+    sayTimer=setTimeout(function(){ sayT.textContent=txt; sayT.classList.remove("swap"); }, 180); }
   // RS65: Leo is interactive. He peeks out, waves hello, reacts while you type, and searches (magnifier sweep) when you
   // press Enter. Animations are sprite sheets cut from the Veo clips (work in every browser, no video alpha needed).
   var spr=sb&&sb.querySelector&&sb.querySelector(".st-sprite"), canAnim=!!(bot&&globe&&!reduce&&bot.classList&&sb&&sb.classList&&bot.addEventListener);
@@ -1499,7 +1522,8 @@ function buildLiveDemo(host){
     spr.style.animation="leoSprite "+d[2]+"s steps("+(d[1]-1)+") "+(loop?"infinite":"1 forwards");
     sb.classList.add("animating");
     if(!loop&&done) spr.addEventListener("animationend",function f(){ spr.removeEventListener("animationend",f); done(); }); }
-  function still(){ if(spr) spr.style.animation="none"; if(sb&&sb.classList) sb.classList.remove("animating"); }
+  function still(){ if(sb&&sb.classList) sb.classList.remove("animating");   // RS69: the sprite dissolves back into the still
+    setTimeout(function(){ if(spr&&sb&&sb.classList&&!sb.classList.contains("animating")) spr.style.animation="none"; }, 400); }
   var greeted=false, started=false;
   function startDemo(){ if(started) return; started=true; run(); }
   function greet(){ if(greeted) return; greeted=true; speak(SAY); sprite("wave", false, function(){ still(); startDemo(); }); }
@@ -1510,7 +1534,9 @@ function buildLiveDemo(host){
   function cssPeek(){ bot.classList.add("peek"); sb.classList.add("peeking");
     bot.addEventListener("animationend",function(){ bot.classList.remove("peek"); sb.classList.remove("peeking"); greet(); },{once:true});
     setTimeout(greet, 3400); }
-  if(canAnim&&alphaVideo){ var done=false, fin=function(){ if(done) return; done=true; sb.classList.remove("videopeek"); greet(); };
+  if(canAnim&&alphaVideo){ var done=false, fin=function(){ if(done) return; done=true;
+      sb.classList.add("peekfade"); greet();   // RS69: the clip dissolves into the waving sprite instead of cutting
+      setTimeout(function(){ sb.classList.remove("videopeek","peekfade"); }, 450); };
     sb.classList.add("videopeek"); pv.addEventListener("ended",fin); pv.addEventListener("error",function(){ sb.classList.remove("videopeek"); if(!done){ done=true; cssPeek(); } });
     pv.src="leo-peek.webm"; var pp=pv.play&&pv.play(); if(pp&&pp.catch) pp.catch(function(){ sb.classList.remove("videopeek"); if(!done){ done=true; cssPeek(); } });
     setTimeout(fin, 6500); setTimeout(startDemo, 10000); }
@@ -1526,7 +1552,14 @@ function buildLiveDemo(host){
   function later(f,ms){ timers.push(setTimeout(f,ms)); }
   function clear(){ timers.forEach(clearTimeout); timers=[]; }
   function stage(i, txt){ rail.forEach(function(li,j){ li.classList.toggle("on", j===i); }); if(label) label.textContent=txt||""; }
-  function pose(p){ if(bot) bot.src=p==="search"?"scout-search.webp":"scout-hero.webp"; }
+  function pose(p){ if(!bot) return; var src=p==="search"?"scout-search.webp":"scout-hero.webp";
+    if(bot.getAttribute&&bot.getAttribute("src")===src) return;
+    if(reduce||typeof bot.cloneNode!=="function"||!bot.parentNode||!bot.offsetWidth){ bot.src=src; return; }
+    // RS69: the old pose stays on top and fades out while the new one shows through (a dissolve, not a cut)
+    var ghost=bot.cloneNode(false); ghost.className="st-bot st-ghost"; ghost.setAttribute("alt","");
+    ghost.style.cssText="position:absolute;left:"+bot.offsetLeft+"px;top:"+bot.offsetTop+"px;width:"+bot.offsetWidth+"px;margin:0;z-index:2;transition:opacity .4s ease";
+    bot.parentNode.insertBefore(ghost, bot.nextSibling); bot.src=src;
+    setTimeout(function(){ ghost.style.opacity="0"; }, 30); setTimeout(function(){ if(ghost.parentNode) ghost.parentNode.removeChild(ghost); }, 480); }
   // RS67: the example search types itself into the search bar's placeholder (never over what a visitor typed)
   var PH=(qin&&qin.getAttribute&&qin.getAttribute("placeholder"))||"What are you building?";
   function ph(t){ if(!qin||qin.value||document.activeElement===qin) return; qin.setAttribute("placeholder",t); }
@@ -1615,7 +1648,8 @@ function restoreResults(){
 if(!restoreResults()) showHome();
 // Home: clicking the Replore logo clears results and returns to the start; Tour: the how-it-works walkthrough
 // full reset: text, similar-repo, every filter, picked repos, results and cached search (search-bar clear button and logo)
-function resetAll(){
+function resetAll(){ smoothSwap(resetAllNow); }   // RS69: back home with a dissolve
+function resetAllNow(){
   window.__runGen++; window.__busy=false; setGoBusy(false);   // abandon any in-flight search so it can't repaint later
   if(window.__gateCtl) try{ window.__gateCtl.abort(); }catch(_){}   // RS41: and stop its AI check
   clearSaved(); closeModals();
@@ -1623,7 +1657,7 @@ function resetAll(){
   ["platform","starters"].forEach(function(id){ var el=document.getElementById(id); if(!el) return;
     var d=el.querySelector("option[selected]"); el.value = d ? d.value : (el.options[0]&&el.options[0].value); });
   var ms=document.getElementById("minstars"); if(ms) ms.value=ms.defaultValue;
-  setStack(""); rfReset(); window.__resLimit=10; closeDrawer();
+  setStack(""); rfReset(); window.__resLimit=10; closeDrawer(true);
   var si=document.getElementById("stackInput"); if(si) si.value="";
   var sm=document.getElementById("stackMenu"); if(sm){ sm.hidden=true; sm.innerHTML=""; }
   document.getElementById("status").textContent=""; showHome();
