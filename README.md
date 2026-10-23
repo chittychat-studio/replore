@@ -302,6 +302,7 @@ python3 -m pytest
 node tests/test_web_logic.js        # web page logic (no network)
 node tests/test_relevance_fn.mjs    # relevance check function (fake AI)
 node tests/test_trust_fn.mjs        # trust check function (fake Scorecard/deps.dev)
+node tests/test_pro_fn.mjs          # Pro key claim function (fake Stripe)
 # tests/fixtures/trust_cases.json is run by the web tests above and by pytest (tests/test_trust.py): one behaviour, two ports
 python3 evals/run.py                # fit-ranking evals
 ```
