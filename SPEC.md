@@ -1039,6 +1039,13 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   The globe has its own inks per theme (light ink on navy in dark mode) and redraws on a theme switch. Media files
   (the peek clip, the Tour video and poster) carry content-hash version tags, so a replaced clip is never served from
   an old cache.
+- **RS77** An error is shown like a result (owner 2026-10-23: on a phone a wrong repo name showed a blank screen, the
+  error far below). The page switches to the results layout, the message sits right under the search box and is
+  scrolled into view.
+- **RS78** An empty search retries broader before giving up (owner 2026-10-23: "motion graphics using opus5.5" said to
+  use fewer words). GitHub matches every word, so when all queries return nothing the page searches again without
+  version-like words (model names and versions such as opus5.5 or gpt-4o rarely appear in repo text), then with the two
+  strongest words, within the same rate-limit guard, and says so above the results.
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
 - **RX3** Ranking by forks, trending or download counts. (Relevance, stars and license-freedom are the only
