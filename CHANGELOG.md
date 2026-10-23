@@ -17,17 +17,27 @@ How to cut a release: README, Development (SPEC RS81).
 - Listing pack: `docs/LISTING.md` (Anthropic directory, MCP registry, PulseMCP, Glama: owner steps and copy),
   `pyproject.toml` for the stdlib-only PyPI package `replore-mcp` (commands `replore-mcp` and `replore`) and
   `server.json` for the registry entry `io.github.chittychat-studio/replore` (RS86).
-- Replore Pro keys on the server: a Polar license key in the plugin-key header is checked with Polar (3 s deadline,
-  no redirects, 10-minute verdict cache by SHA-256, codes-only logs) and, when granted, gets the plugin key's rights:
-  the meaning route and no per-IP limit. Off until `POLAR_ORG_ID` is set (403 `pro_off`) (RS87).
+- Pro keys are now Stripe-backed (signed subscription tokens); Polar removed. A key is `rp.<Stripe subscription
+  id>.<HMAC signature>`: the server checks the signature first (a forged key never reaches Stripe), then the
+  subscription with a restricted, read-only Stripe key (3 s deadline, no redirects, 10-minute verdict cache by SHA-256,
+  codes-only logs); active or trialing with a Replore Pro price gets the plugin key's rights: the meaning route and no
+  per-IP limit. Off until `STRIPE_SECRET_KEY`, `PRO_SIGNING_SECRET` and `PRO_PRICE_IDS` are set (403 `pro_off`) (RS87).
+- `POST /api/pro/claim` turns a paid Stripe Checkout Session into a Pro key (403 `not_paid` or `not_pro`, 404
+  `unknown_session`, 503 `stripe_error`; 5 a minute per address; nothing stored) (RS90).
 - Plugin, script and MCP server read the Pro key from `REPLORE_KEY` (the older `REPLORE_PLUGIN_KEY` still works) and
   send it only to Replore's hosts, never through a redirect; `find_repos` gains an opt-in `semantic` flag with a
-  `description`. README has a Replore Pro section (where to buy: coming soon) and PRIVACY a row for the key (RS87).
-- Web plumbing, nothing visible: when this browser's storage holds `replore.key`, the page sends it with its relevance
-  checks in the same header; nothing on the page writes it yet. PRIVACY has the row (RS87, RS43).
+  `description`. README has a Replore Pro section (how to buy, where the key appears, how to set it) and PRIVACY a
+  row for the key (RS87).
+- Web: when this browser's storage holds a Pro key (`replore.key`), the page sends it with its relevance checks in the
+  same header. PRIVACY has the row (RS87, RS43).
 - `docs/MONETIZATION.md`: the owner's monetisation plan with a status per step and the owner's account checklist (RS88).
-- "Leo, Pro" window and a Pro button in the top menu: buy link, "I have a key", save or remove a key kept in this
-  browser. Hidden until the owner sets `PRO_URL` (the Polar checkout link); the privacy window names the key (RS89).
+- "Leo, Pro" window and a Pro button in the top menu: the sign-up offer line, monthly and yearly Stripe Payment Links
+  (a prefilled promotion code allowed), "I have a key", save or remove a key kept in this browser, and the saved key
+  shown back with Copy buttons for it and for the plugin's `REPLORE_KEY=` line. Hidden until the owner sets `PRO_URL`
+  in `web/pro-core.js`; the privacy window names the key and Stripe (RS89).
+- New page `/pro`: the same window as a page, and where a buyer lands after Stripe checkout to get their key (shown,
+  copyable, saved in the browser that bought it; never saved over another key by a link). Says "Keys are not on sale
+  yet." until `PRO_URL` is set. In the footer and the sitemap (RS90, RS80).
 
 ### Fixed
 - The evals page is linked, canonicalised and listed in the sitemap as `/evals`; Cloudflare Pages redirects `evals.html` (RS80, RS84).

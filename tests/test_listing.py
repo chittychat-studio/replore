@@ -114,8 +114,10 @@ def test_listing_doc_names_the_owner_steps():
 def test_monetisation_plan_and_prices_stay_out_of_the_spec():
     """RS88: the plan lists each step with a status; planned prices live only in docs/MONETIZATION.md."""
     plan = (ROOT / "docs" / "MONETIZATION.md").read_text(encoding="utf-8")
-    for s in ("8 USD a month", "72 USD a year", "Polar", "99 USD a month", "25 USD a seat", "own GitHub token",
-              "0.011 USD per 1,000 neurons", "POLAR_ORG_ID", "PyPI", "PulseMCP", "Anthropic paid plan"):
+    for s in ("8 USD a month", "72 USD a year", "Stripe Payment Link", "99 USD a month", "25 USD a seat", "own GitHub token",
+              "0.011 USD per 1,000 neurons", "PRO_SIGNING_SECRET", "STRIPE_SECRET_KEY", "PRO_PRICE_IDS", "Stripe Tax",
+              "seller of record", "FIRST399", "4.01 USD off", "restricted key",
+              "https://replore.cardzo.co.in/pro?session_id={CHECKOUT_SESSION_ID}", "PyPI", "PulseMCP", "Anthropic paid plan"):
         assert s in plan, s
     assert "not verified" in plan.lower()
     for status in ("done", "built", "owner step", "not started"):

@@ -138,9 +138,19 @@ Two optional **secrets** (16+ random characters each) let callers that can't run
 `EVAL_KEY` opens the paid AI check and the meaning route, for the live eval and `ops/rag_smoke.py` only — keep it in CI
 (repository secret `REPLORE_EVAL_KEY` for the `relevance-eval-live` workflow) or on your machine as `REPLORE_EVAL_KEY`, and
 never hand it out. `PLUGIN_KEY` opens only the cheap meaning route (`mode:"semantic"`), so it is the one you may give to
-plugin users, who set it as `REPLORE_PLUGIN_KEY`. **Replore Pro keys (SPEC RS87):** set the plain variable `POLAR_ORG_ID` (your Polar
-organization id) and optionally `POLAR_BENEFIT_ID`; a buyer's Polar license key then gets the same rights as `PLUGIN_KEY`,
-checked with Polar and cached 10 minutes, never stored. **Plugin `--semantic` without a key:** the server answers 403 and
+plugin users, who set it as `REPLORE_PLUGIN_KEY`. **Replore Pro keys (SPEC RS87, RS90):** sold with a Stripe Payment
+Link; set three things in Pages, then redeploy: the **secret** `STRIPE_SECRET_KEY`, which must be a Stripe **restricted
+key** (Developers, API keys, Create restricted key) with **Read** on Checkout Sessions and Subscriptions and nothing else;
+the **secret** `PRO_SIGNING_SECRET`, 32 or more random characters (for example `python -c "import secrets;
+print(secrets.token_urlsafe(32))"`), which signs every key, so changing it invalidates every key already issued; and the
+plain variable `PRO_PRICE_IDS`, the monthly and yearly Pro price ids comma-separated (copy them from the Replore Pro
+product page in Stripe; `PRO_PRODUCT_ID`, the product id, works instead). The price list matters because the same Stripe
+account sells other things (tips): only a subscription carrying a Pro price gets or keeps a key. Without all three the
+Pro route answers `pro_off`. Set each Payment Link's success URL (After payment, "Don't show confirmation page",
+redirect) to exactly `https://replore.cardzo.co.in/pro?session_id={CHECKOUT_SESSION_ID}`, switch on **Stripe Tax** on
+the links (you are the seller of record), then paste the links into `PRO_URL` and `PRO_URL_YEAR` in
+`web/pro-core.js`. A buyer's key, `rp.<subscription id>.<signature>`, gets the same rights as `PLUGIN_KEY` while the
+subscription is active or trialing, checked with Stripe and cached 10 minutes, never stored. **Plugin `--semantic` without a key:** the server answers 403 and
 the plugin silently keeps its keyword + BM25 order (no error, no meaning scores, no indexed repos). Also add a rate-limiting rule
 (Security → WAF → Rate limiting rules) on the path `/api/relevance`, per IP. On the Free plan, the worst that
 abuse can do is use up the day's allowance, never bill you.
@@ -242,9 +252,17 @@ Pro** key (SPEC RS87) unlocks, today:
   meaning route on (see Hybrid search below).
 - **No per-address queue** on Replore's server: your requests skip its per-IP burst limit.
 
-Set the key as an environment variable, `REPLORE_KEY` (the older `REPLORE_PLUGIN_KEY` still works), before you start
-Claude Code or your agent. It is sent only to Replore's own server (`replore.cardzo.co.in`), which checks it with Polar,
-the shop that sells it; it is never printed, stored or logged. **Where to buy: coming soon.**
+**How to get one:** buy Pro on Stripe from the Pro button on the site (monthly or yearly). After paying, Stripe sends
+you back to [replore.cardzo.co.in/pro](https://replore.cardzo.co.in/pro), which shows your key (`rp.sub_...`), saves it
+in the browser you bought from (it asks first if that browser already has another key) and shows it again any time you
+open `/pro` there. Lost it? Open `/pro` in the browser where you saved
+it. Paste it into "I have a key" on the site in another browser, or set it as an environment variable, `REPLORE_KEY`
+(the older `REPLORE_PLUGIN_KEY` still works), before you start Claude Code or your agent; in an MCP config, add it as an
+`env` entry. It is sent only to Replore's own server (`replore.cardzo.co.in`), which checks its signature and asks
+Stripe whether the subscription is still active; it is never printed, stored or logged. To cancel, use the link to
+manage your subscription in Stripe's emails, or write to hello@cardzo.co.in; the key stops working within 10 minutes of
+the subscription ending. **On sale:** once the
+owner pastes the Stripe links; until then `/pro` says keys are not on sale yet.
 
 Planned, not built yet: searches on your own GitHub token, PRD batches over 20 repos, saved shortlists and a
 licence-policy mode.
