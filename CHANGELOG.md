@@ -1,0 +1,67 @@
+# Changelog
+
+All notable changes to Replore (web page, Claude Code plugin, MCP server and script) are listed here.
+The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
+[Semantic Versioning](https://semver.org/). Each line names the SPEC rule it ships; `SPEC.md` has the full rule.
+How to cut a release: README, Development (SPEC RS81).
+
+## [Unreleased]
+
+### Added
+- SEO basics: `robots.txt`, `sitemap.xml`, a canonical link and a 404 page in the site's look; the pages.dev to
+  custom-domain 301 is documented as a Cloudflare Bulk Redirect (RS80).
+- The CLI and MCP server retry an empty search with up to two broader searches, like the web page, and say so in a
+  `note` (also in `--json`, where an empty result now says why) (RS78a).
+- `.mcp.json`: `/plugin install` registers the `find_repos` and `check_repos` MCP tools in Claude Code (RS32a).
+- This changelog and a release workflow that checks the tag against every version and publishes the matching
+  section as the GitHub release notes (RS81).
+
+### Fixed
+- README, SPEC, PRIVACY, the skill and AGENTS.md described the old five-button card, an old default AI model,
+  `--top 10` and only one MCP tool; they now match the code, and a test guards it (RS63, RS34e, RS51).
+
+## [0.4.0] - 2026-10-22
+
+Everything below shipped under version 0.4.0, from the 0.3.0 release through 2026-10-23.
+
+### Added
+- "Safe to build on?" trust check: OpenSSF Scorecard, known vulnerabilities via deps.dev and OSV.dev, an install
+  command, beginner-friendliness and the latest release, on web cards (RS53) and in the plugin, script and MCP
+  server (`scout.py --trust`, `scripts/trust.py`, `check_repos`), kept in sync by shared test cases (RS56).
+- Explore links on result cards: GitDiagram, Gitingest, DeepWiki, GitHub1s and github.dev (RS51).
+- Tagline "The repo scout for vibe coders. Find it before you build it." (RS54); link-preview image and README
+  banner (RS57).
+- Home page: a live product demo over an ASCII globe (RS61, RS62), then the studio stage with Leo, the scout bot
+  (RS65, RS67, RS68); explainer video and the Tour window that plays it (RS64, RS72, RS73, RS75).
+- Results as compact cards with a filter panel (licence, type, language, stars, updated), a sort menu and a Details
+  side panel (RS63, RS67, RS71); tabbed bento Trending (RS63).
+- The build-plan prompt asks for a design mockup before the PRD (RS28h) and makes Governor setup step 0 (RS28i).
+- Launch it with Leo: a hosting plan and a before/after go-live checklist, handed to your own AI (RS79).
+- An empty web search retries broader before giving up; errors are shown where you are looking (RS77, RS78).
+- Smooth and scroll-driven motion, reduced-motion safe (RS69, RS76).
+
+### Changed
+- Fit ranking asks GitHub for 50 results per search; tail matches rank after the head (RS4b, RS5c).
+- One filter row of combinable switches (RS29d), later the filter panel (RS67).
+- Script and media URLs carry a content hash, so a deploy is never hidden by a cached file (RS52, RS76).
+- One type family site-wide; copy and polish passes (RS65, RS70, RS74).
+
+### Fixed
+- The harm filter no longer drops ordinary repos that mention "crack", "DDoS" or "keygen" (RS18a).
+- The eval and plugin keys are only ever sent to Replore's own hosts (RS34h); keys split by purpose (RS34g).
+- Query length counted in UTF-16 units and trimmed like JavaScript, so web and plugin build the same query (RS4b, RS29b).
+- The security-log hook can never block a prompt (RS25); results area is not a live region (RS46).
+- CI reports the `ci` check the main ruleset requires (RS50); duplicate SPEC rule IDs fail CI.
+
+### Removed
+- Emoji and glyph icons, in the page and in repo descriptions on cards (RS55, RS58).
+- The 60% verdict cap in the relevance check (RS34f).
+
+## [0.3.0] - 2026-10-18
+
+- Release hygiene: one version in `plugin.json` and the MCP server, SHA-pinned actions, an exact pytest pin (RS50).
+  Earlier history is in `git log`.
+
+[Unreleased]: https://github.com/chittychat-studio/replore/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/chittychat-studio/replore/compare/983e7fa...v0.4.0
+[0.3.0]: https://github.com/chittychat-studio/replore/commit/983e7fa

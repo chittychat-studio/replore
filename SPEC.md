@@ -1094,6 +1094,15 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   query string on, status 301). It must name the bare `replore.pages.dev` host only: preview hosts
   (`<x>.replore.pages.dev`, RS34h) keep working, and the canonical link covers search engines until the rule exists.
   The trust and relevance functions (`functions/api/`) are unchanged.
+- **RS81** Release process (go-live review 2026-10-23: versions were bumped by hand with no record of what shipped).
+  `CHANGELOG.md` follows Keep a Changelog: an `## [Unreleased]` section on top, then one `## [X.Y.Z] - YYYY-MM-DD`
+  section per version, each line naming its rule ID. A release is a pushed tag `vX.Y.Z`; the `release` workflow
+  (`.github/workflows/release.yml`) runs only on `v*` tags, and `ops/release_notes.py` (standard library) fails the run
+  unless the tag equals both the `plugin.json` version and `SERVER_INFO` (RS50) and the changelog has a non-empty
+  section for it; then `gh release create --verify-tag` publishes that section as the notes with the built-in token.
+  Only that job gets `contents: write`; the workflow default is `contents: read`; the tag reaches the shell through
+  `env`, never pasted into the command; actions are SHA-pinned (RS50). Steps for the maintainer are in README,
+  Development: bump both versions, update the changelog, tag `vX.Y.Z`, push the tag. Nobody tags from a branch.
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
 - **RX3** Ranking by forks, trending or download counts. (Relevance, stars and license-freedom are the only

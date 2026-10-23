@@ -272,6 +272,16 @@ node tests/test_trust_fn.mjs        # trust check function (fake Scorecard/deps.
 python3 evals/run.py                # fit-ranking evals
 ```
 
+**Cutting a release (SPEC RS81).** One version everywhere (RS50):
+
+1. Bump the version in `.claude-plugin/plugin.json` (`"version"`) and in `scripts/mcp_server.py` (`SERVER_INFO`).
+2. In `CHANGELOG.md`, rename `## [Unreleased]` to `## [X.Y.Z] - YYYY-MM-DD`, start a new empty `## [Unreleased]`
+   above it, and update the compare links at the bottom.
+3. Merge that to `main`, then tag it and push the tag: `git tag vX.Y.Z` and `git push origin vX.Y.Z`.
+
+The `release` workflow then checks that the tag matches both versions and that the changelog has the section, and
+publishes the section as the GitHub release notes. If anything disagrees it fails and creates nothing.
+
 ## Privacy
 
 No account, no database, nothing you type is stored: the makers of Replore never keep your ideas or searches. The web
