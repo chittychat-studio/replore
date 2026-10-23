@@ -265,7 +265,7 @@ export async function verifyTurnstile(request, env, fetchImpl = fetch) {
   } catch { return false; } finally { clearTimeout(timer); }
 }
 
-// RS34g: two server-held keys for callers that can't run Turnstile, each compared in constant time (unset or < 16
+// RS34g: two server-held keys for callers that can't run Turnstile (RS87 adds Polar-issued Pro keys below), each compared in constant time (unset or < 16
 // characters = closed). PLUGIN_KEY (header X-Replore-Plugin-Key) may be handed to plugin users and opens ONLY the cheap
 // semantic route. EVAL_KEY (header X-Replore-Eval-Key) stays in CI / the owner's machine (live eval, ops/rag_smoke.py) and
 // opens the paid judge route as well. A caller with a valid key also skips the per-IP limit (CI runs from one address).
@@ -279,19 +279,72 @@ function keyMatches(want, got) {
 export function pluginKeyOk(request, env) { return keyMatches(env.PLUGIN_KEY, request.headers.get("X-Replore-Plugin-Key")); }
 export function evalKeyOk(request, env) { return keyMatches(env.EVAL_KEY, request.headers.get("X-Replore-Eval-Key")); }
 export async function botCheck(request, env, fetchImpl = fetch, semantic = false) {
-  return evalKeyOk(request, env) || (semantic && pluginKeyOk(request, env)) || verifyTurnstile(request, env, fetchImpl);
+  return evalKeyOk(request, env) || (semantic && pluginKeyOk(request, env))
+    || (semantic && await proKeyOk(request, env, fetchImpl))   // RS87: a granted Pro key = the plugin key's rights
+    || verifyTurnstile(request, env, fetchImpl);
+}
+
+// ---- RS87 Replore Pro key: a Polar license key, validated with Polar's public endpoint, never stored or logged ----
+// Same header as the plugin key (X-Replore-Plugin-Key). Checked only after PLUGIN_KEY / EVAL_KEY fail, only when
+// POLAR_ORG_ID is set and the value has Polar's documented shape ([PREFIX_]UUID4). Fail closed: only "granted" opens.
+export const POLAR_VALIDATE = "https://api.polar.sh/v1/customer-portal/license-keys/validate";
+export const PRO_TTL_MS = 600000, PRO_TIMEOUT_MS = 3000, PRO_MAX = 5000, PRO_LOOKUP_MAX = 5, PRO_LOOKUP_WINDOW_MS = 60000;
+const PRO_SHAPE = /^(?:[A-Za-z0-9-]{1,32}_)?[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$/;
+export const looksLikeProKey = k => typeof k === "string" && k.length <= 80 && PRO_SHAPE.test(k);
+const PRO = new Map(), PRO_RATE = new Map();   // sha256(key) -> {ok, until}; IP -> recent Polar lookups
+export function resetPro() { PRO.clear(); PRO_RATE.clear(); }
+async function sha256hex(s) {
+  const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, "0")).join("");
+}
+// Polar's reply -> granted? (200 + status "granted", not expired, right benefit, usage under any limit)
+export function proGranted(status, j, env, now = Date.now()) {
+  if (status !== 200 || !j || typeof j !== "object" || j.status !== "granted") return false;
+  if (j.expires_at != null && !(Date.parse(j.expires_at) > now)) return false;
+  if (env.POLAR_BENEFIT_ID && j.benefit_id !== env.POLAR_BENEFIT_ID) return false;
+  if (j.limit_usage != null && !(Number(j.usage) < Number(j.limit_usage))) return false;
+  return true;
+}
+// One Polar call, no cache: "granted" | "denied" | "error". Polar answers 404 for unknown, revoked, disabled or expired.
+export async function validateProKey(key, env, fetchImpl = fetch, now = Date.now()) {
+  const body = { key, organization_id: String(env.POLAR_ORG_ID) };
+  if (env.POLAR_BENEFIT_ID) body.benefit_id = String(env.POLAR_BENEFIT_ID);
+  const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), PRO_TIMEOUT_MS);
+  try {
+    const res = await fetchImpl(POLAR_VALIDATE, { method: "POST", redirect: "error", signal: ctl.signal,
+      headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify(body) });
+    if (res.status === 404) return "denied";
+    if (res.status !== 200) return "error";
+    let j; try { j = await res.json(); } catch { return "error"; }
+    return proGranted(res.status, j, env, now) ? "granted" : "denied";
+  } catch { return "error"; } finally { clearTimeout(timer); }
+}
+export async function proKeyOk(request, env, fetchImpl = fetch, now = Date.now()) {
+  if (!env.POLAR_ORG_ID) return false;   // Pro route off
+  const key = request.headers.get("X-Replore-Plugin-Key");
+  if (!looksLikeProKey(key)) return false;
+  const id = await sha256hex(key), hit = PRO.get(id);
+  if (hit && hit.until > now) return hit.ok;
+  if (rateLimit(request.headers.get("CF-Connecting-IP"), now, PRO_RATE, PRO_LOOKUP_MAX, PRO_LOOKUP_WINDOW_MS)) return false;
+  const verdict = await validateProKey(key, env, fetchImpl, now);
+  logFailure(env, { evt: "pro", code: "pro_" + verdict, status: verdict === "granted" ? 200 : 403 });   // code only, never the key
+  if (verdict === "error") return false;   // fail closed; not cached, so the next request asks again
+  PRO.set(id, { ok: verdict === "granted", until: now + PRO_TTL_MS });
+  if (PRO.size > PRO_MAX) { for (const [k, v] of PRO) if (v.until <= now) PRO.delete(k); }
+  if (PRO.size > PRO_MAX) PRO.delete(PRO.keys().next().value);
+  return verdict === "granted";
 }
 
 // RS34g: best-effort per-IP rate limit, kept in this isolate's memory (no binding). Cloudflare runs many isolates, so
 // this only blunts a burst that lands on one of them; the WAF rate-limiting rule (RS41, dashboard) stays the authority.
 export const RATE_MAX = 10, RATE_WINDOW_MS = 10000, RATE_MAX_IPS = 5000;
 const RATE = new Map();
-export function rateLimit(ip, now = Date.now(), store = RATE) {   // 0 = allowed, else seconds to wait
+export function rateLimit(ip, now = Date.now(), store = RATE, max = RATE_MAX, windowMs = RATE_WINDOW_MS) {   // 0 = allowed, else seconds to wait
   if (!ip) return 0;   // Cloudflare always sends CF-Connecting-IP in production; local dev has none
-  const recent = (store.get(ip) || []).filter(t => now - t < RATE_WINDOW_MS);
-  if (recent.length >= RATE_MAX) { store.set(ip, recent); return Math.max(1, Math.ceil((recent[0] + RATE_WINDOW_MS - now) / 1000)); }
+  const recent = (store.get(ip) || []).filter(t => now - t < windowMs);
+  if (recent.length >= max) { store.set(ip, recent); return Math.max(1, Math.ceil((recent[0] + windowMs - now) / 1000)); }
   recent.push(now); store.set(ip, recent);
-  if (store.size > RATE_MAX_IPS) for (const [k, v] of store) if (now - v[v.length - 1] >= RATE_WINDOW_MS) store.delete(k);
+  if (store.size > RATE_MAX_IPS) for (const [k, v] of store) if (now - v[v.length - 1] >= windowMs) store.delete(k);
   if (store.size > RATE_MAX_IPS) store.delete(store.keys().next().value);   // still full: forget the oldest entry
   return 0;
 }
@@ -300,7 +353,8 @@ export function resetRateLimit() { RATE.clear(); }
 // RS34d: one record per failed check — codes and timings only. Never the query, repos, IP, token or provider text.
 const CODE = s => String(s == null ? "" : s).replace(/[^a-z0-9_:]/gi, "").slice(0, 40);
 export function logFailure(env, ev) {
-  const rec = { evt: ev.evt === "rag_fail" ? "rag_fail" : "relevance_fail", code: CODE(ev.code), status: ev.status | 0,
+  // RS87: evt "pro" = one fresh Polar verdict (code pro_granted / pro_denied / pro_error), never the key
+  const rec = { evt: ev.evt === "rag_fail" || ev.evt === "pro" ? ev.evt : "relevance_fail", code: CODE(ev.code), status: ev.status | 0,
     trail: (ev.trail || []).slice(0, 4).map(CODE), ms: Math.max(0, Math.round(ev.ms || 0)), example: !!ev.example };
   try { console.log(JSON.stringify(rec)); } catch {}
   try {
@@ -323,7 +377,8 @@ async function handlePost(request, env, fetchImpl, waitUntil) {
   if (!env.LLM_API_KEY && !(env.AI && typeof env.AI.run === "function")) return json(503, { error: "not_configured" });
   if (!sameOrigin(request)) return json(403, { error: "bad_origin" });
   const keyed = evalKeyOk(request, env) || pluginKeyOk(request, env);   // RS34g: valid-key callers skip the per-IP limit
-  const wait = keyed ? 0 : rateLimit(request.headers.get("CF-Connecting-IP"));   // before the body is read or anything is spent
+  let wait = keyed ? 0 : rateLimit(request.headers.get("CF-Connecting-IP"));   // before the body is read or anything is spent
+  if (wait && await proKeyOk(request, env, fetchImpl)) wait = 0;   // RS87: a granted Pro key skips the limit like PLUGIN_KEY
   if (wait) return json(429, { error: "rate_limited", resetsInSec: wait }, {}, { "Retry-After": String(wait) });
   const ct = request.headers.get("Content-Type") || "";
   if (ct.split(";")[0].trim().toLowerCase() !== "application/json") return json(415, { error: "json_only" });
@@ -336,6 +391,8 @@ async function handlePost(request, env, fetchImpl, waitUntil) {
   if (body.mode === "semantic") {   // RS42 plugin opt-in: meaning scores + indexed repos only, no AI judge
     const f = ragFlags(env);
     if (!f.plugin || (!f.rerank && !f.index)) return json(404, { error: "semantic_off" });
+    if (!env.POLAR_ORG_ID && !evalKeyOk(request, env) && !pluginKeyOk(request, env)
+        && looksLikeProKey(request.headers.get("X-Replore-Plugin-Key"))) return json(403, { error: "pro_off" });   // RS87
     if (!(await botCheck(request, env, fetchImpl, true))) return json(403, { error: "bot_check_failed" });   // RS34g: plugin key, eval key or Turnstile
     const sem = await semanticScores(body.query, body.repos, env);
     return sem ? json(200, { ...(sem.sim ? { sim: sem.sim } : {}), ...(sem.neighbors ? { neighbors: publicNeighbors(sem.neighbors) } : {}) })

@@ -3,6 +3,7 @@
 
 Any MCP-capable agent (Claude Code, Codex CLI, Cursor, Gemini CLI, VS Code/Copilot, Windsurf, Cline) can
 call the `find_repos` and `check_repos` tools (RS56 trust check), whatever model it runs. Standard library only (RS11); no model call, no key (RS1).
+Opt-in `semantic` sends the description to Replore's own server with REPLORE_KEY (RS87), never printed.
 stdout carries only newline-delimited JSON-RPC 2.0 messages; diagnostics go to stderr.
 
 Run: python3 scripts/mcp_server.py   (the agent starts it; you don't talk to it directly)
@@ -62,6 +63,12 @@ TOOL = {
                      "description": "fit (default). trust = opt-in: fit order, then the top 5 re-ordered by a trust "
                                     "score (Scorecard + half Maintained + 2 if no known vulnerabilities; RS82). Use only "
                                     "when the user asks to sort by safety or trust."},
+            "semantic": {"type": "boolean", "description": "Opt-in, only when the user asks for meaning-based "
+                         "ranking: sends 'description' and the top repos' public names/descriptions to Replore's own "
+                         "server (RS42), which needs a Replore Pro key in REPLORE_KEY (RS87). Tell the user first. "
+                         "If it is unavailable the output says keyword-only."},
+            "description": {"type": "string", "maxLength": 200,
+                            "description": "The user's whole project description, used with semantic=true."},
         },
         "required": ["queries"],
         "additionalProperties": False,
@@ -108,7 +115,7 @@ def _bad(msg):
     return _text("replore: " + msg, True)
 
 
-def call_find_repos(args, fetcher=None, trust_get=None):
+def call_find_repos(args, fetcher=None, trust_get=None, semantic_fn=None):
     """RS32: run the RS2-RS5 pipeline and return MCP tool content; every failure fails closed (RS7)."""
     fetcher = fetcher or scout.fetch
     if not isinstance(args, dict):
@@ -135,17 +142,24 @@ def call_find_repos(args, fetcher=None, trust_get=None):
             return _bad(f"'{key}' must be a whole number from 0 to {top}.")
         nums[key] = v
     flags = {}
-    for key in ("prefer_starters", "all", "group", "trust", "selling"):
+    for key in ("prefer_starters", "all", "group", "trust", "selling", "semantic"):
         v = args.get(key, False)
         if type(v) is not bool:
             return _bad(f"'{key}' must be true or false.")
         flags[key] = v
+    desc = args.get("description")
+    if desc is not None and (not isinstance(desc, str) or len(desc) > 200 or scout._CTRL.search(desc)):
+        return _bad("'description' must be plain text of at most 200 characters.")
+    if flags["semantic"] and not (desc or "").strip():
+        return _bad("'semantic' needs 'description' (the user's whole project description).")
     token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")  # RS8: never echoed
+    # RS87: semantic reads REPLORE_KEY (or REPLORE_PLUGIN_KEY) inside hybrid.semantic; sent only to Replore's hosts
     try:
         res = scout.scout(queries, fetcher=fetcher, top=None if flags["all"] else 20,
                           candidates=None if flags["all"] else 40, license_mode=lic,
                           max_age_months=nums["max_age_months"], token=token,
-                          prefer_starters=flags["prefer_starters"], min_stars=nums["min_stars"], rank_mode=rank_mode)
+                          prefer_starters=flags["prefer_starters"], min_stars=nums["min_stars"], rank_mode=rank_mode,
+                          description=desc, semantic_on=flags["semantic"], semantic_fn=semantic_fn)
     except scout.ScoutError as e:
         return _bad(str(e))
     except Exception as e:  # anything unexpected still fails closed with a plain message, never a partial list
@@ -160,6 +174,10 @@ def call_find_repos(args, fetcher=None, trust_get=None):
     elif flags["trust"]:
         scout.add_trust(res, token, trust_get)   # RS56: a failed part says "couldn't check"; the search still returns
     out = scout.render_markdown_grouped(res) if flags["group"] else scout.render_markdown(res)
+    if flags["semantic"]:   # RS42 / RS87: say what actually ran
+        out += ("\n\nMeaning ranking: on (Replore's server)." if res.get("semantic") == "ok" else
+                "\n\nMeaning ranking unavailable (no Pro key, key not accepted, or the server's meaning route is off): "
+                "these results are keyword-only.")
     return _text(PREAMBLE + out, False)
 
 

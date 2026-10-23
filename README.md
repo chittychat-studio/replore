@@ -1,5 +1,7 @@
 # Replore
 
+<!-- mcp-name: io.github.chittychat-studio/replore -->
+
 ![Replore: the repo scout for vibe coders. Find it before you build it.](docs/banner.png)
 
 **The repo scout for vibe coders. Find it before you build it.**
@@ -136,7 +138,9 @@ Two optional **secrets** (16+ random characters each) let callers that can't run
 `EVAL_KEY` opens the paid AI check and the meaning route, for the live eval and `ops/rag_smoke.py` only — keep it in CI
 (repository secret `REPLORE_EVAL_KEY` for the `relevance-eval-live` workflow) or on your machine as `REPLORE_EVAL_KEY`, and
 never hand it out. `PLUGIN_KEY` opens only the cheap meaning route (`mode:"semantic"`), so it is the one you may give to
-plugin users, who set it as `REPLORE_PLUGIN_KEY`. **Plugin `--semantic` without `PLUGIN_KEY`:** the server answers 403 and
+plugin users, who set it as `REPLORE_PLUGIN_KEY`. **Replore Pro keys (SPEC RS87):** set the plain variable `POLAR_ORG_ID` (your Polar
+organization id) and optionally `POLAR_BENEFIT_ID`; a buyer's Polar license key then gets the same rights as `PLUGIN_KEY`,
+checked with Polar and cached 10 minutes, never stored. **Plugin `--semantic` without a key:** the server answers 403 and
 the plugin silently keeps its keyword + BM25 order (no error, no meaning scores, no indexed repos). Also add a rate-limiting rule
 (Security → WAF → Rate limiting rules) on the path `/api/relevance`, per IP. On the Free plan, the worst that
 abuse can do is use up the day's allowance, never bill you.
@@ -167,6 +171,13 @@ The install also registers Replore's MCP server (`mcpServers` in `.claude-plugin
 isn't on your PATH (or opens the Microsoft Store), edit the installed plugin's `.claude-plugin/plugin.json` (under
 `~/.claude/plugins/`) and change `"command": "python3"` to `"command": "python"`, then restart Claude Code. `/mcp`
 shows whether `replore` is connected. The `/replore:find` skill doesn't need this: it finds a working Python itself.
+
+**Optional safety log (off by default).** The plugin also declares a `UserPromptSubmit` hook,
+`python3 ${CLAUDE_PLUGIN_ROOT}/hooks/security_log.py` (SPEC RS25). It is a no-op unless you set the environment
+variable `REPLORE_SECURITY_LOG`: unset, it exits at once without reading your prompt or writing anything. Set it to `1`
+(or a file path) to keep a local log of prompt-injection or harmful-request attempts; see [`PRIVACY.md`](PRIVACY.md).
+On Windows without `python3`, the hook simply fails to start (Claude Code carries on); to use the log there, edit the
+installed plugin's `hooks/hooks.json` and change `"command": "python3"` to `"command": "python"`.
 
 After the comparison table, ask *"which of these are safe to build on?"* and the plugin runs the same check as the web
 page's **Is it safe to build on?**: security health, known vulnerabilities, an install command, beginner-friendliness and
@@ -220,6 +231,23 @@ python3 scripts/trust.py expressjs/express psf/requests      # is it safe to bui
 
 Same filters, ranking and license labels in every path. Browser-only chats with no local tools can't run it — use
 the [web page](https://replore.cardzo.co.in) there.
+
+## Replore Pro
+
+Replore stays free: search, the comparison table, the licence check and "Safe to build on?" need no key. A **Replore
+Pro** key (SPEC RS87) unlocks, today:
+
+- **Meaning ranking** for the plugin, script and MCP server (`--semantic`, or `semantic: true` in `find_repos`): repos
+  are ranked by what they do as well as by your words, on Replore's server. It works once the owner switches the
+  meaning route on (see Hybrid search below).
+- **No per-address queue** on Replore's server: your requests skip its per-IP burst limit.
+
+Set the key as an environment variable, `REPLORE_KEY` (the older `REPLORE_PLUGIN_KEY` still works), before you start
+Claude Code or your agent. It is sent only to Replore's own server (`replore.cardzo.co.in`), which checks it with Polar,
+the shop that sells it; it is never printed, stored or logged. **Where to buy: coming soon.**
+
+Planned, not built yet: searches on your own GitHub token, PRD batches over 20 repos, saved shortlists and a
+licence-policy mode.
 
 ## Hybrid search (RAG): built, switched off
 
@@ -280,7 +308,8 @@ python3 evals/run.py                # fit-ranking evals
 
 **Cutting a release (SPEC RS81).** One version everywhere (RS50):
 
-1. Bump the version in `.claude-plugin/plugin.json` (`"version"`) and in `scripts/mcp_server.py` (`SERVER_INFO`).
+1. Bump the version in `.claude-plugin/plugin.json` (`"version"`) and in `scripts/mcp_server.py` (`SERVER_INFO`), and in
+   `pyproject.toml` and both places in `server.json` (the PyPI package and MCP registry entry, SPEC RS86).
 2. In `CHANGELOG.md`, rename `## [Unreleased]` to `## [X.Y.Z] - YYYY-MM-DD`, start a new empty `## [Unreleased]`
    above it, and update the compare links at the bottom.
 3. Merge that to `main`, then tag it and push the tag: `git tag vX.Y.Z` and `git push origin vX.Y.Z`.

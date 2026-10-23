@@ -244,3 +244,25 @@ def test_plugin_mcp_json_registers_the_server():
     assert {t["name"] for t in mcp_server.TOOLS} == {"find_repos", "check_repos"}
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assert '"command": "python"' in readme and "plugin.json" in readme
+
+
+def test_find_repos_semantic_is_opt_in_and_says_what_ran():
+    """RS42 / RS87: semantic needs a description, and the output says whether meaning ranking ran."""
+    items = [repo("a/diet-tracker", 900), repo("b/calorie-app", 500)]
+    r = mcp_server.call_find_repos({"queries": ["diet"], "semantic": True}, fetcher=fetcher(items))
+    assert r["isError"] and "description" in r["content"][0]["text"]
+    r = mcp_server.call_find_repos({"queries": ["diet"], "description": "x\ny"}, fetcher=fetcher(items))
+    assert r["isError"]
+    seen = []
+    def sem(desc, rows):
+        seen.append(desc)
+        return {"sim": [0.9, 0.1][:len(rows)], "neighbors": None}
+    r = mcp_server.call_find_repos({"queries": ["diet"], "semantic": True, "description": "a diet app"},
+                                   fetcher=fetcher(items), semantic_fn=sem)
+    assert not r["isError"] and "Meaning ranking: on" in r["content"][0]["text"] and seen == ["a diet app"]
+    r = mcp_server.call_find_repos({"queries": ["diet"], "semantic": True, "description": "a diet app"},
+                                   fetcher=fetcher(items), semantic_fn=lambda d, rows: None)
+    assert "keyword-only" in r["content"][0]["text"]
+    seen.clear()
+    r = mcp_server.call_find_repos({"queries": ["diet"]}, fetcher=fetcher(items), semantic_fn=sem)
+    assert seen == [] and "Meaning ranking" not in r["content"][0]["text"]   # off unless asked

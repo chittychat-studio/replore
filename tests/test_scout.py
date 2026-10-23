@@ -486,7 +486,8 @@ def test_skill_asks_for_task_when_no_description():
     assert "argument-hint:" in front
     assert "$ARGUMENTS" in skill
     assert "What are you building, or what task do you need a GitHub repo for?" in skill
-    assert skill.index("RS1a") < skill.index("scripts/scout.py"), "must ask before running the search"
+    body = skill.split("\n---\n", 1)[1]   # RS85: allowed-tools in the frontmatter names the script too
+    assert body.index("RS1a") < body.index("scripts/scout.py"), "must ask before running the search"
 
 
 def test_markdown_summary_escapes_repo_text():
@@ -941,6 +942,12 @@ def test_privacy_notice_matches_what_the_code_does():
     hook = (ROOT / "hooks" / "security_log.py").read_text(encoding="utf-8")
     assert "if not hits:" in hook and "text[:200]" in hook and "urllib" not in hook
     assert "if _log_path() is None:" in hook  # opt-in: off unless REPLORE_SECURITY_LOG is set (RS25)
+    # RS43 storage / RS87: every localStorage key the page uses for the visitor's own data is disclosed; the Pro key
+    # goes only to our own function (relative URL) and Polar is named
+    js = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
+    assert 'var PRO_KEY="replore.key";' in js
+    assert "`replore.key`" in priv and "Replore Pro key" in priv and "api.polar.sh" in priv and "never log it" in priv
+    assert "api.polar.sh" not in js and "polar.sh" not in html   # Polar is called server-side only (CSP unchanged)
 
 
 def test_empty_description_is_said_plainly():
@@ -1197,3 +1204,37 @@ def test_selling_cli_and_mcp(monkeypatch, capsys):
     r = mcp_server.call_find_repos({"queries": ["x"], "selling": True}, lambda q, token=None: {"items": [repo("b/gpl", 800, spdx="GPL-3.0")]})
     assert not r["isError"] and scout.CONFLICT_SHARE in r["content"][0]["text"]
     assert mcp_server.call_find_repos({"queries": ["x"], "selling": "yes"}, lambda q, token=None: {"items": []})["isError"]
+
+
+def test_pro_window_markup_copy_and_switch():
+    """RS89: Leo, Pro window. Final copy, no em dash or emoji (RS55, RS66), 44px targets, hidden until PRO_URL is set."""
+    html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
+    js = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
+    nav = re.search(r'<button id="proBtn"[^>]*>Pro</button>', html).group(0)
+    assert 'class="nav-btn pro-el"' in nav and " hidden" in nav and 'title="Rank by meaning too, with a Pro key"' in nav
+    assert html.index('id="pluginBtn"') < html.index('id="proBtn"') < html.index('id="starBtn"')   # after Plugin
+    start = html.index('<div class="modal pro-el" id="proModal" hidden>')
+    win = html[start:html.index("<div class=\"modal\" id=\"pluginModal\"", start)]
+    for s in ("<h2>Leo, <em>Pro</em></h2>", 'aria-label="Close"', 'src="scout-hero.webp" alt="Leo, the Replore scout" width="150"',
+              "Want me to read for meaning too? Today I match your words. With Pro I also match what a repo\n      does, so the ones that say it differently still turn up.",
+              "<i>Meaning ranking</i><i>No queue on the AI check</i><i>Web and every agent</i>",
+              'id="proBuy" class="go-btn" href="#" target="_blank" rel="noopener noreferrer"', ">I have a key</button>",
+              '<label for="proKey">Your key</label>', 'placeholder="Paste it here" autocomplete="off" spellcheck="false"',
+              ">Save</button>", "Pro is on for this browser", ">Remove key</button>",
+              "Stays in this browser. I check it with Polar, who sold it to you, and never keep it."):
+        assert s in win, s
+    visible = re.sub(r"<[^>]+>", " ", win)
+    assert "—" not in visible and not re.search("[\U0001F000-\U0001FAFF☀-➿✕×]", win)
+    # the switch: empty PRO_URL keeps the button and the window hidden; constants as the owner set them
+    assert 'var PRO_URL="", PRO_PRICE="8 USD a month", PRO_PRICE_YEAR="or 72 USD a year";' in js
+    assert 'if(!proUrlOk(PRO_URL)) return;' in js and 'querySelectorAll(".pro-el").forEach(function(el){ el.hidden=false; })' in js
+    assert '"Get a key, "+PRO_PRICE' in js
+    # 44px tap targets and the phone layout
+    css = html[html.index("/* RS89"):html.index("#launchModal .ln-sheet")]
+    for sel in (".pro-head .x{", ".pro-have{", ".pro-in input{", ".pro-save{", ".pro-on .link-btn{", ".pro-acts .go-btn{"):
+        rule = css[css.index(sel):css.index("}", css.index(sel))]
+        assert "min-height:44px" in rule, sel
+    assert "max-width:580px" in css and "@media (max-width:560px)" in css and "grid-template-columns:1fr" in css
+    # the in-page privacy window names the key and Polar
+    priv = html[html.index('id="privacyModal"'):html.index('id="aboutModal"')]
+    assert "A Replore Pro key" in priv and "Polar" in priv

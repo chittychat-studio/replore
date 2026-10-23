@@ -11,10 +11,36 @@ import math
 import os
 import re
 import urllib.error
+import urllib.parse
 import urllib.request
 from collections import Counter
 
 ENDPOINT = "https://replore.cardzo.co.in/api/relevance"
+# RS34h / RS87: a key goes only to Replore's own hosts (production, or one preview label under replore.pages.dev), https, no port
+KEY_HOST = re.compile(r"replore\.cardzo\.co\.in|([a-z0-9-]{1,63}\.)?replore\.pages\.dev")
+
+
+def key_host_ok(url):
+    u = urllib.parse.urlsplit(url)
+    try:
+        port = u.port
+    except ValueError:
+        return False
+    return u.scheme == "https" and port is None and bool(KEY_HOST.fullmatch(u.hostname or ""))
+
+
+def replore_key():
+    """RS87: the Pro key (REPLORE_KEY) or the older shared plugin key (REPLORE_PLUGIN_KEY). Never printed or logged."""
+    return (os.environ.get("REPLORE_KEY") or os.environ.get("REPLORE_PLUGIN_KEY") or "").strip() or None
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """A redirect would carry the key header to another host, so any 3xx is an error instead (RS34h)."""
+    def redirect_request(self, *a, **k):
+        return None
+
+
+_OPEN = urllib.request.build_opener(_NoRedirect).open
 RRF_K = 60
 FOUND_WHY = "Found by meaning, confirmed on GitHub"   # RS24: honest line for indexed repos (no fake query)
 # Same words as the web page's STOP list (tests/test_scout.py checks they stay identical).
@@ -82,19 +108,19 @@ def hybrid_order(rows, description, sims=None):
     return [rows[i] for i in rrf_order(len(rows), lists)]
 
 
-def semantic(description, rows, endpoint=ENDPOINT, timeout=12, opener=urllib.request.urlopen):
+def semantic(description, rows, endpoint=ENDPOINT, timeout=12, opener=None):
     """Opt-in: meaning scores for rows and indexed nearest repos. Any failure -> None (results stay keyword + BM25)."""
     body = json.dumps({"mode": "semantic", "query": _u16cut(description or "", 200),
                        "repos": [{"name": r["full_name"], "description": (r.get("description") or "")[:100],
                                   "topics": list(r.get("topics") or [])[:5]} for r in rows[:30]]},
                       ensure_ascii=False).encode("utf-8")   # non-ASCII stays one character, so the body fits the server cap
     headers = {"Content-Type": "application/json", "User-Agent": "replore-plugin"}
-    key = os.environ.get("REPLORE_PLUGIN_KEY")   # RS34g: the server's shared plugin key, if the owner gave you one; never printed
-    if key:
+    key = replore_key()   # RS87 Pro key or RS34g plugin key; never printed
+    if key and key_host_ok(endpoint):   # RS34h: only to Replore's hosts
         headers["X-Replore-Plugin-Key"] = key
     req = urllib.request.Request(endpoint, data=body, method="POST", headers=headers)
     try:
-        with opener(req, timeout=timeout) as r:
+        with (opener or _OPEN)(req, timeout=timeout) as r:   # default refuses redirects
             j = json.load(r)
     except (urllib.error.URLError, TimeoutError, OSError, ValueError):
         return None

@@ -2,12 +2,18 @@
   "name": "replore",
   "displayName": "Replore",
   "version": "0.4.0",
-  "description": "The repo scout for vibe coders. Find it before you build it: describe your project in plain words; get the open-source GitHub repos that best fit it — ranked by relevance, popularity, and how freely you can use the license — with plain-English license and last-push date, and whether each is safe to build on.",
+  "description": "The repo scout for vibe coders. Find it before you build it: describe your project in plain words and get the open-source GitHub repos that best fit it, ranked by relevance, popularity and how freely you can use the license, with a plain-English license verdict, the last update, and whether each is safe to build on.",
   "author": {
-    "name": "chittychat-studio"
+    "name": "chittychat-studio",
+    "url": "https://github.com/chittychat-studio"
   },
+  "homepage": "https://replore.cardzo.co.in",
   "license": "MIT",
   "repository": "https://github.com/chittychat-studio/replore",
+  "documentationUrl": "https://github.com/chittychat-studio/replore#readme",
+  "supportUrl": "https://github.com/chittychat-studio/replore/issues",
+  "privacyPolicyUrl": "https://github.com/chittychat-studio/replore/blob/main/PRIVACY.md",
+  "icon": "./.claude-plugin/icon.png",
   "keywords": [
     "github",
     "search",

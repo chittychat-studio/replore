@@ -6,6 +6,10 @@ pages_build_output_dir = "web"
 # Production). Optional secrets (16+ chars): EVAL_KEY opens the paid AI check + meaning route for the live eval and
 # ops/rag_smoke.py (CI only, never shared); PLUGIN_KEY opens only the meaning route, for the plugin's --semantic.
 # Secrets are set in the dashboard, never in this file.
+# RS87 Replore Pro: set POLAR_ORG_ID (your Polar organization id, public, a plain variable, not a secret) to turn on
+# Pro keys; optionally POLAR_BENEFIT_ID (the license-key benefit's id) so only that benefit's keys count. Without
+# POLAR_ORG_ID the Pro route is off (403 pro_off). No Polar token is needed: keys are checked with Polar's public
+# validate endpoint, cached 10 minutes by SHA-256, never stored or logged. A granted key = PLUGIN_KEY's rights.
 
 # RS34a: Workers AI runs the relevance check first (no key); Groq (LLM_API_KEY) is the fallback. On the Workers Free plan it stops at the daily
 # free allocation instead of billing; on Workers Paid, usage past the allocation is billed.

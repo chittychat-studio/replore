@@ -5,7 +5,10 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ -n \"$REPLORE_SECURITY_LOG\" ] || exit 0; for py in python3 python \"py -3\"; do if $py -c \"\" </dev/null >/dev/null 2>&1; then $py \"${CLAUDE_PLUGIN_ROOT}/hooks/security_log.py\"; exit 0; fi; done; exit 0",
+            "command": "python3",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/hooks/security_log.py"
+            ],
             "timeout": 10
           }
         ]

@@ -1,12 +1,24 @@
 {
   "name": "replore",
-  "description": "Marketplace for the Replore plugin.",
-  "owner": {"name": "chittychat-studio"},
+  "description": "Marketplace for the Replore plugin: find the open-source GitHub repos that fit what you are building.",
+  "owner": {
+    "name": "chittychat-studio"
+  },
   "plugins": [
     {
       "name": "replore",
       "source": "./",
-      "description": "The repo scout for vibe coders. Find it before you build it: the open-source GitHub repos that best fit a project you describe — ranked by relevance, popularity, and license-freedom."
+      "description": "The repo scout for vibe coders. Find it before you build it: describe your project in plain words and get the open-source GitHub repos that best fit it, ranked by relevance, popularity and how freely you can use the license, with a plain-English license verdict, the last update, and whether each is safe to build on.",
+      "category": "development",
+      "tags": [
+        "github",
+        "open-source",
+        "repo-search",
+        "discovery",
+        "licenses",
+        "vibe-coding",
+        "mcp"
+      ]
     }
   ]
 }

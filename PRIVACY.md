@@ -1,6 +1,6 @@
 # Privacy
 
-*Last updated: 23 October 2026 (the Trust sort runs the existing safety check for the top five cards; the Explore links are now the "Look inside" tools in a card's Details, same five sites; earlier: the plugin can run the "Safe to build on?" check too; earlier: "Safe to build on?" check on result cards; earlier: DeepWiki added to the Explore links; Explore links on result cards; Cloudflare Web Analytics page-view counts disclosed; off-topic repos move down, not hidden; optional tips via Stripe; bot check switched on; feedback goes by email to Cardzo). This describes how Replore handles data as built. It is not legal advice.*
+*Last updated: 23 October 2026 (Replore Pro key: sent only to our function, checked with Polar, never stored or logged; the optional security-log hook described as a no-op unless switched on; earlier: the Trust sort runs the existing safety check for the top five cards; the Explore links are now the "Look inside" tools in a card's Details, same five sites; earlier: the plugin can run the "Safe to build on?" check too; earlier: "Safe to build on?" check on result cards; earlier: DeepWiki added to the Explore links; Explore links on result cards; Cloudflare Web Analytics page-view counts disclosed; off-topic repos move down, not hidden; optional tips via Stripe; bot check switched on; feedback goes by email to Cardzo). This describes how Replore handles data as built. It is not legal advice.*
 
 **Short version:** Replore has no account and no database, and stores nothing you type. Our host counts page views
 with Cloudflare Web Analytics, a cookieless page-view counter that never sees what you type. The people who
@@ -19,6 +19,7 @@ keep only the error type and time, to fix it.
 | Your IP address and browser details, when the page loads | **Cloudflare Pages** (hosts the page) | To deliver the page. Loading the page doesn't reveal what you search: searches are never put in the page address. (The relevance check in the row above does send your search words to Cloudflare.) Fonts and scripts are served from the same site — no request goes to Google Fonts or any other CDN. |
 | The page address (never your searches, which are not in it), the referring site, your browser, operating system and device type, your country, and page-load timings | **Cloudflare Web Analytics**, a cookieless, privacy-first page-view counter run by Cloudflare. Our host (Cloudflare Pages) has it switched on for this site, and the page loads its script from `static.cloudflareinsights.com`, which reports to `cloudflareinsights.com` | So we can see how many people visit and whether the page loads fast. It sets no cookie, stores nothing on your device, does not fingerprint you, never sees what you type or search, and gives us only totals. Cloudflare handles it under its [privacy policy](https://www.cloudflare.com/privacypolicy/) (see also [Cloudflare Web Analytics](https://www.cloudflare.com/web-analytics/)). |
 | Your last search, results and filters, your light/dark choice, a 30-minute copy of the public trending lists, and — only when the AI check's daily allowance is used up — the time it resets | **Your browser only** (local storage on your device) | So a refresh brings your results back, the trending carousel doesn't re-ask GitHub on every visit, and the page doesn't retry the AI check before it resets. Use the clear button in the search bar, or the Replore logo, to delete it, or clear this site's data in your browser. |
+| A Replore Pro key, only if this browser has one saved (stored in your browser's local storage as `replore.key`; nothing on the page asks for or saves it yet) | **Your browser**, which sends it with each relevance check to **our relevance check** (same site, never in the page address); the function checks it with **Polar** (`api.polar.sh`, the merchant of record that sells Pro) under [Polar's privacy policy](https://polar.sh/legal/privacy) | So a Pro key's rights apply on the web too (today: your checks skip the per-address limit). We never store the key and never log it: the function keeps only a one-way fingerprint and the yes/no answer in memory for 10 minutes, and a failed check is logged as a code only. It is never sent with the feedback form or to any other site. Clear this site's data in your browser to remove it. |
 | A plan / PRD file you upload | **Stays on your device.** It is read in your browser and never uploaded. Only short feature phrases taken from it are sent to GitHub as searches. | To search per feature. |
 | The build-plan prompt, if you click **Open in Claude** or **Open in ChatGPT** | **claude.ai** or **chatgpt.com**, under your own account | You choose to send it. **Copy** keeps it on your clipboard instead. |
 | Nothing, unless you click a **Look inside** link in a result card's Details (Diagram, Wiki, Code, and Also: Digest, Edit) | That site opens in a new tab at the repo's public name: **gitdiagram.com**, **gitingest.com**, **deepwiki.com**, **github1s.com** or **github.dev**. It sees the public repo name and your IP address, under its own terms. Replore sends it nothing else, never your search words. | So you can see a repo's structure, get its code as one text file for an AI chat, read AI-written docs about it, or read the code before you pick it. |
@@ -41,6 +42,13 @@ pixels, ads or cookies.
 - Your AI agent and its AI provider (for example Anthropic, OpenAI or Google) process your conversation under
   **their own** terms. That is between you and them; Replore doesn't receive it.
 - If you set `GITHUB_TOKEN`, it is sent only to GitHub and is never printed or logged.
+- **Replore Pro key (only if you set one).** If you set `REPLORE_KEY` (or `REPLORE_PLUGIN_KEY`) and ask for meaning
+  ranking (`--semantic`, or `semantic` in the MCP tool), the key is sent, with your project description, only to
+  Replore's own function (`replore.cardzo.co.in`), never to any other host and never through a redirect. The function
+  checks the key with **Polar** (`api.polar.sh`, the merchant of record that sold it, under
+  [Polar's privacy policy](https://polar.sh/legal/privacy)) and keeps only a one-way fingerprint of it and the
+  yes/no answer in memory for 10 minutes. We never store the key and never log it; a failed or refused check is
+  logged as a code only.
 - **Optional security log (Claude Code plugin only) — off by default.** Nothing from your prompts is stored unless
   you turn this on. If you set the environment variable `REPLORE_SECURITY_LOG` (to `1` for the default location, or
   to a file path), a safety hook checks each prompt you send in Claude Code while the plugin is enabled; when one
@@ -48,7 +56,9 @@ pixels, ads or cookies.
   matched, and the **first 200 characters** of that prompt — to `~/.replore/security.log` (or your path) **on your
   computer**. It is never sent anywhere. Unset the variable to stop; delete the file at any time. This log is an
   audit trail, not a protection: Replore's safety rules work the same whether it is on or off. The MCP server and
-  the script never write it.
+  the script never write it. While the variable is unset, the hook is a no-op: it starts, exits at once and does not
+  read your prompt. It runs as `python3`; on Windows without `python3` it does not start at all (nothing is logged),
+  and you can change the installed hook's `"command"` to `python` in its `hooks/hooks.json` if you want the log.
 
 ## Questions
 
