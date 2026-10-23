@@ -15,7 +15,18 @@ export const looksLikeSession = s => typeof s === "string" && SESSION_SHAPE.test
 export const looksLikeProKey = k => typeof k === "string" && KEY_SHAPE.test(k);
 export const proSubId = k => { const m = looksLikeProKey(k) ? KEY_SHAPE.exec(k) : null; return m ? m[1] : null; };
 // RS87: the route is on only with both server secrets (a short signing secret counts as unset)
-export const proOn = env => !!(env && env.STRIPE_SECRET_KEY && String(env.PRO_SIGNING_SECRET || "").length >= 32);
+// and with the Pro price list (or product): the Stripe account also sells other things (tips, later templates), so an
+// active subscription counts only while one of its items carries a Pro price (security review 2026-10-23)
+const list = s => String(s || "").split(",").map(x => x.trim()).filter(Boolean);
+export const proOn = env => !!(env && env.STRIPE_SECRET_KEY && String(env.PRO_SIGNING_SECRET || "").length >= 32
+  && (list(env.PRO_PRICE_IDS).length || String(env.PRO_PRODUCT_ID || "").trim()));
+export function proItemOk(sub, env) {
+  const ids = new Set(list(env.PRO_PRICE_IDS)), product = String(env.PRO_PRODUCT_ID || "").trim();
+  const items = sub && sub.items && Array.isArray(sub.items.data) ? sub.items.data : [];
+  return items.some(it => { const pr = it && it.price; if (!pr || typeof pr !== "object") return false;
+    const prod = pr.product && typeof pr.product === "object" ? pr.product.id : pr.product;
+    return (typeof pr.id === "string" && ids.has(pr.id)) || (!!product && prod === product); });
+}
 export const GRANTED = new Set(["active", "trialing"]);
 
 const hex = buf => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
@@ -87,6 +98,7 @@ export async function claim(sessionId, env, fetchImpl = fetch) {
   const sub = s.subscription;
   if (!sub || typeof sub !== "object" || !SUB_SHAPE.test(String(sub.id || ""))) return { status: 503, error: "stripe_error" };
   if (!GRANTED.has(sub.status)) return { status: 403, error: "not_paid" };
+  if (!proItemOk(sub, env)) return { status: 403, error: "not_pro" };   // paid, but for another product
   return { status: 200, body: { key: await makeProKey(sub.id, env.PRO_SIGNING_SECRET), renews: renewsOn(sub) } };
 }
 

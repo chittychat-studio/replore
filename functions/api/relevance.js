@@ -4,6 +4,7 @@
 // Stores no request content (RS33); failures are logged as codes only (RS34d). Fails open: any problem -> an error status, and the page
 // shows its normal keyword results with a note (never a blank page, never invented repos — RS7).
 
+import { looksLikeProKey, proOn, proSigOk, proSubId, proItemOk, GRANTED, STRIPE_API } from "./pro/claim.js";   // RS87/RS90 shared Pro-key helpers
 const MAX_BODY = 16384, MAX_QUERY = 200, MAX_REPOS = 30, MAX_DESC = 160, TIMEOUT_MS = 4500;   // RS41: verify (≤3 s) + AI stays inside the page's 8 s wait
 // control, zero-width, bidi and line/paragraph-separator characters (built from code points so no invisible char sits in the source)
 const CTRL = new RegExp("[" + [[0x00, 0x1f], [0x7f, 0x9f], [0x200b, 0x200f], [0x2028, 0x2029], [0x202a, 0x202e], [0x2066, 0x2069]]
@@ -265,7 +266,7 @@ export async function verifyTurnstile(request, env, fetchImpl = fetch) {
   } catch { return false; } finally { clearTimeout(timer); }
 }
 
-// RS34g: two server-held keys for callers that can't run Turnstile (RS87 adds Polar-issued Pro keys below), each compared in constant time (unset or < 16
+// RS34g: two server-held keys for callers that can't run Turnstile (RS87 adds Stripe-backed Pro keys below), each compared in constant time (unset or < 16
 // characters = closed). PLUGIN_KEY (header X-Replore-Plugin-Key) may be handed to plugin users and opens ONLY the cheap
 // semantic route. EVAL_KEY (header X-Replore-Eval-Key) stays in CI / the owner's machine (live eval, ops/rag_smoke.py) and
 // opens the paid judge route as well. A caller with a valid key also skips the per-IP limit (CI runs from one address).
@@ -284,49 +285,46 @@ export async function botCheck(request, env, fetchImpl = fetch, semantic = false
     || verifyTurnstile(request, env, fetchImpl);
 }
 
-// ---- RS87 Replore Pro key: a Polar license key, validated with Polar's public endpoint, never stored or logged ----
-// Same header as the plugin key (X-Replore-Plugin-Key). Checked only after PLUGIN_KEY / EVAL_KEY fail, only when
-// POLAR_ORG_ID is set and the value has Polar's documented shape ([PREFIX_]UUID4). Fail closed: only "granted" opens.
-export const POLAR_VALIDATE = "https://api.polar.sh/v1/customer-portal/license-keys/validate";
+// ---- RS87 Replore Pro key: rp.<Stripe subscription id>.<HMAC sig>, issued by /api/pro/claim (RS90), never stored ----
+// Same header as the plugin key (X-Replore-Plugin-Key). Checked only after PLUGIN_KEY / EVAL_KEY fail, only when both
+// STRIPE_SECRET_KEY (restricted, read-only), PRO_SIGNING_SECRET (32+ chars) and PRO_PRICE_IDS (or PRO_PRODUCT_ID) are set,
+// and only for the Pro shape.
+// The signature is verified locally first: a bad one is refused with no Stripe call. Fail closed: only active/trialing opens.
+export { looksLikeProKey, proOn } from "./pro/claim.js";
+export const STRIPE_SUBSCRIPTIONS = STRIPE_API + "/subscriptions/";
 export const PRO_TTL_MS = 600000, PRO_TIMEOUT_MS = 3000, PRO_MAX = 5000, PRO_LOOKUP_MAX = 5, PRO_LOOKUP_WINDOW_MS = 60000;
-const PRO_SHAPE = /^(?:[A-Za-z0-9-]{1,32}_)?[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$/;
-export const looksLikeProKey = k => typeof k === "string" && k.length <= 80 && PRO_SHAPE.test(k);
-const PRO = new Map(), PRO_RATE = new Map();   // sha256(key) -> {ok, until}; IP -> recent Polar lookups
+const PRO = new Map(), PRO_RATE = new Map();   // sha256(key) -> {ok, until}; IP -> recent Stripe lookups
 export function resetPro() { PRO.clear(); PRO_RATE.clear(); }
 async function sha256hex(s) {
   const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
   return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, "0")).join("");
 }
-// Polar's reply -> granted? (200 + status "granted", not expired, right benefit, usage under any limit)
-export function proGranted(status, j, env, now = Date.now()) {
-  if (status !== 200 || !j || typeof j !== "object" || j.status !== "granted") return false;
-  if (j.expires_at != null && !(Date.parse(j.expires_at) > now)) return false;
-  if (env.POLAR_BENEFIT_ID && j.benefit_id !== env.POLAR_BENEFIT_ID) return false;
-  if (j.limit_usage != null && !(Number(j.usage) < Number(j.limit_usage))) return false;
-  return true;
+// Stripe's subscription reply -> granted? (200 + status active or trialing + still carries a Pro price, so a switch
+// to another product of the same Stripe account revokes the key)
+export function proGranted(status, j, env = {}) {
+  return status === 200 && !!j && typeof j === "object" && GRANTED.has(j.status) && proItemOk(j, env);
 }
-// One Polar call, no cache: "granted" | "denied" | "error". Polar answers 404 for unknown, revoked, disabled or expired.
-export async function validateProKey(key, env, fetchImpl = fetch, now = Date.now()) {
-  const body = { key, organization_id: String(env.POLAR_ORG_ID) };
-  if (env.POLAR_BENEFIT_ID) body.benefit_id = String(env.POLAR_BENEFIT_ID);
+// One Stripe call, no cache: "granted" | "denied" | "error". 404 = no such subscription (denied).
+export async function validateProKey(subId, env, fetchImpl = fetch) {
   const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), PRO_TIMEOUT_MS);
   try {
-    const res = await fetchImpl(POLAR_VALIDATE, { method: "POST", redirect: "error", signal: ctl.signal,
-      headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify(body) });
+    const res = await fetchImpl(STRIPE_SUBSCRIPTIONS + subId, { method: "GET", redirect: "error", signal: ctl.signal,
+      headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`, Accept: "application/json" } });
     if (res.status === 404) return "denied";
     if (res.status !== 200) return "error";
     let j; try { j = await res.json(); } catch { return "error"; }
-    return proGranted(res.status, j, env, now) ? "granted" : "denied";
+    return proGranted(res.status, j, env) ? "granted" : "denied";
   } catch { return "error"; } finally { clearTimeout(timer); }
 }
 export async function proKeyOk(request, env, fetchImpl = fetch, now = Date.now()) {
-  if (!env.POLAR_ORG_ID) return false;   // Pro route off
+  if (!proOn(env)) return false;   // Pro route off
   const key = request.headers.get("X-Replore-Plugin-Key");
   if (!looksLikeProKey(key)) return false;
+  if (!(await proSigOk(key, env.PRO_SIGNING_SECRET))) return false;   // not signed by us: no Stripe call, no cache entry
   const id = await sha256hex(key), hit = PRO.get(id);
   if (hit && hit.until > now) return hit.ok;
   if (rateLimit(request.headers.get("CF-Connecting-IP"), now, PRO_RATE, PRO_LOOKUP_MAX, PRO_LOOKUP_WINDOW_MS)) return false;
-  const verdict = await validateProKey(key, env, fetchImpl, now);
+  const verdict = await validateProKey(proSubId(key), env, fetchImpl);
   logFailure(env, { evt: "pro", code: "pro_" + verdict, status: verdict === "granted" ? 200 : 403 });   // code only, never the key
   if (verdict === "error") return false;   // fail closed; not cached, so the next request asks again
   PRO.set(id, { ok: verdict === "granted", until: now + PRO_TTL_MS });
@@ -353,7 +351,7 @@ export function resetRateLimit() { RATE.clear(); }
 // RS34d: one record per failed check — codes and timings only. Never the query, repos, IP, token or provider text.
 const CODE = s => String(s == null ? "" : s).replace(/[^a-z0-9_:]/gi, "").slice(0, 40);
 export function logFailure(env, ev) {
-  // RS87: evt "pro" = one fresh Polar verdict (code pro_granted / pro_denied / pro_error), never the key
+  // RS87: evt "pro" = one fresh Stripe verdict (code pro_granted / pro_denied / pro_error), never the key
   const rec = { evt: ev.evt === "rag_fail" || ev.evt === "pro" ? ev.evt : "relevance_fail", code: CODE(ev.code), status: ev.status | 0,
     trail: (ev.trail || []).slice(0, 4).map(CODE), ms: Math.max(0, Math.round(ev.ms || 0)), example: !!ev.example };
   try { console.log(JSON.stringify(rec)); } catch {}
@@ -391,7 +389,7 @@ async function handlePost(request, env, fetchImpl, waitUntil) {
   if (body.mode === "semantic") {   // RS42 plugin opt-in: meaning scores + indexed repos only, no AI judge
     const f = ragFlags(env);
     if (!f.plugin || (!f.rerank && !f.index)) return json(404, { error: "semantic_off" });
-    if (!env.POLAR_ORG_ID && !evalKeyOk(request, env) && !pluginKeyOk(request, env)
+    if (!proOn(env) && !evalKeyOk(request, env) && !pluginKeyOk(request, env)
         && looksLikeProKey(request.headers.get("X-Replore-Plugin-Key"))) return json(403, { error: "pro_off" });   // RS87
     if (!(await botCheck(request, env, fetchImpl, true))) return json(403, { error: "bot_check_failed" });   // RS34g: plugin key, eval key or Turnstile
     const sem = await semanticScores(body.query, body.repos, env);

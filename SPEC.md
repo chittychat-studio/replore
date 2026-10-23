@@ -1188,16 +1188,22 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   HMAC-SHA256(`PRO_SIGNING_SECRET`, subscription id), computed with WebCrypto. The shape
   `^rp\.sub_[A-Za-z0-9_]{8,80}\.[0-9a-f]{16}$` is checked on the client and on the server. Two server secrets turn the
   route on: `PRO_SIGNING_SECRET` (a Pages secret, 32+ random characters) and `STRIPE_SECRET_KEY` (a Stripe
-  **restricted** key with read-only access to Checkout Sessions and Subscriptions, nothing else). Without either the
-  Pro route is off: a semantic request carrying a Pro-shaped key that is not `PLUGIN_KEY` gets 403 `pro_off`. Neither
-  secret ever leaves the server or appears in a log or a response. Keys are issued by RS90.
+  **restricted** key with read-only access to Checkout Sessions and Subscriptions, nothing else), plus the plain
+  variable `PRO_PRICE_IDS` (the comma-separated Stripe price ids of the monthly and yearly Pro prices) or, as an
+  alternative, `PRO_PRODUCT_ID` (matched on each item's `price.product`). The same Stripe account sells other things
+  (the tip link today, template plans later), so a subscription counts as Pro only while at least one of its items
+  carries a Pro price (security review 2026-10-23): a buyer of another product cannot claim a key, and a switch to
+  another product revokes one. Without either secret or without a price or product match configured, the Pro route is
+  off: a semantic request carrying a Pro-shaped key that is not `PLUGIN_KEY` gets 403 `pro_off`. Neither secret ever
+  leaves the server or appears in a log or a response. Keys are issued by RS90.
   **Server** (`functions/api/relevance.js`): the key arrives in the header the plugin already sends,
   `X-Replore-Plugin-Key` (one header for both, no new name). It is checked first, in constant time, against `PLUGIN_KEY`
   (and `X-Replore-Eval-Key` against `EVAL_KEY`) exactly as before (RS34g, unchanged). Only if that fails and the value
   has the Pro shape, the function recomputes the signature and compares it in constant time; a bad signature is refused
   with no Stripe call (so the endpoint cannot be used to probe Stripe). A good signature leads to
   `GET https://api.stripe.com/v1/subscriptions/{id}` with the restricted key, a 3 s deadline and `redirect: "error"`.
-  Granted means HTTP 200 with `status` `active` or `trialing`; 200 with any other status (`canceled`, `past_due`,
+  Granted means HTTP 200 with `status` `active` or `trialing` and a Pro price among `items.data[].price` (above); 200
+  with any other status or no Pro item (`canceled`, `past_due`,
   `unpaid`, `incomplete` and so on) or 404 is a denial. A network error, timeout, redirect, other status or unreadable
   body is an error. **Fail closed:** only a granted verdict opens anything. The verdict (granted or denied, never an
   error) is cached in the isolate's memory for 10 minutes keyed by the SHA-256 hex of the key (at most 5,000 entries);
@@ -1253,10 +1259,11 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   path, so the file sits in `api/pro/`): same-origin check (403 `bad_origin`); a best-effort per-IP limit of 5 per
   minute in memory (429 `rate_limited` with `Retry-After`); JSON only, at most 1 KB; the session id must match
   `^cs_(live|test)_[A-Za-z0-9]{10,200}$` or the answer is 400 `bad_session` before any network call. Off (503
-  `pro_off`) unless both RS87 secrets are set. The function asks Stripe
+  `pro_off`) unless both RS87 secrets and the Pro price list (or product) are set. The function asks Stripe
   `GET https://api.stripe.com/v1/checkout/sessions/{id}?expand[]=subscription` with the restricted key, a 5 s deadline
   and `redirect: "error"`, and issues a key only when `payment_status` is `paid` and the expanded subscription's
-  `status` is `active` or `trialing`; otherwise 403 `not_paid`, Stripe 404 gives 404 `unknown_session`, and anything
+  `status` is `active` or `trialing`; otherwise 403 `not_paid`; a paid, active subscription with no Pro price among its
+  items (another product) gets 403 `not_pro`; Stripe 404 gives 404 `unknown_session`, and anything
   else (network, timeout, redirect, other status, unreadable body, subscription not expanded) gives 503
   `stripe_error`: codes only, fail closed. The answer is `{"key": "rp....", "renews": "YYYY-MM-DD"}` (the
   subscription's `current_period_end`, or its first item's on newer Stripe API versions; `null` when neither is

@@ -4,10 +4,11 @@ import { createHmac } from "node:crypto";
 import * as fn from "../functions/api/pro/claim.js";
 
 const SECRET = "test-signing-secret-0123456789abcdef", STRIPE = "rk_test_RESTRICTEDsecret123";
-const env = { PRO_SIGNING_SECRET: SECRET, STRIPE_SECRET_KEY: STRIPE };
+const env = { PRO_SIGNING_SECRET: SECRET, STRIPE_SECRET_KEY: STRIPE, PRO_PRICE_IDS: "price_ProMonth01, price_ProYear01" };
+const item = (price = "price_ProMonth01", product = "prod_ReplorePro", extra = {}) => ({ price: { id: price, product }, ...extra });
 const SID = "cs_test_a1B2c3D4e5F6g7H8i9J0", SUB = "sub_1QabcDEF234ghiJKL";
 const session = (extra = {}, sub = {}) => ({ id: SID, object: "checkout.session", payment_status: "paid", mode: "subscription",
-  subscription: { id: SUB, object: "subscription", status: "active", current_period_end: 1795392000, ...sub }, ...extra });
+  subscription: { id: SUB, object: "subscription", status: "active", current_period_end: 1795392000, items: { data: [item()] }, ...sub }, ...extra });
 const stripe = (status, json) => { const f = async (url, init) => { f.calls.push({ url, init });
   if (status === "down") throw new TypeError("fetch failed");
   return new Response(typeof json === "string" ? json : JSON.stringify(json), { status }); }; f.calls = []; return f; };
@@ -42,7 +43,7 @@ try {
   r = await post({ session_id: SID }, stripe(200, session())); assert.strictEqual((await r.json()).key, keyIssued, "same session, same key");
   // trialing also issues; newer API versions keep current_period_end on the item
   fn.resetClaim();
-  r = await post({ session_id: SID }, stripe(200, session({}, { status: "trialing", current_period_end: undefined, items: { data: [{ current_period_end: 1795392000 }] } })));
+  r = await post({ session_id: SID }, stripe(200, session({}, { status: "trialing", current_period_end: undefined, items: { data: [item("price_ProYear01", "prod_ReplorePro", { current_period_end: 1795392000 })] } })));
   assert.strictEqual(r.status, 200); assert.strictEqual((await r.json()).renews, "2026-11-23");
   r = await post({ session_id: SID }, stripe(200, session({}, { current_period_end: undefined })));
   assert.strictEqual((await r.json()).renews, null);
@@ -53,6 +54,22 @@ try {
     fn.resetClaim(); r = await post({ session_id: SID }, stripe(200, s));
     assert.strictEqual(r.status, 403); assert.deepStrictEqual(await r.json(), { error: "not_paid" });
   }
+  // paid and active, but for another product on the same Stripe account (a tip, a template plan): 403 not_pro
+  for (const s of [session({}, { items: { data: [item("price_Tip0001", "prod_Tips")] } }), session({}, { items: { data: [] } }),
+                   session({}, { items: undefined }), session({}, { items: { data: [{ price: "price_ProMonth01" }] } })]) {
+    fn.resetClaim(); r = await post({ session_id: SID }, stripe(200, s));
+    assert.strictEqual(r.status, 403); assert.deepStrictEqual(await r.json(), { error: "not_pro" });
+  }
+  // a Pro price among several items is enough; PRO_PRODUCT_ID matches on price.product instead (string or expanded object)
+  fn.resetClaim();
+  r = await post({ session_id: SID }, stripe(200, session({}, { items: { data: [item("price_Tip0001", "prod_Tips"), item("price_ProYear01")] } })));
+  assert.strictEqual(r.status, 200);
+  const byProduct = { PRO_SIGNING_SECRET: SECRET, STRIPE_SECRET_KEY: STRIPE, PRO_PRODUCT_ID: "prod_ReplorePro" };
+  r = await post({ session_id: SID }, stripe(200, session({}, { items: { data: [item("price_NewPrice9")] } })), byProduct); assert.strictEqual(r.status, 200);
+  r = await post({ session_id: SID }, stripe(200, session({}, { items: { data: [{ price: { id: "price_X", product: { id: "prod_ReplorePro" } } }] } })), byProduct);
+  assert.strictEqual(r.status, 200);
+  r = await post({ session_id: SID }, stripe(200, session({}, { items: { data: [item("price_Tip0001", "prod_Tips")] } })), byProduct); assert.strictEqual(r.status, 403);
+  assert.ok(fn.proItemOk({ items: { data: [item()] } }, env) && !fn.proItemOk({ items: { data: [item()] } }, { PRO_PRICE_IDS: " , " }));
   // unknown session: 404 unknown_session
   fn.resetClaim(); r = await post({ session_id: SID }, stripe(404, { error: { type: "invalid_request_error", message: "No such checkout.session" } }));
   assert.strictEqual(r.status, 404); assert.deepStrictEqual(await r.json(), { error: "unknown_session" });
@@ -84,8 +101,9 @@ try {
   r = await post({ session_id: SID }, f, env, { Origin: "https://replore.cardzo.co.in" }); assert.strictEqual(r.status, 200);
   assert.strictEqual(f.calls.length, 1, "refused requests never reach Stripe");
 
-  // pro_off without either secret (or a short signing secret); Stripe never called
-  for (const e of [{}, { STRIPE_SECRET_KEY: STRIPE }, { PRO_SIGNING_SECRET: SECRET }, { STRIPE_SECRET_KEY: STRIPE, PRO_SIGNING_SECRET: "too-short" }]) {
+  // pro_off without either secret, a short signing secret, or no Pro price/product list; Stripe never called
+  for (const e of [{}, { STRIPE_SECRET_KEY: STRIPE }, { PRO_SIGNING_SECRET: SECRET }, { STRIPE_SECRET_KEY: STRIPE, PRO_SIGNING_SECRET: "too-short", PRO_PRICE_IDS: "price_ProMonth01" },
+                 { STRIPE_SECRET_KEY: STRIPE, PRO_SIGNING_SECRET: SECRET }, { STRIPE_SECRET_KEY: STRIPE, PRO_SIGNING_SECRET: SECRET, PRO_PRICE_IDS: " , " }]) {
     fn.resetClaim(); f = stripe(200, session()); r = await post({ session_id: SID }, f, e);
     assert.strictEqual(r.status, 503); assert.deepStrictEqual(await r.json(), { error: "pro_off" }); assert.strictEqual(f.calls.length, 0);
   }
@@ -106,6 +124,6 @@ try {
 const all = lines.join("\n");
 for (const s of [keyIssued, keyIssued.split(".")[2], SID, SUB, STRIPE, SECRET, "a1B2c3D4"]) assert.ok(!all.includes(s), s);
 assert.ok(lines.length > 20 && lines.every(l => { const o = JSON.parse(l); return Object.keys(o).sort().join() === "code,evt,ms,status" && o.evt === "pro_claim"; }));
-for (const c of ["claim_issued", "not_paid", "unknown_session", "stripe_error", "bad_session", "pro_off", "rate_limited"])
+for (const c of ["claim_issued", "not_paid", "unknown_session", "stripe_error", "bad_session", "pro_off", "rate_limited", "not_pro"])
   assert.ok(all.includes(`"code":"${c}"`), c);
 console.log("pro claim ok");
