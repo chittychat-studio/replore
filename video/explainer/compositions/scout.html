@@ -28,6 +28,11 @@
     .sc-status { position: absolute; left: 192px; top: 862px; z-index: 6; display: flex; align-items: center; gap: 16px;
       background: #17212b; border: 2px solid #2b3a48; border-radius: 12px; padding: 14px 24px; font: 500 32px "JetBrains Mono", monospace; color: #c7d6e2; }
     .sc-status i { width: 14px; height: 14px; background: #5b88a6; }
+    /* RS73: a land of code. Faint code tokens rise across the map; a few big, soft ones drift past the camera */
+    #sc-code { position: absolute; left: 0; top: 0; width: 3600px; height: 2000px; pointer-events: none; }
+    .sc-tok { position: absolute; font: 500 32px "JetBrains Mono", monospace; color: #9cc0d8; white-space: nowrap; will-change: transform; }
+    #sc-near { position: absolute; inset: 0; z-index: 5; pointer-events: none; overflow: hidden; }
+    #sc-near .sc-tok { color: #c7d6e2; }
   </style>
   <div data-hf-id="hf-5eq7" id="root" data-composition-id="scout" data-width="1920" data-height="1080">
     <div data-hf-id="hf-eg59" id="sc-world" data-layout-allow-overflow>
@@ -88,6 +93,27 @@
       board("sc-lic2", CHK + "MIT &middot; Free for commercial use", 2560 - 40, 1520 - 250, "sc-lic");
       var bot = document.getElementById("sc-bot"), wiki = document.getElementById("sc-wiki");
       world.appendChild(bot);
+      // RS73: the land of code (seeded, so every render is the same)
+      var TOK = ["{ }", "</>", "=>", "fn()", "[ ]", "import", "def", "const", "&&", "::", "#!", "0x1F", "git push", "npm i", "pip install",
+        "<div>", "return", "async", "() => {}", "// TODO", "*.py", ".md", "{...}", "null", "true", "++", "README", "main()", "</>", "{ }"];
+      var land = document.createElement("div"); land.id = "sc-code"; land.setAttribute("data-layout-ignore", ""); land.setAttribute("aria-hidden", "true"); world.insertBefore(land, map);
+      var near = document.createElement("div"); near.id = "sc-near"; near.setAttribute("data-layout-ignore", ""); near.setAttribute("aria-hidden", "true"); document.getElementById("root").appendChild(near);
+      var farT = [], nearT = [];
+      for (var t = 0; t < 72; t++) {
+        var d = document.createElement("span"); d.className = "sc-tok"; d.textContent = TOK[Math.floor(hash(t + 900) * TOK.length)];
+        var z = hash(t + 1300);   // depth: far tokens are small and faint
+        d.style.left = (120 + hash(t + 700) * 3360).toFixed(0) + "px"; d.style.top = (180 + hash(t + 800) * 1700).toFixed(0) + "px";
+        d.style.fontSize = (22 + z * 34).toFixed(0) + "px"; d.style.opacity = (0.1 + z * 0.22).toFixed(2);
+        land.appendChild(d); farT.push({ el: d, z: z, k: t });
+      }
+      for (var u = 0; u < 12; u++) {
+        var e = document.createElement("span"); e.className = "sc-tok"; e.textContent = TOK[Math.floor(hash(u + 2100) * TOK.length)];
+        var zz = hash(u + 2300);
+        e.style.left = (60 + hash(u + 2200) * 1780).toFixed(0) + "px"; e.style.top = (300 + hash(u + 2400) * 900).toFixed(0) + "px";
+        e.style.fontSize = (70 + zz * 60).toFixed(0) + "px"; e.style.opacity = (0.08 + zz * 0.1).toFixed(2);
+        e.style.filter = "blur(" + (2 + zz * 4).toFixed(1) + "px)";
+        near.appendChild(e); nearT.push({ el: e, z: zz, k: u });
+      }
 
       var tl = gsap.timeline({ paused: true });
       function cam(t, cx, cy, s, d, ease) {
@@ -131,6 +157,9 @@
       tl.fromTo("#sc-plate2", { opacity: 0, y: -10 }, { opacity: 1, y: 0, duration: 0.3, ease: "power3.out" }, 15.6);
       tl.fromTo("#sc-lic2", { opacity: 0, y: -40, rotation: -6, transformOrigin: "50% 0" }, { opacity: 1, y: 0, rotation: 0, duration: 0.7, ease: "elastic.out(1, 0.55)" }, 15.8);
       tl.to("#sc-plate2", { x: -210, y: 150, scale: 0.15, opacity: 0, duration: 0.5, ease: "power2.in" }, 16.6);
+      // RS73: the code rises (far: slow, near: fast, so it flies past the camera), with a gentle sway
+      farT.forEach(function (o) { tl.fromTo(o.el, { y: 0, x: 0 }, { y: -(70 + o.z * 150), x: (hash(o.k + 3000) - 0.5) * 40, duration: 18.2, ease: "none" }, 0); });
+      nearT.forEach(function (o) { tl.fromTo(o.el, { y: 0, x: 0 }, { y: -(380 + o.z * 420), x: (hash(o.k + 3100) - 0.5) * 120, duration: 18.2, ease: "none" }, 0); });
       window.__timelines["scout"] = tl;
     })();
   </script>
