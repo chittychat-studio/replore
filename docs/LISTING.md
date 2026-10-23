@@ -84,7 +84,7 @@ Docs: [Submit your plugin](https://claude.com/docs/plugins/submit), [pre-submiss
 - **Credentials:** none required. If the user sets `GITHUB_TOKEN`, it is sent only to GitHub to raise the rate limit
   and is never printed or logged. If the user sets a Replore Pro key (`REPLORE_KEY`) and asks for meaning ranking
   (`--semantic`), the key and the project description go only to Replore's own server function (replore.cardzo.co.in),
-  which checks the key with Polar and stores neither.
+  which checks the key's signature, asks Stripe only whether its subscription is active, and stores neither.
 - **Local storage:** an optional security log, off by default. Only if the user sets `REPLORE_SECURITY_LOG`, a hook
   writes flagged prompts (first 200 characters) to a log file **on the user's own machine**; it is never transmitted.
 - **Third parties:** GitHub, OpenSSF Scorecard, deps.dev (only on request), Replore's server (only with `--semantic`).

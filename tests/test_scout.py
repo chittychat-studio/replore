@@ -18,7 +18,7 @@ NOW = dt.datetime(2026, 10, 12, tzinfo=dt.timezone.utc)
 
 def _page():
     """The whole web page as shipped: markup + its scripts (RS49 moved the code out of index.html into app.js)."""
-    return "\n".join((ROOT / "web" / f).read_text(encoding="utf-8") for f in ("index.html", "theme.js", "app.js"))
+    return "\n".join((ROOT / "web" / f).read_text(encoding="utf-8") for f in ("index.html", "theme.js", "pro-core.js", "app.js"))
 
 
 def repo(name, stars, spdx="MIT", pushed="2026-09-01T00:00:00Z", **kw):
@@ -669,7 +669,7 @@ def test_web_page_is_safe_static(monkeypatch):
     index = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
     srcs = _re.findall(r'<script[^>]+src="([^"]+)"', index)
     srcs = [s.split("?v=")[0] for s in srcs]   # RS52: app.js / theme.js carry a ?v=<hash> stamp
-    assert srcs == ["theme.js", "vendor/gsap.min.js", "app.js"], srcs   # RS49: no inline script; app.js after GSAP
+    assert srcs == ["theme.js", "vendor/gsap.min.js", "pro-core.js", "app.js"], srcs   # RS49: no inline script; app.js after GSAP and pro-core.js (RS89)
     assert '<script src="vendor/gsap.min.js" defer>' in index and _re.search(r'<script src="app\.js\?v=[0-9a-f]{10}" defer>', index)   # RS24: GSAP first
     assert not _re.search(r"<script(?![^>]*src=)[^>]*>", index) and not _re.search(r"\son[a-z]+\s*=", index)
     assert "<html lang=\"en\">" in index   # RS24: no forced light theme; the system setting applies until the visitor picks one
@@ -920,7 +920,9 @@ def test_privacy_notice_matches_what_the_code_does():
     assert 'id="privacyModal"' in html and "PRIVACY.md" in html and "privacy-note" in html
     assert "PRIVACY.md" in readme and "not legal advice" in priv and "Last updated" in priv
     # "no cookies / no analytics / no tracking" must stay literally true
-    for banned in ("document.cookie", "sessionStorage", "indexedDB", "gtag(", "googletagmanager", "plausible",
+    # RS90: the only sessionStorage use is the one-time checkout marker, disclosed in PRIVACY.md
+    assert re.findall(r"sessionStorage\.\w+\(([^,)]*)", html) == ["PRO_CHECKOUT"] * 3 and "`replore.checkout`" in priv
+    for banned in ("document.cookie", "indexedDB", "gtag(", "googletagmanager", "plausible",
                    "sendBeacon", "posthog", "umami", "analytics.js"):
         assert banned not in html, banned
     # only these hosts are contacted; PRIVACY.md names each of them
@@ -943,11 +945,12 @@ def test_privacy_notice_matches_what_the_code_does():
     assert "if not hits:" in hook and "text[:200]" in hook and "urllib" not in hook
     assert "if _log_path() is None:" in hook  # opt-in: off unless REPLORE_SECURITY_LOG is set (RS25)
     # RS43 storage / RS87: every localStorage key the page uses for the visitor's own data is disclosed; the Pro key
-    # goes only to our own function (relative URL) and Polar is named
-    js = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
-    assert 'var PRO_KEY="replore.key";' in js
-    assert "`replore.key`" in priv and "Replore Pro key" in priv and "api.polar.sh" in priv and "never log it" in priv
-    assert "api.polar.sh" not in js and "polar.sh" not in html   # Polar is called server-side only (CSP unchanged)
+    # goes only to our own function (relative URL) and Stripe is named
+    core = (ROOT / "web" / "pro-core.js").read_text(encoding="utf-8")
+    js = (ROOT / "web" / "app.js").read_text(encoding="utf-8") + core
+    assert 'var PRO_KEY="replore.key"' in core
+    assert "`replore.key`" in priv and "Replore Pro key" in priv and "api.stripe.com" in priv and "never log it" in priv
+    assert "api.stripe.com" not in js and "api.stripe.com" not in html   # Stripe is called server-side only (CSP unchanged)
 
 
 def test_empty_description_is_said_plainly():
@@ -1019,7 +1022,7 @@ def test_web_page_has_no_emoji_or_glyph_icons():
     """RS55: no colour emoji or symbol characters standing in for icons anywhere the page renders."""
     banned = re.compile("[\U0001F000-\U0001FAFF☀-➿✦★⑂✕✓✗☑☐"
                         "☰⚙↗⧉＋☼☾▸]")
-    for name in ("index.html", "app.js", "theme.js"):
+    for name in ("index.html", "app.js", "theme.js", "pro-core.js"):
         text = (ROOT / "web" / name).read_text(encoding="utf-8")
         hits = sorted({m.group() for m in banned.finditer(text)})
         assert not hits, (name, hits)
@@ -1106,7 +1109,7 @@ def test_rs66_no_em_dashes_in_site_copy():
     html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
     visible = re.sub(r"<!--.*?-->|<style.*?</style>|<script.*?</script>", "", html, flags=re.S)
     assert dash not in visible, [l.strip() for l in visible.splitlines() if dash in l][:5]
-    js = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
+    js = (ROOT / "web" / "app.js").read_text(encoding="utf-8") + " " + (ROOT / "web" / "pro-core.js").read_text(encoding="utf-8")
     string_lit = re.compile(r'"(?:[^"\\]|\\.)*"|' + r"'(?:[^'\\]|\\.)*'")  # a string literal: no bare quote or backslash; escapes allowed
     hits = []
     for line in js.splitlines():
@@ -1221,20 +1224,25 @@ def test_pro_window_markup_copy_and_switch():
               'id="proBuy" class="go-btn" href="#" target="_blank" rel="noopener noreferrer"', ">I have a key</button>",
               '<label for="proKey">Your key</label>', 'placeholder="Paste it here" autocomplete="off" spellcheck="false"',
               ">Save</button>", "Pro is on for this browser", ">Remove key</button>",
-              "Stays in this browser. I check it with Polar, who sold it to you, and never keep it."):
+              'id="proOffer" class="pro-offer" hidden', 'id="proYear" class="pro-have"', 'id="proShow" type="text" readonly',
+              'id="proCopy" class="pro-copy">Copy</button>', 'id="proEnv" type="text" readonly', 'id="proEnvCopy" class="pro-copy">Copy</button>',
+              "Stays in this browser. I check it with Stripe, who sold it to you, and never keep it."):
         assert s in win, s
     visible = re.sub(r"<[^>]+>", " ", win)
     assert "—" not in visible and not re.search("[\U0001F000-\U0001FAFF☀-➿✕×]", win)
     # the switch: empty PRO_URL keeps the button and the window hidden; constants as the owner set them
-    assert 'var PRO_URL="", PRO_PRICE="8 USD a month", PRO_PRICE_YEAR="or 72 USD a year";' in js
-    assert 'if(!proUrlOk(PRO_URL)) return;' in js and 'querySelectorAll(".pro-el").forEach(function(el){ el.hidden=false; })' in js
-    assert '"Get a key, "+PRO_PRICE' in js
+    core = (ROOT / "web" / "pro-core.js").read_text(encoding="utf-8")
+    assert 'var PRO_URL="", PRO_URL_YEAR="";' in core
+    assert 'PRO_PRICE="3.99 USD for your first month", PRO_PRICE_WAS="8 USD", PRO_PRICE_YEAR="72 USD a year"' in core
+    assert '!proUrlOk(PRO_URL, location.hostname)) return;' in js and 'querySelectorAll(".pro-el").forEach(function(el){ el.hidden=false; })' in js
+    assert 'label:"Get a key, "' in core and '"Yearly, "+c.priceYear' in core and 'sr.textContent="was "' in core
+    assert "—" not in core and not re.search("[🀀-🫿☀-➿✕×]", core)
     # 44px tap targets and the phone layout
     css = html[html.index("/* RS89"):html.index("#launchModal .ln-sheet")]
-    for sel in (".pro-head .x{", ".pro-have{", ".pro-in input{", ".pro-save{", ".pro-on .link-btn{", ".pro-acts .go-btn{"):
+    for sel in (".pro-head .x{", ".pro-have{", ".pro-in input{", ".pro-save{", ".pro-on .link-btn{", ".pro-acts .go-btn{", ".pro-copy{"):
         rule = css[css.index(sel):css.index("}", css.index(sel))]
         assert "min-height:44px" in rule, sel
     assert "max-width:580px" in css and "@media (max-width:560px)" in css and "grid-template-columns:1fr" in css
-    # the in-page privacy window names the key and Polar
+    # the in-page privacy window names the key and Stripe
     priv = html[html.index('id="privacyModal"'):html.index('id="aboutModal"')]
-    assert "A Replore Pro key" in priv and "Polar" in priv
+    assert "A Replore Pro key" in priv and "Stripe" in priv

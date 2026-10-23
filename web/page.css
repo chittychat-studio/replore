@@ -1,4 +1,4 @@
-/* SPEC RS80: the look of Replore's secondary pages (404.html, evals.html). Same tokens as index.html's :root
+/* SPEC RS80: the look of Replore's secondary pages (404.html, evals.html, pro.html). Same tokens as index.html's :root
    (light, dark by system setting, and the visitor's saved choice set by theme.js), same self-hosted fonts. */
 :root{
   --bg:#f4f6f8; --card:#ffffff; --line:#dde3e9; --ink:#1e2a36; --muted:#5f6b78;
@@ -18,6 +18,7 @@
   --accent:#477491; --accent-ink:#9cc0d8; --tint:#2b3f52; --good:#a3bf7e; --goodbg:#22301c; --warn:#d8a95c; --warnbg:#342a15;
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--f-body);-webkit-font-smoothing:antialiased}
 a{color:var(--accent-ink)}
 a:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
@@ -42,3 +43,51 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius
 .ev-meta span{color:var(--muted)}
 .ev-pill{display:inline-block;font:12px/1 var(--f-mono);padding:4px 8px;border-radius:999px;background:var(--goodbg);color:var(--good)}
 code{font-family:var(--f-mono);font-size:.92em}
+/* SPEC RS90: /pro, the Leo, Pro window (RS89) as a page. 44px targets, one column on phones. */
+:root{--btn-grad:linear-gradient(135deg,#3f6f8e,#22374a)}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--btn-grad:linear-gradient(135deg,#477491,#2c4f68)} }
+:root[data-theme="dark"]{--btn-grad:linear-gradient(135deg,#477491,#2c4f68)}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.pp-main{max-width:640px}
+.pp-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;margin:0 0 20px}
+.pp-card h2{margin:0 0 10px}
+.pro-head h1{margin:0 0 14px;font-size:clamp(28px,5vw,40px)}
+.pro-row{display:grid;grid-template-columns:150px minmax(0,1fr);gap:18px;align-items:center}
+.pro-row img{width:150px;height:auto;display:block}
+.pro-say{margin:0;font-size:19px;font-weight:600;line-height:1.35;color:var(--ink);letter-spacing:-.01em}
+.st-pills{display:flex;flex-wrap:wrap;gap:5px;margin-top:12px}
+.st-pills i{font-style:normal;font-size:12px;font-weight:600;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:4px 10px;white-space:nowrap}
+.pp-notsale{margin:18px 0 0;font-weight:600;color:var(--muted)}
+.pro-offer{margin:18px 0 0;padding:10px 14px;border-radius:10px;background:var(--tint);color:var(--accent-ink);font-weight:600;font-size:14.5px}
+.pro-acts{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:20px 0 0}
+.pp-buy{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 22px;border-radius:999px;background:var(--btn-grad);
+  color:#fff;text-decoration:none;font-weight:700;font-size:15.5px}
+.pp-buy s{opacity:.75;font-weight:500}
+.pro-have{display:inline-flex;align-items:center;box-sizing:border-box;min-height:44px;padding:0 18px;border-radius:999px;border:1px solid var(--line);
+  background:transparent;color:var(--ink);font:600 14.5px var(--f-body);cursor:pointer;text-decoration:none}
+.pro-have:hover,.pro-have:focus-visible{border-color:var(--accent);color:var(--accent-ink)}
+.pro-form{margin:20px 0 0;padding:16px 0 0;border-top:1px solid var(--line)}
+.pro-form label{display:block;font-weight:700;font-size:13.5px;margin:0 0 6px}
+.pro-in{display:flex;gap:8px}
+.pro-in input{flex:1;min-width:0;min-height:44px;font-family:var(--f-mono);font-size:14px;padding:0 12px;
+  border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+.pro-in input:focus{outline:none;border-color:var(--accent)}
+.pro-in input[aria-invalid="true"]{border-color:var(--warn)}
+.pro-reveal{margin-top:8px}
+.pro-save{min-height:44px;padding:0 20px;border:0;border-radius:10px;background:var(--accent);color:#fff;font:700 14.5px var(--f-body);cursor:pointer}
+.pro-copy{min-height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink);font:600 14px var(--f-body);cursor:pointer}
+.pro-copy:hover,.pro-copy:focus-visible{border-color:var(--accent);color:var(--accent-ink)}
+.pro-save:focus-visible,.pro-on .link-btn:focus-visible,.pp-buy:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.pro-on,.pp-on{margin:0;font-weight:600;display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px}
+.pp-on{margin:0 0 10px}
+.link-btn{background:none;border:0;color:var(--accent-ink);font:inherit;font-weight:600;cursor:pointer;padding:0}
+.pro-on .link-btn,.pp-ask .link-btn{min-height:44px}
+.pp-ask{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin:0 0 10px}
+.pp-ask:not(:has(button:not([hidden]))){display:none}
+.pro-note,.pro-hint{margin:10px 0 0;font-size:12.5px;color:var(--muted)}
+.pp-err{margin:0 0 6px;padding:10px 14px;border-radius:10px;background:var(--warnbg);color:var(--warn);font-weight:600}
+@media (max-width:560px){
+  .pro-row{grid-template-columns:1fr}
+  .pro-row img{width:120px}
+  .pp-buy,.pro-have{flex:1 1 100%;justify-content:center}
+}

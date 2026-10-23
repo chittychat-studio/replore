@@ -20,21 +20,38 @@ owner, no code), **not started**. "Not verified" marks a number or fact I could 
 ## 2. Replore Pro: hosted key
 
 - **Price (planned):** 8 USD a month or 72 USD a year.
-- **Merchant of record:** Polar (polar.sh). The owner's plan says 4% + 40c a transaction. **Not verified, and it
-  differs from Polar's pricing page on 2026-10-23:** Starter 5% + 50c, Pro 3.8% + 40c, Growth 3.6% + 35c,
-  Scale 3.4% + 30c, plus 1.5% for non-US cards. At 8 USD on Starter that is about 0.90 USD a sale (11%); check the
-  plan you sign up for.
-- **Delivery:** Polar issues a license key as a "License key" benefit on the product. Replore validates it with
-  Polar on each new key (cached 10 minutes), never stores it.
+- **Sign-up offer (owner's copy, shipped as the default in `web/pro-core.js`):** "Sign-up offer: your first month is
+  3.99 USD, then 8 USD a month. Cancel any time." The monthly button reads "Get a key," with 8 USD struck through and
+  "3.99 USD for your first month"; the yearly button reads "Yearly, 72 USD a year". In Stripe this is a
+  **coupon "4.01 USD off, once"** (amount off, duration once, on the monthly price) with the **promotion code `FIRST399`**, prefilled on
+  the monthly Payment Link by appending `?prefilled_promo_code=FIRST399` to it. The yearly link carries no code.
+- **Seller:** Stripe Payment Links on Cardzo's existing Stripe account (the same account as the tip link). **Stripe
+  replaces the earlier merchant-of-record plan** (named in `CHANGELOG.md`): its payouts need an Indian bank account
+  Cardzo does not have, so that route is dropped entirely.
+- **Seller of record: the owner.** Unlike a merchant of record, Stripe does not take on sales tax. EU and UK VAT on
+  digital services sold to consumers is the owner's responsibility: registering (for example the EU OSS scheme and UK
+  VAT, once the thresholds that apply to a non-EU seller are met), charging and filing. **Stripe Tax** calculates and
+  collects the tax on each Payment Link; it does not register or file for you. Thresholds and whether OSS applies from
+  India: **not verified**, check with an accountant.
+- **Fees:** per Stripe's pricing page for the country of Cardzo's Stripe account (for India, Stripe lists a percentage
+  per card payment that is higher for international cards, plus currency conversion), plus Stripe Tax's own fee per
+  transaction where it calculates tax, plus Stripe Billing's fee on subscription volume. Exact figures: **not verified**;
+  read stripe.com/pricing for the account's country before launch.
+- **Delivery:** no key store. After checkout Stripe sends the buyer to `/pro?session_id=...`; the page asks
+  `/api/pro/claim`, which checks the Checkout Session with Stripe and returns a signed key `rp.<subscription id>.<sig>`.
+  Replore validates a key by its signature and then the subscription's status with Stripe (cached 10 minutes), and only
+  while the subscription carries a Pro price (`PRO_PRICE_IDS`), never stores it.
 
 | Step | Status | Where |
 |---|---|---|
-| Rule: what a Pro key is, how it is checked, what it unlocks | done (written) | RS87 |
-| Server: Polar validation, fail closed, cache, codes-only logs, `pro_off` switch | built | `functions/api/relevance.js` |
+| Rule: what a Pro key is, how it is checked, what it unlocks | done (written) | RS87, RS90 |
+| Server: Stripe validation, signature first, fail closed, cache, codes-only logs, Pro price check, `pro_off` switch | built | `functions/api/relevance.js` |
+| Server: claim function for a paid Checkout Session | built | `functions/api/pro/claim.js`, RS90 |
 | Plugin, script, MCP server: `REPLORE_KEY`, sent only to Replore's hosts | built | `scripts/hybrid.py`, `scripts/mcp_server.py` |
-| Web: sends a stored `replore.key` on relevance checks | built (no visible UI) | `web/app.js` |
-| Pro window on the web ("Leo, Pro": buy link, key field) | built, hidden until `PRO_URL` is set | RS89, `web/index.html`, `web/app.js` |
-| Polar organisation, product, license-key benefit; set `POLAR_ORG_ID` (and `POLAR_BENEFIT_ID`) in Pages | owner step | checklist below |
+| Web: sends a stored `replore.key` on relevance checks | built | `web/pro-core.js`, `web/app.js` |
+| Pro window on the web ("Leo, Pro": offer line, monthly and yearly links, key field, key shown back) | built, hidden until `PRO_URL` is set | RS89, `web/index.html`, `web/pro-core.js` |
+| `/pro` page (claim after checkout, key shown, copy for the plugin) | built; says "not on sale yet" until `PRO_URL` is set | RS90, `web/pro.html`, `web/pro.js` |
+| Stripe product, prices, coupon, promotion code, Payment Links, Stripe Tax, restricted key; Pages secrets and variables | owner step | checklist below |
 | Switch the meaning route on (`RAG_PLUGIN=1` plus `RAG_RERANK=1` or the index) so Pro has something to unlock | owner step | RS42, `docs/RAG.md` |
 
 **What Pro unlocks today:** the meaning route (`mode: "semantic"`) and skipping the per-IP limiter, exactly what
@@ -83,12 +100,29 @@ request caps (30 repos, 100-character descriptions), **not measured**.
 
 ## Owner checklist (accounts and switches)
 
-- [ ] **Polar:** create the organisation; a product "Replore Pro" with monthly and yearly prices; add a **License
-      key** benefit to it (optionally a key prefix such as `REPLORE`); copy the organisation id and the benefit id.
-- [ ] **Cloudflare Pages** (Settings, Variables): `POLAR_ORG_ID` = the organisation id (plain variable);
-      `POLAR_BENEFIT_ID` = the benefit id (optional). Redeploy. Until then the Pro route answers `pro_off`.
+- [ ] **Stripe, product:** Product catalogue, Add product "Replore Pro" with two recurring prices: 8 USD monthly and
+      72 USD yearly. Copy both **price ids** (`price_...`) from the product page.
+- [ ] **Stripe, offer:** Coupons, New: amount off 4.01 USD, duration **once**, applies to the Replore Pro product; add a
+      **promotion code** `FIRST399`.
+- [ ] **Stripe, Payment Links:** one for the monthly price and one for the yearly price. On each: allow promotion codes;
+      After payment, "Don't show confirmation page", redirect to exactly
+      `https://replore.cardzo.co.in/pro?session_id={CHECKOUT_SESSION_ID}`; collect tax automatically (**Stripe Tax**).
+- [ ] **Stripe Tax:** Settings, Tax: add the head office address, the product tax code for software/SaaS, and the
+      registrations you hold; Stripe Tax only collects where a registration is added (you are the seller of record).
+- [ ] **Stripe, customer emails:** Settings, Emails: send receipts and the link to manage subscriptions, so buyers can
+      cancel (customer portal on). Exact menu names: **not verified**.
+- [ ] **Stripe, restricted key:** Developers, API keys, Create restricted key "replore-pages": **Read** on Checkout
+      Sessions and Subscriptions, everything else None. Copy it (`rk_live_...`).
+- [ ] **Cloudflare Pages** (Settings, Variables and Secrets, Production): secret `STRIPE_SECRET_KEY` = the restricted
+      key; secret `PRO_SIGNING_SECRET` = 32+ random characters (`python -c "import secrets; print(secrets.token_urlsafe(32))"`),
+      never rotated once keys are sold; plain variable `PRO_PRICE_IDS` = the two price ids, comma-separated. Redeploy.
+      Until all three are set the Pro route answers `pro_off`.
+- [ ] **Test end to end** with Stripe test mode first: a test restricted key and test links on a Preview deployment
+      (`test_` links are refused on the live hosts).
+- [ ] **`web/pro-core.js`:** paste the monthly link with `?prefilled_promo_code=FIRST399` into `PRO_URL` and the yearly
+      link into `PRO_URL_YEAR`; run `python ops/stamp_assets.py`; ship. The Pro button and window appear, and `/pro` shows
+      the buy buttons.
 - [ ] Turn the meaning route on (`RAG_PLUGIN=1` and `RAG_RERANK=1`), or Pro unlocks only the rate-limit skip.
-- [ ] Paste the Polar checkout link into the web Pro window when it ships (RS89).
 - [ ] **PyPI** account with 2FA, then publish `replore-mcp` (docs/LISTING.md).
 - [ ] **MCP registry:** `mcp-publisher login github`, `mcp-publisher publish`.
 - [ ] **PulseMCP** (when it reopens) and **Glama** Add Server.

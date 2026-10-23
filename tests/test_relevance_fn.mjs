@@ -1,6 +1,7 @@
 // SPEC RS34: the web relevance gate (functions/api/relevance.js). No network: the LLM provider is a fake fetch.
 import assert from "node:assert";
 import * as fn from "../functions/api/relevance.js";
+import { makeProKey } from "../functions/api/pro/claim.js";
 
 const repos = [
   { name: "issaafalkattan/React-Landing-Page-Template", description: "A simple react one page landing page template", topics: ["react"] },
@@ -622,76 +623,96 @@ console.log("fail closed + rate limit ok");
   assert.ok(!/\{\s*"?drop"?\s*:/i.test(u), u); assert.match(u, /Great lib\./); }
 console.log("labelled verdicts accepted ok");
 
-// RS87: Replore Pro key = a Polar license key, validated with Polar (fake fetch), fail closed, cached, never logged
+// RS87: Replore Pro key = rp.<Stripe subscription id>.<HMAC sig>; signature checked locally, then the subscription
+// with Stripe (fake fetch); fail closed, cached, never logged
 { const AI = { run: async (m, input) => input.text ? { data: input.text.map(() => [1, 0]) } : { response: '{"drop":[]}' } };
-  const PRO = "REPLORE_1C285B2D-6CE6-4BC7-B8BE-ADB6A7E304DA", ORG = "11111111-2222-4333-8444-555555555555";
+  const SECRET = "test-signing-secret-0123456789abcdef", STRIPE = "rk_test_RESTRICTEDsecret123", SUB = "sub_1QabcDEF234ghiJKL";
+  const PRO = await makeProKey(SUB, SECRET), SIG = PRO.split(".")[2];
+  const ON = { STRIPE_SECRET_KEY: STRIPE, PRO_SIGNING_SECRET: SECRET, PRO_PRICE_IDS: "price_ProMonth01,price_ProYear01" };
   const sem = { AI, RAG_RERANK: "1", RAG_PLUGIN: "1", TURNSTILE_SECRET: "s" }, body = { mode: "semantic", query: "diet", repos };
-  const polar = (status, json) => { const f = async (url, init) => { f.calls.push({ url, init }); if (status === "down") throw new TypeError("fetch failed");
-    return new Response(JSON.stringify(json), { status }); }; f.calls = []; return f; };
-  const ok = (extra = {}) => ({ id: "x", status: "granted", expires_at: null, limit_usage: null, usage: 0, benefit_id: "b1", ...extra });
+  const stripe = (status, json) => { const f = async (url, init) => { f.calls.push({ url, init }); if (status === "down") throw new TypeError("fetch failed");
+    return new Response(typeof json === "string" ? json : JSON.stringify(json), { status }); }; f.calls = []; return f; };
+  const sub = (status = "active", price = "price_ProMonth01", product = "prod_ReplorePro") => ({ id: SUB, object: "subscription", status,
+    items: { object: "list", data: [{ price: { id: price, product } }] } });
   const lines = [], real = console.log;
   const call = (env, f, headers = { "X-Replore-Plugin-Key": PRO }, b = body) => fn.onRequestPost({ request: new Request("https://replore.pages.dev/api/relevance",
     { method: "POST", headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify(b) }), env }, f);
   console.log = (...a) => lines.push(a.join(" "));
   try {
-    assert.ok(fn.looksLikeProKey(PRO) && fn.looksLikeProKey("1C285B2D-6CE6-4BC7-B8BE-ADB6A7E304DA"));
-    assert.ok(!fn.looksLikeProKey("pk-live-0123456789abcdef") && !fn.looksLikeProKey("") && !fn.looksLikeProKey(null));
-    // granted: semantic route opens, one Polar call with the documented body, no redirects, 3 s deadline
+    assert.ok(fn.looksLikeProKey(PRO) && !fn.looksLikeProKey("pk-live-0123456789abcdef") && !fn.looksLikeProKey("") && !fn.looksLikeProKey(null));
+    assert.ok(!fn.looksLikeProKey("REPLORE_1C285B2D-6CE6-4BC7-B8BE-ADB6A7E304DA"), "the old license-key shape is not a Pro key");
+    // granted (active): semantic route opens, one GET of the subscription with the restricted key, no redirects, 3 s deadline
     fn.resetPro(); fn.resetRateLimit();
-    let f = polar(200, ok()), r = await call({ ...sem, POLAR_ORG_ID: ORG }, f);
+    let f = stripe(200, sub()), r = await call({ ...sem, ...ON }, f);
     assert.strictEqual(r.status, 200); assert.ok(Array.isArray((await r.json()).sim));
-    assert.strictEqual(f.calls.length, 1); assert.strictEqual(f.calls[0].url, fn.POLAR_VALIDATE);
-    assert.strictEqual(f.calls[0].init.redirect, "error"); assert.ok(f.calls[0].init.signal);
-    assert.deepStrictEqual(JSON.parse(f.calls[0].init.body), { key: PRO, organization_id: ORG });
-    // cache hit: a second request makes no new Polar call
-    r = await call({ ...sem, POLAR_ORG_ID: ORG }, f); assert.strictEqual(r.status, 200); assert.strictEqual(f.calls.length, 1, "cached for 10 minutes");
-    // the benefit id is sent and must match when POLAR_BENEFIT_ID is set
-    fn.resetPro(); f = polar(200, ok({ benefit_id: "other" }));
-    r = await call({ ...sem, POLAR_ORG_ID: ORG, POLAR_BENEFIT_ID: "b1" }, f); assert.strictEqual(r.status, 403);
-    assert.strictEqual(JSON.parse(f.calls[0].init.body).benefit_id, "b1");
-    // revoked / disabled / unknown (Polar 404), expired, non-granted status, usage used up -> denied, 403
-    for (const [status, json] of [[404, { error: "ResourceNotFound", detail: "License key not found" }], [200, ok({ status: "revoked" })],
-        [200, ok({ expires_at: "2020-01-01T00:00:00Z" })], [200, ok({ limit_usage: 5, usage: 5 })]]) {
-      fn.resetPro(); f = polar(status, json);
-      r = await call({ ...sem, POLAR_ORG_ID: ORG }, f); assert.strictEqual(r.status, 403, JSON.stringify(json));
+    assert.strictEqual(f.calls.length, 1); assert.strictEqual(f.calls[0].url, "https://api.stripe.com/v1/subscriptions/" + SUB);
+    assert.strictEqual(f.calls[0].init.method, "GET"); assert.strictEqual(f.calls[0].init.redirect, "error"); assert.ok(f.calls[0].init.signal);
+    assert.strictEqual(f.calls[0].init.headers.Authorization, "Bearer " + STRIPE); assert.strictEqual(f.calls[0].init.body, undefined);
+    // cache hit: two calls, one Stripe lookup
+    r = await call({ ...sem, ...ON }, f); assert.strictEqual(r.status, 200); assert.strictEqual(f.calls.length, 1, "cached for 10 minutes");
+    // granted (trialing)
+    fn.resetPro(); f = stripe(200, sub("trialing")); r = await call({ ...sem, ...ON }, f); assert.strictEqual(r.status, 200);
+    // canceled / past_due / unpaid / incomplete / unknown (404) -> denied, 403
+    for (const [status, json] of [[200, sub("canceled")], [200, sub("past_due")], [200, sub("unpaid")], [200, sub("incomplete")],
+        [200, sub("incomplete_expired")], [200, sub("paused")], [404, { error: { type: "invalid_request_error" } }]]) {
+      fn.resetPro(); f = stripe(status, json);
+      r = await call({ ...sem, ...ON }, f); assert.strictEqual(r.status, 403, JSON.stringify(json));
       assert.strictEqual((await r.json()).error, "bot_check_failed");
     }
-    assert.ok(fn.proGranted(200, ok({ expires_at: "2999-01-01T00:00:00Z" }), {}));
-    // Polar down, 500, unreadable body, redirect refused -> fail closed (and not cached: the next call asks again)
-    for (const f2 of [polar("down"), polar(500, {}), (() => { const g = async () => new Response("not json", { status: 200 }); return g; })(),
-        (() => { const g = async (u, init) => { assert.strictEqual(init.redirect, "error"); throw new TypeError("redirect"); }; return g; })()]) {
-      fn.resetPro(); r = await call({ ...sem, POLAR_ORG_ID: ORG }, f2); assert.strictEqual(r.status, 403);
+    assert.ok(fn.proGranted(200, sub("active"), ON) && fn.proGranted(200, sub("trialing"), ON) && !fn.proGranted(200, sub("canceled"), ON) && !fn.proGranted(500, sub(), ON));
+    // still active, but moved to another product of the same Stripe account (a downgrade): revoked
+    fn.resetPro(); f = stripe(200, sub("active", "price_Tip0001", "prod_Tips")); r = await call({ ...sem, ...ON }, f);
+    assert.strictEqual(r.status, 403); assert.strictEqual(f.calls.length, 1);
+    // PRO_PRODUCT_ID matches on price.product instead of the price list
+    const BYPROD = { STRIPE_SECRET_KEY: STRIPE, PRO_SIGNING_SECRET: SECRET, PRO_PRODUCT_ID: "prod_ReplorePro" };
+    fn.resetPro(); r = await call({ ...sem, ...BYPROD }, stripe(200, sub("active", "price_Other77"))); assert.strictEqual(r.status, 200);
+    fn.resetPro(); r = await call({ ...sem, ...BYPROD }, stripe(200, sub("active", "price_Other77", "prod_Tips"))); assert.strictEqual(r.status, 403);
+    // bad signature (a real-looking key we did not sign, or one signed with another secret) -> refused with zero fetches
+    for (const forged of [`rp.${SUB}.${"0".repeat(16)}`, `rp.sub_1QotherSUB999.${SIG}`, await makeProKey(SUB, "another-secret-0123456789abcdefghij")]) {
+      fn.resetPro(); f = stripe(200, sub()); r = await call({ ...sem, ...ON }, f, { "X-Replore-Plugin-Key": forged });
+      assert.strictEqual(r.status, 403, forged); assert.strictEqual(f.calls.length, 0, "a forged key never reaches Stripe");
     }
-    fn.resetPro(); f = polar("down"); await call({ ...sem, POLAR_ORG_ID: ORG }, f); await call({ ...sem, POLAR_ORG_ID: ORG }, f);
+    // Stripe down, 500, 401, unreadable body, redirect refused -> fail closed (and not cached: the next call asks again)
+    for (const f2 of [stripe("down"), stripe(500, {}), stripe(401, {}), stripe(200, "not json"),
+        (() => { const g = async (u, init) => { assert.strictEqual(init.redirect, "error"); throw new TypeError("redirect"); }; return g; })()]) {
+      fn.resetPro(); r = await call({ ...sem, ...ON }, f2); assert.strictEqual(r.status, 403);
+    }
+    fn.resetPro(); f = stripe("down"); await call({ ...sem, ...ON }, f); await call({ ...sem, ...ON }, f);
     assert.strictEqual(f.calls.length, 2, "an error is never cached");
-    // no POLAR_ORG_ID -> 403 pro_off, Polar never called; PLUGIN_KEY and EVAL_KEY keep working unchanged
-    fn.resetPro(); f = polar(200, ok());
-    r = await call(sem, f); assert.strictEqual(r.status, 403); assert.strictEqual((await r.json()).error, "pro_off"); assert.strictEqual(f.calls.length, 0);
+    // pro_off without either secret, with a short signing secret, or with no Pro price/product list: 403 pro_off, Stripe never called
+    for (const off of [{}, { STRIPE_SECRET_KEY: STRIPE }, { PRO_SIGNING_SECRET: SECRET }, { STRIPE_SECRET_KEY: STRIPE, PRO_SIGNING_SECRET: "short", PRO_PRICE_IDS: "price_ProMonth01" },
+        { STRIPE_SECRET_KEY: STRIPE, PRO_SIGNING_SECRET: SECRET }]) {
+      fn.resetPro(); f = stripe(200, sub());
+      r = await call({ ...sem, ...off }, f); assert.strictEqual(r.status, 403); assert.strictEqual((await r.json()).error, "pro_off"); assert.strictEqual(f.calls.length, 0);
+    }
+    // PLUGIN_KEY and EVAL_KEY keep working unchanged, with or without the Pro route
     const KEY = "pk-live-0123456789abcdef";
     r = await call({ ...sem, PLUGIN_KEY: KEY }, f, { "X-Replore-Plugin-Key": KEY }); assert.strictEqual(r.status, 200);
-    r = await call({ ...sem, PLUGIN_KEY: KEY, POLAR_ORG_ID: ORG }, f, { "X-Replore-Plugin-Key": KEY }); assert.strictEqual(r.status, 200);
-    assert.strictEqual(f.calls.length, 0, "the static plugin key never asks Polar");
+    r = await call({ ...sem, PLUGIN_KEY: KEY, ...ON }, f, { "X-Replore-Plugin-Key": KEY }); assert.strictEqual(r.status, 200);
+    r = await call({ ...sem, EVAL_KEY: "ev-0123456789abcdef", ...ON }, f, { "X-Replore-Eval-Key": "ev-0123456789abcdef" }); assert.strictEqual(r.status, 200);
+    assert.strictEqual(f.calls.length, 0, "the static keys never ask Stripe");
     // a Pro key never opens the paid judge (Turnstile still required there)
-    fn.resetPro(); f = polar(200, ok());
-    r = await call({ ...sem, POLAR_ORG_ID: ORG }, f, { "X-Replore-Plugin-Key": PRO }, { query: "q", repos }); assert.strictEqual(r.status, 403);
+    fn.resetPro(); f = stripe(200, sub());
+    r = await call({ ...sem, ...ON }, f, { "X-Replore-Plugin-Key": PRO }, { query: "q", repos }); assert.strictEqual(r.status, 403);
     // a granted key skips the per-IP limiter, like PLUGIN_KEY; a denied one does not
-    fn.resetPro(); fn.resetRateLimit(); f = polar(200, ok());
-    const ip = { "CF-Connecting-IP": "203.0.113.9" }, open = { AI, ALLOW_NO_TURNSTILE: "1", POLAR_ORG_ID: ORG };
+    fn.resetPro(); fn.resetRateLimit(); f = stripe(200, sub());
+    const ip = { "CF-Connecting-IP": "203.0.113.9" }, open = { AI, ALLOW_NO_TURNSTILE: "1", ...ON };
     for (let i = 0; i < 10; i++) await call(open, f, ip, { query: "q", repos });
     assert.strictEqual((await call(open, f, ip, { query: "q", repos })).status, 429);
     assert.strictEqual((await call(open, f, { ...ip, "X-Replore-Plugin-Key": PRO }, { query: "q", repos })).status, 200);
-    const bad = "2C285B2D-6CE6-4BC7-B8BE-ADB6A7E304DA";
-    assert.strictEqual((await call(open, polar(404, {}), { ...ip, "X-Replore-Plugin-Key": bad }, { query: "q", repos })).status, 429);
-    // Polar lookups per IP are capped: random keys can't turn the function into a Polar flooder
-    fn.resetPro(); f = polar(404, {});
-    for (let i = 0; i < 8; i++) await call({ ...sem, POLAR_ORG_ID: ORG }, f, { "X-Replore-Plugin-Key": `${String(i).padStart(8, "0")}-6CE6-4BC7-B8BE-ADB6A7E304DA`, ...ip });
+    const other = await makeProKey("sub_1QcanceledXYZ", SECRET);
+    assert.strictEqual((await call(open, stripe(200, sub("canceled")), { ...ip, "X-Replore-Plugin-Key": other }, { query: "q", repos })).status, 429);
+    // fresh Stripe lookups per IP are capped: many signed keys can't turn the function into a Stripe flooder
+    fn.resetPro(); f = stripe(404, {});
+    for (let i = 0; i < 8; i++) await call({ ...sem, ...ON }, f, { "X-Replore-Plugin-Key": await makeProKey(`sub_1Qflood${String(i).padStart(4, "0")}`, SECRET), ...ip });
     assert.strictEqual(f.calls.length, fn.PRO_LOOKUP_MAX);
   } finally { console.log = real; }
-  // log lines: codes only, never the key (any spelling of it)
+  // log lines: codes only, never the key, its signature, the subscription id, the Stripe key or the signing secret
   const all = lines.join("\n");
-  assert.ok(!all.includes(PRO) && !all.toLowerCase().includes("1c285b2d") && !all.includes("ADB6A7E304DA"), all);
+  for (const s of [PRO, SIG, SUB, STRIPE, SECRET]) assert.ok(!all.includes(s), s);
   assert.ok(/"code":"pro_granted"/.test(all) && /"code":"pro_denied"/.test(all) && /"code":"pro_error"/.test(all));
   assert.ok(lines.every(l => { const o = JSON.parse(l); return Object.keys(o).sort().join() === "code,evt,example,ms,status,trail"; }));
   // and never in a response body
-  fn.resetPro(); const r2 = await call({ ...sem, POLAR_ORG_ID: ORG }, polar(404, {})); assert.ok(!(await r2.text()).includes("1C285B2D"));
+  fn.resetPro(); const r2 = await call({ ...sem, ...ON }, stripe(404, {})); const t2 = await r2.text();
+  for (const s of [SIG, SUB, STRIPE, SECRET]) assert.ok(!t2.includes(s), s);
   console.log("pro key ok"); }

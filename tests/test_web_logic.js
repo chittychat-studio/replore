@@ -2,7 +2,10 @@
 const fs = require("fs"), path = require("path"), assert = require("assert");
 // RS49: the page's code lives in web/app.js (no inline script, so the CSP needs no 'unsafe-inline')
 const html = fs.readFileSync(path.join(__dirname, "..", "web", "index.html"), "utf8");
-const code = fs.readFileSync(path.join(__dirname, "..", "web", "app.js"), "utf8").replace('"use strict";', "");
+const appCode = fs.readFileSync(path.join(__dirname, "..", "web", "app.js"), "utf8").replace('"use strict";', "");
+// RS89: pro-core.js (Pro switches and key rules) loads before app.js on the page; same order here
+const coreCode = fs.readFileSync(path.join(__dirname, "..", "web", "pro-core.js"), "utf8").replace('"use strict";', "");
+const code = coreCode + "\n" + appCode;
 assert.ok(!/<script(?![^>]*\bsrc=)[^>]*>/i.test(html), "index.html must have no inline <script>");
 assert.ok(!/\son[a-z]+\s*=/i.test(html) && !/javascript:/i.test(html), "no inline event handlers or javascript: URLs in index.html");
 assert.ok(!/\son(click|load|error|input|change|submit)\s*=\s*\\?["']/i.test(code), "no inline handlers in markup built by app.js");
@@ -20,7 +23,7 @@ const s = {};
 const LS = { m: {}, getItem(k){ return Object.prototype.hasOwnProperty.call(this.m, k) ? this.m[k] : null; }, setItem(k, v){ this.m[k] = String(v); }, removeItem(k){ delete this.m[k]; } };
 new Function("document", "localStorage",
   code + "; this.keywordQueries=keywordQueries; this.exploreLinks=exploreLinks; this.rankByFit=rankByFit; this.fitScore=fitScore; this.whyRelevant=whyRelevant; this.esc=esc; this.lu=lu; this.freeText=freeText;" +
-  " this.keep=keep; this.ragRan=ragRan; this.hasDesc=hasDesc; this.descHtml=descHtml; this.plainDesc=plainDesc; this.tipUrlOk=tipUrlOk; this.clean=clean; this.harmful=harmful; this.harmfulRepo=harmfulRepo; this.prdFeatures=prdFeatures; this.trendingQuery=trendingQuery; this.trendRows=trendRows; this.feedbackUrl=feedbackUrl; this.feedbackPayload=feedbackPayload; this.agoText=agoText; this.cardHtml=cardHtml; this.recentKey=recentKey; this.recentFind=recentFind; this.recentAdd=recentAdd; this.CACHE_V=CACHE_V; this.bm25Scores=bm25Scores; this.repoText=repoText; this.rrfOrder=rrfOrder; this.hybridOrder=hybridOrder; this.confirmQueries=confirmQueries; this.ghQuery=ghQuery; this.sigTokens=sigTokens; this.resultSummary=resultSummary; this.trustRow=trustRow; this.trustHtml=trustHtml; this.ghShape=ghShape; this.lastPage=lastPage; this.installCmd=installCmd; this.snapHtml=snapHtml; this.cleanLang=cleanLang; this.relaxedQueries=relaxedQueries; this.sellConflict=sellConflict; this.sellSummary=sellSummary; this.filterBar=filterBar; this.trustScore=trustScore; this.trustOrder=trustOrder; this.trustSort=trustSort; this.sortBox=sortBox; this.TRUST_RANK_NOTE=TRUST_RANK_NOTE; this.__trust=__trust; this.proKeyHeader=proKeyHeader; this.proKeyGet=proKeyGet; this.PRO_KEY=PRO_KEY; this.proKeySave=proKeySave; this.proKeyRemove=proKeyRemove; this.proUrlOk=proUrlOk; this.PRO_URL=PRO_URL; this.PRO_PRICE=PRO_PRICE; this.PRO_PRICE_YEAR=PRO_PRICE_YEAR;").call(s, document, LS);
+  " this.keep=keep; this.ragRan=ragRan; this.hasDesc=hasDesc; this.descHtml=descHtml; this.plainDesc=plainDesc; this.tipUrlOk=tipUrlOk; this.clean=clean; this.harmful=harmful; this.harmfulRepo=harmfulRepo; this.prdFeatures=prdFeatures; this.trendingQuery=trendingQuery; this.trendRows=trendRows; this.feedbackUrl=feedbackUrl; this.feedbackPayload=feedbackPayload; this.agoText=agoText; this.cardHtml=cardHtml; this.recentKey=recentKey; this.recentFind=recentFind; this.recentAdd=recentAdd; this.CACHE_V=CACHE_V; this.bm25Scores=bm25Scores; this.repoText=repoText; this.rrfOrder=rrfOrder; this.hybridOrder=hybridOrder; this.confirmQueries=confirmQueries; this.ghQuery=ghQuery; this.sigTokens=sigTokens; this.resultSummary=resultSummary; this.trustRow=trustRow; this.trustHtml=trustHtml; this.ghShape=ghShape; this.lastPage=lastPage; this.installCmd=installCmd; this.snapHtml=snapHtml; this.cleanLang=cleanLang; this.relaxedQueries=relaxedQueries; this.sellConflict=sellConflict; this.sellSummary=sellSummary; this.filterBar=filterBar; this.trustScore=trustScore; this.trustOrder=trustOrder; this.trustSort=trustSort; this.sortBox=sortBox; this.TRUST_RANK_NOTE=TRUST_RANK_NOTE; this.__trust=__trust; this.proKeyHeader=proKeyHeader; this.proKeyGet=proKeyGet; this.PRO_KEY=PRO_KEY; this.proKeySave=proKeySave; this.proKeyRemove=proKeyRemove; this.proUrlOk=proUrlOk; this.PRO_URL=PRO_URL; this.PRO_URL_YEAR=PRO_URL_YEAR; this.PRO_PRICE=PRO_PRICE; this.PRO_PRICE_YEAR=PRO_PRICE_YEAR; this.PRO_PRICE_WAS=PRO_PRICE_WAS; this.PRO_OFFER=PRO_OFFER; this.proButtons=proButtons; this.proReveal=proReveal; this.proConfig=proConfig;").call(s, document, LS);
 
 // RS16: iOS excludes macOS
 // RS16: expansions are specific on-topic phrases, never a bare category (live regression: "website" -> "frontend framework"
@@ -428,39 +431,118 @@ console.log("prd ok:", f.join(" | "));
   assert.ok(!/__selling[^\n]*(rankByFit|sort\()/.test(code), "selling must never re-rank");
   console.log("selling ok"); }
 
-// RS87: the Pro key plumbing. No key -> no header; a stored key rides in the plugin-key header; junk is never sent
+// RS87: the Pro key plumbing (pro-core.js). No key -> no header; a stored Pro-shaped key rides in the plugin-key header;
+// anything else is never sent
+const GOOD = "rp.sub_1QabcDEF234ghiJKL.0123456789abcdef";
 { assert.strictEqual(s.PRO_KEY, "replore.key");
   LS.removeItem("replore.key");
   assert.deepStrictEqual(s.proKeyHeader({"Content-Type":"application/json"}), {"Content-Type":"application/json"});
-  LS.setItem("replore.key", "  1C285B2D-6CE6-4BC7-B8BE-ADB6A7E304DA \n");
-  assert.strictEqual(s.proKeyHeader({})["X-Replore-Plugin-Key"], "1C285B2D-6CE6-4BC7-B8BE-ADB6A7E304DA");
-  ["short", "has space inside the key 0123456789", "x".repeat(101), "bad\nline0123456789abcdef"].forEach(v => {
+  LS.setItem("replore.key", "  " + GOOD + " \n");
+  assert.strictEqual(s.proKeyHeader({})["X-Replore-Plugin-Key"], GOOD);
+  ["short", "has space inside the key 0123456789", "x".repeat(101), "bad\nline0123456789abcdef", "1C285B2D-6CE6-4BC7-B8BE-ADB6A7E304DA",
+   "rp.sub_1QabcDEF234ghiJKL.0123456789ABCDEF", "rp.cus_1QabcDEF234ghiJKL.0123456789abcdef", GOOD + "0"].forEach(v => {
     LS.setItem("replore.key", v); assert.ok(!("X-Replore-Plugin-Key" in s.proKeyHeader({})), v); });
   LS.removeItem("replore.key");
-  // only on /api/relevance: the key's header name appears once in app.js, inside relevanceGate's headers
+  // only on /api/relevance: the header name appears once in the page code, in proKeyHeader, which only relevanceGate calls
   assert.strictEqual((code.match(/X-Replore-Plugin-Key/g) || []).length, 1);
-  assert.ok(/hdr=proKeyHeader\(\{"Content-Type":"application\/json"\}\)/.test(code));
+  assert.strictEqual((appCode.match(/proKeyHeader\(\{/g) || []).length, 1);
+  assert.ok(/hdr=typeof proKeyHeader==="function"\?proKeyHeader\(\{"Content-Type":"application\/json"\}\)/.test(appCode));
   console.log("pro key plumbing ok"); }
 
-// RS89: Leo, Pro window logic. Save trims and stores replore.key, Remove clears it, the header follows; hidden until PRO_URL
-{ assert.strictEqual(s.PRO_URL, "", "the Pro window ships switched off until the owner pastes the Polar link");
+// RS89: Leo, Pro window logic. Two Stripe Payment Links, offer line, key save / reveal / remove; hidden until PRO_URL
+{ assert.strictEqual(s.PRO_URL, "", "the Pro window ships switched off until the owner pastes the Stripe link");
+  assert.strictEqual(s.PRO_URL_YEAR, "");
   assert.ok(!s.proUrlOk(s.PRO_URL));
-  assert.ok(s.proUrlOk("https://buy.polar.sh/polar_cl_AbC123") && s.proUrlOk("https://polar.sh/replore/products/abc"));
-  ["http://buy.polar.sh/x", "https://evil.example/polar.sh/x", "https://polar.sh.evil.example/x", "javascript:alert(1)", "https://buy.polar.sh/a b"]
-    .forEach(u => assert.ok(!s.proUrlOk(u), u));
-  assert.strictEqual(s.PRO_PRICE, "8 USD a month"); assert.strictEqual(s.PRO_PRICE_YEAR, "or 72 USD a year");
+  // Stripe Payment Links only, with at most a prefilled promotion code
+  ["https://buy.stripe.com/aEU5kE0Ab1cd", "https://buy.stripe.com/aEU5kE0Ab1cd?prefilled_promo_code=FIRST399",
+   "https://buy.stripe.com/test_aEU5kE0Ab1cd", "https://buy.stripe.com/x?prefilled_promo_code=LAUNCH_50-A"].forEach(u => assert.ok(s.proUrlOk(u), u));
+  ["", "http://buy.stripe.com/x", "https://evil.example/buy.stripe.com/x", "https://buy.stripe.com.evil.example/x", "javascript:alert(1)",
+   "https://buy.stripe.com/a b", "https://buy.stripe.com/", "https://buy.stripe.com/a/b", "https://checkout.stripe.com/c/pay/x",
+   "https://buy.stripe.com/x?prefilled_email=a@b.c", "https://buy.stripe.com/x?prefilled_promo_code=first399",
+   "https://buy.stripe.com/x?prefilled_promo_code=FIRST399&client_reference_id=1", "https://buy.stripe.com/x?prefilled_promo_code=",
+   "https://buy.stripe.com/x?prefilled_promo_code=" + "A".repeat(31), "https://buy.stripe.com/x#frag"].forEach(u => assert.ok(!s.proUrlOk(u), u));
+  assert.ok(!s.proUrlOk("https://buy.stripe.com/test_abc", "replore.cardzo.co.in"), "test links never on the live site");
+  assert.ok(s.proUrlOk("https://buy.stripe.com/test_abc", "localhost"));
+  // the owner's shipped copy
+  assert.strictEqual(s.PRO_PRICE, "3.99 USD for your first month"); assert.strictEqual(s.PRO_PRICE_WAS, "8 USD");
+  assert.strictEqual(s.PRO_PRICE_YEAR, "72 USD a year");
+  assert.strictEqual(s.PRO_OFFER, "Sign-up offer: your first month is 3.99 USD, then 8 USD a month. Cancel any time.");
+  [s.PRO_PRICE, s.PRO_PRICE_WAS, s.PRO_PRICE_YEAR, s.PRO_OFFER].forEach(x => assert.ok(!/—/.test(x) && !/[\u{1F000}-\u{1FAFF}☀-➿]/u.test(x), x));
+  // buttons: nothing while PRO_URL is empty; monthly only; both
+  const M = "https://buy.stripe.com/mon01?prefilled_promo_code=FIRST399", Y = "https://buy.stripe.com/year01";
+  assert.deepStrictEqual(s.proButtons(s.proConfig()), { on: false, month: null, year: null, offer: "" });
+  let b = s.proButtons({ url: M, price: "3.99 USD for your first month", priceYear: "72 USD a year", was: "8 USD", offer: "" });
+  assert.ok(b.on && b.month.href === M && b.month.label === "Get a key, " && b.month.price === "3.99 USD for your first month" && b.month.was === "8 USD");
+  assert.strictEqual(b.year, null, "yearly button hidden without PRO_URL_YEAR"); assert.strictEqual(b.offer, "", "offer line hidden when empty");
+  b = s.proButtons({ url: M, urlYear: Y, price: "p", priceYear: "72 USD a year", was: "", offer: "  Sign-up offer  " });
+  assert.deepStrictEqual(b.year, { href: Y, label: "Yearly, 72 USD a year" }); assert.strictEqual(b.offer, "Sign-up offer"); assert.strictEqual(b.month.was, "");
+  assert.strictEqual(s.proButtons({ url: M, urlYear: "https://evil.example/x", price: "p", priceYear: "y" }).year, null);
+  assert.strictEqual(s.proButtons({ url: "https://evil.example/x", urlYear: Y }).on, false);
+  // save trims and stores a Pro-shaped key; a bad paste never overwrites a good key; Remove clears it; the header follows
   LS.removeItem("replore.key");
   assert.ok(!("X-Replore-Plugin-Key" in s.proKeyHeader({})), "no key, no header");
-  assert.ok(s.proKeySave("   REPLORE_1C285B2D-6CE6-4BC7-B8BE-ADB6A7E304DA  "));
-  assert.strictEqual(LS.getItem("replore.key"), "REPLORE_1C285B2D-6CE6-4BC7-B8BE-ADB6A7E304DA", "trimmed");
-  assert.strictEqual(s.proKeyHeader({})["X-Replore-Plugin-Key"], "REPLORE_1C285B2D-6CE6-4BC7-B8BE-ADB6A7E304DA", "header sent when stored");
-  assert.ok(!s.proKeySave("") && !s.proKeySave("too short") && !s.proKeySave("has a space 0123456789abc"));
-  assert.strictEqual(LS.getItem("replore.key"), "REPLORE_1C285B2D-6CE6-4BC7-B8BE-ADB6A7E304DA", "a bad paste never overwrites a good key");
+  assert.ok(s.proKeySave("   " + GOOD + "  "));
+  assert.strictEqual(LS.getItem("replore.key"), GOOD, "trimmed");
+  assert.strictEqual(s.proKeyHeader({})["X-Replore-Plugin-Key"], GOOD, "header sent when stored");
+  assert.ok(!s.proKeySave("") && !s.proKeySave("too short") && !s.proKeySave("REPLORE_1C285B2D-6CE6-4BC7-B8BE-ADB6A7E304DA"));
+  assert.strictEqual(LS.getItem("replore.key"), GOOD, "a bad paste never overwrites a good key");
+  // the key shown back, plus the plugin line
+  assert.deepStrictEqual(s.proReveal(GOOD), { key: GOOD, env: "REPLORE_KEY=" + GOOD,
+    hint: "For the plugin: in Claude Code, set it in your shell before you start claude; in an MCP config, add it as an env entry." });
+  assert.strictEqual(s.proReveal(" " + GOOD + " ").key, GOOD);
+  [null, "", "junk", "REPLORE_KEY=" + GOOD].forEach(v => assert.strictEqual(s.proReveal(v), null, String(v)));
   s.proKeyRemove();
   assert.strictEqual(LS.getItem("replore.key"), null);
   assert.ok(!("X-Replore-Plugin-Key" in s.proKeyHeader({})), "header gone after Remove key");
   // never in a URL, the feedback form or a log
-  assert.ok(!/console\.(log|info|warn|error)\([^)]*proKey/.test(code) && !/location[^;]*proKey/.test(code));
+  assert.ok(!/console\.(log|info|warn|error)\([^)]*(proKey|proReveal)/.test(code) && !/location[^;]*(proKey|proReveal)/.test(code));
+  assert.ok(!/[?&](key|session_id)=/.test(coreCode));
   const fb = code.slice(code.indexOf("function feedbackPayload"), code.indexOf("function feedbackPayload") + 1200);
   assert.ok(!/replore\.key|proKey|PRO_KEY/.test(fb));
   console.log("pro window ok"); }
+
+// RS90: the /pro page's claim helpers (pure, no DOM)
+{ const pro = fs.readFileSync(path.join(__dirname, "..", "web", "pro.js"), "utf8").replace('"use strict";', "");
+  const P = new Function("localStorage", coreCode + "\n" + pro + "; return {claimView, claimSession, claimCleanUrl, CLAIM_REASONS, claimDecision, CLAIM_ASK_NEW, CLAIM_ASK_OTHER};")(LS);
+  const KEY = "rp.sub_1QabcDEF234ghiJKL.0123456789abcdef", SID = "cs_test_a1B2c3D4e5F6g7H8i9J0";
+  const v = P.claimView(200, { key: KEY, renews: "2026-11-23" });
+  assert.deepStrictEqual(v, { ok: true, key: KEY, on: "Pro is on in this browser.", renews: "Your subscription renews on 2026-11-23.",
+    keep: "Keep this key somewhere safe: it is how you turn Pro on in another browser, and the plugin and MCP server read it as REPLORE_KEY.",
+    env: "REPLORE_KEY=" + KEY });
+  assert.strictEqual(P.claimView(200, { key: KEY, renews: null }).renews, "");
+  assert.strictEqual(P.claimView(200, { key: KEY, renews: "<b>soon</b>" }).renews, "");
+  // failures: plain-English reasons per code; anything unexpected (bad key shape, not JSON, network) reads as "could not reach Stripe"
+  for (const [st, body, code] of [[403, { error: "not_paid" }, "not_paid"], [403, { error: "not_pro" }, "not_pro"], [404, { error: "unknown_session" }, "unknown_session"],
+      [400, { error: "bad_session" }, "bad_session"], [429, { error: "rate_limited" }, "rate_limited"], [503, { error: "pro_off" }, "pro_off"],
+      [503, { error: "stripe_error" }, "stripe_error"], [200, { key: "rp.bad" }, "stripe_error"], [200, null, "stripe_error"], [0, null, "stripe_error"],
+      [500, { error: "<script>" }, "stripe_error"]]) {
+    const f = P.claimView(st, body); assert.strictEqual(f.ok, false); assert.strictEqual(f.reason, P.CLAIM_REASONS[code], code);
+  }
+  Object.values(P.CLAIM_REASONS).forEach(r => assert.ok(!/—/.test(r) && !/[\u{1F000}-\u{1FAFF}☀-➿]/u.test(r), r));
+  // the session id from the address, shape-checked; the address without it
+  assert.strictEqual(P.claimSession("?session_id=" + SID), SID);
+  assert.strictEqual(P.claimSession("?a=1&session_id=" + SID + "&b=2"), SID);
+  ["", "?session_id=", "?session_id=cs_live_short", "?session_id=" + SID + "%2F..", "?session_id=%E0%A4%A", "?xsession_id=" + SID].forEach(q => assert.strictEqual(P.claimSession(q), "", q));
+  assert.strictEqual(P.claimCleanUrl("/pro", "?session_id=" + SID, ""), "/pro");
+  assert.strictEqual(P.claimCleanUrl("/pro", "?a=1&session_id=" + SID + "&b=2", "#x"), "/pro?a=1&b=2#x");
+  // the key never goes into a URL; the session id is sent only in the POST body to our own function
+  assert.ok(!/session_id=[^"]*\+\s*(v\.key|k\b)/.test(pro) && !/[?&]key=/.test(pro));
+  // security review: auto-save only after a checkout this browser started, never over a different saved key
+  const OTHER = "rp.sub_1QotherKEY99999.fedcba9876543210";
+  assert.strictEqual(P.claimDecision(true, "", KEY), "save");
+  assert.strictEqual(P.claimDecision(false, "", KEY), "ask", "a crafted link without our checkout marker never saves");
+  assert.strictEqual(P.claimDecision(true, OTHER, KEY), "ask", "never over a different key, marker or not");
+  assert.strictEqual(P.claimDecision(false, OTHER, KEY), "ask");
+  assert.strictEqual(P.claimDecision(false, KEY, KEY), "save", "the same key again changes nothing");
+  [P.CLAIM_ASK_NEW, P.CLAIM_ASK_OTHER].forEach(x => assert.ok(!/—/.test(x), x));
+  assert.ok(/nonce=proCheckoutTake\(\)/.test(pro) && /claimDecision\(nonce, had, v\.key\)/.test(pro) && (pro.match(/proKeySave\(/g) || []).length === 2);
+  // the checkout marker: random, one tab, read once
+  const SS = { m: {}, getItem(k){ return k in this.m ? this.m[k] : null; }, setItem(k, v){ this.m[k] = String(v); }, removeItem(k){ delete this.m[k]; } };
+  const C = new Function("localStorage", "sessionStorage", "crypto", coreCode + "; return {proCheckoutMark, proCheckoutTake, PRO_CHECKOUT};")(LS, SS, require("crypto").webcrypto);
+  assert.strictEqual(C.proCheckoutTake(), false);
+  C.proCheckoutMark(); assert.ok(/^[0-9a-f]{32}$/.test(SS.m["replore.checkout"]));
+  const first = SS.m["replore.checkout"]; C.proCheckoutMark(); assert.notStrictEqual(SS.m["replore.checkout"], first, "random each time");
+  assert.strictEqual(C.proCheckoutTake(), true); assert.strictEqual(C.proCheckoutTake(), false, "used once");
+  SS.m["replore.checkout"] = "1"; assert.strictEqual(C.proCheckoutTake(), false, "a forged marker is not ours");
+  assert.ok(/buy\.addEventListener\("click",proCheckoutMark\)/.test(coreCode) && /yr\.addEventListener\("click",proCheckoutMark\)/.test(coreCode));
+  console.log("pro page ok"); }
