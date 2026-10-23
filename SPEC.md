@@ -1165,6 +1165,20 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   `allowed-tools`: the `--version` probe and `${CLAUDE_PLUGIN_ROOT}/scripts/scout.py` and `trust.py` under each of
   `python3`, `python` and `py -3` (the three launchers it already probes). Nothing else is pre-approved (RX4).
   `claude plugin validate --strict .` passes.
+- **RS86** Listing pack (distribution plan 2026-10-23). `docs/LISTING.md` holds the owner's steps and paste-ready copy
+  for (a) Anthropic's plugin directory (claude.ai/directory/manage: paid plan, GitHub connected, Submit new, Plugin
+  bundle, repo URL, Validate, data-handling answers that say truthfully that Replore stores no personal data and the
+  opt-in RS25 log stays on the user's machine, compliance acknowledgements, submit), (b) the official MCP registry and
+  (c) PulseMCP and Glama, plus what the repo still trips in the directory checks (media files under `video/` and
+  `web/` held for a reviewer) and the recommendation, the owner's call, to move `video/` to its own repository rather than
+  move the plugin into a subfolder. For the registry, which lists only packages: `pyproject.toml` builds the PyPI package
+  `replore-mcp` (named for its server, so `uvx replore-mcp` starts the MCP server; standard library only, no
+  dependencies, RS11) by mapping the `replore` package to `scripts/` without renaming anything; console scripts
+  `replore-mcp` (`scripts/mcp_server.py` `main`) and `replore` (`scripts/scout.py` `main`). `server.json` (schema
+  2025-12-11) names the server `io.github.chittychat-studio/replore`, package `pypi` / `replore-mcp`, transport stdio,
+  optional `GITHUB_TOKEN` and `REPLORE_KEY`; the README carries the `mcp-name:` ownership line as an HTML comment. The
+  package and registry versions equal `plugin.json` (RS50) and the identifiers match (tested). Publishing is the
+  owner's step; nothing in CI uploads.
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
 - **RX3** Ranking by forks, trending or download counts. (Relevance, stars and license-freedom are the only

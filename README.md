@@ -1,5 +1,7 @@
 # Replore
 
+<!-- mcp-name: io.github.chittychat-studio/replore -->
+
 ![Replore: the repo scout for vibe coders. Find it before you build it.](docs/banner.png)
 
 **The repo scout for vibe coders. Find it before you build it.**
@@ -287,7 +289,8 @@ python3 evals/run.py                # fit-ranking evals
 
 **Cutting a release (SPEC RS81).** One version everywhere (RS50):
 
-1. Bump the version in `.claude-plugin/plugin.json` (`"version"`) and in `scripts/mcp_server.py` (`SERVER_INFO`).
+1. Bump the version in `.claude-plugin/plugin.json` (`"version"`) and in `scripts/mcp_server.py` (`SERVER_INFO`), and in
+   `pyproject.toml` and both places in `server.json` (the PyPI package and MCP registry entry, SPEC RS86).
 2. In `CHANGELOG.md`, rename `## [Unreleased]` to `## [X.Y.Z] - YYYY-MM-DD`, start a new empty `## [Unreleased]`
    above it, and update the compare links at the bottom.
 3. Merge that to `main`, then tag it and push the tag: `git tag vX.Y.Z` and `git push origin vX.Y.Z`.

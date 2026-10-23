@@ -1,0 +1,37 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.chittychat-studio/replore",
+  "title": "Replore",
+  "description": "Find open-source GitHub repos that fit your project, ranked by relevance, stars and license.",
+  "repository": {
+    "url": "https://github.com/chittychat-studio/replore",
+    "source": "github"
+  },
+  "websiteUrl": "https://replore.cardzo.co.in",
+  "version": "0.4.0",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "replore-mcp",
+      "version": "0.4.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeHint": "uvx",
+      "environmentVariables": [
+        {
+          "name": "GITHUB_TOKEN",
+          "description": "Optional GitHub token: raises GitHub's search rate limit. Sent only to api.github.com, never printed.",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "REPLORE_KEY",
+          "description": "Optional Replore Pro key: turns on meaning ranking (semantic). Sent only to Replore's own server.",
+          "isRequired": false,
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}

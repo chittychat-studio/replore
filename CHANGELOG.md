@@ -14,6 +14,9 @@ How to cut a release: README, Development (SPEC RS81).
 - The optional security-log hook runs in exec form (`python3` + the script path, no shell), so it no longer fails
   under PowerShell and meets the directory checklist; unset `REPLORE_SECURITY_LOG` still means an immediate, silent
   exit (RS25).
+- Listing pack: `docs/LISTING.md` (Anthropic directory, MCP registry, PulseMCP, Glama: owner steps and copy),
+  `pyproject.toml` for the stdlib-only PyPI package `replore-mcp` (commands `replore-mcp` and `replore`) and
+  `server.json` for the registry entry `io.github.chittychat-studio/replore` (RS86).
 
 ### Fixed
 - The evals page is linked, canonicalised and listed in the sitemap as `/evals`; Cloudflare Pages redirects `evals.html` (RS80, RS84).

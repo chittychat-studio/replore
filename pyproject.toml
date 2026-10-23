@@ -1,0 +1,41 @@
+# SPEC RS86: the PyPI package `replore-mcp` (named for its server, so `uvx replore-mcp` starts it), so the official MCP registry can list the server (it needs a package).
+# Standard library only (RS11): no dependencies. The modules stay in scripts/ (no rename): setuptools maps the
+# `replore` package to that folder, so the wheel holds replore/scout.py, replore/mcp_server.py, replore/hybrid.py and
+# replore/trust.py. Each script puts its own folder on sys.path, so their plain `import scout` still works installed.
+# Version: one version everywhere (RS50), checked by tests/test_listing.py.
+[build-system]
+requires = ["setuptools>=77"]   # SPDX `license` string
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "replore-mcp"
+version = "0.4.0"
+description = "The repo scout for vibe coders: find the open-source GitHub repos that fit what you are building, ranked by relevance, popularity and license. CLI and MCP server."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "chittychat-studio" }]
+keywords = ["github", "search", "open-source", "mcp", "model-context-protocol", "license"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
+  "Environment :: Console",
+  "Topic :: Software Development",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://replore.cardzo.co.in"
+Documentation = "https://github.com/chittychat-studio/replore#readme"
+Source = "https://github.com/chittychat-studio/replore"
+Issues = "https://github.com/chittychat-studio/replore/issues"
+Privacy = "https://github.com/chittychat-studio/replore/blob/main/PRIVACY.md"
+
+[project.scripts]
+replore = "replore.scout:main"
+replore-mcp = "replore.mcp_server:main"
+
+[tool.setuptools]
+packages = ["replore"]
+package-dir = { "replore" = "scripts" }

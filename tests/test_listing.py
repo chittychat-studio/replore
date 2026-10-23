@@ -75,3 +75,37 @@ def test_skill_frontmatter_names_it_and_scopes_tools():
             assert f"Bash({py} *${{CLAUDE_PLUGIN_ROOT}}/scripts/{script}*)" in rules
     # only the launcher probe and the plugin's own scripts (RX4)
     assert all(r.endswith("--version)") or "${CLAUDE_PLUGIN_ROOT}/scripts/" in r for r in rules)
+
+
+def test_pypi_package_and_registry_entry_agree():
+    """RS86: pyproject.toml (PyPI) and server.json (MCP registry) match each other and the plugin version (RS50)."""
+    import tomllib
+    proj = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    server = json.loads((ROOT / "server.json").read_text(encoding="utf-8"))
+    p = proj["project"]
+    assert p["dependencies"] == []   # RS11: standard library only
+    assert p["version"] == PLUGIN["version"] == server["version"] == server["packages"][0]["version"]
+    pkg = server["packages"][0]
+    assert pkg["registryType"] == "pypi" and pkg["identifier"] == p["name"] and pkg["transport"] == {"type": "stdio"}
+    assert server["name"] == "io.github.chittychat-studio/replore"
+    assert server["$schema"].startswith("https://static.modelcontextprotocol.io/schemas/")
+    assert len(server["description"]) <= 100
+    # the registry proves PyPI ownership with this line in the package README
+    readme = (ROOT / p["readme"]).read_text(encoding="utf-8")
+    assert re.search(r"^<!-- mcp-name: io\.github\.chittychat-studio/replore -->$", readme, re.M)
+    # console scripts point at modules that exist in the mapped folder and define main()
+    folder = ROOT / proj["tool"]["setuptools"]["package-dir"]["replore"]
+    assert p["scripts"] == {"replore": "replore.scout:main", "replore-mcp": "replore.mcp_server:main"}
+    for target in p["scripts"].values():
+        mod, fn = target.split(":")
+        src = (folder / (mod.split(".", 1)[1] + ".py")).read_text(encoding="utf-8")
+        assert re.search(rf"^def {fn}\(", src, re.M), target
+    assert {e["name"] for e in pkg.get("environmentVariables", [])} <= {"GITHUB_TOKEN", "REPLORE_KEY"}
+    assert all(e["isRequired"] is False for e in pkg.get("environmentVariables", []))
+
+
+def test_listing_doc_names_the_owner_steps():
+    doc = (ROOT / "docs" / "LISTING.md").read_text(encoding="utf-8")
+    for s in ("claude.ai/directory/manage", "Plugin bundle", "Validate", "mcp-publisher login github",
+              "mcp-publisher publish", "pulsemcp.com/submit", "glama.ai/mcp/servers", "video/"):
+        assert s in doc, s
