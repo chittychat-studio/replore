@@ -756,8 +756,10 @@ def test_web_page_is_safe_static(monkeypatch):
     assert "ask me 5 short questions that would most improve this plan" in html and "wait for my answers" in html   # RS28d
     assert "show me what the app will look like: make reference images or a simple" in html   # RS28h
     assert "Write the PRD only after I approve, and match what I approved." in html   # RS28h
+    assert "Make step 0 of the build plan: set up Governor" in html and "governor@chittychat-governor" in html   # RS28i
     skill = (ROOT / "skills" / "find" / "SKILL.md").read_text(encoding="utf-8")
     assert "Needs first, shell last (RS16a" in skill and "No good match" in skill and "RS28c" in skill   # web and plugin in sync
+    assert "RS28i" in skill and "/governor:init" in skill   # RS28i: Governor as step 0, web and plugin
     assert "var GENERIC=" in html and "RS16a" in html
     # RS28b: Gemini copies BEFORE opening its tab (a focused new tab makes the browser refuse the clipboard write)
     cto = html[html.index("function copyThenOpen("):]
