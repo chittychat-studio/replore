@@ -1180,44 +1180,53 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   optional `GITHUB_TOKEN` and `REPLORE_KEY`; the README carries the `mcp-name:` ownership line as an HTML comment. The
   package and registry versions equal `plugin.json` (RS50) and the identifiers match (tested). Publishing is the
   owner's step; nothing in CI uploads.
-- **RS87** Replore Pro key (owner plan 2026-10-23; builds on RS34g, RS34h, RS42). A **Pro key** is a Polar license key:
-  Polar (polar.sh) is the merchant of record and issues it as a "license key" benefit when someone buys Pro. The key
-  shape in Polar's docs is a UUID4 with an optional brandable prefix (`<PREFIX>_<UUID4>`, e.g. `1C285B2D-6CE6-...`).
+- **RS87** Replore Pro key (owner plan 2026-10-23; builds on RS34g, RS34h, RS42; amended 2026-10-23: Stripe replaces
+  the earlier merchant of record, which pays out only to a bank account in a country Cardzo has none in). The owner
+  sells Pro with a **Stripe Payment Link** and is the seller of record. There is no key store: a **Pro key** is a signed
+  subscription token, `rp.<subscription id>.<sig>`, where `<subscription id>` is the Stripe subscription id (`sub_` then
+  `[A-Za-z0-9_]`, 8-80 characters after the prefix) and `<sig>` is the first 16 hex characters of
+  HMAC-SHA256(`PRO_SIGNING_SECRET`, subscription id), computed with WebCrypto. The shape
+  `^rp\.sub_[A-Za-z0-9_]{8,80}\.[0-9a-f]{16}$` is checked on the client and on the server. Two server secrets turn the
+  route on: `PRO_SIGNING_SECRET` (a Pages secret, 32+ random characters) and `STRIPE_SECRET_KEY` (a Stripe
+  **restricted** key with read-only access to Checkout Sessions and Subscriptions, nothing else). Without either the
+  Pro route is off: a semantic request carrying a Pro-shaped key that is not `PLUGIN_KEY` gets 403 `pro_off`. Neither
+  secret ever leaves the server or appears in a log or a response. Keys are issued by RS90.
   **Server** (`functions/api/relevance.js`): the key arrives in the header the plugin already sends,
   `X-Replore-Plugin-Key` (one header for both, no new name). It is checked first, in constant time, against `PLUGIN_KEY`
-  (and `X-Replore-Eval-Key` against `EVAL_KEY`) exactly as before (RS34g, unchanged). Only if that fails, the variable
-  `POLAR_ORG_ID` is set and the value has the Polar shape, the function asks Polar's public validate endpoint
-  (`POST https://api.polar.sh/v1/customer-portal/license-keys/validate`, body `key`, `organization_id` and, when the
-  variable `POLAR_BENEFIT_ID` is set, `benefit_id`; no Polar token, so no Polar secret is held) with a 3 s deadline and
-  `redirect: "error"`. Granted means HTTP 200 with `status` `"granted"`, `expires_at` null or in the future, the benefit
-  matching `POLAR_BENEFIT_ID` when set, and `usage` below `limit_usage` when a limit is set. Polar answers 404 for a key
-  that is unknown, revoked, disabled or expired (its documented error); that and any non-granted reply is a denial. A
-  network error, timeout, redirect, other status or unreadable body is an error. **Fail closed:** only a granted
-  verdict opens anything. The verdict (granted or denied, never an error) is cached in the isolate's memory for 10
-  minutes keyed by the SHA-256 hex of the key (at most 5,000 entries); the key itself is never stored, logged or
-  returned. Polar lookups are rate-limited per IP (best effort, in memory, 5 per minute), so random keys cannot turn
-  the function into a Polar flooder. Each fresh lookup logs one RS34d record with a code only: `pro_granted`,
-  `pro_denied` or `pro_error`. Without `POLAR_ORG_ID` the Pro route is off: a semantic request carrying a Polar-shaped
-  key that is not `PLUGIN_KEY` gets 403 `pro_off`. **What a granted key unlocks today** is exactly what `PLUGIN_KEY`
-  unlocks: the meaning route (`mode: "semantic"`, RS42; still answers 404 `semantic_off` until the owner switches
-  `RAG_PLUGIN` and a RAG part on) and skipping the per-IP limiter (RS34g). It never opens the paid AI judge without
-  Turnstile. **Clients:** `scripts/hybrid.py` (the plugin's `--semantic`, `scout.py`) and `scripts/mcp_server.py` read
-  `REPLORE_KEY` first, then the older `REPLORE_PLUGIN_KEY`, and send it only to Replore's hosts (RS34h: https,
-  `replore.cardzo.co.in`, `replore.pages.dev` or one label under it, no port) with redirects refused; never printed.
-  The MCP tool `find_repos` gains an opt-in `semantic` flag with a `description` (sent to Replore's server only when
-  set, like `--semantic`). The web page sends `localStorage["replore.key"]`, when present, in the same header on its
-  `/api/relevance` calls; on the web this only lifts the per-IP limit, since the page never uses `mode: "semantic"`.
-  `web/_headers` (CSP) is unchanged: Polar is called server-side only. **Planned, not built** (so nobody reads them
-  as shipped): searches on the user's own GitHub token, PRD batch over 20 repos, saved shortlists, a licence-policy
-  mode. Prices live only in `docs/MONETIZATION.md`, never in this SPEC or on the site until the owner publishes them.
+  (and `X-Replore-Eval-Key` against `EVAL_KEY`) exactly as before (RS34g, unchanged). Only if that fails and the value
+  has the Pro shape, the function recomputes the signature and compares it in constant time; a bad signature is refused
+  with no Stripe call (so the endpoint cannot be used to probe Stripe). A good signature leads to
+  `GET https://api.stripe.com/v1/subscriptions/{id}` with the restricted key, a 3 s deadline and `redirect: "error"`.
+  Granted means HTTP 200 with `status` `active` or `trialing`; 200 with any other status (`canceled`, `past_due`,
+  `unpaid`, `incomplete` and so on) or 404 is a denial. A network error, timeout, redirect, other status or unreadable
+  body is an error. **Fail closed:** only a granted verdict opens anything. The verdict (granted or denied, never an
+  error) is cached in the isolate's memory for 10 minutes keyed by the SHA-256 hex of the key (at most 5,000 entries);
+  the key itself is never stored, logged or returned. Fresh Stripe lookups are rate-limited per IP (best effort, in
+  memory, 5 per minute), so random keys cannot turn the function into a Stripe flooder. Each fresh lookup logs one
+  RS34d record with a code only: `pro_granted`, `pro_denied` or `pro_error`. **What a granted key unlocks today** is
+  exactly what `PLUGIN_KEY` unlocks: the meaning route (`mode: "semantic"`, RS42; still answers 404 `semantic_off`
+  until the owner switches `RAG_PLUGIN` and a RAG part on) and skipping the per-IP limiter (RS34g). It never opens the
+  paid AI judge without Turnstile. A canceled subscription stops working within the 10-minute cache. **Clients:**
+  `scripts/hybrid.py` (the plugin's `--semantic`, `scout.py`) and `scripts/mcp_server.py` read `REPLORE_KEY` first,
+  then the older `REPLORE_PLUGIN_KEY`, and send it only to Replore's hosts (RS34h: https, `replore.cardzo.co.in`,
+  `replore.pages.dev` or one label under it, no port) with redirects refused; never printed. The MCP tool `find_repos`
+  gains an opt-in `semantic` flag with a `description` (sent to Replore's server only when set, like `--semantic`). The
+  web page sends `localStorage["replore.key"]`, when it has the Pro shape, in the same header on its `/api/relevance`
+  calls; on the web this only lifts the per-IP limit, since the page never uses `mode: "semantic"`. `web/_headers`
+  (CSP) is unchanged: Stripe is called server-side only, and the buy link is a plain navigation. **Planned, not built**
+  (so nobody reads them as shipped): searches on the user's own GitHub token, PRD batch over 20 repos, saved
+  shortlists, a licence-policy mode. Prices live only in `docs/MONETIZATION.md`, never in this SPEC or on the site until
+  the owner publishes them.
 - **RS88** Monetisation plan (owner plan 2026-10-23). `docs/MONETIZATION.md` keeps the owner's plan in the owner's order
-  (distribution first; Replore Pro hosted key with Polar as merchant of record; sponsored starter slots per intent
-  category, labelled and never in the ranking, RS9 and RX3; affiliate "how to start" links disclosed in `PRIVACY.md`; a
-  Team tier; an API only on request and on the customer's own GitHub token; Workers AI unit economics), each step with
-  a status (done, built, owner step, not started), the owner's checklist of accounts and dashboard variables, and every
-  figure it could not confirm marked "not verified". Planned prices live in that file only: `SPEC.md` and `README.md`
-  never state them (tested); the site shows a price only where the owner placed it in a picked design. Sponsored slots,
-  affiliate links, Team and the API each need their own rule (and PRIVACY change) before any code.
+  (distribution first; Replore Pro hosted key sold through a Stripe Payment Link with the owner as seller of record, so
+  EU and UK VAT on digital services is the owner's to register for and file, with Stripe Tax calculating it; sponsored
+  starter slots per intent category, labelled and never in the ranking, RS9 and RX3; affiliate "how to start" links
+  disclosed in `PRIVACY.md`; a Team tier; an API only on request and on the customer's own GitHub token; Workers AI
+  unit economics), each step with a status (done, built, owner step, not started), the owner's checklist of accounts
+  and dashboard variables, and every figure it could not confirm marked "not verified". Planned prices live in that file
+  only: `SPEC.md` and `README.md` never state them (tested); the site shows a price only where the owner placed it in a
+  picked design. Sponsored slots, affiliate links, Team and the API each need their own rule (and PRIVACY change)
+  before any code.
 - **RS89** Leo, Pro window (owner pick 2026-10-23, from mock-ups; lifts RS87's "no visible UI" for exactly this window).
   A "Pro" button after "Plugin" in the top nav (`nav-btn`, title "Rank by meaning too, with a Pro key") opens a window
   built like the other modals (`.modal > .sheet`, 16px radius, site fonts, max-width 580px). Copy is final: heading
@@ -1227,16 +1236,44 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   and three search-stage pills: "Meaning ranking", "No queue on the AI check", "Web and every agent"; a dark primary link
   "Get a key, " + `PRO_PRICE` to `PRO_URL` in a new tab, an outlined "I have a key" that focuses the key field, and the
   muted `PRO_PRICE_YEAR`; under a top border, "Your key" (JetBrains Mono input, placeholder "Paste it here", autocomplete
-  and spellcheck off) with an accent "Save", and the 12.5px note "Stays in this browser. I check it with Polar, who sold
+  and spellcheck off) with an accent "Save", and the 12.5px note "Stays in this browser. I check it with Stripe, who sold
   it to you, and never keep it." Save trims the value and stores it in `localStorage["replore.key"]` (the key RS87's
-  plumbing sends) only if it is printable ASCII of 16-100 characters (otherwise the field is marked invalid and nothing
-  is overwritten); the form then shows "Pro is on for this browser" with a "Remove key" button that deletes it; opening
-  the window with a stored key shows that state. The key is never put in a URL, a log or the feedback form. **Switch:**
-  `PRO_URL` in `web/app.js` is empty, so the button and the window stay hidden (`hidden`), like the tip link (RS44); the
-  owner pastes the Polar checkout link (https, a `polar.sh` host) to go live. `PRO_PRICE` and `PRO_PRICE_YEAR` hold the
-  owner's picked price copy (values in `docs/MONETIZATION.md`, never here, RS88) and show only inside this window. Tap targets
-  are 44px; one column on phones (560px and under). No em dash (RS66), no emoji or glyph icon (RS55); CSP unchanged
-  (Polar is only a link and a server-side call). The in-page privacy window and `PRIVACY.md` disclose the key.
+  plumbing sends) only if it has the RS87 Pro shape (otherwise the field is marked invalid and nothing is overwritten);
+  the form then shows "Pro is on for this browser" with a "Remove key" button that deletes it; opening the window with a
+  stored key shows that state. The key is never put in a URL, a log or the feedback form. **Switch:** `PRO_URL` in
+  `web/app.js` (and the same value in `web/pro.js`, tested equal) is empty, so the button and the window stay hidden
+  (`hidden`), like the tip link (RS44); the owner pastes the Stripe Payment Link to go live. `proUrlOk` accepts exactly
+  what the tip link accepts (RS44): `https://buy.stripe.com/` and one path segment of `[A-Za-z0-9_-]`, and a `test_`
+  link is refused on the live hosts. `PRO_PRICE` and `PRO_PRICE_YEAR` hold the owner's picked price copy (values in
+  `docs/MONETIZATION.md`, never here, RS88) and show only inside this window and on the RS90 page. Tap targets are
+  44px; one column on phones (560px and under). No em dash (RS66), no emoji or glyph icon (RS55); CSP unchanged (Stripe
+  is only a link and a server-side call). The in-page privacy window and `PRIVACY.md` disclose the key.
+- **RS90** Getting a Pro key: the claim function and the `/pro` page (2026-10-23, with the RS87 Stripe switch).
+  **Claim** (`functions/api/pro/claim.js`, `POST /api/pro/claim`, body `{"session_id": "cs_..."}`; Pages routes by file
+  path, so the file sits in `api/pro/`): same-origin check (403 `bad_origin`); a best-effort per-IP limit of 5 per
+  minute in memory (429 `rate_limited` with `Retry-After`); JSON only, at most 1 KB; the session id must match
+  `^cs_(live|test)_[A-Za-z0-9]{10,200}$` or the answer is 400 `bad_session` before any network call. Off (503
+  `pro_off`) unless both RS87 secrets are set. The function asks Stripe
+  `GET https://api.stripe.com/v1/checkout/sessions/{id}?expand[]=subscription` with the restricted key, a 5 s deadline
+  and `redirect: "error"`, and issues a key only when `payment_status` is `paid` and the expanded subscription's
+  `status` is `active` or `trialing`; otherwise 403 `not_paid`, Stripe 404 gives 404 `unknown_session`, and anything
+  else (network, timeout, redirect, other status, unreadable body, subscription not expanded) gives 503
+  `stripe_error`: codes only, fail closed. The answer is `{"key": "rp....", "renews": "YYYY-MM-DD"}` (the
+  subscription's `current_period_end`, or its first item's on newer Stripe API versions; `null` when neither is
+  there) with `Cache-Control: no-store`. The key is deterministic, so claiming the same session again returns the same
+  key and nothing is stored. One log line per claim with a code only (`claim_issued` or the error code), never the
+  session id, the key or a secret. **Page** (`web/pro.html` + `web/pro.js`, styles in `web/page.css`, served at `/pro`:
+  link, canonical and sitemap entry use `/pro`, RS80): the RS89 window as a page, same copy, image, pills, buttons and
+  key form (ids prefixed `pp`). With `session_id` in the address, it shows a claim state: it POSTs the id to
+  `/api/pro/claim`, removes `session_id` from the address bar (`history.replaceState`), and on success shows the key in
+  a read-only JetBrains Mono field with a Copy button, saves it to `localStorage["replore.key"]`, says "Pro is on in this
+  browser" and the renewal date, and tells the buyer to keep the key for the plugin and MCP server (`REPLORE_KEY`). On
+  failure it shows the plain-English reason for the code and a "Try again" link. The strings come from pure functions in
+  `pro.js` (tested without a DOM). While `PRO_URL` is empty the page is still reachable but shows "Keys are not on sale
+  yet." and no buy button. The owner sets the Payment Link's success URL to
+  `https://replore.cardzo.co.in/pro?session_id={CHECKOUT_SESSION_ID}`. Linked from the page footer and listed in the
+  sitemap; no inline script (RS49), no emoji (RS55), no em dash (RS66), 44px targets, CSP unchanged (the page calls only
+  its own site); the script is hash-stamped by `ops/stamp_assets.py` (RS52).
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
 - **RX3** Ranking by forks, trending or download counts. (Relevance, stars and license-freedom are the only
