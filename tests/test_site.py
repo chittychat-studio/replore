@@ -25,8 +25,8 @@ def test_robots_and_sitemap():
     locs = [u.find("s:loc", ns).text for u in urls]
     assert locs[0] == CANON and all(l.startswith(CANON) for l in locs) and "pages.dev" not in "".join(locs)
     assert all(re.fullmatch(r"\d{4}-\d{2}-\d{2}", u.find("s:lastmod", ns).text) for u in urls)
-    for loc in locs[1:]:   # every listed secondary page exists
-        assert (WEB / loc[len(CANON):]).exists(), loc
+    for loc in locs[1:]:   # every listed secondary page exists as <name>.html (clean URL on Cloudflare Pages)
+        assert (WEB / (loc[len(CANON):] + ".html")).exists(), loc
 
 
 def test_canonical_link_on_the_page():
