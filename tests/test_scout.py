@@ -486,7 +486,8 @@ def test_skill_asks_for_task_when_no_description():
     assert "argument-hint:" in front
     assert "$ARGUMENTS" in skill
     assert "What are you building, or what task do you need a GitHub repo for?" in skill
-    assert skill.index("RS1a") < skill.index("scripts/scout.py"), "must ask before running the search"
+    body = skill.split("\n---\n", 1)[1]   # RS85: allowed-tools in the frontmatter names the script too
+    assert body.index("RS1a") < body.index("scripts/scout.py"), "must ask before running the search"
 
 
 def test_markdown_summary_escapes_repo_text():

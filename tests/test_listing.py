@@ -1,0 +1,77 @@
+"""SPEC RS85: directory-ready manifest, icon and skill frontmatter. No network."""
+import json
+import re
+import struct
+import sys
+import zlib
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "ops"))
+import make_icon  # noqa: E402
+
+PLUGIN = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
+MARKET = json.loads((ROOT / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8"))
+
+
+def _png_chunks(data):
+    assert data[:8] == b"\x89PNG\r\n\x1a\n"
+    i, out = 8, []
+    while i < len(data):
+        (n,) = struct.unpack(">I", data[i:i + 4])
+        kind, body = data[i + 4:i + 8], data[i + 8:i + 8 + n]
+        (crc,) = struct.unpack(">I", data[i + 8 + n:i + 12 + n])
+        assert crc == zlib.crc32(kind + body) & 0xFFFFFFFF, kind
+        out.append((kind, body))
+        i += 12 + n
+    return out
+
+
+def test_icon_is_a_512_square_png():
+    icon = ROOT / PLUGIN["icon"].removeprefix("./")
+    assert PLUGIN["icon"].startswith("./") and icon.exists()
+    chunks = _png_chunks(icon.read_bytes())
+    assert chunks[0][0] == b"IHDR" and chunks[-1][0] == b"IEND"
+    w, h, depth, ctype = struct.unpack(">IIBB", chunks[0][1][:10])
+    assert (w, h, depth, ctype) == (512, 512, 8, 2)
+    raw = zlib.decompress(b"".join(b for k, b in chunks if k == b"IDAT"))
+    assert len(raw) == 512 * (1 + 512 * 3)
+    assert icon.stat().st_size < 256 * 1024   # directory: well under its per-file limits
+
+
+def test_icon_generator_is_stdlib_and_writes_valid_png():
+    src = (ROOT / "ops" / "make_icon.py").read_text(encoding="utf-8")
+    imports = set(re.findall(r"^\s*(?:import|from)\s+([a-zA-Z_]+)", src, re.M))
+    assert imports <= {"struct", "sys", "zlib", "pathlib"}, imports
+    tiny = make_icon.png_bytes(b"\x00" + b"\x10\x20\x30" * 2 + b"\x00" + b"\x10\x20\x30" * 2, size=2)
+    assert struct.unpack(">II", _png_chunks(tiny)[0][1][:8]) == (2, 2)
+    # the mark: ring colour on the ring, needle colour at the needle tip, background in the corner
+    assert make_icon._colour(16, 3.5) == make_icon.RING
+    assert make_icon._colour(20, 12.5) == make_icon.NEEDLE
+    assert make_icon._colour(1, 1) == make_icon.BG
+
+
+def test_listing_fields_and_marketplace_parity():
+    for k in ("homepage", "documentationUrl", "supportUrl", "privacyPolicyUrl"):
+        assert PLUGIN[k].startswith("https://"), k
+    assert PLUGIN["homepage"] == "https://replore.cardzo.co.in"
+    assert PLUGIN["privacyPolicyUrl"] == "https://github.com/chittychat-studio/replore/blob/main/PRIVACY.md"
+    assert PLUGIN["author"]["url"].startswith("https://")
+    entry = MARKET["plugins"][0]
+    assert entry["description"] == PLUGIN["description"]
+    assert "—" not in PLUGIN["description"]   # RS66
+    assert entry["category"] and entry["tags"] and all(isinstance(t, str) for t in entry["tags"])
+    assert MARKET.get("description")
+
+
+def test_skill_frontmatter_names_it_and_scopes_tools():
+    text = (ROOT / "skills" / "find" / "SKILL.md").read_text(encoding="utf-8")
+    front = text.split("\n---\n", 1)[0]
+    assert re.search(r"^name: find$", front, re.M)
+    rules = re.findall(r'^\s+- "(.+)"$', front.split("allowed-tools:", 1)[1], re.M)
+    assert rules and all(r.startswith("Bash(") for r in rules)
+    for py in ("python3", "python", "py -3"):
+        for script in ("scout.py", "trust.py"):
+            assert f"Bash({py} *${{CLAUDE_PLUGIN_ROOT}}/scripts/{script}*)" in rules
+    # only the launcher probe and the plugin's own scripts (RX4)
+    assert all(r.endswith("--version)") or "${CLAUDE_PLUGIN_ROOT}/scripts/" in r for r in rules)
