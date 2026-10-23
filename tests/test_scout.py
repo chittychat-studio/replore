@@ -731,7 +731,8 @@ def test_web_page_is_safe_static(monkeypatch):
     # light/dark toggle (RS24)
     assert 'id="theme"' in html and "data-theme" in html and "findrepo_theme" in html
     # RS24 Tour: a current screenshot of the live page is committed and embedded (replaces the stale gif)
-    assert 'src="tour.png"' in html and (ROOT / "web" / "tour.png").exists()
+    assert 'id="tourVideo"' in html and 'src="tour.mp4"' in html and (ROOT / "web" / "tour.mp4").exists()   # RS72: the explainer video
+    assert (ROOT / "web" / "tour-poster.jpg").exists() and (ROOT / "web" / "tour.mp4").stat().st_size < 4_000_000
     # RS28 select-to-PRD hand-off: no model call/key; copy + deep-link to the user's own Claude
     assert 'class="pick-cb"' in html and 'id="prdModal"' in html and 'id="prdPrompt"' in html
     assert "claude.ai/new?q=" in html and "Copy prompt" in html

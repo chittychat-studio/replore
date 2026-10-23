@@ -1015,6 +1015,10 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   (1010 px). A tap anywhere on a result card (not a link or button) adds it to the plan or takes it out. The card has
   one top row (owner left; Updated and the bookmark right) and the rank beside the name. The plugin steps view hides
   the intro and is tighter, so one agent's steps fit one screen.
+- **RS72** The Tour window plays the explainer video (RS64), a 720p web copy (`web/tour.mp4`, about 2 MB, plus a poster),
+  instead of the old carousel and the outdated screenshot. It starts muted when the window opens (sound is one tap on
+  the controls) and stops when it closes; with reduced motion it waits for a tap. The small Trending cards say what
+  their big number counts (stars or forks).
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
 - **RX3** Ranking by forks, trending or download counts. (Relevance, stars and license-freedom are the only

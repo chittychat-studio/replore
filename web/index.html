@@ -1208,6 +1208,11 @@
   .ag-steps li::before{top:10px}
   .ag-cmd{margin-top:6px}
   @media (max-width:560px){ .ag-detail{grid-template-columns:1fr} }
+  /* RS72: the Tour plays the explainer video; Trending numbers say what they count */
+  #howModal .tour-sheet{max-width:860px}
+  .tour-video{display:block;width:100%;aspect-ratio:16/9;height:auto;margin:14px 0 8px;border-radius:14px;background:#0d1824;border:1px solid var(--line)}
+  .tb-sm .tb-nw{display:inline-flex;align-items:baseline;gap:4px}
+  .tb-sm .tb-u{font-style:normal;font-size:12px;font-weight:600;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -1385,13 +1390,13 @@
   <button id="likeGo" class="primary">Find similar →</button>
 </div></div>
 
-<div class="modal" id="howModal"><div class="sheet">
+<div class="modal" id="howModal"><div class="sheet tour-sheet">
   <button class="x" data-close>&times;</button>
   <h2>How Replore works</h2>
   <p class="mut">Three steps, right in your browser. No account, no key.</p>
-  <div id="howDemo" class="demo" style="margin:16px auto 4px"></div>
-  <img src="tour.png" alt="The Replore page: describe your project, then get the open-source repos that fit"
-    loading="lazy" style="width:100%;border:1px solid var(--line);border-radius:12px;margin:16px 0 4px">
+  <video id="tourVideo" class="tour-video" controls muted playsinline preload="none" poster="tour-poster.jpg"
+    aria-label="Replore explainer video: from a late-night blank chat to the repos that fit, with Leo the scout">
+    <source src="tour.mp4" type="video/mp4"></video>   <!-- RS72: the HyperFrames explainer (RS64), 720p web copy -->
   <p class="mut" style="margin:0">Describe your project, tap Find, and get the repos that fit: relevant, popular, free to use.</p>
   <p class="mut rag-only" style="margin-top:12px" hidden><b>Hybrid search:</b> repos are ranked by your words and by what you mean, so "voice notes" also finds "speech-to-text". Repos our index finds that the word search missed are checked on GitHub before you see them.</p>
   <p class="mut" style="margin-top:12px"><b>Build a plan:</b> tick the repos you like on the results, then tap <b>Generate plan</b>.
@@ -1546,6 +1551,6 @@
   <p class="mut rag-only" style="margin-top:12px" hidden><b>Hybrid search:</b> repos are ranked by your words and by what you mean, so "voice notes" also finds "speech-to-text". Repos our index finds that the word search missed are checked on GitHub before you see them.</p>
 </div></div>
 
-<script src="app.js?v=ddd877d6b8" defer></script>
+<script src="app.js?v=f99d4dcd51" defer></script>
 </body>
 </html>

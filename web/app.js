@@ -930,14 +930,15 @@ function openModal(id){ var m=document.getElementById(id); if(!m) return;
   if(already && already!==m){ already.classList.remove("open"); stopDemo("howDemo"); }
   else if(!already){ __lastFocus=document.activeElement; }   // remember opener (keep the original when switching modals)
   m.classList.add("open");
-  if(id==="howModal"){ var hd=document.getElementById("howDemo"); buildDemo(hd); if(hd&&hd.__playDemo) hd.__playDemo(); }
+  if(id==="howModal"){ var tv=document.getElementById("tourVideo");   // RS72: the Tour is the explainer video; it starts muted (browsers allow that), sound is one tap away
+    if(tv&&tv.play&&!(window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches)){ try{ tv.currentTime=0; }catch(_){} var pp=tv.play(); if(pp&&pp.catch) pp.catch(function(){}); } }
   var focusId = id==="filtersModal" ? "stackInput" : (id==="likeModal" ? "like" : (id==="fbModal" ? "fbTitle" : null)), sheet=m.querySelector(".sheet");
   setTimeout(function(){ var f=focusId&&document.getElementById(focusId);
     if(!f){ var fs=focusables(sheet); f=fs[0]||sheet; } if(f&&f.focus) f.focus(); },30);
 }
 function closeModals(){ var any=false, m=document.querySelectorAll(".modal");
   for(var i=0;i<m.length;i++){ if(m[i].classList.contains("open")) any=true; m[i].classList.remove("open"); }
-  stopDemo("howDemo");                                        // stop the Tour carousel when it closes
+  stopDemo("howDemo"); var tv=document.getElementById("tourVideo"); if(tv&&tv.pause) tv.pause();   // RS72: the Tour video stops when the window closes
   if(any && __lastFocus && __lastFocus.focus){ __lastFocus.focus(); __lastFocus=null; }
 }
 // modal a11y: mark sheets as dialogs, label the × buttons, and trap Tab within the open modal
@@ -1371,7 +1372,7 @@ function buildTrendCarousel(){
       '</div>';
     return big+rows.slice(1).map(function(r,k){ var n=split(r.name), v=licenseVerdict(r.spdx);
       return '<a class="tb-sm" role="listitem" style="--i:'+(k+1)+'" href="'+esc(r.url)+'" target="_blank" rel="noopener">'+
-        '<span class="tb-top"><span class="tb-lab">#'+(k+2)+'</span><span class="tb-n">'+num(r)+'</span></span>'+
+        '<span class="tb-top"><span class="tb-lab">#'+(k+2)+'</span><span class="tb-nw"><span class="tb-n">'+num(r)+'</span><i class="tb-u">'+unit+'</i></span></span>'+   // RS72: say what the number is
         '<b title="'+esc(r.name)+'">'+esc(n.r)+'</b><small>'+esc(plainDesc(r.desc))+'</small>'+
         (v.c==="t-good"?'':'<span class="tag '+v.c+'">'+ico(v.i)+esc(v.t)+'</span>')+'</a>'; }).join("");
   }
