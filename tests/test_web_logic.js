@@ -18,7 +18,7 @@ global.window = global;
 const s = {};
 new Function("document", "localStorage",
   code + "; this.keywordQueries=keywordQueries; this.exploreLinks=exploreLinks; this.rankByFit=rankByFit; this.fitScore=fitScore; this.whyRelevant=whyRelevant; this.esc=esc; this.lu=lu; this.freeText=freeText;" +
-  " this.keep=keep; this.ragRan=ragRan; this.hasDesc=hasDesc; this.descHtml=descHtml; this.plainDesc=plainDesc; this.tipUrlOk=tipUrlOk; this.clean=clean; this.harmful=harmful; this.harmfulRepo=harmfulRepo; this.prdFeatures=prdFeatures; this.trendingQuery=trendingQuery; this.trendRows=trendRows; this.feedbackUrl=feedbackUrl; this.feedbackPayload=feedbackPayload; this.agoText=agoText; this.cardHtml=cardHtml; this.recentKey=recentKey; this.recentFind=recentFind; this.recentAdd=recentAdd; this.CACHE_V=CACHE_V; this.bm25Scores=bm25Scores; this.repoText=repoText; this.rrfOrder=rrfOrder; this.hybridOrder=hybridOrder; this.confirmQueries=confirmQueries; this.ghQuery=ghQuery; this.sigTokens=sigTokens; this.resultSummary=resultSummary; this.trustRow=trustRow; this.trustHtml=trustHtml; this.ghShape=ghShape; this.lastPage=lastPage; this.installCmd=installCmd; this.snapHtml=snapHtml; this.cleanLang=cleanLang;").call(s, document, global.localStorage || {getItem:()=>null,setItem(){},removeItem(){}});
+  " this.keep=keep; this.ragRan=ragRan; this.hasDesc=hasDesc; this.descHtml=descHtml; this.plainDesc=plainDesc; this.tipUrlOk=tipUrlOk; this.clean=clean; this.harmful=harmful; this.harmfulRepo=harmfulRepo; this.prdFeatures=prdFeatures; this.trendingQuery=trendingQuery; this.trendRows=trendRows; this.feedbackUrl=feedbackUrl; this.feedbackPayload=feedbackPayload; this.agoText=agoText; this.cardHtml=cardHtml; this.recentKey=recentKey; this.recentFind=recentFind; this.recentAdd=recentAdd; this.CACHE_V=CACHE_V; this.bm25Scores=bm25Scores; this.repoText=repoText; this.rrfOrder=rrfOrder; this.hybridOrder=hybridOrder; this.confirmQueries=confirmQueries; this.ghQuery=ghQuery; this.sigTokens=sigTokens; this.resultSummary=resultSummary; this.trustRow=trustRow; this.trustHtml=trustHtml; this.ghShape=ghShape; this.lastPage=lastPage; this.installCmd=installCmd; this.snapHtml=snapHtml; this.cleanLang=cleanLang; this.relaxedQueries=relaxedQueries;").call(s, document, global.localStorage || {getItem:()=>null,setItem(){},removeItem(){}});
 
 // RS16: iOS excludes macOS
 // RS16: expansions are specific on-topic phrases, never a bare category (live regression: "website" -> "frontend framework"
@@ -279,6 +279,13 @@ console.log("prd ok:", f.join(" | "));
   assert.ok(c2.indexOf("rc-tools") > c2.indexOf("rc-more") && c2.indexOf('class="trust"') > c2.indexOf("rc-more"));   // tools and trust live in Details
   assert.strictEqual(s.cleanLang("constructor"), ""); assert.strictEqual(s.cleanLang("<x>"), ""); assert.strictEqual(s.cleanLang("C#"), "C#");
   console.log("card ok"); }
+
+// RS78: an empty search retries broader: without version-like words, then the two strongest words
+{ const r = s.relaxedQueries("motion graphics using opus5.5", ["motion graphics opus5.5"]);
+  assert.deepStrictEqual(r, ["motion graphics"]);
+  assert.deepStrictEqual(s.relaxedQueries("offline maps trip planner", ["offline maps trip"]), ["offline maps"]);
+  assert.deepStrictEqual(s.relaxedQueries("chatbot", ["chatbot"]), []);
+  console.log("relaxed ok"); }
 
 // RS51 Explore links: same owner/repo path on four tools; malformed names get none
 { const x = s.exploreLinks("vercel/next.js");
