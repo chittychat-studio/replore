@@ -26,6 +26,8 @@ How to cut a release: README, Development (SPEC RS81).
 - Web plumbing, nothing visible: when this browser's storage holds `replore.key`, the page sends it with its relevance
   checks in the same header; nothing on the page writes it yet. PRIVACY has the row (RS87, RS43).
 - `docs/MONETIZATION.md`: the owner's monetisation plan with a status per step and the owner's account checklist (RS88).
+- "Leo, Pro" window and a Pro button in the top menu: buy link, "I have a key", save or remove a key kept in this
+  browser. Hidden until the owner sets `PRO_URL` (the Polar checkout link); the privacy window names the key (RS89).
 
 ### Fixed
 - The evals page is linked, canonicalised and listed in the sitemap as `/evals`; Cloudflare Pages redirects `evals.html` (RS80, RS84).

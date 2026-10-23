@@ -1849,6 +1849,29 @@ function tipUrlOk(u, host){ u=String(u||"");
 (function(){ if(typeof location==="undefined" || !tipUrlOk(TIP_URL, location.hostname)) return;
   document.querySelectorAll(".tip-link").forEach(function(a){ a.href=TIP_URL; });
   document.querySelectorAll(".tip-el").forEach(function(el){ el.hidden=false; }); })();
+// RS89: Leo, Pro window. Hidden (button and window) until the owner pastes the Polar checkout link into PRO_URL.
+var PRO_URL="", PRO_PRICE="8 USD a month", PRO_PRICE_YEAR="or 72 USD a year";
+function proUrlOk(u){ return /^https:\/\/([a-z0-9-]+\.)*polar\.sh\/[A-Za-z0-9_\-\/.?=&%]+$/.test(String(u||"")); }
+function proKeySave(v){ var k=String(v==null?"":v).trim();   // stored only if it is a key the relevance call would send
+  if(!/^[!-~]{16,100}$/.test(k)) return false;
+  try{ localStorage.setItem(PRO_KEY,k); }catch(_){ return false; }
+  return proKeyGet()===k; }
+function proKeyRemove(){ try{ localStorage.removeItem(PRO_KEY); }catch(_){} }
+function proView(){ var on=!!proKeyGet(), ed=document.getElementById("proEdit"), ok=document.getElementById("proOn"), inp=document.getElementById("proKey");
+  if(ed) ed.hidden=on; if(ok) ok.hidden=!on; if(inp){ inp.value=""; inp.removeAttribute("aria-invalid"); } }
+(function(){ if(!proUrlOk(PRO_URL)) return;
+  var buy=document.getElementById("proBuy"), yr=document.getElementById("proYear"), form=document.getElementById("proForm");
+  if(buy){ buy.href=PRO_URL; buy.textContent="Get a key, "+PRO_PRICE; }
+  if(yr) yr.textContent=PRO_PRICE_YEAR;
+  document.querySelectorAll(".pro-el").forEach(function(el){ el.hidden=false; });
+  document.getElementById("proBtn").addEventListener("click",function(){ proView(); openModal("proModal"); });
+  document.getElementById("proHave").addEventListener("click",function(){ proView(); var i=document.getElementById("proKey"); if(i&&!i.closest("[hidden]")) i.focus(); });
+  if(form) form.addEventListener("submit",function(e){ e.preventDefault(); var i=document.getElementById("proKey");
+    if(proKeySave(i&&i.value)){ proView(); var r=document.getElementById("proRemove"); if(r) r.focus(); }
+    else if(i){ i.setAttribute("aria-invalid","true"); i.focus(); } });
+  var rm=document.getElementById("proRemove");
+  if(rm) rm.addEventListener("click",function(){ proKeyRemove(); proView(); var i=document.getElementById("proKey"); if(i) i.focus(); });
+})();
 var LAST="findrepo_last", CACHE_V="16";   // 16: compact card + filter panel (RS67); 15: card A (RS63); 14: one filter row, no "All" chip (RS29d); 13: cards carry the trust row (RS53); 12: Wiki (DeepWiki) Explore button; 11: cards carry Explore links (RS51); 10: no inline onclick (RS49)  // bump when saved markup changes, so stale caches are dropped
 // RS43 A: the visitor's own last 10 searches for 1 hour, in their browser only. Pure functions (tested) + thin wrappers.
 var RECENT="replore_recent", RECENT_TTL_MS=3600000, RECENT_MAX=10;

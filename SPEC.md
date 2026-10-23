@@ -1218,6 +1218,25 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   figure it could not confirm marked "not verified". Planned prices live in that file only: `SPEC.md` and `README.md`
   never state them (tested); the site shows a price only where the owner placed it in a picked design. Sponsored slots,
   affiliate links, Team and the API each need their own rule (and PRIVACY change) before any code.
+- **RS89** Leo, Pro window (owner pick 2026-10-23, from mock-ups; lifts RS87's "no visible UI" for exactly this window).
+  A "Pro" button after "Plugin" in the top nav (`nav-btn`, title "Rank by meaning too, with a Pro key") opens a window
+  built like the other modals (`.modal > .sheet`, 16px radius, site fonts, max-width 580px). Copy is final: heading
+  "Leo, Pro" ("Pro" in the hero title's Instrument Serif treatment) with a line-icon close button (aria-label Close);
+  Leo (`scout-hero.webp`, 150px, alt "Leo, the Replore scout") beside "Want me to read for meaning too? Today I match
+  your words. With Pro I also match what a repo does, so the ones that say it differently still turn up." (19px, 600)
+  and three search-stage pills: "Meaning ranking", "No queue on the AI check", "Web and every agent"; a dark primary link
+  "Get a key, " + `PRO_PRICE` to `PRO_URL` in a new tab, an outlined "I have a key" that focuses the key field, and the
+  muted `PRO_PRICE_YEAR`; under a top border, "Your key" (JetBrains Mono input, placeholder "Paste it here", autocomplete
+  and spellcheck off) with an accent "Save", and the 12.5px note "Stays in this browser. I check it with Polar, who sold
+  it to you, and never keep it." Save trims the value and stores it in `localStorage["replore.key"]` (the key RS87's
+  plumbing sends) only if it is printable ASCII of 16-100 characters (otherwise the field is marked invalid and nothing
+  is overwritten); the form then shows "Pro is on for this browser" with a "Remove key" button that deletes it; opening
+  the window with a stored key shows that state. The key is never put in a URL, a log or the feedback form. **Switch:**
+  `PRO_URL` in `web/app.js` is empty, so the button and the window stay hidden (`hidden`), like the tip link (RS44); the
+  owner pastes the Polar checkout link (https, a `polar.sh` host) to go live. `PRO_PRICE` and `PRO_PRICE_YEAR` hold the
+  owner's picked price copy (values in `docs/MONETIZATION.md`, never here, RS88) and show only inside this window. Tap targets
+  are 44px; one column on phones (560px and under). No em dash (RS66), no emoji or glyph icon (RS55); CSP unchanged
+  (Polar is only a link and a server-side call). The in-page privacy window and `PRIVACY.md` disclose the key.
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
 - **RX3** Ranking by forks, trending or download counts. (Relevance, stars and license-freedom are the only

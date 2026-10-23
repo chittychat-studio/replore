@@ -33,7 +33,7 @@ owner, no code), **not started**. "Not verified" marks a number or fact I could 
 | Server: Polar validation, fail closed, cache, codes-only logs, `pro_off` switch | built | `functions/api/relevance.js` |
 | Plugin, script, MCP server: `REPLORE_KEY`, sent only to Replore's hosts | built | `scripts/hybrid.py`, `scripts/mcp_server.py` |
 | Web: sends a stored `replore.key` on relevance checks | built (no visible UI) | `web/app.js` |
-| Pro window on the web (buy link, key field) | see RS89 | `web/index.html`, `web/app.js` |
+| Pro window on the web ("Leo, Pro": buy link, key field) | built, hidden until `PRO_URL` is set | RS89, `web/index.html`, `web/app.js` |
 | Polar organisation, product, license-key benefit; set `POLAR_ORG_ID` (and `POLAR_BENEFIT_ID`) in Pages | owner step | checklist below |
 | Switch the meaning route on (`RAG_PLUGIN=1` plus `RAG_RERANK=1` or the index) so Pro has something to unlock | owner step | RS42, `docs/RAG.md` |
 

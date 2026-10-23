@@ -20,7 +20,7 @@ const s = {};
 const LS = { m: {}, getItem(k){ return Object.prototype.hasOwnProperty.call(this.m, k) ? this.m[k] : null; }, setItem(k, v){ this.m[k] = String(v); }, removeItem(k){ delete this.m[k]; } };
 new Function("document", "localStorage",
   code + "; this.keywordQueries=keywordQueries; this.exploreLinks=exploreLinks; this.rankByFit=rankByFit; this.fitScore=fitScore; this.whyRelevant=whyRelevant; this.esc=esc; this.lu=lu; this.freeText=freeText;" +
-  " this.keep=keep; this.ragRan=ragRan; this.hasDesc=hasDesc; this.descHtml=descHtml; this.plainDesc=plainDesc; this.tipUrlOk=tipUrlOk; this.clean=clean; this.harmful=harmful; this.harmfulRepo=harmfulRepo; this.prdFeatures=prdFeatures; this.trendingQuery=trendingQuery; this.trendRows=trendRows; this.feedbackUrl=feedbackUrl; this.feedbackPayload=feedbackPayload; this.agoText=agoText; this.cardHtml=cardHtml; this.recentKey=recentKey; this.recentFind=recentFind; this.recentAdd=recentAdd; this.CACHE_V=CACHE_V; this.bm25Scores=bm25Scores; this.repoText=repoText; this.rrfOrder=rrfOrder; this.hybridOrder=hybridOrder; this.confirmQueries=confirmQueries; this.ghQuery=ghQuery; this.sigTokens=sigTokens; this.resultSummary=resultSummary; this.trustRow=trustRow; this.trustHtml=trustHtml; this.ghShape=ghShape; this.lastPage=lastPage; this.installCmd=installCmd; this.snapHtml=snapHtml; this.cleanLang=cleanLang; this.relaxedQueries=relaxedQueries; this.sellConflict=sellConflict; this.sellSummary=sellSummary; this.filterBar=filterBar; this.trustScore=trustScore; this.trustOrder=trustOrder; this.trustSort=trustSort; this.sortBox=sortBox; this.TRUST_RANK_NOTE=TRUST_RANK_NOTE; this.__trust=__trust; this.proKeyHeader=proKeyHeader; this.proKeyGet=proKeyGet; this.PRO_KEY=PRO_KEY;").call(s, document, LS);
+  " this.keep=keep; this.ragRan=ragRan; this.hasDesc=hasDesc; this.descHtml=descHtml; this.plainDesc=plainDesc; this.tipUrlOk=tipUrlOk; this.clean=clean; this.harmful=harmful; this.harmfulRepo=harmfulRepo; this.prdFeatures=prdFeatures; this.trendingQuery=trendingQuery; this.trendRows=trendRows; this.feedbackUrl=feedbackUrl; this.feedbackPayload=feedbackPayload; this.agoText=agoText; this.cardHtml=cardHtml; this.recentKey=recentKey; this.recentFind=recentFind; this.recentAdd=recentAdd; this.CACHE_V=CACHE_V; this.bm25Scores=bm25Scores; this.repoText=repoText; this.rrfOrder=rrfOrder; this.hybridOrder=hybridOrder; this.confirmQueries=confirmQueries; this.ghQuery=ghQuery; this.sigTokens=sigTokens; this.resultSummary=resultSummary; this.trustRow=trustRow; this.trustHtml=trustHtml; this.ghShape=ghShape; this.lastPage=lastPage; this.installCmd=installCmd; this.snapHtml=snapHtml; this.cleanLang=cleanLang; this.relaxedQueries=relaxedQueries; this.sellConflict=sellConflict; this.sellSummary=sellSummary; this.filterBar=filterBar; this.trustScore=trustScore; this.trustOrder=trustOrder; this.trustSort=trustSort; this.sortBox=sortBox; this.TRUST_RANK_NOTE=TRUST_RANK_NOTE; this.__trust=__trust; this.proKeyHeader=proKeyHeader; this.proKeyGet=proKeyGet; this.PRO_KEY=PRO_KEY; this.proKeySave=proKeySave; this.proKeyRemove=proKeyRemove; this.proUrlOk=proUrlOk; this.PRO_URL=PRO_URL; this.PRO_PRICE=PRO_PRICE; this.PRO_PRICE_YEAR=PRO_PRICE_YEAR;").call(s, document, LS);
 
 // RS16: iOS excludes macOS
 // RS16: expansions are specific on-topic phrases, never a bare category (live regression: "website" -> "frontend framework"
@@ -441,3 +441,26 @@ console.log("prd ok:", f.join(" | "));
   assert.strictEqual((code.match(/X-Replore-Plugin-Key/g) || []).length, 1);
   assert.ok(/hdr=proKeyHeader\(\{"Content-Type":"application\/json"\}\)/.test(code));
   console.log("pro key plumbing ok"); }
+
+// RS89: Leo, Pro window logic. Save trims and stores replore.key, Remove clears it, the header follows; hidden until PRO_URL
+{ assert.strictEqual(s.PRO_URL, "", "the Pro window ships switched off until the owner pastes the Polar link");
+  assert.ok(!s.proUrlOk(s.PRO_URL));
+  assert.ok(s.proUrlOk("https://buy.polar.sh/polar_cl_AbC123") && s.proUrlOk("https://polar.sh/replore/products/abc"));
+  ["http://buy.polar.sh/x", "https://evil.example/polar.sh/x", "https://polar.sh.evil.example/x", "javascript:alert(1)", "https://buy.polar.sh/a b"]
+    .forEach(u => assert.ok(!s.proUrlOk(u), u));
+  assert.strictEqual(s.PRO_PRICE, "8 USD a month"); assert.strictEqual(s.PRO_PRICE_YEAR, "or 72 USD a year");
+  LS.removeItem("replore.key");
+  assert.ok(!("X-Replore-Plugin-Key" in s.proKeyHeader({})), "no key, no header");
+  assert.ok(s.proKeySave("   REPLORE_1C285B2D-6CE6-4BC7-B8BE-ADB6A7E304DA  "));
+  assert.strictEqual(LS.getItem("replore.key"), "REPLORE_1C285B2D-6CE6-4BC7-B8BE-ADB6A7E304DA", "trimmed");
+  assert.strictEqual(s.proKeyHeader({})["X-Replore-Plugin-Key"], "REPLORE_1C285B2D-6CE6-4BC7-B8BE-ADB6A7E304DA", "header sent when stored");
+  assert.ok(!s.proKeySave("") && !s.proKeySave("too short") && !s.proKeySave("has a space 0123456789abc"));
+  assert.strictEqual(LS.getItem("replore.key"), "REPLORE_1C285B2D-6CE6-4BC7-B8BE-ADB6A7E304DA", "a bad paste never overwrites a good key");
+  s.proKeyRemove();
+  assert.strictEqual(LS.getItem("replore.key"), null);
+  assert.ok(!("X-Replore-Plugin-Key" in s.proKeyHeader({})), "header gone after Remove key");
+  // never in a URL, the feedback form or a log
+  assert.ok(!/console\.(log|info|warn|error)\([^)]*proKey/.test(code) && !/location[^;]*proKey/.test(code));
+  const fb = code.slice(code.indexOf("function feedbackPayload"), code.indexOf("function feedbackPayload") + 1200);
+  assert.ok(!/replore\.key|proKey|PRO_KEY/.test(fb));
+  console.log("pro window ok"); }
