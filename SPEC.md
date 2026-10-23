@@ -1025,6 +1025,16 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   Details, the safety check, tap-to-pick, Generate plan for Claude, ChatGPT or Gemini with questions and mockups first).
   Feedback reads as a chat with Leo ("Tell Leo", Send to Leo). Trending counts sit top right on every card. A long
   example in the search box never shows scroll arrows.
+- **RS75** The explainer uses the site's type: heavy Inter Tight, with Instrument Serif for "you build it." (end card and
+  the Replore screen inside the video, which now shows today's tagline). No Anton anywhere in the video.
+- **RS76** Scroll-driven motion (owner 2026-10-23). With scroll timelines (CSS `animation-timeline: view()`), the stage
+  (Leo, globe, his words) and the title drift up and soften as you scroll past; Trending's heading, tabs and grid,
+  the results head and filter panel, and the footer rise into place as they enter. Scrolling spins the globe faster
+  for a moment. Result cards keep their own scroll reveal (RS38). Browsers without scroll timelines and reduced motion
+  get the page without it.
+  The globe has its own inks per theme (light ink on navy in dark mode) and redraws on a theme switch. Media files
+  (the peek clip, the Tour video and poster) carry content-hash version tags, so a replaced clip is never served from
+  an old cache.
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
 - **RX3** Ranking by forks, trending or download counts. (Relevance, stars and license-freedom are the only

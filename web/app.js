@@ -1458,7 +1458,7 @@ function startAsciiGlobe(canvas, reduce){
     if(canvas.width!==Math.round(r.width*d)||canvas.height!==Math.round(r.height*d)){ canvas.width=Math.round(r.width*d); canvas.height=Math.round(r.height*d); }   // RS65: height too
     var W=canvas.width, H=canvas.height, cell=Math.max(8,Math.round(Math.min(W,H)/40)), cols=Math.floor(W/cell), rows=Math.floor(H/(cell*1.6));
     g.clearRect(0,0,W,H); g.font="700 "+Math.round(cell*1.3)+"px "+(css("--f-mono")||"monospace"); g.textBaseline="top";   // RS65: bolder
-    var ink=css("--accent-ink"), dim=css("--accent2");
+    var ink=css("--globe-ink"), dim=css("--globe-dim");   // RS76: per-theme globe inks
     var cx=cols*.5, cy=rows*.5, R=Math.min(rows*.47, cols*.29);
     for(var j=0;j<rows;j++) for(var i=0;i<cols;i++){ var x=(i-cx)/R*.62, y=(j-cy)/R, r2=x*x+y*y; if(r2>1) continue;
       var z=Math.sqrt(1-r2), lon=Math.atan2(x,z)+t, lat=Math.asin(y), light=.3+.7*z;
@@ -1474,6 +1474,9 @@ function startAsciiGlobe(canvas, reduce){
     var hidden=canvas.parentNode&&canvas.parentNode.parentNode&&canvas.parentNode.parentNode.classList.contains("show-cards");
     if(!hidden) draw(); raf=requestAnimationFrame(frame); }
   canvas.__boost=function(s){ boost=Math.max(boost,s||1.4); };
+  // RS76: a theme switch redraws at once, even while the globe is paused or off screen
+  if(window.MutationObserver) new MutationObserver(function(){ if(canvas.isConnected) draw(); }).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+  try{ matchMedia("(prefers-color-scheme: dark)").addEventListener("change",function(){ if(canvas.isConnected) draw(); }); }catch(_){}
   canvas.__stop=function(){ live=false; cancelAnimationFrame(raf); };
   if(reduce){ draw(); return; }
   if(window.IntersectionObserver) new IntersectionObserver(function(es){ var v=es[0].isIntersecting;
@@ -1538,7 +1541,7 @@ function buildLiveDemo(host){
       sb.classList.add("peekfade"); greet();   // RS69: the clip dissolves into the waving sprite instead of cutting
       setTimeout(function(){ sb.classList.remove("videopeek","peekfade"); }, 450); };
     sb.classList.add("videopeek"); pv.addEventListener("ended",fin); pv.addEventListener("error",function(){ sb.classList.remove("videopeek"); if(!done){ done=true; cssPeek(); } });
-    pv.src="leo-peek.webm"; var pp=pv.play&&pv.play(); if(pp&&pp.catch) pp.catch(function(){ sb.classList.remove("videopeek"); if(!done){ done=true; cssPeek(); } });
+    pv.src="leo-peek.webm?v=7193e5672f"; var pp=pv.play&&pv.play(); if(pp&&pp.catch) pp.catch(function(){ sb.classList.remove("videopeek"); if(!done){ done=true; cssPeek(); } });
     setTimeout(fin, 6500); setTimeout(startDemo, 10000); }
   else if(canAnim){ cssPeek(); setTimeout(startDemo, 7000); }   // fallbacks if an animation event never fires
   else { speak(SAY); }
@@ -1586,6 +1589,10 @@ function buildLiveDemo(host){
       later(function(){ stage(1,"Ranking by fit"); }, 1400); later(function(){ stage(2,"Licence check"); }, 2800); }
     else if(!on&&busy){ busy=false; still(); speak(SAY); if(!document.body.classList.contains("has-results")&&host.isConnected){ paused=false; run(); } } }
   if(window.MutationObserver) new MutationObserver(onSearch).observe(document.body,{attributes:true,attributeFilter:["class"]});
+  // RS76: scrolling spins the globe faster for a moment (it eases back on its own)
+  if(globe&&!reduce&&window.addEventListener){ var lastY=window.scrollY||0;
+    window.addEventListener("scroll",function(){ var y=window.scrollY||0, dy=Math.abs(y-lastY); lastY=y;
+      if(dy>2&&host.isConnected&&globe.__boost) globe.__boost(Math.min(3, 1.3+dy/60)); },{passive:true}); }
   host.__stopDemo=function(){ paused=true; clear(); if(qin&&!qin.value) qin.setAttribute("placeholder",PH); };   // the globe keeps turning on the stage; it stops itself once removed
   host.__playDemo=function(){ if(paused){ paused=false; run(); } };
   if(!canAnim) startDemo();

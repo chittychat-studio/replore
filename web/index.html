@@ -1224,11 +1224,39 @@
   .tb-big .tb-desc{-webkit-line-clamp:3}
   .tb-big .tb-tools{margin-top:auto}
   .vibebar textarea:placeholder-shown{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-  .vibebar textarea{scrollbar-width:thin}
+  .vibebar textarea{scrollbar-width:none}   /* RS76: never a scrollbar or arrows in the search box; long text still scrolls */
+  .vibebar textarea::-webkit-scrollbar{display:none}
   .fb-leo{display:flex;align-items:center;gap:14px;margin:0 30px 12px 0}
   .fb-leo img{flex:none;width:64px;height:auto;filter:drop-shadow(0 6px 6px rgba(var(--shadow),.25))}
   #fbModal .fb-leo h2{margin:0 0 2px}
   #fbModal .fb-leo .mut{margin:0}
+
+  /* RS76 scroll-driven motion (owner 2026-10-23): motion follows the scroll, not a timer. Browsers with scroll timelines
+     (Chrome, Edge, Safari 26) get it; others keep the page as is. Reduced motion turns it off. */
+  @supports (animation-timeline: view()){
+    @media (prefers-reduced-motion:no-preference){
+      /* the stage: Leo, the globe and his words drift up and soften as you scroll past */
+      body:not(.has-results) .stage-slot .st-stage{animation:rsStageOut linear both;animation-timeline:view();animation-range:exit 0% exit 90%}
+      body:not(.has-results) .stage-slot .st-side{animation:rsSideOut linear both;animation-timeline:view();animation-range:exit 0% exit 90%}
+      body:not(.has-results) .hero-title{animation:rsTitleOut linear both;animation-timeline:view();animation-range:exit 0% exit 100%}
+      /* Trending: the heading, tabs and grid rise into place as they enter */
+      #trendCar .tcar-head,#trendCar .tb-tabs,#trendCar .tbento{animation:rsRise linear both;animation-timeline:view();animation-range:entry 0% cover 28%}
+      #trendCar .tb-tabs{animation-range:entry 5% cover 30%}
+      #trendCar .tbento{animation-range:entry 0% cover 34%}
+      /* results: the head and the filter panel settle in; the cards keep their own reveal (RS38) */
+      .res-head,.res-filter.res-rail{animation:rsRise linear both;animation-timeline:view();animation-range:entry 0% cover 20%}
+      /* the footer lines come up last */
+      .out-wrap>.privacy-note,.out-wrap>.gh-credit{animation:rsRise linear both;animation-timeline:view();animation-range:entry 0% cover 40%}
+    }
+  }
+  @keyframes rsStageOut{to{transform:translateY(-48px) scale(.94);opacity:.35}}
+  @keyframes rsSideOut{to{transform:translateY(-24px);opacity:.5}}
+  @keyframes rsTitleOut{to{transform:translateY(-18px);opacity:.6}}
+  @keyframes rsRise{from{opacity:0;transform:translateY(34px)}}
+  /* RS76: the globe has its own inks, brighter in dark mode so the whole sphere reads on navy */
+  :root{--globe-ink:#22374a;--globe-dim:#5b88a6}
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--globe-ink:#e6eef4;--globe-dim:#8fb3cf} }
+  :root[data-theme="dark"]{--globe-ink:#e6eef4;--globe-dim:#8fb3cf}
 </style>
 </head>
 <body>
@@ -1410,9 +1438,9 @@
   <button class="x" data-close>&times;</button>
   <h2>How Replore works</h2>
   <p class="mut">Three steps, right in your browser. No account, no key.</p>
-  <video id="tourVideo" class="tour-video" controls muted playsinline preload="none" poster="tour-poster.jpg"
+  <video id="tourVideo" class="tour-video" controls muted playsinline preload="none" poster="tour-poster.jpg?v=dd20979073"
     aria-label="Replore explainer video: from a late-night blank chat to the repos that fit, with Leo the scout">
-    <source src="tour.mp4" type="video/mp4"></video>   <!-- RS72: the HyperFrames explainer (RS64), 720p web copy -->
+    <source src="tour.mp4?v=ceb5bb1f70" type="video/mp4"></video>   <!-- RS72: the HyperFrames explainer (RS64), 720p web copy -->
   <p class="mut" style="margin:0">Describe your project, tap Find, and get the repos that fit: relevant, popular, free to use.</p>
   <p class="mut rag-only" style="margin-top:12px" hidden><b>Hybrid search:</b> repos are ranked by your words and by what you mean, so "voice notes" also finds "speech-to-text". Repos our index finds that the word search missed are checked on GitHub before you see them.</p>
   <p class="mut" style="margin-top:12px"><b>Build a plan:</b> tick the repos you like on the results, then tap <b>Generate plan</b>.
@@ -1576,6 +1604,6 @@
   <p class="mut rag-only" style="margin-top:12px" hidden><b>Hybrid search:</b> repos are ranked by your words and by what you mean, so "voice notes" also finds "speech-to-text". Repos our index finds that the word search missed are checked on GitHub before you see them.</p>
 </div></div>
 
-<script src="app.js?v=fff170ec93" defer></script>
+<script src="app.js?v=b2525ca588" defer></script>
 </body>
 </html>
