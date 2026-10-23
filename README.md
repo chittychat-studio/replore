@@ -138,7 +138,9 @@ Two optional **secrets** (16+ random characters each) let callers that can't run
 `EVAL_KEY` opens the paid AI check and the meaning route, for the live eval and `ops/rag_smoke.py` only — keep it in CI
 (repository secret `REPLORE_EVAL_KEY` for the `relevance-eval-live` workflow) or on your machine as `REPLORE_EVAL_KEY`, and
 never hand it out. `PLUGIN_KEY` opens only the cheap meaning route (`mode:"semantic"`), so it is the one you may give to
-plugin users, who set it as `REPLORE_PLUGIN_KEY`. **Plugin `--semantic` without `PLUGIN_KEY`:** the server answers 403 and
+plugin users, who set it as `REPLORE_PLUGIN_KEY`. **Replore Pro keys (SPEC RS87):** set the plain variable `POLAR_ORG_ID` (your Polar
+organization id) and optionally `POLAR_BENEFIT_ID`; a buyer's Polar license key then gets the same rights as `PLUGIN_KEY`,
+checked with Polar and cached 10 minutes, never stored. **Plugin `--semantic` without a key:** the server answers 403 and
 the plugin silently keeps its keyword + BM25 order (no error, no meaning scores, no indexed repos). Also add a rate-limiting rule
 (Security → WAF → Rate limiting rules) on the path `/api/relevance`, per IP. On the Free plan, the worst that
 abuse can do is use up the day's allowance, never bill you.
@@ -229,6 +231,23 @@ python3 scripts/trust.py expressjs/express psf/requests      # is it safe to bui
 
 Same filters, ranking and license labels in every path. Browser-only chats with no local tools can't run it — use
 the [web page](https://replore.cardzo.co.in) there.
+
+## Replore Pro
+
+Replore stays free: search, the comparison table, the licence check and "Safe to build on?" need no key. A **Replore
+Pro** key (SPEC RS87) unlocks, today:
+
+- **Meaning ranking** for the plugin, script and MCP server (`--semantic`, or `semantic: true` in `find_repos`): repos
+  are ranked by what they do as well as by your words, on Replore's server. It works once the owner switches the
+  meaning route on (see Hybrid search below).
+- **No per-address queue** on Replore's server: your requests skip its per-IP burst limit.
+
+Set the key as an environment variable, `REPLORE_KEY` (the older `REPLORE_PLUGIN_KEY` still works), before you start
+Claude Code or your agent. It is sent only to Replore's own server (`replore.cardzo.co.in`), which checks it with Polar,
+the shop that sells it; it is never printed, stored or logged. **Where to buy: coming soon.**
+
+Planned, not built yet: searches on your own GitHub token, PRD batches over 20 repos, saved shortlists and a
+licence-policy mode.
 
 ## Hybrid search (RAG): built, switched off
 

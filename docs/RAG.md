@@ -54,7 +54,7 @@ page (RS22). The pieces RS42 needs (one embedding call, one vector query, rank f
 3. Add repository secrets `CF_ACCOUNT_ID` and `CF_API_TOKEN` (token with Workers AI + Vectorize edit), then run again with *apply* on.
 4. Uncomment the `[[vectorize]]` block in `wrangler.toml` (a PR), then add `RAG_INDEX` = `1` for Preview, test, then Production.
 
-**Plugin:** `--semantic` needs `RAG_PLUGIN` = `1` as well, and the caller must send the server's `PLUGIN_KEY` (set `REPLORE_PLUGIN_KEY`; SPEC RS34g). `--rank hybrid` works offline any time.
+**Plugin:** `--semantic` needs `RAG_PLUGIN` = `1` as well, and the caller must send the server's `PLUGIN_KEY` (set `REPLORE_PLUGIN_KEY`; SPEC RS34g) or a granted Replore Pro key (set `REPLORE_KEY`; SPEC RS87). `--rank hybrid` works offline any time.
 
 ## Testing it on a preview, and seeing failures (RS42b)
 

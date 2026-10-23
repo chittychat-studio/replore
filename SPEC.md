@@ -389,7 +389,8 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
 - **RS32** Model-agnostic MCP server. `scripts/mcp_server.py` exposes the engine as a Model Context Protocol
   server over stdio (newline-delimited JSON-RPC 2.0), so any MCP-capable agent — Claude Code, Codex CLI, Cursor,
   Gemini CLI, VS Code/Copilot, Windsurf, Cline — can call it whatever model it runs. Two tools: `find_repos`
-  (1–4 queries; optional prefer_starters, license open|any, min_stars, max_age_months, all, group, trust) returns the
+  (1–4 queries; optional prefer_starters, license open|any, min_stars, max_age_months, all, group, trust, and the opt-in
+  semantic + description of RS87) returns the
   RS10/RS23 Markdown from `scout.py`, and `check_repos` (1–5 repos) is the RS56 trust check. Standard library only
   (RS11); no model call, no key (RS1); the only network calls are the GitHub API via `scout.fetch`, plus GitHub,
   Scorecard and deps.dev when a trust check is asked for (RS56). Failures return `isError: true` with the plain message and

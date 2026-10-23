@@ -1,6 +1,6 @@
 # Privacy
 
-*Last updated: 23 October 2026 (the Trust sort runs the existing safety check for the top five cards; the Explore links are now the "Look inside" tools in a card's Details, same five sites; earlier: the plugin can run the "Safe to build on?" check too; earlier: "Safe to build on?" check on result cards; earlier: DeepWiki added to the Explore links; Explore links on result cards; Cloudflare Web Analytics page-view counts disclosed; off-topic repos move down, not hidden; optional tips via Stripe; bot check switched on; feedback goes by email to Cardzo). This describes how Replore handles data as built. It is not legal advice.*
+*Last updated: 23 October 2026 (Replore Pro key: sent only to our function, checked with Polar, never stored or logged; the optional security-log hook described as a no-op unless switched on; earlier: the Trust sort runs the existing safety check for the top five cards; the Explore links are now the "Look inside" tools in a card's Details, same five sites; earlier: the plugin can run the "Safe to build on?" check too; earlier: "Safe to build on?" check on result cards; earlier: DeepWiki added to the Explore links; Explore links on result cards; Cloudflare Web Analytics page-view counts disclosed; off-topic repos move down, not hidden; optional tips via Stripe; bot check switched on; feedback goes by email to Cardzo). This describes how Replore handles data as built. It is not legal advice.*
 
 **Short version:** Replore has no account and no database, and stores nothing you type. Our host counts page views
 with Cloudflare Web Analytics, a cookieless page-view counter that never sees what you type. The people who
@@ -41,6 +41,13 @@ pixels, ads or cookies.
 - Your AI agent and its AI provider (for example Anthropic, OpenAI or Google) process your conversation under
   **their own** terms. That is between you and them; Replore doesn't receive it.
 - If you set `GITHUB_TOKEN`, it is sent only to GitHub and is never printed or logged.
+- **Replore Pro key (only if you set one).** If you set `REPLORE_KEY` (or `REPLORE_PLUGIN_KEY`) and ask for meaning
+  ranking (`--semantic`, or `semantic` in the MCP tool), the key is sent, with your project description, only to
+  Replore's own function (`replore.cardzo.co.in`), never to any other host and never through a redirect. The function
+  checks the key with **Polar** (`api.polar.sh`, the merchant of record that sold it, under
+  [Polar's privacy policy](https://polar.sh/legal/privacy)) and keeps only a one-way fingerprint of it and the
+  yes/no answer in memory for 10 minutes. We never store the key and never log it; a failed or refused check is
+  logged as a code only.
 - **Optional security log (Claude Code plugin only) — off by default.** Nothing from your prompts is stored unless
   you turn this on. If you set the environment variable `REPLORE_SECURITY_LOG` (to `1` for the default location, or
   to a file path), a safety hook checks each prompt you send in Claude Code while the plugin is enabled; when one

@@ -215,3 +215,47 @@ def test_raw_github_items_give_the_same_bm25_as_the_page():
     rows = [byname[n] for n in raw["order"]]
     docs = [hybrid.repo_text(r["full_name"], r["description"], r["topics"]) for r in rows]
     assert hybrid.bm25_scores(raw["description"], docs) == raw["bm25"]
+
+
+def test_pro_key_preferred_and_sent_only_to_replore_hosts(monkeypatch):
+    """RS87 + RS34h: REPLORE_KEY wins over REPLORE_PLUGIN_KEY; a key never goes to another host or a port."""
+    got = []
+    def cap(req, timeout):
+        got.append((req.full_url, req.get_header("X-replore-plugin-key")))
+        return _Resp(b'{"sim": [0.5]}')
+    rows = [{"full_name": "a/b", "description": "x"}]
+    monkeypatch.setenv("REPLORE_PLUGIN_KEY", "pk-0123456789abcdef")
+    monkeypatch.setenv("REPLORE_KEY", "1C285B2D-6CE6-4BC7-B8BE-ADB6A7E304DA")
+    hybrid.semantic(DESC, rows, opener=cap)
+    for url in ("https://preview-1.replore.pages.dev/api/relevance", "https://replore.pages.dev/api/relevance"):
+        hybrid.semantic(DESC, rows, endpoint=url, opener=cap)
+    for url in ("https://evil.example/api/relevance", "http://replore.cardzo.co.in/api/relevance",
+                "https://replore.cardzo.co.in:8443/api/relevance", "https://replore.pages.dev.evil.example/x",
+                "https://a.b.replore.pages.dev/x"):
+        hybrid.semantic(DESC, rows, endpoint=url, opener=cap)
+    keys = [k for _, k in got]
+    assert keys[:3] == ["1C285B2D-6CE6-4BC7-B8BE-ADB6A7E304DA"] * 3 and keys[3:] == [None] * 5
+    monkeypatch.delenv("REPLORE_KEY")
+    got.clear(); hybrid.semantic(DESC, rows, opener=cap)
+    assert got[0][1] == "pk-0123456789abcdef"   # the older variable still works
+
+
+def test_default_opener_refuses_redirects():
+    """RS34h: a 3xx would carry the key header elsewhere; the default opener turns it into an error (-> None)."""
+    import urllib.request
+    handler = hybrid._NoRedirect()
+    req = urllib.request.Request("https://replore.cardzo.co.in/api/relevance", headers={"X-Replore-Plugin-Key": "k"})
+    assert handler.redirect_request(req, None, 302, "Found", {}, "https://evil.example/") is None
+    assert hybrid.semantic.__defaults__[-1] is None   # opener=None -> the no-redirect opener
+
+
+def test_scout_never_prints_the_key(monkeypatch, capsys):
+    """RS8 / RS87: the key is never printed, even with --semantic and --json."""
+    key = "1C285B2D-6CE6-4BC7-B8BE-ADB6A7E304DA"
+    monkeypatch.setenv("REPLORE_KEY", key)
+    monkeypatch.setattr(scout, "fetch", lambda q, token=None, timeout=20: {"items": [_repo("a/calorie-counter", 800, "Track calories")], "total_count": 1})
+    monkeypatch.setattr(hybrid, "_OPEN", lambda req, timeout: _Resp(b'{"sim": [0.4]}'))
+    for fmt in ("--json", "--markdown", None):
+        scout.main(["diet", "--semantic", "--describe", "a diet app"] + ([fmt] if fmt else []))
+    out = capsys.readouterr()
+    assert key not in out.out and key not in out.err
