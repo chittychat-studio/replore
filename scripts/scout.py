@@ -446,7 +446,7 @@ def scout(queries, fetcher=fetch, top=20, candidates=40, license_mode="open", ma
         if broadened and any(by_query):
             note = "Nothing matched every word, so the search was broadened to " + _quoted(broadened) + "."
 
-    fit_mode = "fit" if rank_mode == "hybrid" else rank_mode
+    fit_mode = "fit" if rank_mode in ("hybrid", "trust") else rank_mode   # RS82: trust starts from the fit order
     kept = rank(by_query, fit_mode, prefer_starters)  # RS5, RS15
     # RS42 hybrid: the same rule as the page. The first 30 rows (what the page sends) get meaning scores; indexed repos
     # are confirmed by ONE live GitHub search, appended in score order, then fit + BM25 (+ meaning) are fused by RRF.
@@ -529,7 +529,7 @@ def render(result):
             out.append("    Safe to build on?")
             out += [f"      {x}" for x in r["trust"]["lines"]]
     if any(r.get("trust") for r in result["candidates"]):
-        out.append("    " + trust.NOTE)
+        out.append("    " + _trust_note(result))
     out += ["", KEY, FREE_NOTE]
     return "\n".join(out)
 
@@ -593,6 +593,9 @@ def render_csv(result):
 def _rank_text(result):
     """RS5, RS15."""
     m = result["rank_mode"]
+    if m == "trust":   # RS82
+        return ("fit (relevant, then popular, then free to use), then the top %d re-ordered by trust: %s"
+                % (trust.TRUST_RANK_N, trust.TRUST_FORMULA)) + ("; starter templates first" if result["prefer_starters"] else "")
     text = ("fit: relevant, then popular, then free to use" if m == "fit"
             else "balanced: each search's best match first, then by stars" if m == "balanced"
             else "by stars across all searches")
@@ -614,7 +617,30 @@ def _trust_markdown(result):
         out.append(f"**#{r['rank']} {_md(r['full_name'])}**")
         out += [f"- {_md(x)}" for x in r["trust"]["lines"]]
         out.append("")
-    return out + [_md(trust.NOTE), ""]
+    return out + [_md(_trust_note(result)), ""]
+
+
+def _trust_note(result):
+    return trust.RANK_NOTE if result.get("trust_reordered") else trust.NOTE
+
+
+def apply_trust_rank(result, token=None, get=None):
+    """RS82: opt-in trust sort. Check the top 5 fit-ranked repos (RS56), re-order those 5 by trust.trust_score
+    (ties keep fit order) and leave every other repo in fit order. Ranks are renumbered; the per-need groups (RS23)
+    keep their fit order. A failed part counts 0, never a guess (RS7)."""
+    add_trust(result, token, get)
+    allr = result["all"]
+    n = min(trust.TRUST_RANK_N, len(allr))
+    for r in allr[:n]:
+        r["trust_score"] = trust.trust_score(r.get("trust"))
+        if r.get("trust"):
+            r["trust"]["lines"].append("Trust score %g (used for the trust sort, RS82)" % r["trust_score"])
+    new = trust.trust_order(allr, lambda r: r.get("trust_score", 0), n)
+    for i, r in enumerate(new, 1):
+        r["rank"] = i
+    result["all"], result["candidates"], result["top"] = new, new[:len(result["candidates"])], new[:len(result["top"])]
+    result["trust_reordered"] = n
+    return result
 
 
 def add_trust(result, token=None, get=None):
@@ -675,7 +701,8 @@ def main(argv=None):
     p.add_argument("--license", dest="license_mode", choices=["open", "any"], default="open")
     p.add_argument("--max-age-months", type=int, default=24)
     p.add_argument("--min-stars", type=int, default=50)
-    p.add_argument("--rank", dest="rank_mode", choices=["fit", "balanced", "stars", "hybrid"], default="fit")
+    p.add_argument("--rank", dest="rank_mode", choices=["fit", "balanced", "stars", "hybrid", "trust"], default="fit",
+                   help="RS82 trust: fit order, then the top 5 re-ordered by a trust score (runs the RS56 check)")
     p.add_argument("--describe", default=None, help="RS42: the whole project description, for --rank hybrid")
     p.add_argument("--semantic", action="store_true",
                    help="RS42 opt-in: meaning scores + indexed repos from Replore's server (sends the description)")
@@ -701,7 +728,9 @@ def main(argv=None):
     except ScoutError as e:
         print(f"replore: {e}", file=sys.stderr)
         return 2
-    if a.trust and res["candidates"]:
+    if a.rank_mode == "trust" and res["candidates"]:
+        apply_trust_rank(res, token)   # RS82: opt-in; runs the RS56 check on the top 5 and re-orders only them
+    elif a.trust and res["candidates"]:
         add_trust(res, token)   # RS56: never fails the search; a failed part says "couldn't check"
     out = (json.dumps(res, indent=2, ensure_ascii=False) if a.json
            else render_markdown_grouped(res) if (a.markdown and a.group)

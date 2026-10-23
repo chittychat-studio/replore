@@ -96,7 +96,9 @@ Then open a new terminal and try again. Do not search GitHub any other way.
    `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/scout.py" "<query 1>" "<query 2>" --json`
    Add `--prefer-starters` when the user is starting a new project (RS15), so ready-made templates come first.
    Add `--license any` only if the user says unlicensed repos are fine. Add `--max-age-months N` only if they ask.
-   Leave the ranking at its default (fit: relevance + popularity + license-freedom, RS5); add `--rank stars`
+   Leave the ranking at its default (fit: relevance + popularity + license-freedom, RS5). Only if the user asks to
+   sort by trust or safety, add `--rank trust` (RS82): the top 5 are re-ordered by their trust check; say so, using
+   the script's Ranking line, and keep that order in the table. Add `--rank stars`
    only if the user asks for pure star order, or `--rank balanced` for round-robin best-match across queries.
    - Meaning-based search (RS42, opt-in): only if the user asks for it, add `--semantic --describe "<their whole
      description>"`. Say first, in one line, that this sends their description to Replore's server for ranking.

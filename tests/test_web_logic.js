@@ -18,7 +18,7 @@ global.window = global;
 const s = {};
 new Function("document", "localStorage",
   code + "; this.keywordQueries=keywordQueries; this.exploreLinks=exploreLinks; this.rankByFit=rankByFit; this.fitScore=fitScore; this.whyRelevant=whyRelevant; this.esc=esc; this.lu=lu; this.freeText=freeText;" +
-  " this.keep=keep; this.ragRan=ragRan; this.hasDesc=hasDesc; this.descHtml=descHtml; this.plainDesc=plainDesc; this.tipUrlOk=tipUrlOk; this.clean=clean; this.harmful=harmful; this.harmfulRepo=harmfulRepo; this.prdFeatures=prdFeatures; this.trendingQuery=trendingQuery; this.trendRows=trendRows; this.feedbackUrl=feedbackUrl; this.feedbackPayload=feedbackPayload; this.agoText=agoText; this.cardHtml=cardHtml; this.recentKey=recentKey; this.recentFind=recentFind; this.recentAdd=recentAdd; this.CACHE_V=CACHE_V; this.bm25Scores=bm25Scores; this.repoText=repoText; this.rrfOrder=rrfOrder; this.hybridOrder=hybridOrder; this.confirmQueries=confirmQueries; this.ghQuery=ghQuery; this.sigTokens=sigTokens; this.resultSummary=resultSummary; this.trustRow=trustRow; this.trustHtml=trustHtml; this.ghShape=ghShape; this.lastPage=lastPage; this.installCmd=installCmd; this.snapHtml=snapHtml; this.cleanLang=cleanLang; this.relaxedQueries=relaxedQueries;").call(s, document, global.localStorage || {getItem:()=>null,setItem(){},removeItem(){}});
+  " this.keep=keep; this.ragRan=ragRan; this.hasDesc=hasDesc; this.descHtml=descHtml; this.plainDesc=plainDesc; this.tipUrlOk=tipUrlOk; this.clean=clean; this.harmful=harmful; this.harmfulRepo=harmfulRepo; this.prdFeatures=prdFeatures; this.trendingQuery=trendingQuery; this.trendRows=trendRows; this.feedbackUrl=feedbackUrl; this.feedbackPayload=feedbackPayload; this.agoText=agoText; this.cardHtml=cardHtml; this.recentKey=recentKey; this.recentFind=recentFind; this.recentAdd=recentAdd; this.CACHE_V=CACHE_V; this.bm25Scores=bm25Scores; this.repoText=repoText; this.rrfOrder=rrfOrder; this.hybridOrder=hybridOrder; this.confirmQueries=confirmQueries; this.ghQuery=ghQuery; this.sigTokens=sigTokens; this.resultSummary=resultSummary; this.trustRow=trustRow; this.trustHtml=trustHtml; this.ghShape=ghShape; this.lastPage=lastPage; this.installCmd=installCmd; this.snapHtml=snapHtml; this.cleanLang=cleanLang; this.relaxedQueries=relaxedQueries; this.trustScore=trustScore; this.trustOrder=trustOrder; this.trustSort=trustSort; this.sortBox=sortBox; this.TRUST_RANK_NOTE=TRUST_RANK_NOTE; this.__trust=__trust;").call(s, document, global.localStorage || {getItem:()=>null,setItem(){},removeItem(){}});
 
 // RS16: iOS excludes macOS
 // RS16: expansions are specific on-topic phrases, never a bare category (live regression: "website" -> "frontend framework"
@@ -368,3 +368,45 @@ console.log("prd ok:", f.join(" | "));
       c.absent.forEach(w => assert.ok(!text.includes(w) && !html.includes(w), c.name + ": must not show " + w)); });
   } finally { document.createElement = realEl; }
   console.log("shared trust cases ok"); }
+
+// RS82: the opt-in Trust sort: the same formula and order as scripts/trust.py (tests/test_trust.py runs the same file)
+{ const RK = JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures", "trust_rank_cases.json"), "utf8"));
+  RK.scores.forEach(c => assert.strictEqual(s.trustScore(c.t), c.expect, c.name));
+  RK.orders.forEach(c => assert.deepStrictEqual(s.trustOrder(c.rows, r => s.trustScore(r.t), RK.n).map(r => r.repo), c.expect, c.name));
+  const box = s.sortBox();
+  assert.ok(box.indexOf('value="fit"') < box.indexOf('value="trust"') && box.includes(">Trust (top 5)<") && !/selected/.test(box));   // never the default
+  assert.ok(!/\u2014/.test(s.TRUST_RANK_NOTE));
+  console.log("trust rank ok"); }
+
+// RS82: choosing Trust fetches /api/trust for the top 5 visible cards only and re-orders just those (network mocked)
+(async () => {
+  const mkCard = (name, i, extra = {}) => { const a = Object.assign({ "data-i": String(i), "data-lang": "" }, extra), kids = [];
+    return { name, attrs: a, style: { display: "" }, getAttribute: k => (k in a ? a[k] : null), setAttribute(k, v) { a[k] = v; },
+      querySelector: sel => sel === ".pick-cb" ? { getAttribute: () => name } : sel === ".rc-in" ? { appendChild: x => kids.push(x) } : null, kids }; };
+  const cards = ["a/c0", "a/c1", "a/c2", "a/c3", "a/c4", "a/c5"].map((n, i) => mkCard(n, i));
+  cards.splice(1, 0, mkCard("a/hidden", 9)); cards[1].style.display = "none";   // filtered out: not part of the top 5
+  const g = { kids: cards.slice(), isConnected: true, querySelectorAll: sel => sel === ".rcard" ? g.kids.slice() : [],
+    insertBefore(node, ref) { const j = g.kids.indexOf(node); if (j >= 0) g.kids.splice(j, 1); g.kids.splice(g.kids.indexOf(ref), 0, node); } };
+  const note = { hidden: true, textContent: "" }, sel = { value: "trust" };
+  const realGet = document.getElementById, realCC = document.createComment, realCE = document.createElement, realFetch = global.fetch;
+  document.getElementById = id => id === "resSort" ? sel : id === "resTrustNote" ? note : realGet(id);
+  document.createComment = () => { const m = { remove() { g.kids.splice(g.kids.indexOf(m), 1); } }; return m; };
+  document.createElement = () => ({ className: "", textContent: "" });
+  const SC = { "a/c2": { scorecard: { status: "ok", score: 9, maintained: 10 }, package: { status: "ok", advisoryCount: 0 } },
+               "a/c4": { scorecard: { status: "ok", score: 4, maintained: 0 }, package: { status: "none" } } };
+  const urls = [];
+  global.fetch = url => { urls.push(url); const m = /\/api\/trust\?repo=([^&]+)/.exec(url);
+    if (m) { const r = decodeURIComponent(m[1]); return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(SC[r] || { scorecard: { status: "none" }, package: { status: "skipped" } }) }); }
+    return Promise.resolve({ ok: false, status: 404, json: () => Promise.resolve({}), headers: { get: () => null } }); };
+  try {
+    await s.trustSort(g);
+    const trustUrls = urls.filter(u => u.startsWith("/api/trust"));
+    assert.strictEqual(trustUrls.length, 5); assert.ok(!trustUrls.some(u => /hidden|c5/.test(u)));
+    assert.deepStrictEqual(g.kids.filter(c => c.style.display !== "none").map(c => c.name), ["a/c2", "a/c4", "a/c0", "a/c1", "a/c3", "a/c5"]);
+    assert.strictEqual(cards.find(c => c.name === "a/c2").attrs["data-trust"], "16");
+    assert.ok(cards.find(c => c.name === "a/c2").kids[0].textContent.startsWith("Trust score 16"));
+    assert.ok(note.textContent.startsWith("The top 5 were re-ordered by trust") && !note.hidden);
+    assert.strictEqual(cards.find(c => c.name === "a/c5").attrs["data-trust"], undefined);   // outside the top 5: untouched
+    console.log("trust sort ok");
+  } finally { document.getElementById = realGet; document.createComment = realCC; document.createElement = realCE; global.fetch = realFetch; }
+})().catch(e => { console.error(e); process.exit(1); });

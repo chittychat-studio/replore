@@ -297,13 +297,14 @@ async function ghTrust(repo){ var H={headers:{"Accept":"application/vnd.github+j
   return ghShape({community:x[0], release:x[1], gfi:x[2]}); }
 function apiTrust(repo, lang){ return fetch("/api/trust?repo="+encodeURIComponent(repo)+(lang?"&lang="+encodeURIComponent(lang):""),{headers:{"Accept":"application/json"}})
   .then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; }); }
+function trustFor(repo, lang){ var L=TRUST_LANGS[lang]===1?lang:"", key=repo+"|"+L;   // one cached check per repo (panel and RS82 sort)
+  return {key:key, p:__trust[key]||(__trust[key]=Promise.all([ghTrust(repo), apiTrust(repo, L)]))}; }
 document.addEventListener("toggle",function(e){ var d=e.target;   // toggle doesn't bubble: listen in the capture phase
   if(!d||!d.classList||!d.classList.contains("trust")||!d.open) return;
   var body=d.querySelector(".trust-body"), repo=d.getAttribute("data-repo"), lang=d.getAttribute("data-lang")||"";
   if(!body||!validRepoName(repo)||body.getAttribute("data-done")) return;
   body.setAttribute("data-done","1"); body.innerHTML='<p class="mut">Checking…</p>';
-  var key=repo+"|"+(TRUST_LANGS[lang]===1?lang:"");
-  var p=__trust[key]||(__trust[key]=Promise.all([ghTrust(repo), apiTrust(repo, TRUST_LANGS[lang]===1?lang:"")]));
+  var x=trustFor(repo, lang), key=x.key, p=x.p;
   p.then(function(x){ body.innerHTML=trustHtml(x[0],x[1],d.getAttribute("data-spdx")||"",repo);
     if(!x[1]||x[0].limited){ delete __trust[key]; body.removeAttribute("data-done"); } },   // a failed part retries on the next open
     function(){ delete __trust[key]; body.removeAttribute("data-done"); body.innerHTML='<p class="mut">Couldn\'t check right now.</p>'; });
@@ -466,15 +467,65 @@ function filterBar(top){ top=top||[];
       '<div class="rr-g"><b>Updated</b>'+seg("upd",RF_UPD,"Last updated")+'</div>'+
     '</div></aside>'; }
 function sortBox(){ return '<label class="res-sort"><span class="sr-only">Sort by</span><select id="resSort">'+
-  '<option value="fit">Best fit</option><option value="stars">Most stars</option><option value="new">Recently updated</option></select></label>'; }
+  '<option value="fit">Best fit</option><option value="stars">Most stars</option><option value="new">Recently updated</option>'+
+  '<option value="trust">Trust (top 5)</option></select></label>'; }   // RS82: opt-in, never the default
 // RS67: sort the cards already on screen; repos the AI check left out always stay last (RS34)
-function sortCards(how){ var g=document.querySelector("#out .grid"); if(!g) return;
+function orderGrid(g, how){
   var cards=[].slice.call(g.querySelectorAll(".rcard")), key=function(c){ return how==="stars"?-(+c.getAttribute("data-stars")||0)
     : how==="new"?-(Date.parse(c.getAttribute("data-pushed"))||0) : +c.getAttribute("data-i")||0; };
   cards.sort(function(a,b){ var la=a.getAttribute("data-left")?1:0, lb=b.getAttribute("data-left")?1:0; return la-lb || key(a)-key(b); });
   var div=g.querySelector(".left-div"), seen=false;
-  cards.forEach(function(c){ if(div && !seen && c.getAttribute("data-left")){ g.appendChild(div); seen=true; } g.appendChild(c); });
-  window.__resLimit=10; applyResultFilter(); checkMore(); }
+  cards.forEach(function(c){ if(div && !seen && c.getAttribute("data-left")){ g.appendChild(div); seen=true; } g.appendChild(c); }); }
+function sortCards(how){ var g=document.querySelector("#out .grid"); if(!g) return;
+  __trustSortGen++; clearTrustSort(g);
+  orderGrid(g, how==="trust"?"fit":how);   // RS82: the trust sort starts from the fit order
+  window.__resLimit=10; applyResultFilter(); checkMore();
+  if(how==="trust") trustSort(g); }
+// RS82: opt-in "Trust" sort. Same formula as scripts/trust.py trust_score (shared cases: tests/fixtures/trust_rank_cases.json):
+// Scorecard score + half the Maintained score + 2 when no known vulnerabilities; a part that couldn't be checked counts 0.
+var TRUST_RANK_N=5, __trustSortGen=0;
+var TRUST_RANK_NOTE="The top N were re-ordered by trust: Scorecard score + half the Maintained score + 2 when no known vulnerabilities "+
+  "(a part that couldn't be checked counts 0). The rest stay in best-fit order, and Best fit brings the usual order back.";
+function trustScore(t){ t=(t&&typeof t==="object")?t:{};
+  var sc=(t.scorecard&&typeof t.scorecard==="object")?t.scorecard:{}, pk=(t.package&&typeof t.package==="object")?t.package:{};
+  var ok=sc.status==="ok", in10=function(x){ return typeof x==="number"&&isFinite(x)&&x>=0&&x<=10; };
+  var s=ok&&in10(sc.score)?sc.score:0, m=ok&&in10(sc.maintained)?sc.maintained:0;
+  var ids=Array.isArray(pk.advisories)?pk.advisories:[], cnt=(typeof pk.advisoryCount==="number"&&isFinite(pk.advisoryCount))?pk.advisoryCount:0;
+  var v=(pk.status==="ok"&&Math.max(cnt,ids.length)===0)?2:0;
+  return Math.round((s+m/2+v)*10)/10; }
+function trustOrder(rows, scoreOf, n){ n=n==null?TRUST_RANK_N:n;
+  var head=rows.slice(0,n).map(function(r,i){ return {r:r, i:i, s:scoreOf(r)}; });
+  head.sort(function(a,b){ return (b.s-a.s)||(a.i-b.i); });   // ties keep fit order
+  return head.map(function(x){ return x.r; }).concat(rows.slice(n)); }
+function clearTrustSort(g){ [].forEach.call(g.querySelectorAll(".rc-trust"),function(x){ x.remove(); });
+  var n=document.getElementById("resTrustNote"); if(n){ n.hidden=true; n.textContent=""; } }
+function trustSort(g){ var gen=__trustSortGen, note=document.getElementById("resTrustNote");
+  var cards=[].slice.call(g.querySelectorAll(".rcard")).filter(function(c){ return c.style.display!=="none" && !c.getAttribute("data-left"); }).slice(0,TRUST_RANK_N);
+  if(!cards.length) return;
+  if(note){ note.hidden=false; note.textContent="Checking the top "+cards.length+" for trust…"; }
+  return Promise.all(cards.map(function(c){ var cb=c.querySelector(".pick-cb"), repo=cb?cb.getAttribute("data-name"):"";
+    if(!validRepoName(repo)) return Promise.resolve(null);
+    var x=trustFor(repo, c.getAttribute("data-lang")||"");
+    return x.p.then(function(v){ if(!v||!v[1]||v[0].limited) delete __trust[x.key]; return v; },   // a failed part retries later
+      function(){ delete __trust[x.key]; return null; }); }))
+  .then(function(res){ var so=document.getElementById("resSort");
+    if(gen!==__trustSortGen || !so || so.value!=="trust" || !g.isConnected) return;   // the visitor moved on
+    cards.forEach(function(c,i){ var v=res[i], s=trustScore(v&&v[1]); c.setAttribute("data-trust",String(s)); fillTrustPanel(c, v);
+      var p=document.createElement("p"); p.className="rc-trust"; p.textContent="Trust score "+s+" of 17"+(v&&v[1]?"":" (couldn't check)");
+      var box=c.querySelector(".rc-in")||c; box.appendChild(p); });
+    var order=trustOrder(cards, function(c){ return +c.getAttribute("data-trust")||0; });
+    var mark=document.createComment("trust"); g.insertBefore(mark, cards[0]);
+    order.forEach(function(c){ g.insertBefore(c, mark); }); mark.remove();
+    if(note) note.textContent=TRUST_RANK_NOTE.replace("top N","top "+cards.length);
+    applyResultFilter(); });
+}
+function fillTrustPanel(card, v){   // RS53: the usual trust lines, ready in Details without a second fetch
+  var cb=card.querySelector(".pick-cb"), repo=cb?cb.getAttribute("data-name"):"";
+  if(!validRepoName(repo)) return;   // RS51 shape only, so it is safe inside the selector below
+  var d=card.querySelector("details.trust")||document.querySelector('#rcDrawer details.trust[data-repo="'+repo+'"]');
+  var body=d&&d.querySelector(".trust-body"); if(!body||!v) return;
+  body.innerHTML=trustHtml(v[0],v[1],d.getAttribute("data-spdx")||"",repo);
+  if(v[1]&&!v[0].limited) body.setAttribute("data-done","1"); }
 
 function render(top, queries, excluded, totalMatches, qtokens, heading, note, gate){
   if(!top.length){ return '<div class="panel"><p class="err">No repository matched.</p>'+
@@ -485,6 +536,7 @@ function render(top, queries, excluded, totalMatches, qtokens, heading, note, ga
       '<span class="res-count mut">'+n+' result'+(n===1?'':'s')+'</span>'+
       '<span class="res-tools">'+sortBox()+'<button type="button" class="rsel" id="resSelAll" title="Tick every repo shown, for a build plan (RS28a)">Select all shown</button></span></div>'+
     (note?'<p class="res-note mut">'+note+'</p>':'')+  /* note is pre-built HTML: repo name already escaped, rest is our own markup */
+    '<p id="resTrustNote" class="res-note mut" aria-live="polite" hidden></p>'+   /* RS82: says when the Trust sort re-ordered the top 5 */
     '<div class="res-body">'+filterBar(top)+'<div class="res-main">'+   // RS67: filter panel on the left, cards on the right
     '<div class="grid">'+top.map(function(r,i){   // RS34: AI-dropped repos follow the kept ones under a quiet divider, shown automatically
       return (r.left && !(i && top[i-1].left) ? '<p class="left-div" hidden>Less likely to fit</p>' : '')+cardHtml(r,i,qtokens);}).join("")+'</div>'+
@@ -1793,6 +1845,9 @@ function cleanCards(root){ var c=root.querySelectorAll(".rcard"); for(var i=0;i<
 // RS47: saved HTML comes from a copy, so a half-rolled odometer is saved as its plain number and the live one keeps rolling
 function snapHtml(root){ var c=root.cloneNode(true), o=c.querySelectorAll('.cnt[data-odo="1"]');
   for(var j=0;j<o.length;j++){ o[j].textContent=o[j].getAttribute("aria-label")||o[j].textContent; o[j].removeAttribute("data-odo"); }
+  var tg=c.querySelector&&c.querySelector(".grid");   // RS82: a saved copy is always in fit order, without trust lines
+  if(tg){ orderGrid(tg,"fit"); [].forEach.call(c.querySelectorAll(".rc-trust"),function(x){ x.remove(); });
+    var tn=c.querySelector("#resTrustNote"); if(tn){ tn.hidden=true; tn.textContent=""; } }
   var t=c.querySelectorAll("details.trust");   // RS53d: an opened trust panel is never saved — closed and emptied
   for(var k=0;k<t.length;k++){ t[k].removeAttribute("open"); var b=t[k].querySelector(".trust-body"); if(b){ b.innerHTML=""; b.removeAttribute("data-done"); } }
   return c.innerHTML; }

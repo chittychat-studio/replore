@@ -868,7 +868,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   `check_repos` (1–5 repos). At most 5 repos per run: GitHub's unauthenticated core limit is 60 calls an hour and a
   repo costs 3–4. The calls go straight from the user's computer to `api.github.com`, `api.securityscorecards.dev` and
   `api.deps.dev` (no Replore server in between); `GITHUB_TOKEN` is sent to `api.github.com` only (RS8). Display
-  only: it never reorders, filters or fails the search (RX3); a failed source says "couldn't check", never a guess
+  only: it never reorders, filters or fails the search (RX3), except in the opt-in RS82 trust sort; a failed source says "couldn't check", never a guess
   (RS7). Every result row now carries the repo's GitHub `language` (JSON), which picks the ecosystem.
   **Kept in sync by tests:** `tests/fixtures/trust_cases.json` holds the shared cases (deps.dev/Scorecard answers →
   parts, GitHub answers → shape, and the phrases the panel and the lines must and must not show). The web's
@@ -1103,8 +1103,25 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   Only that job gets `contents: write`; the workflow default is `contents: read`; the tag reaches the shell through
   `env`, never pasted into the command; actions are SHA-pinned (RS50). Steps for the maintainer are in README,
   Development: bump both versions, update the changelog, tag `vX.Y.Z`, push the tag. Nobody tags from a branch.
+- **RS82** Opt-in trust sort (owner request 2026-10-23; amends RX3). The default ranking stays RS5 fit everywhere. On
+  request only, the top 5 fit-ranked repos are re-ordered by a **trust score** = Scorecard overall score (0-10) + half
+  the Scorecard `Maintained` check score (0-10) + 2 when the published package has no known vulnerabilities; a part that
+  is missing, not scored or couldn't be checked counts 0, never a guess (RS7); out-of-range values count 0; the sum is
+  rounded to one decimal (half up). Highest first; ties, and every repo after the top 5, keep fit order. Plugin:
+  `scout.py --rank trust` ranks by fit, runs the RS56 check on the top 5 (`apply_trust_rank`), re-orders them, renumbers
+  the ranks, adds `trust_score` and `trust_reordered` to the JSON and a "Trust score N" line to each checked repo; the
+  Ranking line and the trust note say "the top 5 re-ordered by trust" with the formula. Per-need groups (RS23) keep fit
+  order. MCP: `find_repos` takes `rank: "fit" | "trust"`. Web: the results sort menu (RS67) gets "Trust (top 5)": it
+  takes the first 5 visible, kept cards in fit order (filters respected, "Less likely to fit" never included), fetches
+  their check through the same cached RS53 calls (GitHub plus `/api/trust`), fills their Details trust panels, shows
+  "Trust score N of 17" on each, re-orders just those 5 and says so above the results; Best fit puts the usual order
+  back, and a saved copy is always in fit order. Nothing is fetched until Trust is chosen. The formula and order are
+  shared: `tests/fixtures/trust_rank_cases.json` runs in `tests/test_trust.py` and `tests/test_web_logic.js`; network is
+  mocked in both. Same cost limits as RS56 (5 repos, about 4 GitHub calls each).
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
 - **RX3** Ranking by forks, trending or download counts. (Relevance, stars and license-freedom are the only
-  ranking signals — see RS5.)
+  signals of the **default** ranking — see RS5. Amended 2026-10-23: the one exception is the explicit, opt-in trust sort
+  of RS82, which re-orders only the top 5 by public security signals, is never the default and says so in the output.
+  Forks, trending and downloads still never rank anything.)
 - **RX4** Writing into the user's repo (cloning, adding dependencies). The output is a recommendation only.

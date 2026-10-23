@@ -305,6 +305,34 @@ def trust_lines(gh, tr, spdx, repo):
 
 NOTE = "For information — it doesn't change the ranking. Sources: OpenSSF Scorecard, deps.dev, OSV.dev, GitHub."
 
+# ---- RS82: the opt-in trust sort (same formula as web/app.js trustScore; shared cases in tests/fixtures/trust_rank_cases.json)
+TRUST_RANK_N = MAX_REPOS
+TRUST_FORMULA = ("Scorecard score + half the Maintained score + 2 when no known vulnerabilities "
+                 "(a part that couldn't be checked counts 0)")
+RANK_NOTE = (f"The top {TRUST_RANK_N} were re-ordered by trust: {TRUST_FORMULA}; ties and every repo after them stay "
+             "in fit order. Sources: OpenSSF Scorecard, deps.dev, OSV.dev.")
+
+
+def trust_score(t):
+    """RS82: one number from the {scorecard, package} answer; unknown parts count 0, never guessed (RS7)."""
+    t = t if isinstance(t, dict) else {}
+    sc = t.get("scorecard") if isinstance(t.get("scorecard"), dict) else {}
+    pk = t.get("package") if isinstance(t.get("package"), dict) else {}
+    ok = sc.get("status") == "ok"
+    in10 = lambda x: _num(x) and 0 <= x <= 10
+    s = sc.get("score") if ok and in10(sc.get("score")) else 0
+    m = sc.get("maintained") if ok and in10(sc.get("maintained")) else 0
+    ids = pk.get("advisories") if isinstance(pk.get("advisories"), list) else []
+    cnt = pk.get("advisoryCount") if _num(pk.get("advisoryCount")) else 0
+    v = 2 if pk.get("status") == "ok" and max(cnt, len(ids)) == 0 else 0
+    return _round1(s + m / 2 + v)
+
+
+def trust_order(rows, score_of, n=TRUST_RANK_N):
+    """RS82: the first n rows by trust score, highest first (ties keep fit order); the rest unchanged."""
+    head = sorted(enumerate(rows[:n]), key=lambda p: (-score_of(p[1]), p[0]))
+    return [r for _, r in head] + list(rows[n:])
+
 
 def install_cmd(system, name):
     return INSTALL[system] + name if system in INSTALL and NAME_RE.fullmatch(str(name or "")) else ""

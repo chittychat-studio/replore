@@ -55,6 +55,10 @@ TOOL = {
             "group": {"type": "boolean", "description": "Group results by query/need (use with all for a PRD)."},
             "trust": {"type": "boolean", "description": "Also check whether the top 5 are safe to build on: security "
                       "health, known vulnerabilities, install command, beginner-friendliness (RS56). Display only."},
+            "rank": {"type": "string", "enum": ["fit", "trust"],
+                     "description": "fit (default). trust = opt-in: fit order, then the top 5 re-ordered by a trust "
+                                    "score (Scorecard + half Maintained + 2 if no known vulnerabilities; RS82). Use only "
+                                    "when the user asks to sort by safety or trust."},
         },
         "required": ["queries"],
         "additionalProperties": False,
@@ -115,6 +119,9 @@ def call_find_repos(args, fetcher=None, trust_get=None):
         return _bad(f"'queries' must be a list of 1-{scout.MAX_QUERIES} short search strings.")
     if any(scout._CTRL.search(q) for q in queries):  # RS9: no newlines/control chars into the output table
         return _bad("queries must be plain text on one line.")
+    rank_mode = args.get("rank", "fit")
+    if rank_mode not in ("fit", "trust"):
+        return _bad("'rank' must be 'fit' or 'trust'.")
     lic = args.get("license", "open")
     if lic not in ("open", "any"):
         return _bad("'license' must be 'open' or 'any'.")
@@ -135,7 +142,7 @@ def call_find_repos(args, fetcher=None, trust_get=None):
         res = scout.scout(queries, fetcher=fetcher, top=None if flags["all"] else 20,
                           candidates=None if flags["all"] else 40, license_mode=lic,
                           max_age_months=nums["max_age_months"], token=token,
-                          prefer_starters=flags["prefer_starters"], min_stars=nums["min_stars"])
+                          prefer_starters=flags["prefer_starters"], min_stars=nums["min_stars"], rank_mode=rank_mode)
     except scout.ScoutError as e:
         return _bad(str(e))
     except Exception as e:  # anything unexpected still fails closed with a plain message, never a partial list
@@ -143,7 +150,9 @@ def call_find_repos(args, fetcher=None, trust_get=None):
         return _bad("internal error while searching; nothing was returned. Try again or simplify the search.")
     if not res["candidates"]:   # honest "no match" with excluded counts, not an error; RS78a: suggest broader words
         return _text(scout.render_markdown(res) + "\n\n" + BROADER_HINT, False)
-    if flags["trust"]:
+    if rank_mode == "trust":
+        scout.apply_trust_rank(res, token, trust_get)   # RS82: opt-in; re-orders only the top 5, says so in the output
+    elif flags["trust"]:
         scout.add_trust(res, token, trust_get)   # RS56: a failed part says "couldn't check"; the search still returns
     out = scout.render_markdown_grouped(res) if flags["group"] else scout.render_markdown(res)
     return _text(PREAMBLE + out, False)
