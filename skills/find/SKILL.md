@@ -102,7 +102,11 @@ Then open a new terminal and try again. Do not search GitHub any other way.
      description>"`. Say first, in one line, that this sends their description to Replore's server for ranking.
      If the output's `semantic` is `unavailable`, say the results are keyword-only this time.
    - Exit 2 (network, rate limit, bad query): show the error and stop. Never list repos from memory instead (RS7).
-   - Exit 1 (no matches): show the queries and excluded counts, then offer broader queries, or ask what they are
+   - Broader retry (RS78a): when every query finds nothing, the script itself retries up to two broader searches
+     (without version-like words such as `opus5.5` or `gpt-4o`, then with the two strongest words). If the JSON has a
+     `note`, say it in one line, e.g. "Nothing matched every word, so I searched for 'motion graphics'." The repos
+     found by a broader search are still only what the script printed (RS6).
+   - Exit 1 (no matches, the `note` says why): show the queries and excluded counts, then offer broader queries, or ask what they are
      building if the input looked like nonsense (RS19). Do not invent results.
    - The script skips repos under 50 stars by default (RS4a); add `--min-stars 0` only if the user wants tiny or
      brand-new projects.

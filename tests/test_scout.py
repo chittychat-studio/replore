@@ -1106,3 +1106,56 @@ def test_rs66_no_em_dashes_in_site_copy():
         code = re.split(r"\s//\s|^\s*//", line)[0]
         hits += [m for m in string_lit.findall(code) if dash in m]
     assert hits == [], hits[:5]
+
+
+# ---- RS78a: an empty search retries broader (the web page's RS78, ported) ----
+
+def test_relaxed_queries_match_the_web_page():
+    """RS78a, RS29: tests/fixtures/relaxed_cases.json is run by tests/test_web_logic.js against relaxedQueries() too."""
+    fx = json.loads((ROOT / "tests" / "fixtures" / "relaxed_cases.json").read_text(encoding="utf-8"))
+    assert len(fx["cases"]) >= 8
+    for c in fx["cases"]:
+        assert scout.relaxed_queries(c["text"], c["tried"]) == c["expect"], c["name"]
+
+
+def test_empty_search_retries_broader_and_says_so():
+    res, f = run([[], [repo("a/motion", 900)]], queries=["motion graphics opus5.5"], min_stars=50)
+    assert [q for q, _ in f.calls][1].startswith("motion graphics fork:false")
+    assert res["broadened"] == ["motion graphics"] and res["queries"] == ["motion graphics opus5.5", "motion graphics"]
+    assert res["note"] == 'Nothing matched every word, so the search was broadened to "motion graphics".'
+    assert [r["full_name"] for r in res["top"]] == ["a/motion"] and res["top"][0]["query"] == "motion graphics"
+    assert "Note: Nothing matched every word" in scout.render(res)
+    assert "**Note:** Nothing matched every word" in scout.render_markdown(res)
+    assert "**Note:** Nothing matched every word" in scout.render_markdown_grouped(res)
+
+
+def test_broader_search_stays_in_budget_and_keeps_shared_qualifiers():
+    """RS78a, RS8: at most two extra searches (4 + 2 = 6 of GitHub's 10 a minute); a qualifier on every query stays."""
+    qs = ["voice ai 2025 language:python", "speech text v3 language:python", "tts 4o language:python", "stt language:python"]
+    res, f = run([[]] * 6, queries=qs)
+    assert len(f.calls) == scout.MAX_QUERIES + scout.MAX_BROADER == 6
+    assert res["broadened"] == ["voice ai speech language:python", "voice ai language:python"]
+    assert res["note"].startswith(scout.NO_MATCH) and "found nothing either" in res["note"]
+    assert res["top"] == [] and len(res["groups"]) == 6
+
+
+def test_broader_uses_the_description_when_given_and_can_be_turned_off():
+    res, f = run([[], []], queries=["pdf chat gpt5"], description="chat with my pdfs using gpt5")
+    assert res["broadened"] == ["chat pdfs"]
+    res, f = run([[]], queries=["motion graphics opus5.5"], broaden=False)
+    assert len(f.calls) == 1 and res["broadened"] == [] and res["note"] == scout.NO_MATCH
+
+
+def test_no_broader_words_means_plain_no_match_note():
+    res, f = run([[]], queries=["chatbot"])
+    assert len(f.calls) == 1 and res["broadened"] == [] and res["note"] == scout.NO_MATCH
+    res, _ = run([[repo("a/b", 900)]], queries=["chatbot"])
+    assert res["note"] is None and res["broadened"] == []
+
+
+def test_empty_json_carries_a_note(monkeypatch, capsys):
+    """RS78a: JSON consumers get a reason for an empty list."""
+    _patch_fetch(monkeypatch, lambda q, token=None: {"items": []})
+    assert scout.main(["chatbot", "--json"]) == 1
+    data = json.loads(capsys.readouterr().out)
+    assert data["note"] == "No repository matched after filtering." and data["candidates"] == []

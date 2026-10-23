@@ -285,6 +285,10 @@ console.log("prd ok:", f.join(" | "));
   assert.deepStrictEqual(r, ["motion graphics"]);
   assert.deepStrictEqual(s.relaxedQueries("offline maps trip planner", ["offline maps trip"]), ["offline maps"]);
   assert.deepStrictEqual(s.relaxedQueries("chatbot", ["chatbot"]), []);
+  // RS78a: the same cases scripts/scout.py relaxed_queries() must pass (tests/test_scout.py reads this file too)
+  const RX = JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures", "relaxed_cases.json"), "utf8"));
+  assert.ok(RX.cases.length >= 8);
+  for (const c of RX.cases) assert.deepStrictEqual(s.relaxedQueries(c.text, c.tried), c.expect, c.name);
   console.log("relaxed ok"); }
 
 // RS51 Explore links: same owner/repo path on four tools; malformed names get none

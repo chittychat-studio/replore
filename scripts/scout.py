@@ -241,6 +241,54 @@ def why_relevant(query, name, desc, rel):
     return "Top match for your search" if (rel is not None and rel <= 3) else "Related to your search"
 
 
+MAX_BROADER = 2   # RS78a: at most two extra searches, so a run stays at 6 of GitHub's 10 searches a minute
+NO_MATCH = "No repository matched after filtering."
+
+
+def kw_words(text):
+    """RS78a: the page's kwWords(): lower case, the page's tokenizer, filler words (hybrid.STOP) dropped."""
+    return [w for w in _page_words(text) if w not in hybrid.STOP]
+
+
+def relaxed_queries(text, tried=()):
+    """RS78a: the page's relaxedQueries(), word for word (shared cases in tests/fixtures/relaxed_cases.json). When every
+    search came back empty (GitHub ANDs every word), search broader: first without version-like words ("opus5.5",
+    "gpt-4o", "v2": model names and versions rarely appear in repo text), then with the two strongest words."""
+    w = kw_words(text)
+    plain = [x for x in w if not re.search(r"\d", x)]
+    out = []
+
+    def add(q):
+        q = q.strip()
+        if q and q not in tried and q not in out:
+            out.append(q)
+    if plain and len(plain) < len(w):
+        add(" ".join(plain[:3]))
+    if len(plain) >= 2:
+        add(" ".join(plain[:2]))
+    return out[:MAX_BROADER]
+
+
+def _quoted(qs):
+    return " and ".join(f'"{q}"' for q in qs)
+
+
+def _split_quals(q):
+    """Words vs qualifiers (topic:x, language:y, -topic:z, -word) of one query."""
+    toks = q.split()
+    return [t for t in toks if ":" not in t and not t.startswith("-")], [t for t in toks if ":" in t or t.startswith("-")]
+
+
+def broader_queries(queries, description=None):
+    """RS78a: the plugin's broader searches. The words come from the description when given (as on the page), else from
+    the queries; a qualifier every query carried (e.g. language:python, -topic:macos) is kept on each broader search."""
+    parts = [_split_quals(q) for q in queries]
+    text = description if (description and description.strip()) else " ".join(" ".join(w) for w, _ in parts)
+    common = [t for t in parts[0][1] if all(t in qs for _, qs in parts[1:])] if parts else []
+    tried = [q for q in queries] + [" ".join(w) for w, _ in parts]
+    return [(q + " " + " ".join(common)).strip() for q in relaxed_queries(text, tried)]
+
+
 def _tail(r):
     """RS5c: 1 when a repo was found only past GitHub's first REL_SPAN best matches (it would compete on stars alone)."""
     return 1 if (r.get("rel") or 0) >= REL_SPAN else 0
@@ -287,8 +335,10 @@ def _pushed(item):
 
 def scout(queries, fetcher=fetch, top=20, candidates=40, license_mode="open", max_age_months=24,
           now=None, token=None, rank_mode="fit", prefer_starters=False, min_stars=0,
-          description=None, semantic_on=False, semantic_fn=None):
+          description=None, semantic_on=False, semantic_fn=None, broaden=True):
     """RS2-RS5: search, merge, filter, rank. Returns a result dict; raises ScoutError (RS7).
+    RS78a: when every search comes back empty after filtering, up to two broader searches run (see relaxed_queries)
+    and the result's `note` says so; `broadened` lists them.
     RS42: rank_mode "hybrid" re-orders by fit + BM25 against `description`; semantic_on (opt-in) adds meaning
     scores and live-confirmed indexed repos from Replore's endpoint."""
     queries = [q.strip() for q in queries if q and q.strip()]
@@ -373,7 +423,7 @@ def scout(queries, fetcher=fetch, top=20, candidates=40, license_mode="open", ma
             kept.append(row)
             seen[name] = row
 
-    for q in queries:
+    def run(q):
         kept = []
         by_query.append(kept)
         try:
@@ -384,6 +434,17 @@ def scout(queries, fetcher=fetch, top=20, candidates=40, license_mode="open", ma
         if not isinstance(items, list):
             raise ScoutError(f"Unexpected GitHub response for {q!r}.")
         take(q, items, kept)
+
+    for q in queries:
+        run(q)
+    broadened, note = [], None
+    if broaden and not any(by_query):   # RS78a: nothing matched every word; a broader search fails closed like any other
+        broadened = broader_queries(queries, description)
+        for q in broadened:
+            run(q)
+        queries = queries + broadened
+        if broadened and any(by_query):
+            note = "Nothing matched every word, so the search was broadened to " + _quoted(broadened) + "."
 
     fit_mode = "fit" if rank_mode == "hybrid" else rank_mode
     kept = rank(by_query, fit_mode, prefer_starters)  # RS5, RS15
@@ -414,6 +475,8 @@ def scout(queries, fetcher=fetch, top=20, candidates=40, license_mode="open", ma
                     sims += [score.get(r["full_name"].lower(), 0.0) for r in extra]
     if fused:
         kept = hybrid.hybrid_order(head + extra, description or " ".join(queries), sims) + tail
+    if not kept:   # RS78a: an empty result always says why, also in --json
+        note = NO_MATCH + (" Broader searches " + _quoted(broadened) + " found nothing either." if broadened else "")
     # RS23: per-feature groups (a repo appears under the first query that returned it); build before _pushed is dropped
     groups = [{"query": queries[i], "repos": _order(by_query[i], prefer_starters)} for i in range(len(queries))]
     for i, r in enumerate(kept, 1):
@@ -431,6 +494,8 @@ def scout(queries, fetcher=fetch, top=20, candidates=40, license_mode="open", ma
         "semantic": semantic_status,
         "found_by_meaning": [r["full_name"] for r in extra],
         "prefer_starters": prefer_starters,
+        "broadened": broadened,   # RS78a
+        "note": note,             # RS78a: why the list is broader, or why it is empty; None otherwise
         "excluded": excluded,
         "top": kept[:cap],
         "candidates": kept[:ccap],
@@ -447,8 +512,10 @@ def render(result):
            f"Ranking: {_rank_text(result)}",
            "Excluded: " + ", ".join(f"{k}={v}" for k, v in result["excluded"].items()), ""]
     if not result["candidates"]:
-        out += ["No repository matched after filtering.", "", KEY]
+        out += [result.get("note") or NO_MATCH, "", KEY]
         return "\n".join(out)
+    if result.get("note"):   # RS78a
+        out += ["Note: " + result["note"], ""]
     out.append("Shortlist:")
     for r in result["candidates"]:
         star = "  [starter]" if r["starter"] else ""
@@ -473,6 +540,8 @@ def render_markdown_grouped(result):
            f"**Filters:** license={result['license_mode']}, last push within "
            f"{result['max_age_months'] or 'any'} months, at least {result['min_stars']} stars, no forks, no archived  ",
            "**Excluded:** " + ", ".join(f"{k}={v}" for k, v in result["excluded"].items()), ""]
+    if result.get("note"):   # RS78a
+        out += [f"**Note:** {_md(result['note'])}", ""]
     total = 0
     for g in result["groups"]:
         out += [f"### {_md(g['query'])}  ({len(g['repos'])})", ""]
@@ -569,8 +638,10 @@ def render_markdown(result):
            f"**Ranking:** {_rank_text(result)}  ",
            "**Excluded:** " + ", ".join(f"{k}={v}" for k, v in result["excluded"].items()), ""]
     if not result["candidates"]:
-        out += ["No repository matched after filtering.", "", KEY]
+        out += [_md(result.get("note") or NO_MATCH), "", KEY]
         return "\n".join(out)
+    if result.get("note"):   # RS78a
+        out += [f"**Note:** {_md(result['note'])}", ""]
     extra = result["candidates"][len(result["top"]):]
     for title, rows in (("Top %d" % len(result["top"]), result["top"]),
                         ("More candidates (used if the relevance check drops some)", extra)):

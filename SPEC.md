@@ -1048,6 +1048,19 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   use fewer words). GitHub matches every word, so when all queries return nothing the page searches again without
   version-like words (model names and versions such as opus5.5 or gpt-4o rarely appear in repo text), then with the two
   strongest words, within the same rate-limit guard, and says so above the results.
+- **RS78a** The plugin, script and MCP server retry broader too, in sync with RS78 (RS29). When every query of a
+  `scout.py` run comes back empty after filtering, `scout()` runs at most two broader searches (`MAX_BROADER`), so a
+  run stays at 6 of GitHub's 10 unauthenticated searches a minute (RS8). The words come from `--describe` when given
+  (the page uses the typed description), else from the queries without their qualifiers; `relaxed_queries()` is the
+  page's `relaxedQueries()` word for word (same tokenizer and filler words), and a qualifier every query carried
+  (`language:python`, `-topic:macos`) is kept on each broader search, as the page keeps the platform and stack. A
+  broader search that fails ends the run like any other (RS7). The result gets `broadened` (the searches added, also
+  appended to `queries`) and `note`: "Nothing matched every word, so the search was broadened to "a" and "b"." when
+  they found something; an empty result always carries `note` = "No repository matched after filtering." (plus which
+  broader searches also found nothing), so `--json` consumers get a reason. The text, Markdown and grouped outputs
+  print the note. The MCP `find_repos` reply shows it, and an empty reply adds a line asking the agent to suggest
+  broader words; the skill says the note in one line. Shared cases: `tests/fixtures/relaxed_cases.json`, run by
+  `tests/test_scout.py` and `tests/test_web_logic.js`. The web behaviour is unchanged.
 - **RS79** Launch it with Leo (owner 2026-10-23, from a mock-up). A Launch button in the top menu opens a window: a few
   tap answers (what you built, including iPhone, Android and games; who uses it; data; how people pay; budget) build a
   colour-coded plan (host or store, store accounts, multiplayer, database, sign-in, payments with store billing rules on

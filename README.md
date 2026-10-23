@@ -250,7 +250,9 @@ python3 scripts/scout.py "animation library" "topic:css-framework" [--json | --m
     [--max-age-months 12] [--rank balanced|stars] [--prefer-starters]
 ```
 
-Exit codes: 0 results, 1 no match after filtering, 2 error (network, rate limit, bad query).
+Exit codes: 0 results, 1 no match after filtering, 2 error (network, rate limit, bad query). When every search finds
+nothing, the script retries up to two broader searches (without version-like words, then the two strongest words)
+and says so in a note (`note` in `--json`; SPEC RS78a).
 
 ## Development
 
