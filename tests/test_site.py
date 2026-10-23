@@ -25,8 +25,8 @@ def test_robots_and_sitemap():
     locs = [u.find("s:loc", ns).text for u in urls]
     assert locs[0] == CANON and all(l.startswith(CANON) for l in locs) and "pages.dev" not in "".join(locs)
     assert all(re.fullmatch(r"\d{4}-\d{2}-\d{2}", u.find("s:lastmod", ns).text) for u in urls)
-    for loc in locs[1:]:   # every listed secondary page exists
-        assert (WEB / loc[len(CANON):]).exists(), loc
+    for loc in locs[1:]:   # every listed secondary page exists as <name>.html (clean URL on Cloudflare Pages)
+        assert (WEB / (loc[len(CANON):] + ".html")).exists(), loc
 
 
 def test_canonical_link_on_the_page():
@@ -117,8 +117,10 @@ def test_evals_page_is_static_csp_safe_and_linked():
     assert re.search(r'<script src="/evals\.js\?v=[0-9a-f]{10}" defer></script>', html)
     assert 'id="fitCases"' in html and 'id="hybridCases"' in html and "<noscript>" in html
     assert 'fetch("/evals.json"' in js and "innerHTML" not in js and "—" not in js and not BANNED.search(js)
-    assert 'href="evals.html"' in (WEB / "index.html").read_text(encoding="utf-8")
-    assert CANON + "evals.html" in (WEB / "sitemap.xml").read_text(encoding="utf-8")
+    # Cloudflare Pages serves clean URLs (evals.html answers 308 to /evals), so every link, the canonical and the sitemap use /evals
+    assert 'href="/evals">' in (WEB / "index.html").read_text(encoding="utf-8")
+    assert CANON + "evals</loc>" in (WEB / "sitemap.xml").read_text(encoding="utf-8")
+    assert 'href="' + CANON + 'evals">' in html and "evals.html" not in (WEB / "sitemap.xml").read_text(encoding="utf-8")
 
 
 def test_secondary_page_scripts_carry_the_current_hash():

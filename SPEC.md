@@ -1081,7 +1081,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   menu button; the GitHub credit line moved from the footer into Privacy.
   The top bar stacks above the page, so the phone menu's items are tappable (the hero covered them).
 - **RS80** SEO basics (Cardzo go-live playbook, RS79 checklist applied to Replore itself). `web/robots.txt` allows every
-  path and names `https://replore.cardzo.co.in/sitemap.xml`; `web/sitemap.xml` lists the canonical pages with a `lastmod`
+  path and names `https://replore.cardzo.co.in/sitemap.xml`; `web/sitemap.xml` lists the canonical pages with a `lastmod` (Cloudflare Pages serves clean URLs and answers 308 for `x.html`, so links, canonicals and the sitemap use `/evals`, never `evals.html`)
   (the home page, and secondary pages as they ship); `web/index.html` carries `<link rel="canonical"
   href="https://replore.cardzo.co.in/">`, so the same page on `replore.pages.dev` is not indexed as a duplicate.
   `web/404.html` is the not-found page in the site's look (`fonts.css`, `theme.js`, a shared `web/page.css` with the same
