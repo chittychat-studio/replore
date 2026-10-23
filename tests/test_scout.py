@@ -1235,9 +1235,9 @@ def test_pro_window_markup_copy_and_switch():
     # the switch: empty PRO_URL keeps the button and the window hidden; constants as the owner set them
     core = (ROOT / "web" / "pro-core.js").read_text(encoding="utf-8")
     assert 'var PRO_URL="", PRO_URL_YEAR="";' in core
-    assert 'PRO_PRICE="3.99 USD for your first month", PRO_PRICE_WAS="8 USD", PRO_PRICE_YEAR="72 USD a year"' in core
+    assert 'PRO_PRICE="8 USD a month", PRO_PRICE_WAS="", PRO_PRICE_YEAR="36 USD for your first year", PRO_PRICE_YEAR_WAS="72 USD"' in core
     assert '!proUrlOk(PRO_URL, location.hostname)) return;' in js and 'querySelectorAll(".pro-el").forEach(function(el){ el.hidden=false; })' in js
-    assert 'label:"Get a key, "' in core and '"Yearly, "+c.priceYear' in core and 'sr.textContent="was "' in core
+    assert 'label:"Get a key, "' in core and 'label:"Yearly, "' in core and 'sr.textContent="was "' in core
     assert "—" not in core and not re.search("[🀀-🫿☀-➿✕×]", core)
     # 44px tap targets and the phone layout
     css = html[html.index("/* RS89"):html.index("#launchModal .ln-sheet")]

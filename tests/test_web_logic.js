@@ -23,7 +23,7 @@ const s = {};
 const LS = { m: {}, getItem(k){ return Object.prototype.hasOwnProperty.call(this.m, k) ? this.m[k] : null; }, setItem(k, v){ this.m[k] = String(v); }, removeItem(k){ delete this.m[k]; } };
 new Function("document", "localStorage",
   code + "; this.keywordQueries=keywordQueries; this.exploreLinks=exploreLinks; this.rankByFit=rankByFit; this.fitScore=fitScore; this.whyRelevant=whyRelevant; this.esc=esc; this.lu=lu; this.freeText=freeText;" +
-  " this.keep=keep; this.ragRan=ragRan; this.hasDesc=hasDesc; this.descHtml=descHtml; this.plainDesc=plainDesc; this.tipUrlOk=tipUrlOk; this.clean=clean; this.harmful=harmful; this.harmfulRepo=harmfulRepo; this.prdFeatures=prdFeatures; this.trendingQuery=trendingQuery; this.trendRows=trendRows; this.feedbackUrl=feedbackUrl; this.feedbackPayload=feedbackPayload; this.agoText=agoText; this.cardHtml=cardHtml; this.recentKey=recentKey; this.recentFind=recentFind; this.recentAdd=recentAdd; this.CACHE_V=CACHE_V; this.bm25Scores=bm25Scores; this.repoText=repoText; this.rrfOrder=rrfOrder; this.hybridOrder=hybridOrder; this.confirmQueries=confirmQueries; this.ghQuery=ghQuery; this.sigTokens=sigTokens; this.resultSummary=resultSummary; this.trustRow=trustRow; this.trustHtml=trustHtml; this.ghShape=ghShape; this.lastPage=lastPage; this.installCmd=installCmd; this.snapHtml=snapHtml; this.cleanLang=cleanLang; this.relaxedQueries=relaxedQueries; this.sellConflict=sellConflict; this.sellSummary=sellSummary; this.filterBar=filterBar; this.trustScore=trustScore; this.trustOrder=trustOrder; this.trustSort=trustSort; this.sortBox=sortBox; this.TRUST_RANK_NOTE=TRUST_RANK_NOTE; this.__trust=__trust; this.proKeyHeader=proKeyHeader; this.proKeyGet=proKeyGet; this.PRO_KEY=PRO_KEY; this.proKeySave=proKeySave; this.proKeyRemove=proKeyRemove; this.proUrlOk=proUrlOk; this.PRO_URL=PRO_URL; this.PRO_URL_YEAR=PRO_URL_YEAR; this.PRO_PRICE=PRO_PRICE; this.PRO_PRICE_YEAR=PRO_PRICE_YEAR; this.PRO_PRICE_WAS=PRO_PRICE_WAS; this.PRO_OFFER=PRO_OFFER; this.proButtons=proButtons; this.proReveal=proReveal; this.proConfig=proConfig;").call(s, document, LS);
+  " this.keep=keep; this.ragRan=ragRan; this.hasDesc=hasDesc; this.descHtml=descHtml; this.plainDesc=plainDesc; this.tipUrlOk=tipUrlOk; this.clean=clean; this.harmful=harmful; this.harmfulRepo=harmfulRepo; this.prdFeatures=prdFeatures; this.trendingQuery=trendingQuery; this.trendRows=trendRows; this.feedbackUrl=feedbackUrl; this.feedbackPayload=feedbackPayload; this.agoText=agoText; this.cardHtml=cardHtml; this.recentKey=recentKey; this.recentFind=recentFind; this.recentAdd=recentAdd; this.CACHE_V=CACHE_V; this.bm25Scores=bm25Scores; this.repoText=repoText; this.rrfOrder=rrfOrder; this.hybridOrder=hybridOrder; this.confirmQueries=confirmQueries; this.ghQuery=ghQuery; this.sigTokens=sigTokens; this.resultSummary=resultSummary; this.trustRow=trustRow; this.trustHtml=trustHtml; this.ghShape=ghShape; this.lastPage=lastPage; this.installCmd=installCmd; this.snapHtml=snapHtml; this.cleanLang=cleanLang; this.relaxedQueries=relaxedQueries; this.sellConflict=sellConflict; this.sellSummary=sellSummary; this.filterBar=filterBar; this.trustScore=trustScore; this.trustOrder=trustOrder; this.trustSort=trustSort; this.sortBox=sortBox; this.TRUST_RANK_NOTE=TRUST_RANK_NOTE; this.__trust=__trust; this.proKeyHeader=proKeyHeader; this.proKeyGet=proKeyGet; this.PRO_KEY=PRO_KEY; this.proKeySave=proKeySave; this.proKeyRemove=proKeyRemove; this.proUrlOk=proUrlOk; this.PRO_URL=PRO_URL; this.PRO_URL_YEAR=PRO_URL_YEAR; this.PRO_PRICE=PRO_PRICE; this.PRO_PRICE_YEAR=PRO_PRICE_YEAR; this.PRO_PRICE_WAS=PRO_PRICE_WAS; this.PRO_PRICE_YEAR_WAS=PRO_PRICE_YEAR_WAS; this.PRO_OFFER=PRO_OFFER; this.proButtons=proButtons; this.proReveal=proReveal; this.proConfig=proConfig;").call(s, document, LS);
 
 // RS16: iOS excludes macOS
 // RS16: expansions are specific on-topic phrases, never a bare category (live regression: "website" -> "frontend framework"
@@ -464,18 +464,20 @@ const GOOD = "rp.sub_1QabcDEF234ghiJKL.0123456789abcdef";
   assert.ok(!s.proUrlOk("https://buy.stripe.com/test_abc", "replore.cardzo.co.in"), "test links never on the live site");
   assert.ok(s.proUrlOk("https://buy.stripe.com/test_abc", "localhost"));
   // the owner's shipped copy
-  assert.strictEqual(s.PRO_PRICE, "3.99 USD for your first month"); assert.strictEqual(s.PRO_PRICE_WAS, "8 USD");
-  assert.strictEqual(s.PRO_PRICE_YEAR, "72 USD a year");
-  assert.strictEqual(s.PRO_OFFER, "Sign-up offer: your first month is 3.99 USD, then 8 USD a month. Cancel any time.");
-  [s.PRO_PRICE, s.PRO_PRICE_WAS, s.PRO_PRICE_YEAR, s.PRO_OFFER].forEach(x => assert.ok(!/—/.test(x) && !/[\u{1F000}-\u{1FAFF}☀-➿]/u.test(x), x));
+  assert.strictEqual(s.PRO_PRICE, "8 USD a month"); assert.strictEqual(s.PRO_PRICE_WAS, "");
+  assert.strictEqual(s.PRO_PRICE_YEAR, "36 USD for your first year"); assert.strictEqual(s.PRO_PRICE_YEAR_WAS, "72 USD");
+  assert.strictEqual(s.PRO_OFFER, "Launch offer: pay yearly and your first year is half price, 36 USD instead of 72. Cancel any time.");
+  [s.PRO_PRICE, s.PRO_PRICE_WAS, s.PRO_PRICE_YEAR, s.PRO_PRICE_YEAR_WAS, s.PRO_OFFER].forEach(x => assert.ok(!/—/.test(x) && !/[\u{1F000}-\u{1FAFF}☀-➿]/u.test(x), x));
   // buttons: nothing while PRO_URL is empty; monthly only; both
-  const M = "https://buy.stripe.com/mon01?prefilled_promo_code=FIRST399", Y = "https://buy.stripe.com/year01";
+  const M = "https://buy.stripe.com/mon01", Y = "https://buy.stripe.com/year01?prefilled_promo_code=YEAR50";
   assert.deepStrictEqual(s.proButtons(s.proConfig()), { on: false, month: null, year: null, offer: "" });
   let b = s.proButtons({ url: M, price: "3.99 USD for your first month", priceYear: "72 USD a year", was: "8 USD", offer: "" });
   assert.ok(b.on && b.month.href === M && b.month.label === "Get a key, " && b.month.price === "3.99 USD for your first month" && b.month.was === "8 USD");
   assert.strictEqual(b.year, null, "yearly button hidden without PRO_URL_YEAR"); assert.strictEqual(b.offer, "", "offer line hidden when empty");
-  b = s.proButtons({ url: M, urlYear: Y, price: "p", priceYear: "72 USD a year", was: "", offer: "  Sign-up offer  " });
-  assert.deepStrictEqual(b.year, { href: Y, label: "Yearly, 72 USD a year" }); assert.strictEqual(b.offer, "Sign-up offer"); assert.strictEqual(b.month.was, "");
+  b = s.proButtons({ url: M, urlYear: Y, price: "p", priceYear: "36 USD for your first year", was: "", wasYear: " 72 USD ", offer: "  Launch offer  " });
+  assert.deepStrictEqual(b.year, { href: Y, label: "Yearly, ", price: "36 USD for your first year", was: "72 USD" }, "the struck price can sit on the yearly button");
+  assert.strictEqual(b.offer, "Launch offer"); assert.strictEqual(b.month.was, "");
+  assert.deepStrictEqual(s.proButtons({ url: M, urlYear: Y, price: "p", priceYear: "72 USD a year" }).year, { href: Y, label: "Yearly, ", price: "72 USD a year", was: "" });
   assert.strictEqual(s.proButtons({ url: M, urlYear: "https://evil.example/x", price: "p", priceYear: "y" }).year, null);
   assert.strictEqual(s.proButtons({ url: "https://evil.example/x", urlYear: Y }).on, false);
   // save trims and stores a Pro-shaped key; a bad paste never overwrites a good key; Remove clears it; the header follows
