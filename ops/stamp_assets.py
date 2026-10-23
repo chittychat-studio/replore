@@ -13,6 +13,7 @@ WEB = pathlib.Path(__file__).resolve().parent.parent / "web"
 ASSETS = ("theme.js", "app.js")
 MEDIA_IN_JS = ("leo-peek.webm",)                      # referenced as "leo-peek.webm" in app.js
 MEDIA_IN_HTML = ("tour.mp4", "tour-poster.jpg")       # src="..." / poster="..." in index.html
+SECONDARY = {"evals.html": ("theme.js", "evals.js"), "404.html": ("theme.js",)}  # RS84: secondary pages load scripts by absolute path (/name?v=...)
 
 
 def asset_hash(name):
@@ -48,6 +49,14 @@ def main():
         if n != 1:
             raise SystemExit("expected one <script src=\"%s\"> in index.html, found %d" % (name, n))
     page.write_text(html, encoding="utf-8", newline="")
+    for name, scripts in SECONDARY.items():
+        p = WEB / name
+        text = p.read_text(encoding="utf-8")
+        for s in scripts:
+            text, n = re.subn(r'src="/' + re.escape(s) + r'(\?v=[0-9a-f]+)?"', 'src="/%s?v=%s"' % (s, asset_hash(s)), text)
+            if n != 1:
+                raise SystemExit("expected one <script src=\"/%s\"> in %s, found %d" % (s, name, n))
+        p.write_text(text, encoding="utf-8", newline="")
     print("stamped " + ", ".join("%s?v=%s" % (a, asset_hash(a)) for a in ASSETS))
 
 

@@ -104,7 +104,10 @@ A static page at `web/index.html` powers it. It auto-deploys (Cloudflare Pages) 
 
 The page's code is in `web/app.js` (plus `web/theme.js`); its security headers and Content-Security-Policy are in
 `web/_headers` (SPEC RS49), so a new third-party script or API must be added there or the browser blocks it.
-`web/robots.txt`, `web/sitemap.xml`, the canonical link and `web/404.html` are the SEO basics (SPEC RS80). Pages'
+`web/robots.txt`, `web/sitemap.xml`, the canonical link and `web/404.html` are the SEO basics (SPEC RS80).
+`web/evals.html` publishes the ranking evals (SPEC RS84); after editing `evals/*.json`, run
+`python3 ops/build_evals_page.py` to refresh `web/evals.json`, and after editing a script run
+`python3 ops/stamp_assets.py` (a test fails until both are done). Pages'
 `_redirects` can't redirect a whole domain, so the 301 from `replore.pages.dev` to `replore.cardzo.co.in` is a
 Cloudflare **Bulk Redirect** rule (dashboard: Rules, Redirect Rules, Bulk Redirects; source `replore.pages.dev`,
 target `https://replore.cardzo.co.in`, 301, preserve path suffix and query string, include subpaths). Leave preview
