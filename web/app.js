@@ -226,7 +226,7 @@ function licenseVerdict(spdx){
   if(WEAK.has(spdx))       return {c:"t-good", i:"check", t:"Paid-use OK · changes stay open"};
   if(STRONG.has(spdx))     return {c:"t-warn", i:"alert", t:"Must open-source your app"};
   if(NETWORK.has(spdx))    return {c:"t-warn", i:"alert", t:"Share your code, even as a web app"};
-  return {c:"t-warn", i:"ban", t:"No license — can't reuse"};
+  return {c:"t-warn", i:"ban", t:"No licence, can't reuse"};
 }
 // RS24 result card helpers: owner initial tile (colour from the name, no image fetch) and "updated N ago"
 function ownerHue(o){ var h=0; for(var k=0;k<o.length;k++) h=(h*31+o.charCodeAt(k))>>>0; return [14,24,32,198,152,268,340][h%7]; }
@@ -1036,7 +1036,7 @@ document.getElementById("fbGo").addEventListener("click",function(){
   var $=function(id){ return document.getElementById(id); }, go=$("fbGo"), err=$("fbErr"), ok=$("fbOk");
   var t=$("fbTitle").value, ty=$("fbType").value, d=$("fbDesc").value, em=$("fbEmail").value;
   var p=feedbackPayload(t,ty,d,em); ok.hidden=true;
-  if(!p){ err.textContent="Add a title first."; err.hidden=false; $("fbTitle").focus(); return; }
+  if(!p){ err.textContent="Tell me what it's about first."; err.hidden=false; $("fbTitle").focus(); return; }
   if($("fbBot").checked){ ok.hidden=false; return; }   // honeypot ticked: a bot — pretend, send nothing
   function fallback(msg){ err.innerHTML=msg+' <a href="'+esc(feedbackUrl(t,ty,d))+'">Email it instead</a> (opens your email app).'; err.hidden=false; }
   if(!WEB3FORMS_KEY){ fallback("Sending from the page isn't set up yet."); return; }
@@ -1046,7 +1046,7 @@ document.getElementById("fbGo").addEventListener("click",function(){
     .then(function(sent){ if(sent){ ok.hidden=false; err.hidden=true; $("fbTitle").value=""; $("fbDesc").value=""; }
       else fallback("Couldn't send just now."); },
       function(){ fallback("Couldn't send just now."); })
-    .then(function(){ go.disabled=false; go.textContent="Send feedback"; });
+    .then(function(){ go.disabled=false; go.textContent="Send to Leo"; });
 });
 document.getElementById("fbCopy").addEventListener("click",function(){ var b=this;
   try{ navigator.clipboard.writeText(FB_TO).then(function(){ b.textContent="Copied"; setTimeout(function(){ b.textContent="Copy address"; },1500); }); }catch(_){} });
@@ -1363,10 +1363,10 @@ function buildTrendCarousel(){
     var num=function(r){ return kstars(kind==="forks"?r.forks:r.stars); }, unit=kind==="forks"?"forks":"stars";
     var a=rows[0], an=split(a.name), av=licenseVerdict(a.spdx), xs=exploreLinks(a.name);
     var big='<div class="tb-big" role="listitem" style="--i:0"><pre class="tb-tex" aria-hidden="true">'+tex+'</pre>'+
-      '<span class="tb-lab">#1 '+LAB[kind]+'</span>'+
+      '<span class="tb-top"><span class="tb-lab">#1 '+LAB[kind]+'</span><span class="tb-nw"><span class="tb-n">'+num(a)+'</span><i class="tb-u">'+unit+'</i></span></span>'+   // RS74: count top right, like the small cards
       '<a class="tb-name" href="'+esc(a.url)+'" target="_blank" rel="noopener"><span class="owner">'+esc(an.o)+' / </span>'+esc(an.r)+'</a>'+
       '<p class="tb-desc">'+esc(plainDesc(a.desc))+'</p>'+
-      '<div class="tb-facts"><span><span class="tb-n">'+num(a)+'</span> '+unit+'</span><span class="tag '+av.c+'">'+ico(av.i)+esc(av.t)+'</span></div>'+
+      '<div class="tb-facts"><span class="tag '+av.c+'">'+ico(av.i)+esc(av.t)+'</span></div>'+
       (xs.length?'<div class="tb-tools">'+xs.filter(function(x){ return x.label==="Diagram"||x.label==="Wiki"||x.label==="Browse"; }).map(function(x){
         return '<a href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer" title="'+esc(x.title)+'">'+esc(x.label==="Browse"?"Code":x.label)+'</a>'; }).join("")+'</div>':'')+
       '</div>';

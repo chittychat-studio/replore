@@ -1213,6 +1213,22 @@
   .tour-video{display:block;width:100%;aspect-ratio:16/9;height:auto;margin:14px 0 8px;border-radius:14px;background:#0d1824;border:1px solid var(--line)}
   .tb-sm .tb-nw{display:inline-flex;align-items:baseline;gap:4px}
   .tb-sm .tb-u{font-style:normal;font-size:12px;font-weight:600;color:var(--muted)}
+
+  /* RS74: Trending counts sit top right on every card (the big one too, which also fills its empty top);
+     the search box never shows scroll arrows for a long example; feedback is a chat with Leo */
+  .tb-big{justify-content:flex-start}
+  .tb-big .tb-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+  .tb-big .tb-nw{display:inline-flex;align-items:baseline;gap:5px}
+  .tb-big .tb-top .tb-n{font:800 30px/1 var(--f-display);color:#fff;letter-spacing:-.03em}
+  .tb-big .tb-u{font-style:normal;font-size:13px;font-weight:600;color:#9cc0d8}
+  .tb-big .tb-desc{-webkit-line-clamp:3}
+  .tb-big .tb-tools{margin-top:auto}
+  .vibebar textarea:placeholder-shown{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  .vibebar textarea{scrollbar-width:thin}
+  .fb-leo{display:flex;align-items:center;gap:14px;margin:0 30px 12px 0}
+  .fb-leo img{flex:none;width:64px;height:auto;filter:drop-shadow(0 6px 6px rgba(var(--shadow),.25))}
+  #fbModal .fb-leo h2{margin:0 0 2px}
+  #fbModal .fb-leo .mut{margin:0}
 </style>
 </head>
 <body>
@@ -1438,40 +1454,45 @@
 
 <div class="modal" id="nextModal"><div class="sheet">
   <button class="x" data-close>&times;</button>
-  <h2>Found some repos? Here's what's next</h2>
+  <h2>Found some repos? Here's what's next</h2>   <!-- RS74: today's flow -->
   <p class="mut">Three steps from a shortlist to building.</p>
   <ol class="guide">
-    <li><b>Pick the ones that fit</b>: tap <i>Add to plan</i> on the 2–3 cards you like. Compare them:
-      check the license verdict (can you use it in a paid product?) and the <i>updated</i> date before you commit to one.</li>
-    <li><b>Get a build plan</b>: hit <i>Generate plan</i> on the bar that appears. Replore turns your picks plus
-      what you're building into a step-by-step prompt. No AI runs here; it hands the prompt to <b>your own</b> AI.</li>
+    <li><b>Pick the ones that fit</b>: tap a card (or its bookmark) to add it to your plan; picked cards turn dark.
+      Open <b>Details</b> to look inside (Diagram, Wiki, Code) and check <i>Is it safe to build on?</i>. 2 or 3 good
+      picks beat 10 maybes.</li>
+    <li><b>Get a build plan</b>: hit <i>Generate plan</i> on the bar that appears. Replore turns your picks and what
+      you're building into one prompt for <b>your own</b> AI (Claude, ChatGPT or Gemini; copy it or open it there).
+      No AI runs here. Your AI first asks you 5 short questions, then shows you mockups of the main screens to approve,
+      and only then writes the plan (a PRD).</li>
     <li><b>Build it with your AI agent</b>: paste the plan into Claude Code, Codex, Cursor or any agent.
       Want smarter search and a feature-by-feature plan from a whole PRD? <button type="button" class="link-btn" data-open="pluginModal">Use the plugin</button>.
       Tip: add the free <a href="https://github.com/upstash/context7" target="_blank" rel="noopener noreferrer">Context7</a> MCP server to your agent so it reads each repo's current docs instead of guessing.</li>
   </ol>
-  <p class="mut" style="margin-top:12px">Remember: stars are popularity, not quality, and a license is a plain summary, not legal advice.</p>
+  <p class="mut" style="margin-top:12px">Remember: stars are popularity, not quality, and a licence verdict is a plain summary, not legal advice.</p>
 </div></div>
 
 <!-- RS39/RS40 feedback: sent by email through Web3Forms only when the visitor presses Send -->
 <button type="button" class="fb-fab" id="fbFab">Feedback</button>
 <div class="modal" id="fbModal"><div class="sheet fb-sheet">
   <button class="x" data-close>&times;</button>
-  <h2>Send feedback</h2>
-  <p class="mut">Report a bug or suggest an improvement. It's sent to the Cardzo team (hello@cardzo.co.in).</p>
-  <div class="field"><label for="fbTitle">Title</label>
-    <input id="fbTitle" type="text" maxlength="120" autocomplete="off" placeholder="Short summary"></div>
+  <div class="fb-leo"><img src="scout-hero.webp" alt="" width="64" height="66" decoding="async">   <!-- RS74: feedback is a chat with Leo -->
+    <div><h2>Tell Leo</h2>
+    <p class="mut">Hi, it's Leo! Found a bug, or want something new? Tell me and I'll pass it straight to the Cardzo
+      team (hello@cardzo.co.in).</p></div></div>
+  <div class="field"><label for="fbTitle">What's it about?</label>
+    <input id="fbTitle" type="text" maxlength="120" autocomplete="off" placeholder="One line, like: the filters don't stick"></div>
   <div class="field-row">
-    <div class="field"><label for="fbType">Type</label>
+    <div class="field"><label for="fbType">Is it a</label>
       <select id="fbType"><option>Bug</option><option selected>Feature request</option><option>Content issue</option><option>Other</option></select></div>
     <div class="field"><label for="fbEmail">Your email <span class="mut">(optional)</span></label>
-      <input id="fbEmail" type="email" maxlength="120" autocomplete="email" placeholder="so we can reply"></div>
+      <input id="fbEmail" type="email" maxlength="120" autocomplete="email" placeholder="so we can write back"></div>
   </div>
-  <div class="field"><label for="fbDesc">Description</label>
-    <textarea id="fbDesc" maxlength="2000" rows="3" placeholder="What happened, or what would you like?"></textarea></div>
+  <div class="field"><label for="fbDesc">Tell me more</label>
+    <textarea id="fbDesc" maxlength="2000" rows="3" placeholder="What happened, or what would you like me to do?"></textarea></div>
   <input id="fbBot" type="checkbox" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px">
-  <p class="mut fb-err" id="fbErr" hidden>Add a title first.</p>
-  <p class="fb-ok" id="fbOk" role="status" hidden>Thanks, your feedback was sent to Cardzo.</p>
-  <button type="button" id="fbGo" class="primary">Send feedback</button>
+  <p class="mut fb-err" id="fbErr" hidden>Tell me what it's about first.</p>
+  <p class="fb-ok" id="fbOk" role="status" hidden>Got it, thanks! I passed it to the Cardzo team.</p>
+  <button type="button" id="fbGo" class="primary">Send to Leo</button>
   <p class="mut fb-alt">Or write to <b>hello@cardzo.co.in</b>
     <button type="button" class="link-btn" id="fbCopy">Copy address</button></p>
 </div></div>
@@ -1534,23 +1555,27 @@
 
 <div class="modal" id="aboutModal"><div class="sheet">
   <button class="x" data-close>&times;</button>
-  <h2>About the results</h2>
+  <h2>About the results</h2>   <!-- RS74: what the page does today -->
   <p class="mut">Results are ranked by <b>fit</b>: how well a repo matches your words, how popular it is (stars)
-    and how freely you can use its license. So the top pick is relevant, popular and free to use, not just the
-    most-starred. Each card says why it fits.</p>
-  <p class="mut" style="margin-top:12px"><b>How this page searches:</b> it splits what you describe into separate needs
-    and searches GitHub for each, specific needs first. An AI check then reads the top 30 and moves repos that don't
-    fit to the end, under "Less likely to fit". If the check is unavailable you get the keyword results unchanged.
-    A search you repeat within an hour comes back instantly from your own browser.</p>
-  <p class="mut" style="margin-top:12px">The <a href="https://github.com/chittychat-studio/replore" target="_blank" rel="noopener">plugin</a>
+    and how freely you can use its licence. So the top pick is relevant, popular and free to use, not just the
+    most-starred.</p>
+  <p class="mut" style="margin-top:12px"><b>How Leo searches:</b> he splits what you describe into separate needs and
+    searches GitHub for each, specific needs first. An AI check then reads the top 30 and moves repos that don't fit to
+    the end, under "Less likely to fit". If the check is unavailable you get the keyword results unchanged. A search
+    you repeat within an hour comes back instantly from your own browser.</p>
+  <p class="mut" style="margin-top:12px"><b>On each card:</b> when the code last changed, the licence in plain words
+    (free for commercial use or not), stars, the language and whether it's a starter template. The filters on the left
+    and the sort menu only narrow and reorder what was found; they never search again. <b>Details</b> shows why it
+    fits, Diagram, Wiki and Code to look inside, and <i>Is it safe to build on?</i> (OpenSSF Scorecard, known
+    vulnerabilities, releases), which is for information and never changes the ranking.</p>
+  <p class="mut" style="margin-top:12px">The <button type="button" class="link-btn" data-open="pluginModal">plugin</button>
     goes further: your own AI writes the searches, judges every result and reads a whole plan feature by feature.</p>
   <p class="mut" style="margin-top:12px"><b>Limits:</b> results are GitHub search matches, not a scan of every
-    repository. Stars measure popularity, not quality, and can be bought. "Completely free?" and "OK in a paid
-    product?" come from the license only: a plain summary, not legal advice. Some projects also sell a paid hosted
-    version or add-ons.</p>
+    repository. Stars measure popularity, not quality, and can be bought. The licence verdict comes from the licence
+    only: a plain summary, not legal advice. Some projects also sell a paid hosted version or add-ons.</p>
   <p class="mut rag-only" style="margin-top:12px" hidden><b>Hybrid search:</b> repos are ranked by your words and by what you mean, so "voice notes" also finds "speech-to-text". Repos our index finds that the word search missed are checked on GitHub before you see them.</p>
 </div></div>
 
-<script src="app.js?v=f99d4dcd51" defer></script>
+<script src="app.js?v=fff170ec93" defer></script>
 </body>
 </html>
