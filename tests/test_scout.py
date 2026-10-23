@@ -942,6 +942,12 @@ def test_privacy_notice_matches_what_the_code_does():
     hook = (ROOT / "hooks" / "security_log.py").read_text(encoding="utf-8")
     assert "if not hits:" in hook and "text[:200]" in hook and "urllib" not in hook
     assert "if _log_path() is None:" in hook  # opt-in: off unless REPLORE_SECURITY_LOG is set (RS25)
+    # RS43 storage / RS87: every localStorage key the page uses for the visitor's own data is disclosed; the Pro key
+    # goes only to our own function (relative URL) and Polar is named
+    js = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
+    assert 'var PRO_KEY="replore.key";' in js
+    assert "`replore.key`" in priv and "Replore Pro key" in priv and "api.polar.sh" in priv and "never log it" in priv
+    assert "api.polar.sh" not in js and "polar.sh" not in html   # Polar is called server-side only (CSP unchanged)
 
 
 def test_empty_description_is_said_plainly():

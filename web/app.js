@@ -668,12 +668,17 @@ var TS_LATE={late:true};
 function tokenWithin(ms){ return new Promise(function(ok){ var done=false;
   turnstileToken().then(function(v){ if(!done){ done=true; ok(v); } },function(){ if(!done){ done=true; ok(""); } });
   (function tick(){ setTimeout(function(){ if(done) return; if(window.__tsInteractive) return tick(); done=true; ok(TS_LATE); },ms); })(); }); }
+// RS87: a Replore Pro key, if this browser has one (nothing writes it yet), rides in the plugin-key header on
+// /api/relevance only: same origin, never in a URL, a log or the feedback form. Printable ASCII, 16-100 chars, or nothing.
+var PRO_KEY="replore.key";
+function proKeyGet(){ try{ var k=String(localStorage.getItem(PRO_KEY)||"").trim(); return /^[!-~]{16,100}$/.test(k)?k:""; }catch(_){ return ""; } }
+function proKeyHeader(h){ var k=proKeyGet(); if(k) h["X-Replore-Plugin-Key"]=k; return h; }
 var AI_OFF_KEY="replore_ai_off_until";   // RS41: only a reset time, set when the daily AI allowance is used up
 function aiOffUntil(){ try{ return +localStorage.getItem(AI_OFF_KEY)||0; }catch(_){ return 0; } }
 async function relevanceGate(query, repos){
   if(Date.now()<aiOffUntil()) return {fail:true,error:"llm_daily_limit",resetsInSec:Math.ceil((aiOffUntil()-Date.now())/1000)};   // don't ask again until it resets
   if(window.__gateCtl) try{ window.__gateCtl.abort(); }catch(_){}   // a newer search supersedes the old check
-  var tok=await tokenWithin(5000), hdr={"Content-Type":"application/json"};
+  var tok=await tokenWithin(5000), hdr=proKeyHeader({"Content-Type":"application/json"});
   if(tok===TS_LATE) return {fail:true,error:"bot_check_slow"};
   if(tok) hdr["CF-Turnstile-Token"]=tok;
   var ctl=window.AbortController?new AbortController():null, timer=ctl&&setTimeout(function(){ ctl.abort(); },8000);
