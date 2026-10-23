@@ -212,11 +212,10 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   solid "✓ In plan" when picked (RS28). Every field comes from the GitHub API response; nothing is invented.
   On wide screens the home demo is larger (art, type and frame) to use its half of the opening section. The plain-English license meaning (e.g. "OK to use in a paid product" / "Completely free?") renders as
   a line on every card at every breakpoint — not only on wide screens — so the core promise is visible on phones.
-  Motion comes from GSAP 3.12.5, self-hosted as `web/vendor/gsap.min.js` and loaded with `defer` before `app.js` (also
-  `defer`), so it is always defined before the page code runs (peer review 2026-10-18: it was `async`, a race); every GSAP
-  use is guarded so the page works fully without it, and all motion is disabled under prefers-reduced-motion.
+  Motion uses the browser's own Web Animations API, with no animation library (RS91; GSAP was removed 2026-10-24);
+  every use is guarded so the page works fully without it, and all motion is disabled under prefers-reduced-motion.
   Cards are cursor-reactive (a pointer-driven 3D tilt with a light glare, skipped on touch and under reduced
-  motion) and the star counts tween up on reveal, all with the already-loaded GSAP and CSS (no extra library).
+  motion) and the star counts tween up on reveal, all with that API and CSS (no library).
   An in-page animated "How it works" explainer (a looping step carousel) stands in for a video and is also
   shown as the results panel's empty state; a current screenshot of the live page (`web/tour.png`) is committed
   under `web/` and shown in the Tour.
@@ -1298,6 +1297,17 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   `https://replore.cardzo.co.in/pro?session_id={CHECKOUT_SESSION_ID}`. Linked from the page footer and listed in the
   sitemap; no inline script (RS49), no emoji (RS55), no em dash (RS66), 44px targets, CSP unchanged (the page calls only
   its own site); the script is hash-stamped by `ops/stamp_assets.py` (RS52).
+- **RS91** No animation library on the web page (owner 2026-10-24, from the frontend-stack review). GSAP 3.12.5 is
+  removed: it ships under GreenSock's own "Standard" licence, not MIT, inside this MIT repo (RS12), with no NOTICE,
+  and the owner's stack bans it. Every effect it ran is ported, with the same timings and easings, to the browser's Web
+  Animations API (`Element.animate`), which is what the Motion library uses underneath. Motion itself was not vendored:
+  its single-file browser build is about 57 KB gzipped (GSAP was about 28 KB) and `app.js` is a classic script with no
+  bundler, so the native API keeps the page lighter. `canAnimate()` guards every use, so the page still works fully
+  where the API is missing. The effects are: the results entrance (`enterFrom`), the star-count odometer, the How-it-works
+  explainer loop (timers plus the API), the hero word reveal, the page entrance and the magnetic nav buttons. The magnet
+  now moves the CSS `translate` property through a springy transition, so it never fights the hover styles that own
+  `transform`. Reduced motion still turns everything off (RS47). `web/vendor/` no longer exists, and the test checks
+  that no GSAP file or reference remains.
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
 - **RX3** Ranking by forks, trending or download counts. (Relevance, stars and license-freedom are the only

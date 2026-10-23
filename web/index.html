@@ -9,14 +9,13 @@
   Replore web page (SPEC RS22). Static page (this file + app.js + theme.js), no build step, no key or token.
   Security headers and the Content-Security-Policy live in web/_headers (RS49); keep every script in a file, never inline.
   It calls the PUBLIC GitHub search API from the browser (unauthenticated: ~10 searches/minute).
-  No third-party requests for assets: GSAP 3.12.5 (motion) and the Inter Tight/Instrument Serif/JetBrains Mono fonts are served from this site
-  (vendor/, fonts/); the page degrades gracefully without GSAP. Only GitHub's API is called (RS33).
+  No third-party requests for assets: the Inter Tight/Instrument Serif/JetBrains Mono fonts are served from this site
+  (fonts/); motion uses the browser's Web Animations API with no library (RS91) and the page works fully without it. Only GitHub's API is called (RS33).
   The browser version uses keyword search plus a small server-side AI relevance check (functions/api/relevance.js, RS34; the
   key lives on the server, never in this page); the plugin (Claude Code, or the script in any AI agent) also writes smarter
   queries and reads a whole PRD.
 -->
 <script src="theme.js?v=d156f907a3"></script>   <!-- RS24: saved light/dark choice before first paint; else the system setting -->
-<script src="vendor/gsap.min.js" defer></script>   <!-- RS49: defer keeps order: GSAP runs before app.js -->
 <!-- RS57: link previews (WhatsApp, LinkedIn, X, Slack). Image source: ops/share/card.html, rendered by ops/render_share.py -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Replore">
@@ -752,7 +751,7 @@
     box-shadow:0 16px 34px -24px rgba(var(--card-glow,var(--shadow)),.45)}
   body.view-trending .tcar, body.has-results .tcar{display:none}
   body,.sheet,.tcard,.vibebar,.think,.trend-tab{transition:background-color .3s ease,border-color .3s ease,color .3s ease,box-shadow .3s ease}
-  .rcard{transition:background-color .3s ease,border-color .3s ease,box-shadow .3s ease}   /* colours only: GSAP + tilt own its transform */
+  .rcard{transition:background-color .3s ease,border-color .3s ease,box-shadow .3s ease}   /* colours only: the entrance animation + tilt own its transform */
   .sheet{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;max-width:540px;width:100%;
     box-shadow:0 40px 80px -30px rgba(var(--shadow),.7);max-height:88vh;overflow:auto}
   .sheet h2{margin:0 0 8px;font-size:23px;font-weight:800;color:var(--accent-ink);letter-spacing:-.01em}
@@ -1743,6 +1742,6 @@
 </div></div>
 
 <script src="pro-core.js?v=40c22795a2" defer></script>
-<script src="app.js?v=fbe9326e90" defer></script>
+<script src="app.js?v=6598ca1c44" defer></script>
 </body>
 </html>
