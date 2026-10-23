@@ -1240,20 +1240,29 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   Leo (`scout-hero.webp`, 150px, alt "Leo, the Replore scout") beside "Want me to read for meaning too? Today I match
   your words. With Pro I also match what a repo does, so the ones that say it differently still turn up." (19px, 600)
   and three search-stage pills: "Meaning ranking", "No queue on the AI check", "Web and every agent"; a dark primary link
-  "Get a key, " + `PRO_PRICE` to `PRO_URL` in a new tab, an outlined "I have a key" that focuses the key field, and the
-  muted `PRO_PRICE_YEAR`; under a top border, "Your key" (JetBrains Mono input, placeholder "Paste it here", autocomplete
-  and spellcheck off) with an accent "Save", and the 12.5px note "Stays in this browser. I check it with Stripe, who sold
-  it to you, and never keep it." Save trims the value and stores it in `localStorage["replore.key"]` (the key RS87's
-  plumbing sends) only if it has the RS87 Pro shape (otherwise the field is marked invalid and nothing is overwritten);
-  the form then shows "Pro is on for this browser" with a "Remove key" button that deletes it; opening the window with a
-  stored key shows that state. The key is never put in a URL, a log or the feedback form. **Switch:** `PRO_URL` in
-  `web/app.js` (and the same value in `web/pro.js`, tested equal) is empty, so the button and the window stay hidden
-  (`hidden`), like the tip link (RS44); the owner pastes the Stripe Payment Link to go live. `proUrlOk` accepts exactly
-  what the tip link accepts (RS44): `https://buy.stripe.com/` and one path segment of `[A-Za-z0-9_-]`, and a `test_`
-  link is refused on the live hosts. `PRO_PRICE` and `PRO_PRICE_YEAR` hold the owner's picked price copy (values in
-  `docs/MONETIZATION.md`, never here, RS88) and show only inside this window and on the RS90 page. Tap targets are
-  44px; one column on phones (560px and under). No em dash (RS66), no emoji or glyph icon (RS55); CSP unchanged (Stripe
-  is only a link and a server-side call). The in-page privacy window and `PRIVACY.md` disclose the key.
+  "Get a key, " + `PRO_PRICE` to `PRO_URL` in a new tab, with `PRO_PRICE_WAS`, when set, struck through before the
+  price (`<s>` with a screen-reader-only "was"); an outlined "Yearly, " + `PRO_PRICE_YEAR` to `PRO_URL_YEAR` in a new
+  tab, shown only when that link is set; an outlined "I have a key" that focuses the key field. Above the buttons,
+  `PRO_OFFER`, when set, is one highlighted line (accent tint background, no emoji, no em dash). Under a top border,
+  "Your key" (JetBrains Mono input, placeholder "Paste it here", autocomplete and spellcheck off) with an accent "Save",
+  and the 12.5px note "Stays in this browser. I check it with Stripe, who sold it to you, and never keep it." Save trims
+  the value and stores it in `localStorage["replore.key"]` (the key RS87's plumbing sends) only if it has the RS87 Pro
+  shape (otherwise the field is marked invalid and nothing is overwritten); the form then shows "Pro is on for this
+  browser" with a "Remove key" button that deletes it, the saved key in a read-only mono field with a Copy button, the
+  plugin line `REPLORE_KEY=<key>` in a second read-only field with its own Copy button, and one sentence on where to set
+  it (Claude Code: in the shell before `claude`; an MCP config: an `env` entry), so moving the key to another browser
+  or to the plugin is copy and paste; opening the window with a stored key shows that state. The key is never put in a
+  URL, a log or the feedback form. **Switches** live in `web/pro-core.js`, loaded before `app.js` on the page and by the
+  RS90 page, so both read one copy: `PRO_URL` (monthly) and `PRO_URL_YEAR` (yearly) are empty, so the button and the
+  window stay hidden (`hidden`), like the tip link (RS44); the owner pastes the two Stripe Payment Links to go live.
+  `proUrlOk` accepts `https://buy.stripe.com/` with one path segment of `[A-Za-z0-9_-]` and at most the query
+  `?prefilled_promo_code=` + `[A-Z0-9_-]{1,30}` (any other parameter, a fragment or another host is refused), and a
+  `test_` link is refused on the live hosts. `PRO_PRICE`, `PRO_PRICE_WAS`, `PRO_PRICE_YEAR` and `PRO_OFFER` hold the
+  owner's offer copy (values in `docs/MONETIZATION.md` and `pro-core.js`, never here, RS88) and show only inside this
+  window and on the RS90 page; empty means hidden. The pure helpers `proButtons` and `proReveal` decide what shows and
+  are tested without a DOM. Tap targets are 44px; one column on phones (560px and under). No em dash (RS66), no emoji or
+  glyph icon (RS55); CSP unchanged (Stripe is only a link and a server-side call). The in-page privacy window and
+  `PRIVACY.md` disclose the key.
 - **RS90** Getting a Pro key: the claim function and the `/pro` page (2026-10-23, with the RS87 Stripe switch).
   **Claim** (`functions/api/pro/claim.js`, `POST /api/pro/claim`, body `{"session_id": "cs_..."}`; Pages routes by file
   path, so the file sits in `api/pro/`): same-origin check (403 `bad_origin`); a best-effort per-IP limit of 5 per
