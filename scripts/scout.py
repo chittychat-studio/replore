@@ -190,6 +190,34 @@ def license_use(spdx):
     return USE_NONE
 
 
+CONFLICT_SHARE = ("Conflicts with a closed-source product: you would have to open-source your app "
+                  "if you give it to others.")
+CONFLICT_NETWORK = ("Conflicts with a closed-source product: you would have to open-source your app, "
+                    "even if you only run it as a website or online service.")
+
+
+def selling_conflict(spdx):
+    """RS83: the plain line for a copyleft repo when the user sells a closed-source product ("" when it is fine).
+    Same words as the page's sellConflict() (shared cases: tests/fixtures/selling_cases.json)."""
+    if spdx in STRONG_COPYLEFT:
+        return CONFLICT_SHARE
+    if spdx in NETWORK_COPYLEFT:
+        return CONFLICT_NETWORK
+    return ""
+
+
+def selling_summary(picks):
+    """RS83: one line for the plan prompt naming the picked repos that conflict; "" when none do.
+    picks: [{"name": owner/repo, "spdx": id}]."""
+    bad = [p for p in picks if selling_conflict(p.get("spdx"))]
+    if not bad:
+        return ""
+    return ("Licence check: I will sell this as a closed-source product, and these picks are copyleft, so building on "
+            "them would make me open-source my app: " + ", ".join(f"{p['name']} ({p['spdx']})" for p in bad)
+            + ". Mark them in the triage and suggest a permissive alternative for each, or tell me if keeping the app "
+            "open source is the better call.")
+
+
 def free_text(spdx):
     """RS20."""
     use = license_use(spdx)
@@ -241,6 +269,54 @@ def why_relevant(query, name, desc, rel):
     return "Top match for your search" if (rel is not None and rel <= 3) else "Related to your search"
 
 
+MAX_BROADER = 2   # RS78a: at most two extra searches, so a run stays at 6 of GitHub's 10 searches a minute
+NO_MATCH = "No repository matched after filtering."
+
+
+def kw_words(text):
+    """RS78a: the page's kwWords(): lower case, the page's tokenizer, filler words (hybrid.STOP) dropped."""
+    return [w for w in _page_words(text) if w not in hybrid.STOP]
+
+
+def relaxed_queries(text, tried=()):
+    """RS78a: the page's relaxedQueries(), word for word (shared cases in tests/fixtures/relaxed_cases.json). When every
+    search came back empty (GitHub ANDs every word), search broader: first without version-like words ("opus5.5",
+    "gpt-4o", "v2": model names and versions rarely appear in repo text), then with the two strongest words."""
+    w = kw_words(text)
+    plain = [x for x in w if not re.search(r"\d", x)]
+    out = []
+
+    def add(q):
+        q = q.strip()
+        if q and q not in tried and q not in out:
+            out.append(q)
+    if plain and len(plain) < len(w):
+        add(" ".join(plain[:3]))
+    if len(plain) >= 2:
+        add(" ".join(plain[:2]))
+    return out[:MAX_BROADER]
+
+
+def _quoted(qs):
+    return " and ".join(f'"{q}"' for q in qs)
+
+
+def _split_quals(q):
+    """Words vs qualifiers (topic:x, language:y, -topic:z, -word) of one query."""
+    toks = q.split()
+    return [t for t in toks if ":" not in t and not t.startswith("-")], [t for t in toks if ":" in t or t.startswith("-")]
+
+
+def broader_queries(queries, description=None):
+    """RS78a: the plugin's broader searches. The words come from the description when given (as on the page), else from
+    the queries; a qualifier every query carried (e.g. language:python, -topic:macos) is kept on each broader search."""
+    parts = [_split_quals(q) for q in queries]
+    text = description if (description and description.strip()) else " ".join(" ".join(w) for w, _ in parts)
+    common = [t for t in parts[0][1] if all(t in qs for _, qs in parts[1:])] if parts else []
+    tried = [q for q in queries] + [" ".join(w) for w, _ in parts]
+    return [(q + " " + " ".join(common)).strip() for q in relaxed_queries(text, tried)]
+
+
 def _tail(r):
     """RS5c: 1 when a repo was found only past GitHub's first REL_SPAN best matches (it would compete on stars alone)."""
     return 1 if (r.get("rel") or 0) >= REL_SPAN else 0
@@ -287,8 +363,10 @@ def _pushed(item):
 
 def scout(queries, fetcher=fetch, top=20, candidates=40, license_mode="open", max_age_months=24,
           now=None, token=None, rank_mode="fit", prefer_starters=False, min_stars=0,
-          description=None, semantic_on=False, semantic_fn=None):
+          description=None, semantic_on=False, semantic_fn=None, broaden=True):
     """RS2-RS5: search, merge, filter, rank. Returns a result dict; raises ScoutError (RS7).
+    RS78a: when every search comes back empty after filtering, up to two broader searches run (see relaxed_queries)
+    and the result's `note` says so; `broadened` lists them.
     RS42: rank_mode "hybrid" re-orders by fit + BM25 against `description`; semantic_on (opt-in) adds meaning
     scores and live-confirmed indexed repos from Replore's endpoint."""
     queries = [q.strip() for q in queries if q and q.strip()]
@@ -373,7 +451,7 @@ def scout(queries, fetcher=fetch, top=20, candidates=40, license_mode="open", ma
             kept.append(row)
             seen[name] = row
 
-    for q in queries:
+    def run(q):
         kept = []
         by_query.append(kept)
         try:
@@ -385,7 +463,18 @@ def scout(queries, fetcher=fetch, top=20, candidates=40, license_mode="open", ma
             raise ScoutError(f"Unexpected GitHub response for {q!r}.")
         take(q, items, kept)
 
-    fit_mode = "fit" if rank_mode == "hybrid" else rank_mode
+    for q in queries:
+        run(q)
+    broadened, note = [], None
+    if broaden and not any(by_query):   # RS78a: nothing matched every word; a broader search fails closed like any other
+        broadened = broader_queries(queries, description)
+        for q in broadened:
+            run(q)
+        queries = queries + broadened
+        if broadened and any(by_query):
+            note = "Nothing matched every word, so the search was broadened to " + _quoted(broadened) + "."
+
+    fit_mode = "fit" if rank_mode in ("hybrid", "trust") else rank_mode   # RS82: trust starts from the fit order
     kept = rank(by_query, fit_mode, prefer_starters)  # RS5, RS15
     # RS42 hybrid: the same rule as the page. The first 30 rows (what the page sends) get meaning scores; indexed repos
     # are confirmed by ONE live GitHub search, appended in score order, then fit + BM25 (+ meaning) are fused by RRF.
@@ -414,6 +503,8 @@ def scout(queries, fetcher=fetch, top=20, candidates=40, license_mode="open", ma
                     sims += [score.get(r["full_name"].lower(), 0.0) for r in extra]
     if fused:
         kept = hybrid.hybrid_order(head + extra, description or " ".join(queries), sims) + tail
+    if not kept:   # RS78a: an empty result always says why, also in --json
+        note = NO_MATCH + (" Broader searches " + _quoted(broadened) + " found nothing either." if broadened else "")
     # RS23: per-feature groups (a repo appears under the first query that returned it); build before _pushed is dropped
     groups = [{"query": queries[i], "repos": _order(by_query[i], prefer_starters)} for i in range(len(queries))]
     for i, r in enumerate(kept, 1):
@@ -431,6 +522,8 @@ def scout(queries, fetcher=fetch, top=20, candidates=40, license_mode="open", ma
         "semantic": semantic_status,
         "found_by_meaning": [r["full_name"] for r in extra],
         "prefer_starters": prefer_starters,
+        "broadened": broadened,   # RS78a
+        "note": note,             # RS78a: why the list is broader, or why it is empty; None otherwise
         "excluded": excluded,
         "top": kept[:cap],
         "candidates": kept[:ccap],
@@ -447,8 +540,10 @@ def render(result):
            f"Ranking: {_rank_text(result)}",
            "Excluded: " + ", ".join(f"{k}={v}" for k, v in result["excluded"].items()), ""]
     if not result["candidates"]:
-        out += ["No repository matched after filtering.", "", KEY]
+        out += [result.get("note") or NO_MATCH, "", KEY]
         return "\n".join(out)
+    if result.get("note"):   # RS78a
+        out += ["Note: " + result["note"], ""]
     out.append("Shortlist:")
     for r in result["candidates"]:
         star = "  [starter]" if r["starter"] else ""
@@ -458,11 +553,13 @@ def render(result):
         out.append(f"    {r['url']}  [query: {r['query']}]")
         out.append(f"    How to start: {r['start_hint']}")
         out.append(f"    {_desc(r)}")
+        if r.get("conflict"):   # RS83
+            out.append("    " + r["conflict"])
         if r.get("trust"):   # RS56
             out.append("    Safe to build on?")
             out += [f"      {x}" for x in r["trust"]["lines"]]
     if any(r.get("trust") for r in result["candidates"]):
-        out.append("    " + trust.NOTE)
+        out.append("    " + _trust_note(result))
     out += ["", KEY, FREE_NOTE]
     return "\n".join(out)
 
@@ -473,6 +570,8 @@ def render_markdown_grouped(result):
            f"**Filters:** license={result['license_mode']}, last push within "
            f"{result['max_age_months'] or 'any'} months, at least {result['min_stars']} stars, no forks, no archived  ",
            "**Excluded:** " + ", ".join(f"{k}={v}" for k, v in result["excluded"].items()), ""]
+    if result.get("note"):   # RS78a
+        out += [f"**Note:** {_md(result['note'])}", ""]
     total = 0
     for g in result["groups"]:
         out += [f"### {_md(g['query'])}  ({len(g['repos'])})", ""]
@@ -487,6 +586,7 @@ def render_markdown_grouped(result):
             out.append(f"| {link} | {_md(r['why'])} | {r['stars']:,} | {_md(_desc(r))} | {_md(r['license'])} | "
                        f"{r['license_use']} | {r['free']} | {'yes' if r['starter'] else 'no'} | {r['pushed']} |")
         out.append("")
+    out += _selling_markdown(result)
     out += _trust_markdown(result)
     out += [f"{total} open-source repos across {len(result['groups'])} needs, each group ranked by fit "
             "(relevance, stars, license). Grouped by the first search that found each; not a scan of every "
@@ -524,6 +624,9 @@ def render_csv(result):
 def _rank_text(result):
     """RS5, RS15."""
     m = result["rank_mode"]
+    if m == "trust":   # RS82
+        return ("fit (relevant, then popular, then free to use), then the top %d re-ordered by trust: %s"
+                % (trust.TRUST_RANK_N, trust.TRUST_FORMULA)) + ("; starter templates first" if result["prefer_starters"] else "")
     text = ("fit: relevant, then popular, then free to use" if m == "fit"
             else "balanced: each search's best match first, then by stars" if m == "balanced"
             else "by stars across all searches")
@@ -545,7 +648,51 @@ def _trust_markdown(result):
         out.append(f"**#{r['rank']} {_md(r['full_name'])}**")
         out += [f"- {_md(x)}" for x in r["trust"]["lines"]]
         out.append("")
-    return out + [_md(trust.NOTE), ""]
+    return out + [_md(_trust_note(result)), ""]
+
+
+def mark_selling(result):
+    """RS83: the user will sell a closed-source product. Each strong or network copyleft repo gets a plain `conflict`
+    line; nothing is removed and the order is untouched (RS6). Rows in groups are the same dicts, so they get it too."""
+    result["selling"] = True
+    for r in result["all"]:
+        r["conflict"] = selling_conflict(r["license"] if r.get("open_license") else None)
+    return result
+
+
+def _selling_markdown(result):
+    """RS83: the licence check against a closed-source product, under the table."""
+    if not result.get("selling"):
+        return []
+    rows = [r for r in result["candidates"] if r.get("conflict")]
+    out = ["### Selling it closed source? Licence check", ""]
+    if not rows:
+        return out + ["No repo in this list conflicts with a closed-source product.", ""]
+    out += [f"- **{_md(r['full_name'])}** ({_md(r['license'])}): {r['conflict']}" for r in rows]
+    return out + ["", "These stay in the list in their usual place; weak copyleft (LGPL, MPL, EPL) is fine to sell with.", ""]
+
+
+def _trust_note(result):
+    return trust.RANK_NOTE if result.get("trust_reordered") else trust.NOTE
+
+
+def apply_trust_rank(result, token=None, get=None):
+    """RS82: opt-in trust sort. Check the top 5 fit-ranked repos (RS56), re-order those 5 by trust.trust_score
+    (ties keep fit order) and leave every other repo in fit order. Ranks are renumbered; the per-need groups (RS23)
+    keep their fit order. A failed part counts 0, never a guess (RS7)."""
+    add_trust(result, token, get)
+    allr = result["all"]
+    n = min(trust.TRUST_RANK_N, len(allr))
+    for r in allr[:n]:
+        r["trust_score"] = trust.trust_score(r.get("trust"))
+        if r.get("trust"):
+            r["trust"]["lines"].append("Trust score %g (used for the trust sort, RS82)" % r["trust_score"])
+    new = trust.trust_order(allr, lambda r: r.get("trust_score", 0), n)
+    for i, r in enumerate(new, 1):
+        r["rank"] = i
+    result["all"], result["candidates"], result["top"] = new, new[:len(result["candidates"])], new[:len(result["top"])]
+    result["trust_reordered"] = n
+    return result
 
 
 def add_trust(result, token=None, get=None):
@@ -569,8 +716,10 @@ def render_markdown(result):
            f"**Ranking:** {_rank_text(result)}  ",
            "**Excluded:** " + ", ".join(f"{k}={v}" for k, v in result["excluded"].items()), ""]
     if not result["candidates"]:
-        out += ["No repository matched after filtering.", "", KEY]
+        out += [_md(result.get("note") or NO_MATCH), "", KEY]
         return "\n".join(out)
+    if result.get("note"):   # RS78a
+        out += [f"**Note:** {_md(result['note'])}", ""]
     extra = result["candidates"][len(result["top"]):]
     for title, rows in (("Top %d" % len(result["top"]), result["top"]),
                         ("More candidates (used if the relevance check drops some)", extra)):
@@ -587,6 +736,7 @@ def render_markdown(result):
                        f"{_md(r['license'])} | {r['license_use']} | {r['free']} | {'yes' if r['starter'] else 'no'} | "
                        f"{r['pushed']} | {_md(r['start_hint'])} | {_md(r['query'])} |")
         out.append("")
+    out += _selling_markdown(result)
     out += _trust_markdown(result)
     out += ["Ranked by fit (relevance, stars, license) among GitHub search matches, not a scan of every "
             "repository. The plugin skill adds a semantic relevance check on top.", "", KEY, "", FREE_NOTE]
@@ -604,11 +754,14 @@ def main(argv=None):
     p.add_argument("--license", dest="license_mode", choices=["open", "any"], default="open")
     p.add_argument("--max-age-months", type=int, default=24)
     p.add_argument("--min-stars", type=int, default=50)
-    p.add_argument("--rank", dest="rank_mode", choices=["fit", "balanced", "stars", "hybrid"], default="fit")
+    p.add_argument("--rank", dest="rank_mode", choices=["fit", "balanced", "stars", "hybrid", "trust"], default="fit",
+                   help="RS82 trust: fit order, then the top 5 re-ordered by a trust score (runs the RS56 check)")
     p.add_argument("--describe", default=None, help="RS42: the whole project description, for --rank hybrid")
     p.add_argument("--semantic", action="store_true",
                    help="RS42 opt-in: meaning scores + indexed repos from Replore's server (sends the description)")
     p.add_argument("--prefer-starters", action="store_true")
+    p.add_argument("--selling", action="store_true",
+                   help="RS83: the user sells a closed-source product; flag copyleft repos that would force it open")
     p.add_argument("--trust", action="store_true",
                    help="RS56: also check the top 5 are safe to build on (OpenSSF Scorecard, deps.dev, GitHub)")
     fmt = p.add_mutually_exclusive_group()
@@ -630,7 +783,11 @@ def main(argv=None):
     except ScoutError as e:
         print(f"replore: {e}", file=sys.stderr)
         return 2
-    if a.trust and res["candidates"]:
+    if a.selling:
+        mark_selling(res)   # RS83: flags only; never removes or re-orders a repo (RS6)
+    if a.rank_mode == "trust" and res["candidates"]:
+        apply_trust_rank(res, token)   # RS82: opt-in; runs the RS56 check on the top 5 and re-orders only them
+    elif a.trust and res["candidates"]:
         add_trust(res, token)   # RS56: never fails the search; a failed part says "couldn't check"
     out = (json.dumps(res, indent=2, ensure_ascii=False) if a.json
            else render_markdown_grouped(res) if (a.markdown and a.group)

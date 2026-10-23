@@ -1100,9 +1100,100 @@ def test_rs66_no_em_dashes_in_site_copy():
     visible = re.sub(r"<!--.*?-->|<style.*?</style>|<script.*?</script>", "", html, flags=re.S)
     assert dash not in visible, [l.strip() for l in visible.splitlines() if dash in l][:5]
     js = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
-    string_lit = re.compile(r'"(?:[^"\\n]|\.)*"|' + r"'(?:[^'\\n]|\.)*'")
+    string_lit = re.compile(r'"(?:[^"\\]|\\.)*"|' + r"'(?:[^'\\]|\\.)*'")  # a string literal: no bare quote or backslash; escapes allowed
     hits = []
     for line in js.splitlines():
         code = re.split(r"\s//\s|^\s*//", line)[0]
         hits += [m for m in string_lit.findall(code) if dash in m]
     assert hits == [], hits[:5]
+
+
+# ---- RS78a: an empty search retries broader (the web page's RS78, ported) ----
+
+def test_relaxed_queries_match_the_web_page():
+    """RS78a, RS29: tests/fixtures/relaxed_cases.json is run by tests/test_web_logic.js against relaxedQueries() too."""
+    fx = json.loads((ROOT / "tests" / "fixtures" / "relaxed_cases.json").read_text(encoding="utf-8"))
+    assert len(fx["cases"]) >= 8
+    for c in fx["cases"]:
+        assert scout.relaxed_queries(c["text"], c["tried"]) == c["expect"], c["name"]
+
+
+def test_empty_search_retries_broader_and_says_so():
+    res, f = run([[], [repo("a/motion", 900)]], queries=["motion graphics opus5.5"], min_stars=50)
+    assert [q for q, _ in f.calls][1].startswith("motion graphics fork:false")
+    assert res["broadened"] == ["motion graphics"] and res["queries"] == ["motion graphics opus5.5", "motion graphics"]
+    assert res["note"] == 'Nothing matched every word, so the search was broadened to "motion graphics".'
+    assert [r["full_name"] for r in res["top"]] == ["a/motion"] and res["top"][0]["query"] == "motion graphics"
+    assert "Note: Nothing matched every word" in scout.render(res)
+    assert "**Note:** Nothing matched every word" in scout.render_markdown(res)
+    assert "**Note:** Nothing matched every word" in scout.render_markdown_grouped(res)
+
+
+def test_broader_search_stays_in_budget_and_keeps_shared_qualifiers():
+    """RS78a, RS8: at most two extra searches (4 + 2 = 6 of GitHub's 10 a minute); a qualifier on every query stays."""
+    qs = ["voice ai 2025 language:python", "speech text v3 language:python", "tts 4o language:python", "stt language:python"]
+    res, f = run([[]] * 6, queries=qs)
+    assert len(f.calls) == scout.MAX_QUERIES + scout.MAX_BROADER == 6
+    assert res["broadened"] == ["voice ai speech language:python", "voice ai language:python"]
+    assert res["note"].startswith(scout.NO_MATCH) and "found nothing either" in res["note"]
+    assert res["top"] == [] and len(res["groups"]) == 6
+
+
+def test_broader_uses_the_description_when_given_and_can_be_turned_off():
+    res, f = run([[], []], queries=["pdf chat gpt5"], description="chat with my pdfs using gpt5")
+    assert res["broadened"] == ["chat pdfs"]
+    res, f = run([[]], queries=["motion graphics opus5.5"], broaden=False)
+    assert len(f.calls) == 1 and res["broadened"] == [] and res["note"] == scout.NO_MATCH
+
+
+def test_no_broader_words_means_plain_no_match_note():
+    res, f = run([[]], queries=["chatbot"])
+    assert len(f.calls) == 1 and res["broadened"] == [] and res["note"] == scout.NO_MATCH
+    res, _ = run([[repo("a/b", 900)]], queries=["chatbot"])
+    assert res["note"] is None and res["broadened"] == []
+
+
+def test_empty_json_carries_a_note(monkeypatch, capsys):
+    """RS78a: JSON consumers get a reason for an empty list."""
+    _patch_fetch(monkeypatch, lambda q, token=None: {"items": []})
+    assert scout.main(["chatbot", "--json"]) == 1
+    data = json.loads(capsys.readouterr().out)
+    assert data["note"] == "No repository matched after filtering." and data["candidates"] == []
+
+
+# ---- RS83: licence check against a closed-source product ----
+SELL = json.loads((ROOT / "tests" / "fixtures" / "selling_cases.json").read_text(encoding="utf-8"))
+
+
+def test_selling_conflicts_match_the_web_page():
+    """RS83: tests/test_web_logic.js runs the same file against sellConflict / sellSummary."""
+    for c in SELL["conflicts"]:
+        assert scout.selling_conflict(c["spdx"]) == c["expect"], c["spdx"]
+    for c in SELL["summaries"]:
+        assert scout.selling_summary(c["picks"]) == c["expect"], c["name"]
+    assert "\u2014" not in json.dumps(SELL, ensure_ascii=False)
+
+
+def test_selling_flags_copyleft_without_removing_or_reordering():
+    items = [repo("a/mit", 900), repo("b/gpl", 800, spdx="GPL-3.0"), repo("c/agpl", 700, spdx="AGPL-3.0"), repo("d/lgpl", 600, spdx="LGPL-3.0")]
+    plain, _ = run([items])
+    sold, _ = run([items])
+    scout.mark_selling(sold)
+    assert [r["full_name"] for r in sold["all"]] == [r["full_name"] for r in plain["all"]]   # RS6: same list, same order
+    flags = {r["full_name"]: r["conflict"] for r in sold["all"]}
+    assert flags == {"a/mit": "", "b/gpl": scout.CONFLICT_SHARE, "c/agpl": scout.CONFLICT_NETWORK, "d/lgpl": ""}
+    assert scout.CONFLICT_SHARE in scout.render(sold) and scout.CONFLICT_SHARE not in scout.render(plain)
+    md = scout.render_markdown(sold)
+    assert "### Selling it closed source? Licence check" in md and "**b/gpl** (GPL-3.0)" in md and "a/mit**" not in md
+    assert "Licence check" in scout.render_markdown_grouped(sold) and "Licence check" not in scout.render_markdown(plain)
+
+
+def test_selling_cli_and_mcp(monkeypatch, capsys):
+    _patch_fetch(monkeypatch, lambda q, token=None: {"items": [repo("b/gpl", 800, spdx="GPL-3.0"), repo("a/mit", 900)]})
+    assert scout.main(["x", "--selling", "--json"]) == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["selling"] is True and {r["full_name"]: bool(r["conflict"]) for r in data["top"]} == {"a/mit": False, "b/gpl": True}
+    import mcp_server
+    r = mcp_server.call_find_repos({"queries": ["x"], "selling": True}, lambda q, token=None: {"items": [repo("b/gpl", 800, spdx="GPL-3.0")]})
+    assert not r["isError"] and scout.CONFLICT_SHARE in r["content"][0]["text"]
+    assert mcp_server.call_find_repos({"queries": ["x"], "selling": "yes"}, lambda q, token=None: {"items": []})["isError"]

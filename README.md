@@ -57,17 +57,28 @@ What you can do there:
 
 - **Search in plain words.** Describe what you're building; filters (tech stack, minimum stars) are optional.
   Repos an AI check thinks don't fit move to the end, under "Less likely to fit".
-- **Read each result at a glance.** Every card shows stars and forks, a "Matches:" line with the words it matched,
-  what the repo does, when it was last updated, and one license verdict ("Free for commercial use", "Must
-  open-source your app", …). Filter to **Free for commercial use** or **Starters** (ready-made templates).
-- **Look inside a repo before you pick it.** Each card has five buttons under the repo name, each opening a free tool
-  in a new tab (SPEC RS51):
-  - **Diagram** ([GitDiagram](https://gitdiagram.com)): the repo as an architecture diagram.
-  - **Digest** ([Gitingest](https://gitingest.com)): all the code as one text file to paste into an AI chat.
+- **Read each result at a glance.** Results come three to a row (SPEC RS63, RS67). Each card shows the owner, the repo
+  name and its rank, when it was last updated, what the repo does, one license verdict ("Free for commercial use",
+  "Must open-source your app", …), a Starter tag for ready-made templates, its main language and its stars. A
+  bookmark (or a tap on the card) adds it to your plan; **Details** opens the rest in a side panel.
+- **Narrow and sort what you got.** The filter panel on the left has **Licence** (free for commercial use), **Type**
+  (starters and templates), **Language** (the languages found in your results), **Stars** (any, 1k+, 10k+) and
+  **Updated** (any time, past year, past month). The sort menu offers best fit (the default), most stars and recently
+  updated. Filters and sorting only rearrange the cards already fetched; the ranking itself never changes.
+- **Look inside a repo before you pick it.** In a card's **Details**: a "Matches:" line with the words it matched,
+  **Open on GitHub**, and three tools under "Look inside", each opening a free site in a new tab (SPEC RS51, RS63):
+  - **Diagram** ([GitDiagram](https://gitdiagram.com)): see the structure as an architecture diagram.
   - **Wiki** ([DeepWiki](https://deepwiki.com)): AI-written docs for the repo that you can ask questions.
-  - **Browse** ([GitHub1s](https://github1s.com)): read the code in a VS Code-style viewer.
-  - **Edit** ([github.dev](https://github.dev)): open the repo in GitHub's web editor.
-- **Check it's safe to build on.** Open **🛡 Safe to build on?** on a card (SPEC RS53) to see its security health
+  - **Code** ([GitHub1s](https://github1s.com)): read the files in a VS Code-style viewer.
+  - Also: **Digest** ([Gitingest](https://gitingest.com)), all the code as one text file for an AI chat, and
+    **Edit** ([github.dev](https://github.dev)), GitHub's web editor.
+- **Selling it?** Switch on **I'll sell it (closed source)** in the filter panel and every GPL- or AGPL-style repo
+  says plainly that building on it would make you open-source your app; the build-plan prompt names the picks that
+  conflict. Nothing is hidden or re-ordered (SPEC RS83). The plugin does the same with `--selling` (or "Selling it?: yes").
+- **Sort by trust, if you want.** Pick **Trust (top 5)** in the sort menu to re-order the top five by their safety
+  check: Scorecard score + half the Maintained score + 2 when no known vulnerabilities (SPEC RS82). Best fit stays
+  the default; the plugin's `--rank trust` and the MCP tool's `rank: "trust"` do the same.
+- **Check it's safe to build on.** Open **Is it safe to build on?** in a card's Details (SPEC RS53) to see its security health
   score ([OpenSSF Scorecard](https://scorecard.dev)), known vulnerabilities in its latest published package
   ([OSV.dev](https://osv.dev), via [deps.dev](https://deps.dev)), a copy-paste install command (`npm install`,
   `pip install`, `go get`, …), whether it has a README, contributing guide and good first issues, and its latest
@@ -85,14 +96,19 @@ What you can do there:
 - Light and dark themes, keyboard and screen-reader friendly, and a **Feedback** form for bugs and ideas.
 
 A static page at `web/index.html` powers it. It auto-deploys (Cloudflare Pages) to [replore.cardzo.co.in](https://replore.cardzo.co.in)
-(Cloudflare Pages) on every push to `main`. To self-host it elsewhere, it also deploys free on GitHub Pages:
-
-1. Settings → Pages → Source → **GitHub Actions**.
-2. Push to `main` (the `pages` workflow deploys `web/`), or run the **pages** workflow by hand.
-3. Open the URL the workflow prints.
+(Cloudflare Pages) on every push to `main`. To self-host it, serve the `web/` folder from any static host; only the
+relevance check and the trust check (`functions/api/`, Cloudflare Pages Functions) need Cloudflare.
 
 The page's code is in `web/app.js` (plus `web/theme.js`); its security headers and Content-Security-Policy are in
 `web/_headers` (SPEC RS49), so a new third-party script or API must be added there or the browser blocks it.
+`web/robots.txt`, `web/sitemap.xml`, the canonical link and `web/404.html` are the SEO basics (SPEC RS80).
+`web/evals.html` publishes the ranking evals (SPEC RS84); after editing `evals/*.json`, run
+`python3 ops/build_evals_page.py` to refresh `web/evals.json`, and after editing a script run
+`python3 ops/stamp_assets.py` (a test fails until both are done). Pages'
+`_redirects` can't redirect a whole domain, so the 301 from `replore.pages.dev` to `replore.cardzo.co.in` is a
+Cloudflare **Bulk Redirect** rule (dashboard: Rules, Redirect Rules, Bulk Redirects; source `replore.pages.dev`,
+target `https://replore.cardzo.co.in`, 301, preserve path suffix and query string, include subpaths). Leave preview
+hosts (`*.replore.pages.dev`) out of it.
 
 It calls the public GitHub search API from the browser (about 10 searches a minute, no login, no key) and runs
 the same filters, ranking and license labels as the plugin. The searches are keyword-based; then a small server-side
@@ -104,7 +120,7 @@ deployment → Functions → Real-time logs; live only, not stored). To keep the
 account, then uncomment the `[[analytics_engine_datasets]]` block in `wrangler.toml`. The plugin goes further: your AI writes the searches, and its PRD mode returns every suitable repo per feature.
 
 **How the relevance check runs (maintainer, SPEC RS34a):** `wrangler.toml` binds Cloudflare Workers AI as `AI`, so
-the check works on deploy with no key (optional variable `WORKERS_AI_MODEL`, comma-separated; default `@cf/meta/llama-3.1-8b-instruct-fp8`, then `@cf/meta/llama-3.3-70b-instruct-fp8-fast` if Cloudflare has retired the first).
+the check works on deploy with no key (optional variable `WORKERS_AI_MODEL`, comma-separated; default `@cf/mistralai/mistral-small-3.1-24b-instruct`, then `@cf/meta/llama-3.3-70b-instruct-fp8-fast` if the first is retired, missing or busy; SPEC RS34e).
 Keep the account on the Workers **Free** plan if you want it to stop at the daily free allocation rather than bill.
 **Optional fallback** for when Workers AI is over its allocation or failing: in Cloudflare → your Pages project →
 Settings → Variables and Secrets, add a **secret** `LLM_API_KEY` (e.g. a free Groq API key from console.groq.com) and
@@ -146,8 +162,14 @@ limit of 10 requests per 10 seconds runs in memory; for a hard limit, add a WAF 
 
 Needs Python 3.11+ (the plugin tells you how to install it if it's missing). Once installed, it is available in every project.
 
+The install also registers Replore's MCP server (`mcpServers` in `.claude-plugin/plugin.json`, SPEC RS32a), so Claude Code gets two tools,
+`find_repos` and `check_repos`, besides `/replore:find`. **Windows:** the server starts with `python3`. If `python3`
+isn't on your PATH (or opens the Microsoft Store), edit the installed plugin's `.claude-plugin/plugin.json` (under
+`~/.claude/plugins/`) and change `"command": "python3"` to `"command": "python"`, then restart Claude Code. `/mcp`
+shows whether `replore` is connected. The `/replore:find` skill doesn't need this: it finds a working Python itself.
+
 After the comparison table, ask *"which of these are safe to build on?"* and the plugin runs the same check as the web
-page's **Safe to build on?**: security health, known vulnerabilities, an install command, beginner-friendliness and
+page's **Is it safe to build on?**: security health, known vulnerabilities, an install command, beginner-friendliness and
 the latest release (SPEC RS56). The web page and the plugin share one set of test cases, so they give the same answer.
 
 ## Use in any other AI agent
@@ -184,7 +206,7 @@ docs — the command and argument stay the same.
 
 **3. Ask your agent** — *"find repos for a diet app for iPhone"*. It calls Replore's `find_repos` tool and shows the
 comparison table. Then *"which of these are safe to build on?"* calls `check_repos`, the same check as the web page's
-**Safe to build on?** (SPEC RS56). Your AI writes the searches and judges which results fit; the feature-by-feature PRD mode is in the
+**Is it safe to build on?** (SPEC RS56). Your AI writes the searches and judges which results fit; the feature-by-feature PRD mode is in the
 Claude Code plugin.
 
 **No MCP support?** Open the cloned folder in your agent. Codex, Cursor, Copilot, Cline and Windsurf read
@@ -240,7 +262,9 @@ python3 scripts/scout.py "animation library" "topic:css-framework" [--json | --m
     [--max-age-months 12] [--rank balanced|stars] [--prefer-starters]
 ```
 
-Exit codes: 0 results, 1 no match after filtering, 2 error (network, rate limit, bad query).
+Exit codes: 0 results, 1 no match after filtering, 2 error (network, rate limit, bad query). When every search finds
+nothing, the script retries up to two broader searches (without version-like words, then the two strongest words)
+and says so in a note (`note` in `--json`; SPEC RS78a).
 
 ## Development
 
@@ -254,6 +278,16 @@ node tests/test_trust_fn.mjs        # trust check function (fake Scorecard/deps.
 python3 evals/run.py                # fit-ranking evals
 ```
 
+**Cutting a release (SPEC RS81).** One version everywhere (RS50):
+
+1. Bump the version in `.claude-plugin/plugin.json` (`"version"`) and in `scripts/mcp_server.py` (`SERVER_INFO`).
+2. In `CHANGELOG.md`, rename `## [Unreleased]` to `## [X.Y.Z] - YYYY-MM-DD`, start a new empty `## [Unreleased]`
+   above it, and update the compare links at the bottom.
+3. Merge that to `main`, then tag it and push the tag: `git tag vX.Y.Z` and `git push origin vX.Y.Z`.
+
+The `release` workflow then checks that the tag matches both versions and that the changelog has the section, and
+publishes the section as the GitHub release notes. If anything disagrees it fails and creates nothing.
+
 ## Privacy
 
 No account, no database, nothing you type is stored: the makers of Replore never keep your ideas or searches. The web
@@ -261,7 +295,7 @@ page's host counts page views with Cloudflare Web Analytics (cookieless, script 
 it never sees your searches).
 Search words go to GitHub to run the search; on the web page they also pass through a small relevance check to an AI
 provider (Cloudflare Workers AI, with Groq as fallback) that moves off-topic repos to the end of the list. Fonts and scripts are served from the site itself. The plugin never uses
-the relevance check. Opening **Safe to build on?** sends only the repo's public name and language to our trust check,
+the relevance check. Opening **Is it safe to build on?** sends only the repo's public name and language to our trust check,
 which asks OpenSSF Scorecard and Google's deps.dev without your IP or searches. In the plugin the same check runs
 only when you ask for it, straight from your computer to GitHub, Scorecard and deps.dev (repo names only). Details — including what the web page keeps in your browser and the plugin's optional,
 off-by-default local safety log — are in [`PRIVACY.md`](PRIVACY.md).

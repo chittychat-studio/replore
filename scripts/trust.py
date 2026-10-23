@@ -277,7 +277,7 @@ def trust_lines(gh, tr, spdx, repo):
         ids = [i for i in (pk.get("advisories") or []) if isinstance(i, str) and ADVISORY_RE.fullmatch(i)]
         n = max(int(pk.get("advisoryCount") or 0), len(ids))
         head = f"Known vulnerabilities in {pk['name']} {pk['version']}: "
-        lines.append(head + ("none known" if n == 0 else f"{n} known — "
+        lines.append(head + ("none known" if n == 0 else f"{n} known: "
                              + ", ".join(f"{i} (https://osv.dev/vulnerability/{i})" for i in ids) + (" …" if n > len(ids) else "")))
         cmd = install_cmd(pk.get("system"), pk.get("name"))
         if cmd:
@@ -290,7 +290,7 @@ def trust_lines(gh, tr, spdx, repo):
     elif not pk or pk.get("status") == "error":
         lines.append("Known vulnerabilities " + na)
     if gh and gh.get("limited"):
-        lines.append("GitHub's hourly limit is used up — try again later (or set GITHUB_TOKEN)")
+        lines.append("GitHub's hourly limit is used up, try again later (or set GITHUB_TOKEN)")
     else:
         f = (gh or {}).get("files")
         mark = lambda b, t: t + (": yes" if b else ": no")   # words, not glyphs (RS55); same words as the web
@@ -303,7 +303,35 @@ def trust_lines(gh, tr, spdx, repo):
     return lines
 
 
-NOTE = "For information — it doesn't change the ranking. Sources: OpenSSF Scorecard, deps.dev, OSV.dev, GitHub."
+NOTE = "For information only. It doesn't change the ranking. Sources: OpenSSF Scorecard, deps.dev, OSV.dev, GitHub."
+
+# ---- RS82: the opt-in trust sort (same formula as web/app.js trustScore; shared cases in tests/fixtures/trust_rank_cases.json)
+TRUST_RANK_N = MAX_REPOS
+TRUST_FORMULA = ("Scorecard score + half the Maintained score + 2 when no known vulnerabilities "
+                 "(a part that couldn't be checked counts 0)")
+RANK_NOTE = (f"The top {TRUST_RANK_N} were re-ordered by trust: {TRUST_FORMULA}; ties and every repo after them stay "
+             "in fit order. Sources: OpenSSF Scorecard, deps.dev, OSV.dev.")
+
+
+def trust_score(t):
+    """RS82: one number from the {scorecard, package} answer; unknown parts count 0, never guessed (RS7)."""
+    t = t if isinstance(t, dict) else {}
+    sc = t.get("scorecard") if isinstance(t.get("scorecard"), dict) else {}
+    pk = t.get("package") if isinstance(t.get("package"), dict) else {}
+    ok = sc.get("status") == "ok"
+    in10 = lambda x: _num(x) and 0 <= x <= 10
+    s = sc.get("score") if ok and in10(sc.get("score")) else 0
+    m = sc.get("maintained") if ok and in10(sc.get("maintained")) else 0
+    ids = pk.get("advisories") if isinstance(pk.get("advisories"), list) else []
+    cnt = pk.get("advisoryCount") if _num(pk.get("advisoryCount")) else 0
+    v = 2 if pk.get("status") == "ok" and max(cnt, len(ids)) == 0 else 0
+    return _round1(s + m / 2 + v)
+
+
+def trust_order(rows, score_of, n=TRUST_RANK_N):
+    """RS82: the first n rows by trust score, highest first (ties keep fit order); the rest unchanged."""
+    head = sorted(enumerate(rows[:n]), key=lambda p: (-score_of(p[1]), p[0]))
+    return [r for _, r in head] + list(rows[n:])
 
 
 def install_cmd(system, name):
@@ -319,7 +347,7 @@ def lines_for(result):
 def render(results):
     out = []
     for r in results:
-        out.append(f"{r['repo']} — Safe to build on?")
+        out.append(f"{r['repo']}: Safe to build on?")
         out += ["  " + x for x in (r["lines"] if "lines" in r else lines_for(r))]
         out.append("")
     return "\n".join(out + [NOTE])
@@ -360,7 +388,7 @@ def main(argv=None):
             r = next(checked)
             r["lines"] = lines_for(r)
         else:
-            msg = {"not_found": "not found on GitHub", "limited": "GitHub's hourly limit is used up — try again later (or set GITHUB_TOKEN)"}
+            msg = {"not_found": "not found on GitHub", "limited": "GitHub's hourly limit is used up, try again later (or set GITHUB_TOKEN)"}
             r = {"repo": repo, "error": m["status"], "lines": [msg.get(m["status"], "couldn't check")]}
         results.append(r)
     print(json.dumps(results, indent=2, ensure_ascii=False) if a.json else render(results))

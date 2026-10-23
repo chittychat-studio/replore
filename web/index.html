@@ -31,6 +31,7 @@
 <meta name="twitter:title" content="Replore: the repo scout for vibe coders">
 <meta name="twitter:description" content="Find it before you build it. Describe your idea in plain words. Get the open-source GitHub repos that fit, with a plain license verdict.">
 <meta name="twitter:image" content="https://replore.cardzo.co.in/og.jpg">
+<link rel="canonical" href="https://replore.cardzo.co.in/">   <!-- RS80: one canonical URL (replore.pages.dev serves the same page) -->
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="fonts.css">
 <style>
@@ -1056,6 +1057,9 @@
   .rc2 .name a{color:inherit}
   .rc2 .desc{margin:0;font-size:13px;line-height:1.45;color:var(--muted);-webkit-line-clamp:2;min-height:2.9em}
   .rc2 .rc-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto}
+  .rc2 .rc-conflict{display:none;margin:8px 0 0;font-size:12.5px;line-height:1.35;font-weight:600;color:var(--warn)}   /* RS83 */
+  #out.selling .rc2 .rc-conflict{display:block}
+  .rc2 .rc-trust{margin:8px 0 0;font:600 12px/1.3 var(--f-mono);opacity:.85}   /* RS82: the Trust sort's score on the card */
   .rc2 .rc-tags .tag,.rc-drawer .rc-tags .tag{font-size:11.5px}
   .tag.t-lang{background:transparent;border:1px solid var(--line);color:var(--ink);padding:2px 9px}
   .rc2 .rc-bot{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 4px 2px}
@@ -1396,7 +1400,8 @@
 
       <button type="button" class="link-btn" id="aboutBtn">About the results</button> ·
       <button type="button" class="link-btn" id="nextBtn">Next steps</button> ·
-      <button type="button" class="link-btn" id="fbBtn">Feedback</button>
+      <button type="button" class="link-btn" id="fbBtn">Feedback</button> ·
+      <a class="link-btn" href="evals.html">How ranking is tested</a>   <!-- RS84 -->
       <span class="brand-by">· A <a href="https://cardzo.co.in" target="_blank" rel="noopener noreferrer">Cardzo</a> product</span></p>
   </section>
 </main>
@@ -1626,7 +1631,7 @@
     <li><b>Uploaded plans</b> are read in your browser and never uploaded; only short feature phrases are searched on GitHub.</li>
     <li><b>Open in Claude</b> or <b>Open in ChatGPT</b> sends the build-plan prompt to your own claude.ai or chatgpt.com
       account, only when you click it. <b>Open in Gemini</b> copies it and opens gemini.google.com; you paste it.</li>
-    <li><b>Explore</b> links on a card (Diagram, Digest, Wiki, Browse, Edit) open gitdiagram.com, gitingest.com, deepwiki.com, github1s.com or
+    <li><b>Look inside</b> links in a card's Details (Diagram, Wiki, Code, and Also: Digest, Edit) open gitdiagram.com, gitingest.com, deepwiki.com, github1s.com or
       github.dev at the repo's public name, only when you click one; your searches are never sent.</li>
     <li><b>Safe to build on?</b> on a card, only when you open it: your browser asks GitHub's API about that repo, and our
       trust check sends the repo's public name and language to OpenSSF Scorecard and Google's deps.dev (vulnerability data
@@ -1665,6 +1670,6 @@
   <p class="mut rag-only" style="margin-top:12px" hidden><b>Hybrid search:</b> repos are ranked by your words and by what you mean, so "voice notes" also finds "speech-to-text". Repos our index finds that the word search missed are checked on GitHub before you see them.</p>
 </div></div>
 
-<script src="app.js?v=9fad60cbec" defer></script>
+<script src="app.js?v=c29e5e095e" defer></script>
 </body>
 </html>

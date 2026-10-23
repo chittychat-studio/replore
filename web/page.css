@@ -1,0 +1,44 @@
+/* SPEC RS80: the look of Replore's secondary pages (404.html, evals.html). Same tokens as index.html's :root
+   (light, dark by system setting, and the visitor's saved choice set by theme.js), same self-hosted fonts. */
+:root{
+  --bg:#f4f6f8; --card:#ffffff; --line:#dde3e9; --ink:#1e2a36; --muted:#5f6b78;
+  --accent:#3f6f8e; --accent-ink:#22374a; --tint:#c7d6e2; --good:#426832; --goodbg:#e4ecdc; --warn:#855816; --warnbg:#f3ead2;
+  --f-body:"Inter Tight",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --f-serif:"Instrument Serif",Georgia,serif;
+  --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121a22; --card:#1b2631; --line:#2b3a48; --ink:#e6edf3; --muted:#9aa8b5;
+    --accent:#477491; --accent-ink:#9cc0d8; --tint:#2b3f52; --good:#a3bf7e; --goodbg:#22301c; --warn:#d8a95c; --warnbg:#342a15;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121a22; --card:#1b2631; --line:#2b3a48; --ink:#e6edf3; --muted:#9aa8b5;
+  --accent:#477491; --accent-ink:#9cc0d8; --tint:#2b3f52; --good:#a3bf7e; --goodbg:#22301c; --warn:#d8a95c; --warnbg:#342a15;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--f-body);-webkit-font-smoothing:antialiased}
+a{color:var(--accent-ink)}
+a:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.sp-top{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.sp-top a{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)}
+.sp-top b{font-weight:800;font-size:20px;letter-spacing:-.02em}
+.sp-tag{font:12px/1.2 var(--f-mono);color:var(--muted)}
+.sp-main{max-width:920px;margin:0 auto;padding:40px 16px 64px}
+.sp-main h1{font-weight:800;font-size:clamp(30px,6vw,48px);line-height:1.05;letter-spacing:-.03em;margin:0 0 12px}
+.sp-main h1 em{font:400 1.05em/1 var(--f-serif);color:var(--muted)}
+.sp-main h2{font-weight:800;font-size:22px;letter-spacing:-.02em;margin:36px 0 8px}
+.sp-lead{color:var(--muted);max-width:640px;margin:0 0 20px}
+.sp-btn{display:inline-flex;align-items:center;min-height:44px;padding:0 18px;border-radius:10px;background:var(--accent);
+  color:#fff;text-decoration:none;font-weight:700}
+.sp-btn:hover{background:var(--accent-ink)}
+.sp-foot{border-top:1px solid var(--line);padding:18px 16px;color:var(--muted);font-size:14px;text-align:center}
+.ev-list{display:grid;gap:12px;padding:0;margin:0;list-style:none}
+.ev-case{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.ev-case h3{margin:0 0 4px;font-size:16px}
+.ev-goal{margin:0 0 8px;color:var(--muted);font-size:14px}
+.ev-meta{font:13px/1.5 var(--f-mono);color:var(--ink);overflow-wrap:anywhere}
+.ev-meta span{color:var(--muted)}
+.ev-pill{display:inline-block;font:12px/1 var(--f-mono);padding:4px 8px;border-radius:999px;background:var(--goodbg);color:var(--good)}
+code{font-family:var(--f-mono);font-size:.92em}

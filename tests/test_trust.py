@@ -140,8 +140,8 @@ def test_cli_end_to_end(monkeypatch, capsys):
     monkeypatch.setattr(trust, "get_json", fake(routes))
     assert trust.main(["https://github.com/expressjs/express.git", "nobody/x"]) == 0
     out = capsys.readouterr().out
-    assert "expressjs/express — Safe to build on?" in out and "Security health 8.9/10" in out
-    assert "npm install express" in out and "nobody/x — Safe to build on?" in out and "not found on GitHub" in out
+    assert "expressjs/express: Safe to build on?" in out and "Security health 8.9/10" in out
+    assert "npm install express" in out and "nobody/x: Safe to build on?" in out and "not found on GitHub" in out
     assert "doesn't change the ranking" in out
 
 
@@ -203,3 +203,63 @@ def test_hostile_api_values_never_reach_the_output():
     lines = trust.trust_lines(None, tr, "MIT", "a/b")
     assert not any("IGNORE" in x for x in lines) and any("GHSA-ok-1" in x for x in lines)
     assert trust.install_cmd("pypi", "requests; rm -rf /") == "" and trust.install_cmd("__class__", "x") == ""
+
+
+# ---- RS82: the opt-in trust sort (shared with the web: tests/fixtures/trust_rank_cases.json) ----
+RANK = json.loads((ROOT / "tests" / "fixtures" / "trust_rank_cases.json").read_text(encoding="utf-8"))
+
+
+@pytest.mark.parametrize("case", RANK["scores"], ids=[c["name"] for c in RANK["scores"]])
+def test_shared_trust_scores(case):
+    assert trust.trust_score(case["t"]) == case["expect"]
+
+
+@pytest.mark.parametrize("case", RANK["orders"], ids=[c["name"] for c in RANK["orders"]])
+def test_shared_trust_orders(case):
+    assert RANK["n"] == trust.TRUST_RANK_N == trust.MAX_REPOS
+    got = trust.trust_order(case["rows"], lambda r: trust.trust_score(r["t"]))
+    assert [r["repo"] for r in got] == case["expect"]
+
+
+def _sc(score, maintained):
+    return [200, {"score": score, "date": "2026-10-01T00:00:00Z", "checks": [{"name": "Maintained", "score": maintained}]}]
+
+
+def test_rank_trust_reorders_only_the_top_five_and_says_so():
+    items = [_item(f"o/r{i}") for i in range(7)]
+    routes = {trust.SCORECARD + "o/r3": _sc(9, 10), trust.SCORECARD + "o/r1": _sc(5, 0), trust.SCORECARD + "o/r6": _sc(10, 10)}
+    res = scout.scout(["web framework"], fetcher=lambda q, token=None: {"items": items}, rank_mode="trust", top=3, candidates=7)
+    assert [r["full_name"] for r in res["all"]] == [f"o/r{i}" for i in range(7)]   # scout() itself ranks by fit
+    scout.apply_trust_rank(res, None, fake(routes))
+    order = [r["full_name"] for r in res["all"]]
+    assert order == ["o/r3", "o/r1", "o/r0", "o/r2", "o/r4", "o/r5", "o/r6"]   # r6 scores best but is outside the top 5
+    assert [r["rank"] for r in res["all"]] == list(range(1, 8)) and [r["full_name"] for r in res["top"]] == order[:3]
+    assert res["candidates"] == res["all"] and res["trust_reordered"] == 5
+    assert [r["trust_score"] for r in res["all"][:5]] == [14, 5, 0, 0, 0] and "trust_score" not in res["all"][5]
+    md, text = scout.render_markdown(res), scout.render(res)
+    assert "top 5 re-ordered by trust" in md and "re-ordered by trust" in text and trust.RANK_NOTE in text
+    assert "doesn't change the ranking" not in text and "Trust score 14" in text
+    assert [g["repos"][0]["full_name"] for g in res["groups"]] == ["o/r0"]   # per-need groups keep fit order
+
+
+def test_default_ranking_never_runs_the_trust_check():
+    res = scout.scout(["web framework"], fetcher=lambda q, token=None: {"items": [_item("o/a"), _item("o/b")]})
+    assert res["rank_mode"] == "fit" and not any("trust" in r or "trust_score" in r for r in res["all"])
+
+
+def test_cli_rank_trust(monkeypatch, capsys):
+    monkeypatch.setattr(scout, "fetch", lambda q, token=None: {"items": [_item("o/a"), _item("o/b")]})
+    monkeypatch.setattr(trust, "get_json", fake({trust.SCORECARD + "o/b": _sc(8, 10)}))
+    assert scout.main(["web framework", "--rank", "trust", "--json"]) == 0
+    data = json.loads(capsys.readouterr().out)
+    assert [r["full_name"] for r in data["top"]] == ["o/b", "o/a"] and data["trust_reordered"] == 2
+    assert data["top"][0]["trust_score"] == 13
+
+
+def test_mcp_find_repos_rank_trust():
+    fetch = lambda q, token=None: {"items": [_item("o/a"), _item("o/b")]}
+    r = mcp_server.call_find_repos({"queries": ["web framework"], "rank": "trust"}, fetch, fake({trust.SCORECARD + "o/b": _sc(8, 10)}))
+    text = r["content"][0]["text"]
+    assert not r["isError"] and text.index("o/b") < text.index("o/a") and "re-ordered by trust" in text
+    assert mcp_server.call_find_repos({"queries": ["x"], "rank": "stars"}, fetch)["isError"]
+    assert mcp_server.TOOL["inputSchema"]["properties"]["rank"]["enum"] == ["fit", "trust"]

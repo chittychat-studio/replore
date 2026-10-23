@@ -1,0 +1,40 @@
+{
+  "_about": "SPEC RS82: the opt-in trust sort. trust score = Scorecard score (0-10) + half the Maintained check score (0-10) + 2 when the published package has no known vulnerabilities; a part that is missing, not scored or failed counts 0 (never guessed); rounded to one decimal. Only the first 5 rows are re-ordered, highest score first, ties keep fit order; the rest stay in fit order. Run by tests/test_trust.py (scripts/trust.py trust_score / trust_order) and tests/test_web_logic.js (web/app.js trustScore / trustOrder).",
+  "n": 5,
+  "scores": [
+    {"name": "all three parts", "t": {"scorecard": {"status": "ok", "score": 8.9, "date": "2026-10-19", "maintained": 10}, "package": {"status": "ok", "system": "npm", "name": "express", "version": "5.3.0", "licenses": ["MIT"], "advisories": [], "advisoryCount": 0}}, "expect": 15.9},
+    {"name": "known vulnerabilities give no bonus", "t": {"scorecard": {"status": "ok", "score": 8.9, "maintained": 10}, "package": {"status": "ok", "advisories": ["GHSA-qw6h-vgh9-j6wx"], "advisoryCount": 1}}, "expect": 13.9},
+    {"name": "count without listed IDs still counts", "t": {"scorecard": {"status": "ok", "score": 5, "maintained": 0}, "package": {"status": "ok", "advisories": [], "advisoryCount": 3}}, "expect": 5},
+    {"name": "not scored yet, clean package", "t": {"scorecard": {"status": "none"}, "package": {"status": "ok", "advisories": [], "advisoryCount": 0}}, "expect": 2},
+    {"name": "maintained missing", "t": {"scorecard": {"status": "ok", "score": 6.3, "maintained": null}, "package": {"status": "none"}}, "expect": 6.3},
+    {"name": "odd maintained halves", "t": {"scorecard": {"status": "ok", "score": 4.1, "maintained": 7}, "package": {"status": "skipped"}}, "expect": 7.6},
+    {"name": "everything failed", "t": {"scorecard": {"status": "error"}, "package": {"status": "error"}}, "expect": 0},
+    {"name": "no answer at all", "t": null, "expect": 0},
+    {"name": "out-of-range values are not trusted", "t": {"scorecard": {"status": "ok", "score": 42, "maintained": -1}, "package": {"status": "ok", "advisoryCount": 0}}, "expect": 2}
+  ],
+  "orders": [
+    {"name": "top 5 re-ordered, rest untouched",
+     "rows": [
+       {"repo": "a/fit1", "t": {"scorecard": {"status": "ok", "score": 3, "maintained": 0}, "package": {"status": "none"}}},
+       {"repo": "a/fit2", "t": {"scorecard": {"status": "ok", "score": 9, "maintained": 10}, "package": {"status": "ok", "advisoryCount": 0}}},
+       {"repo": "a/fit3", "t": {"scorecard": {"status": "none"}, "package": {"status": "error"}}},
+       {"repo": "a/fit4", "t": {"scorecard": {"status": "ok", "score": 7, "maintained": 4}, "package": {"status": "ok", "advisoryCount": 2}}},
+       {"repo": "a/fit5", "t": {"scorecard": {"status": "ok", "score": 9, "maintained": 10}, "package": {"status": "ok", "advisoryCount": 0}}},
+       {"repo": "a/fit6", "t": {"scorecard": {"status": "ok", "score": 10, "maintained": 10}, "package": {"status": "ok", "advisoryCount": 0}}}
+     ],
+     "expect": ["a/fit2", "a/fit5", "a/fit4", "a/fit1", "a/fit3", "a/fit6"]},
+    {"name": "all unknown: fit order kept",
+     "rows": [
+       {"repo": "b/one", "t": null},
+       {"repo": "b/two", "t": {"scorecard": {"status": "error"}, "package": {"status": "error"}}},
+       {"repo": "b/three", "t": null}
+     ],
+     "expect": ["b/one", "b/two", "b/three"]},
+    {"name": "fewer than 5 rows",
+     "rows": [
+       {"repo": "c/low", "t": {"scorecard": {"status": "ok", "score": 2.5, "maintained": 1}, "package": {"status": "none"}}},
+       {"repo": "c/high", "t": {"scorecard": {"status": "ok", "score": 2.5, "maintained": 2}, "package": {"status": "none"}}}
+     ],
+     "expect": ["c/high", "c/low"]}
+  ]
+}

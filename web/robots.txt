@@ -1,0 +1,5 @@
+# SPEC RS80: every page may be crawled; the sitemap lists the canonical URLs.
+User-agent: *
+Allow: /
+
+Sitemap: https://replore.cardzo.co.in/sitemap.xml

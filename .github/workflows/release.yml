@@ -1,0 +1,25 @@
+# SPEC RS81: a pushed tag vX.Y.Z becomes a GitHub release. The tag must match the version in
+# .claude-plugin/plugin.json and SERVER_INFO in scripts/mcp_server.py (RS50), and CHANGELOG.md must have a
+# "## [X.Y.Z]" section, which becomes the release notes. Nothing is built or uploaded; the plugin installs from the repo.
+name: release
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: read
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # only this job may create the release
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+      - name: Check versions and take the CHANGELOG section
+        env:
+          TAG: ${{ github.ref_name }}
+        run: python3 ops/release_notes.py "$TAG" > "$RUNNER_TEMP/notes.md"
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: gh release create "$TAG" --verify-tag --title "Replore $TAG" --notes-file "$RUNNER_TEMP/notes.md"

@@ -210,3 +210,37 @@ def test_imports_are_stdlib_only():  # RS11 (ast-based, not a string grep)
         mods = {a.name.split(".")[0] for n in ast.walk(tree) if isinstance(n, ast.Import) for a in n.names}
         mods |= {n.module.split(".")[0] for n in ast.walk(tree) if isinstance(n, ast.ImportFrom) and n.module}
         assert mods - set(sys.stdlib_module_names) <= {"scout", "hybrid", "trust"}, (name, mods - set(sys.stdlib_module_names))
+
+
+def test_no_match_suggests_broader_words_and_broadened_note_is_shown():
+    """RS78a: the MCP reply says when the search was broadened, and an empty reply suggests broader words."""
+    r = mcp_server.call_find_repos({"queries": ["chatbot"]}, fetcher([]))
+    text = r["content"][0]["text"]
+    assert r["isError"] is False and "No repository matched" in text and "Suggest broader words" in text
+    pages = iter([[], [repo("a/motion", 900)]])
+    calls = []
+
+    def f(q, token=None):
+        calls.append(q)
+        return {"items": next(pages)}
+    r = mcp_server.call_find_repos({"queries": ["motion graphics opus5.5"]}, f)
+    text = r["content"][0]["text"]
+    assert len(calls) == 2 and '**Note:** Nothing matched every word, so the search was broadened to "motion graphics".' in text
+    assert "a/motion" in text and "broader searches by itself" in mcp_server.TOOL["description"]
+
+
+def test_plugin_mcp_json_registers_the_server():
+    """RS32a: /plugin install registers find_repos and check_repos through mcpServers in plugin.json (not a root
+    .mcp.json, which Claude Code would also load as a project server for anyone opening the repo, with no plugin root)."""
+    cfg = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
+    assert not (ROOT / ".mcp.json").exists()
+    assert list(cfg["mcpServers"]) == ["replore"]
+    srv = cfg["mcpServers"]["replore"]
+    assert srv["command"] == "python3" and len(srv["args"]) == 1
+    prefix = "${CLAUDE_PLUGIN_ROOT}/"
+    assert srv["args"][0].startswith(prefix)
+    script = ROOT / srv["args"][0][len(prefix):]
+    assert script.is_file() and script.name == "mcp_server.py"
+    assert {t["name"] for t in mcp_server.TOOLS} == {"find_repos", "check_repos"}
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert '"command": "python"' in readme and "plugin.json" in readme

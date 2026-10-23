@@ -1,0 +1,16 @@
+{
+  "_doc": "SPEC RS78/RS78a: an empty search retries broader. Shared by tests/test_web_logic.js (relaxedQueries in web/app.js) and tests/test_scout.py (relaxed_queries in scripts/scout.py); both must return `expect` for every case.",
+  "cases": [
+    {"name": "version word dropped", "text": "motion graphics using opus5.5", "tried": ["motion graphics opus5.5"], "expect": ["motion graphics"]},
+    {"name": "two strongest words", "text": "offline maps trip planner", "tried": ["offline maps trip"], "expect": ["offline maps"]},
+    {"name": "one word: nothing broader", "text": "chatbot", "tried": ["chatbot"], "expect": []},
+    {"name": "model name split by the tokenizer", "text": "gpt-4o voice assistant for my phone", "tried": ["gpt 4o voice"], "expect": ["gpt voice assistant", "gpt voice"]},
+    {"name": "no digits: only the two-word retry", "text": "Build a SaaS starter with Stripe billing", "tried": ["saas starter stripe"], "expect": ["saas starter"]},
+    {"name": "same broader query only once", "text": "react 18 dashboard", "tried": ["react 18 dashboard"], "expect": ["react dashboard"]},
+    {"name": "already tried is skipped", "text": "react 18 dashboard", "tried": ["react dashboard"], "expect": []},
+    {"name": "empty text", "text": "", "tried": [], "expect": []},
+    {"name": "filler words only", "text": "make me something cool please", "tried": [], "expect": []},
+    {"name": "versions everywhere", "text": "v2 3d 4k", "tried": [], "expect": []},
+    {"name": "keeps C# and node.js style words", "text": "c# api v3 for node.js", "tried": [], "expect": ["c# api node.js", "c# api"]}
+  ]
+}

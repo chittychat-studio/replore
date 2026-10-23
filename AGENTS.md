@@ -4,7 +4,8 @@ Replore finds the open-source GitHub repos that best fit a project described in 
 ranked by **fit** (relevance + popularity/stars + license-freedom). This file tells any AI coding
 agent how to use it. Codex, Cursor, Copilot, Cline and Windsurf load it automatically; Claude Code users should
 install the plugin instead (`/replore:find`), which wraps the same script. Agents with MCP support can instead load
-`scripts/mcp_server.py` as an MCP server and call its `find_repos` tool (setup per agent: README).
+`scripts/mcp_server.py` as an MCP server and call its `find_repos` tool (search) and `check_repos` tool (is it safe
+to build on?, 1-5 repos, SPEC RS56) (setup per agent: README).
 Otherwise, run the script directly as shown below. No account, no API key, no model call — it uses the public GitHub search API.
 
 ## The one rule that matters (SPEC RS9, RS25)
