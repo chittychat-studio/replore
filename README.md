@@ -72,6 +72,9 @@ What you can do there:
   - **Code** ([GitHub1s](https://github1s.com)): read the files in a VS Code-style viewer.
   - Also: **Digest** ([Gitingest](https://gitingest.com)), all the code as one text file for an AI chat, and
     **Edit** ([github.dev](https://github.dev)), GitHub's web editor.
+- **Selling it?** Switch on **I'll sell it (closed source)** in the filter panel and every GPL- or AGPL-style repo
+  says plainly that building on it would make you open-source your app; the build-plan prompt names the picks that
+  conflict. Nothing is hidden or re-ordered (SPEC RS83). The plugin does the same with `--selling` (or "Selling it?: yes").
 - **Sort by trust, if you want.** Pick **Trust (top 5)** in the sort menu to re-order the top five by their safety
   check: Scorecard score + half the Maintained score + 2 when no known vulnerabilities (SPEC RS82). Best fit stays
   the default; the plugin's `--rank trust` and the MCP tool's `rank: "trust"` do the same.

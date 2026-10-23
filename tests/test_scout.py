@@ -1159,3 +1159,41 @@ def test_empty_json_carries_a_note(monkeypatch, capsys):
     assert scout.main(["chatbot", "--json"]) == 1
     data = json.loads(capsys.readouterr().out)
     assert data["note"] == "No repository matched after filtering." and data["candidates"] == []
+
+
+# ---- RS83: licence check against a closed-source product ----
+SELL = json.loads((ROOT / "tests" / "fixtures" / "selling_cases.json").read_text(encoding="utf-8"))
+
+
+def test_selling_conflicts_match_the_web_page():
+    """RS83: tests/test_web_logic.js runs the same file against sellConflict / sellSummary."""
+    for c in SELL["conflicts"]:
+        assert scout.selling_conflict(c["spdx"]) == c["expect"], c["spdx"]
+    for c in SELL["summaries"]:
+        assert scout.selling_summary(c["picks"]) == c["expect"], c["name"]
+    assert "\u2014" not in json.dumps(SELL, ensure_ascii=False)
+
+
+def test_selling_flags_copyleft_without_removing_or_reordering():
+    items = [repo("a/mit", 900), repo("b/gpl", 800, spdx="GPL-3.0"), repo("c/agpl", 700, spdx="AGPL-3.0"), repo("d/lgpl", 600, spdx="LGPL-3.0")]
+    plain, _ = run([items])
+    sold, _ = run([items])
+    scout.mark_selling(sold)
+    assert [r["full_name"] for r in sold["all"]] == [r["full_name"] for r in plain["all"]]   # RS6: same list, same order
+    flags = {r["full_name"]: r["conflict"] for r in sold["all"]}
+    assert flags == {"a/mit": "", "b/gpl": scout.CONFLICT_SHARE, "c/agpl": scout.CONFLICT_NETWORK, "d/lgpl": ""}
+    assert scout.CONFLICT_SHARE in scout.render(sold) and scout.CONFLICT_SHARE not in scout.render(plain)
+    md = scout.render_markdown(sold)
+    assert "### Selling it closed source? Licence check" in md and "**b/gpl** (GPL-3.0)" in md and "a/mit**" not in md
+    assert "Licence check" in scout.render_markdown_grouped(sold) and "Licence check" not in scout.render_markdown(plain)
+
+
+def test_selling_cli_and_mcp(monkeypatch, capsys):
+    _patch_fetch(monkeypatch, lambda q, token=None: {"items": [repo("b/gpl", 800, spdx="GPL-3.0"), repo("a/mit", 900)]})
+    assert scout.main(["x", "--selling", "--json"]) == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["selling"] is True and {r["full_name"]: bool(r["conflict"]) for r in data["top"]} == {"a/mit": False, "b/gpl": True}
+    import mcp_server
+    r = mcp_server.call_find_repos({"queries": ["x"], "selling": True}, lambda q, token=None: {"items": [repo("b/gpl", 800, spdx="GPL-3.0")]})
+    assert not r["isError"] and scout.CONFLICT_SHARE in r["content"][0]["text"]
+    assert mcp_server.call_find_repos({"queries": ["x"], "selling": "yes"}, lambda q, token=None: {"items": []})["isError"]

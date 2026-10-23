@@ -190,6 +190,34 @@ def license_use(spdx):
     return USE_NONE
 
 
+CONFLICT_SHARE = ("Conflicts with a closed-source product: you would have to open-source your app "
+                  "if you give it to others.")
+CONFLICT_NETWORK = ("Conflicts with a closed-source product: you would have to open-source your app, "
+                    "even if you only run it as a website or online service.")
+
+
+def selling_conflict(spdx):
+    """RS83: the plain line for a copyleft repo when the user sells a closed-source product ("" when it is fine).
+    Same words as the page's sellConflict() (shared cases: tests/fixtures/selling_cases.json)."""
+    if spdx in STRONG_COPYLEFT:
+        return CONFLICT_SHARE
+    if spdx in NETWORK_COPYLEFT:
+        return CONFLICT_NETWORK
+    return ""
+
+
+def selling_summary(picks):
+    """RS83: one line for the plan prompt naming the picked repos that conflict; "" when none do.
+    picks: [{"name": owner/repo, "spdx": id}]."""
+    bad = [p for p in picks if selling_conflict(p.get("spdx"))]
+    if not bad:
+        return ""
+    return ("Licence check: I will sell this as a closed-source product, and these picks are copyleft, so building on "
+            "them would make me open-source my app: " + ", ".join(f"{p['name']} ({p['spdx']})" for p in bad)
+            + ". Mark them in the triage and suggest a permissive alternative for each, or tell me if keeping the app "
+            "open source is the better call.")
+
+
 def free_text(spdx):
     """RS20."""
     use = license_use(spdx)
@@ -525,6 +553,8 @@ def render(result):
         out.append(f"    {r['url']}  [query: {r['query']}]")
         out.append(f"    How to start: {r['start_hint']}")
         out.append(f"    {_desc(r)}")
+        if r.get("conflict"):   # RS83
+            out.append("    " + r["conflict"])
         if r.get("trust"):   # RS56
             out.append("    Safe to build on?")
             out += [f"      {x}" for x in r["trust"]["lines"]]
@@ -556,6 +586,7 @@ def render_markdown_grouped(result):
             out.append(f"| {link} | {_md(r['why'])} | {r['stars']:,} | {_md(_desc(r))} | {_md(r['license'])} | "
                        f"{r['license_use']} | {r['free']} | {'yes' if r['starter'] else 'no'} | {r['pushed']} |")
         out.append("")
+    out += _selling_markdown(result)
     out += _trust_markdown(result)
     out += [f"{total} open-source repos across {len(result['groups'])} needs, each group ranked by fit "
             "(relevance, stars, license). Grouped by the first search that found each; not a scan of every "
@@ -618,6 +649,27 @@ def _trust_markdown(result):
         out += [f"- {_md(x)}" for x in r["trust"]["lines"]]
         out.append("")
     return out + [_md(_trust_note(result)), ""]
+
+
+def mark_selling(result):
+    """RS83: the user will sell a closed-source product. Each strong or network copyleft repo gets a plain `conflict`
+    line; nothing is removed and the order is untouched (RS6). Rows in groups are the same dicts, so they get it too."""
+    result["selling"] = True
+    for r in result["all"]:
+        r["conflict"] = selling_conflict(r["license"] if r.get("open_license") else None)
+    return result
+
+
+def _selling_markdown(result):
+    """RS83: the licence check against a closed-source product, under the table."""
+    if not result.get("selling"):
+        return []
+    rows = [r for r in result["candidates"] if r.get("conflict")]
+    out = ["### Selling it closed source? Licence check", ""]
+    if not rows:
+        return out + ["No repo in this list conflicts with a closed-source product.", ""]
+    out += [f"- **{_md(r['full_name'])}** ({_md(r['license'])}): {r['conflict']}" for r in rows]
+    return out + ["", "These stay in the list in their usual place; weak copyleft (LGPL, MPL, EPL) is fine to sell with.", ""]
 
 
 def _trust_note(result):
@@ -684,6 +736,7 @@ def render_markdown(result):
                        f"{_md(r['license'])} | {r['license_use']} | {r['free']} | {'yes' if r['starter'] else 'no'} | "
                        f"{r['pushed']} | {_md(r['start_hint'])} | {_md(r['query'])} |")
         out.append("")
+    out += _selling_markdown(result)
     out += _trust_markdown(result)
     out += ["Ranked by fit (relevance, stars, license) among GitHub search matches, not a scan of every "
             "repository. The plugin skill adds a semantic relevance check on top.", "", KEY, "", FREE_NOTE]
@@ -707,6 +760,8 @@ def main(argv=None):
     p.add_argument("--semantic", action="store_true",
                    help="RS42 opt-in: meaning scores + indexed repos from Replore's server (sends the description)")
     p.add_argument("--prefer-starters", action="store_true")
+    p.add_argument("--selling", action="store_true",
+                   help="RS83: the user sells a closed-source product; flag copyleft repos that would force it open")
     p.add_argument("--trust", action="store_true",
                    help="RS56: also check the top 5 are safe to build on (OpenSSF Scorecard, deps.dev, GitHub)")
     fmt = p.add_mutually_exclusive_group()
@@ -728,6 +783,8 @@ def main(argv=None):
     except ScoutError as e:
         print(f"replore: {e}", file=sys.stderr)
         return 2
+    if a.selling:
+        mark_selling(res)   # RS83: flags only; never removes or re-orders a repo (RS6)
     if a.rank_mode == "trust" and res["candidates"]:
         apply_trust_rank(res, token)   # RS82: opt-in; runs the RS56 check on the top 5 and re-orders only them
     elif a.trust and res["candidates"]:

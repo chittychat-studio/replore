@@ -34,6 +34,17 @@ function freeText(spdx){ var u=lu(spdx);
  if(u.indexOf("OK in a paid")===0)return"Yes, but changes to its files must stay open";
  if(u.indexOf("You must share")===0)return"Free to use, but you must share your code";
  return"No: no license"; }
+// RS83: selling a closed-source product? Same words as scripts/scout.py selling_conflict / selling_summary
+// (shared cases: tests/fixtures/selling_cases.json). Flags only: nothing is hidden or re-ordered (RS6).
+function sellConflict(spdx){
+  if(STRONG.has(spdx)) return "Conflicts with a closed-source product: you would have to open-source your app if you give it to others.";
+  if(NETWORK.has(spdx)) return "Conflicts with a closed-source product: you would have to open-source your app, even if you only run it as a website or online service.";
+  return ""; }
+function sellSummary(picks){ var bad=(picks||[]).filter(function(p){ return sellConflict(p.spdx); });
+  if(!bad.length) return "";
+  return "Licence check: I will sell this as a closed-source product, and these picks are copyleft, so building on them would make me "+
+    "open-source my app: "+bad.map(function(p){ return p.name+" ("+p.spdx+")"; }).join(", ")+". Mark them in the triage and suggest a "+
+    "permissive alternative for each, or tell me if keeping the app open source is the better call."; }
 function esc(s){var d=document.createElement("div");d.textContent=s==null?"":s;
   return d.innerHTML.replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
 function clean(s){ s=(s||"").replace(/[\u0000-\u001f\u007f-\u009f​-‏‪-‮⁦-⁩]/g," ").trim();
@@ -333,7 +344,7 @@ function cardHtml(r,i,qtokens){
         '<span class="owner">'+esc(owner)+'</span></div>'+   // RS71: the owner and the Updated pill share one row
         '<span class="rc-date" title="Last code change '+esc(r.pushed)+'">Updated '+esc(agoText(r.pushed)||r.pushed)+'</span>'+
         '<label class="pick rc-bm" title="Add to plan"><input type="checkbox" class="pick-cb" data-name="'+esc(r.name)+'" data-url="'+esc(r.url)+
-        '" data-desc="'+esc(r.desc||"")+'"><span class="pk-add">'+ico("bookmark")+'<span class="sr-only">Add '+esc(r.name)+' to plan</span></span>'+
+        '" data-desc="'+esc(r.desc||"")+'" data-spdx="'+esc(r.spdx||"")+'"><span class="pk-add">'+ico("bookmark")+'<span class="sr-only">Add '+esc(r.name)+' to plan</span></span>'+
         '<span class="pk-in">'+ico("bookmarked")+'<span class="sr-only">In plan</span></span></label></div>'+
       '<div class="rc-nmrow"><h3 class="name"><a href="'+esc(r.url)+'" target="_blank" rel="noopener" title="'+esc(r.name)+'">'+esc(repo)+'</a></h3>'+
         (i!=null?'<span class="rank">#'+(i+1)+'</span>':'')+'</div>'+
@@ -341,6 +352,7 @@ function cardHtml(r,i,qtokens){
       '<div class="rc-tags"><span class="tag '+v.c+'" title="License: '+esc(r.spdx)+' · '+esc(paid)+' · Completely free? '+esc(free)+'">'+esc(v.t)+'</span>'+
         (r.starter?'<span class="tag t-star" title="A ready-made template to start your project from">Starter</span>':'')+
         (lang?'<span class="tag t-lang">'+esc(lang)+'</span>':'')+'</div>'+
+      (sellConflict(r.spdx)?'<p class="rc-conflict">'+esc(sellConflict(r.spdx))+'</p>':'')+   // RS83: shown only with "I'll sell it"
     '</div>'+
     '<div class="rc-bot"><span class="rc-stats"><span class="stars">'+ico("star")+'<span class="cnt" data-v="'+(+r.stars||0)+'">'+kstars(r.stars)+'</span> stars</span>'+
       '<span class="rc-lic">'+esc(lic)+'</span></span>'+
@@ -448,8 +460,8 @@ function rfReset(){ window.__rf={com:false, starter:false, langs:Object.create(n
 function resFlags(){ if(!window.__rf) rfReset(); return window.__rf; }
 var RF_STARS=[[0,"Any"],[1000,"1k+"],[10000,"10k+"]], RF_UPD=[[0,"Any"],[365,"Year"],[31,"Month"]];
 function filterBar(top){ top=top||[];
-  var nCom=0, nSt=0, langs=Object.create(null);
-  top.forEach(function(r){ if(licenseVerdict(r.spdx).c==="t-good") nCom++; if(r.starter) nSt++;
+  var nCom=0, nSt=0, nSell=0, langs=Object.create(null);
+  top.forEach(function(r){ if(licenseVerdict(r.spdx).c==="t-good") nCom++; if(r.starter) nSt++; if(sellConflict(r.spdx)) nSell++;
     var l=cleanLang(r.lang); if(l) langs[l]=(langs[l]||0)+1; });
   var L=Object.keys(langs).sort(function(a,b){ return langs[b]-langs[a] || (a<b?-1:1); }).slice(0,6);
   var opt=function(f,v,label,n){ return '<label class="rr-opt"><input type="checkbox" class="rf-cb" data-f="'+f+'"'+(v?' data-v="'+esc(v)+'"':'')+'>'+
@@ -465,6 +477,8 @@ function filterBar(top){ top=top||[];
       (L.length?'<div class="rr-g"><b>Language</b>'+L.map(function(l){ return opt("lang",l,l,langs[l]); }).join("")+'</div>':'')+
       '<div class="rr-g"><b>Stars</b>'+seg("stars",RF_STARS,"Minimum stars")+'</div>'+
       '<div class="rr-g"><b>Updated</b>'+seg("upd",RF_UPD,"Last updated")+'</div>'+
+      '<div class="rr-g"><b>Your project</b><label class="rr-opt"><input type="checkbox" class="rf-sell"'+(window.__selling?' checked':'')+'>'+   // RS83
+        '<span>I&#39;ll sell it (closed source)</span><small>'+nSell+'</small></label></div>'+
     '</div></aside>'; }
 function sortBox(){ return '<label class="res-sort"><span class="sr-only">Sort by</span><select id="resSort">'+
   '<option value="fit">Best fit</option><option value="stars">Most stars</option><option value="new">Recently updated</option>'+
@@ -595,6 +609,7 @@ function watchMore(){ var s=document.querySelector("#out #resMore"); if(!s) retu
     for(var i=0;i<es.length;i++) if(es[i].isIntersecting){ revealMore(); break; } },{rootMargin:"0px 0px 400px 0px"});
   window.__moreObs.observe(s); }
 function initResultFilter(){ rfReset(); window.__resLimit=10; var so=document.getElementById("resSort"); if(so) so.value="fit";
+  var ro=document.getElementById("out"); if(ro&&ro.classList) ro.classList.toggle("selling",!!window.__selling);   // RS83: the switch outlives a search
   applyResultFilter(); watchMore(); checkMore(); }
 // RS34: ask the same-origin function which repos don't fit; "off" when not set up, {fail} on any failure (fail open, silent)
 // RS42: RAG wording appears only when the server says a RAG part is switched on (never claimed while it is off)
@@ -1145,9 +1160,10 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
       if(f==="lang") fl.langs[cb.getAttribute("data-v")]=cb.checked; else fl[f]=cb.checked;
       window.__resLimit=10; applyResultFilter(); checkMore(); return; }
     if(cb&&cb.id==="resSort"){ sortCards(cb.value); return; }
+    if(cb&&cb.classList&&cb.classList.contains("rf-sell")){ window.__selling=cb.checked; out.classList.toggle("selling",cb.checked); return; }   // RS83: flags only
     if(!cb||!cb.classList||!cb.classList.contains("pick-cb")) return;
     var url=cb.getAttribute("data-url"), i=idx(url);
-    if(cb.checked){ if(i<0) picks.push({name:cb.getAttribute("data-name"),url:url,desc:cb.getAttribute("data-desc")}); }
+    if(cb.checked){ if(i<0) picks.push({name:cb.getAttribute("data-name"),url:url,desc:cb.getAttribute("data-desc"),spdx:cb.getAttribute("data-spdx")||""}); }
     else if(i>=0) picks.splice(i,1);
     refresh(); });
   // result-filter chips + show-more + clear (delegated, survives re-render)
@@ -1171,6 +1187,7 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
     var list=picks.map(function(r,i){ return (i+1)+". "+r.name+": "+r.url+(r.desc?"\n   "+r.desc:""); }).join("\n");
     return "You are the principal architect for my vibe coding app, with 15+ years of experience building similar apps.\n\n"+   // RS28e
       "I'm building: "+q+"\n\n"+
+      (window.__selling&&sellSummary(picks)?sellSummary(picks)+"\n\n":"")+   // RS83: picks that conflict with a closed-source product
       "Write a product requirements document (PRD) for it, built on these open-source GitHub repos:\n\n"+list+"\n\n"+
       "Not every repo above will fit (they came from a keyword search). First triage each one as USE, REFERENCE ONLY "+
       "or REJECT, with a one-line reason, and build only on the ones you USE.\n\n"+

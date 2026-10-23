@@ -1,0 +1,24 @@
+{
+  "_about": "SPEC RS83: licence check against a closed-source product. Shared by tests/test_scout.py (scripts/scout.py selling_conflict / selling_summary) and tests/test_web_logic.js (web/app.js sellConflict / sellSummary). Only strong and network copyleft conflict; nothing is removed or re-ordered.",
+  "conflicts": [
+    {"spdx": "GPL-3.0", "expect": "Conflicts with a closed-source product: you would have to open-source your app if you give it to others."},
+    {"spdx": "GPL-2.0", "expect": "Conflicts with a closed-source product: you would have to open-source your app if you give it to others."},
+    {"spdx": "EUPL-1.2", "expect": "Conflicts with a closed-source product: you would have to open-source your app if you give it to others."},
+    {"spdx": "AGPL-3.0", "expect": "Conflicts with a closed-source product: you would have to open-source your app, even if you only run it as a website or online service."},
+    {"spdx": "OSL-3.0", "expect": "Conflicts with a closed-source product: you would have to open-source your app, even if you only run it as a website or online service."},
+    {"spdx": "MIT", "expect": ""},
+    {"spdx": "Apache-2.0", "expect": ""},
+    {"spdx": "LGPL-3.0", "expect": ""},
+    {"spdx": "MPL-2.0", "expect": ""},
+    {"spdx": "NOASSERTION", "expect": ""},
+    {"spdx": "", "expect": ""},
+    {"spdx": null, "expect": ""}
+  ],
+  "summaries": [
+    {"name": "two conflicts among four picks",
+     "picks": [{"name": "a/mit", "spdx": "MIT"}, {"name": "b/gpl", "spdx": "GPL-3.0"}, {"name": "c/lgpl", "spdx": "LGPL-2.1"}, {"name": "d/agpl", "spdx": "AGPL-3.0"}],
+     "expect": "Licence check: I will sell this as a closed-source product, and these picks are copyleft, so building on them would make me open-source my app: b/gpl (GPL-3.0), d/agpl (AGPL-3.0). Mark them in the triage and suggest a permissive alternative for each, or tell me if keeping the app open source is the better call."},
+    {"name": "no conflict, no line", "picks": [{"name": "a/mit", "spdx": "MIT"}, {"name": "c/mpl", "spdx": "MPL-2.0"}], "expect": ""},
+    {"name": "no picks", "picks": [], "expect": ""}
+  ]
+}

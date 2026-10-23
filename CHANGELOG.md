@@ -18,6 +18,9 @@ How to cut a release: README, Development (SPEC RS81).
 - Opt-in trust sort: "Trust (top 5)" on the web, `--rank trust` in the script, `rank: "trust"` in the MCP tool
   re-order only the top 5 by Scorecard, Maintained and known vulnerabilities; the default ranking is unchanged and
   RX3 is amended to allow this one opt-in (RS82).
+- Licence check for a closed-source product: "I'll sell it (closed source)" on the web, `--selling` in the script,
+  `selling: true` in the MCP tool flag GPL/AGPL-style repos and name the conflicting picks in the plan prompt; nothing
+  is removed or re-ordered (RS83).
 
 ### Fixed
 - README, SPEC, PRIVACY, the skill and AGENTS.md described the old five-button card, an old default AI model,

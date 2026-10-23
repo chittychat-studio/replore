@@ -46,7 +46,9 @@ Then open a new terminal and try again. Do not search GitHub any other way.
    - **What I'm building** (required): the domain and main features.
    - **Platform**: web, iPhone/iOS, Android, desktop, command line. Use it for RS16 platform exclusions.
    - **Stack**: language or framework (React, Python, Swift…). Add `language:<name>` to one or two queries.
-   - **Selling it?**: if yes, point out repos whose "OK in a paid product?" is not "OK to use in a paid product".
+   - **Selling it?**: if yes (they will sell a closed-source product), pass `--selling` (RS83): each GPL/AGPL-style
+     repo then carries a `conflict` line ("Conflicts with a closed-source product: ..."). Show it in the table's
+     notes; never drop or re-order those repos because of it (RS6).
    - **Starting from scratch?**: if yes, pass `--prefer-starters`.
    Only "What I'm building" can trigger a question (RS1a, RS1b). Never ask for the other four; assume and say so.
 
@@ -156,6 +158,10 @@ Then open a new terminal and try again. Do not search GitHub any other way.
   or a simple design mockup of the main screens (an artifact, HTML page or image, whichever you can make). Wait for
   their OK or changes, and write the PRD only after they approve it, matching what they approved. Build only on the
   repos in the table and list anything none of them covers under GAPS (RS28c).
+  If they are selling a closed-source product (RS83) and any picked repo has a `conflict`, open the plan with one line:
+  "Licence check: I will sell this as a closed-source product, and these picks are copyleft, so building on them would
+  make me open-source my app: owner/repo (GPL-3.0), .... Mark them in the triage and suggest a permissive alternative
+  for each, or tell me if keeping the app open source is the better call."
   Make step 0 of the plan "set up Governor" (https://github.com/chittychat-studio/Governance-manager, free, MIT, a
   safety kit for AI coding agents): `/plugin marketplace add chittychat-studio/Governance-manager`, then
   `/plugin install governor@chittychat-governor`, then `/governor:init`, before any code is written (RS28i).

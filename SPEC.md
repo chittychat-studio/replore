@@ -1118,6 +1118,23 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   back, and a saved copy is always in fit order. Nothing is fetched until Trust is chosen. The formula and order are
   shared: `tests/fixtures/trust_rank_cases.json` runs in `tests/test_trust.py` and `tests/test_web_logic.js`; network is
   mocked in both. Same cost limits as RS56 (5 repos, about 4 GitHub calls each).
+- **RS83** Licence check against the user's own project (owner request 2026-10-23; builds on RS14, RS20, RS29a). When
+  the user says they will sell a closed-source product, every strong copyleft repo (GPL-2.0, GPL-3.0, EUPL) carries
+  "Conflicts with a closed-source product: you would have to open-source your app if you give it to others." and every
+  network copyleft repo (AGPL-3.0, OSL-3.0) "Conflicts with a closed-source product: you would have to open-source your
+  app, even if you only run it as a website or online service." Permissive and weak copyleft (LGPL, MPL, EPL) never
+  conflict; an unlicensed repo already says it may not be reused. The repos are **not** removed and the ranking is not
+  changed (RS5, RS6). Plugin: `scout.py --selling` (`mark_selling`: a `conflict` field per row and `selling: true` in
+  JSON, the line under each conflicting repo in the text output, a "Selling it closed source? Licence check" list
+  under the Markdown tables); MCP `find_repos` takes `selling: true`; the skill passes `--selling` when the prompt
+  template's "Selling it?" is yes. Web: an "I'll sell it (closed source)" switch in the filter panel ("Your project",
+  with the number of conflicting results) shows the line on each conflicting card; it is not a filter, survives a new
+  search in the same visit, and is never stored. The plan prompt (web, and the skill's plan step) gets one summary line
+  naming the picked repos that conflict: "Licence check: I will sell this as a closed-source product, and these picks
+  are copyleft, so building on them would make me open-source my app: a/b (GPL-3.0), .... Mark them in the triage and
+  suggest a permissive alternative for each, or tell me if keeping the app open source is the better call." Wording is
+  shared: `tests/fixtures/selling_cases.json`, run by `tests/test_scout.py` and `tests/test_web_logic.js`. A plain
+  summary, not legal advice (RS14).
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
 - **RX3** Ranking by forks, trending or download counts. (Relevance, stars and license-freedom are the only

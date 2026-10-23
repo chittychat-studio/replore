@@ -18,7 +18,7 @@ global.window = global;
 const s = {};
 new Function("document", "localStorage",
   code + "; this.keywordQueries=keywordQueries; this.exploreLinks=exploreLinks; this.rankByFit=rankByFit; this.fitScore=fitScore; this.whyRelevant=whyRelevant; this.esc=esc; this.lu=lu; this.freeText=freeText;" +
-  " this.keep=keep; this.ragRan=ragRan; this.hasDesc=hasDesc; this.descHtml=descHtml; this.plainDesc=plainDesc; this.tipUrlOk=tipUrlOk; this.clean=clean; this.harmful=harmful; this.harmfulRepo=harmfulRepo; this.prdFeatures=prdFeatures; this.trendingQuery=trendingQuery; this.trendRows=trendRows; this.feedbackUrl=feedbackUrl; this.feedbackPayload=feedbackPayload; this.agoText=agoText; this.cardHtml=cardHtml; this.recentKey=recentKey; this.recentFind=recentFind; this.recentAdd=recentAdd; this.CACHE_V=CACHE_V; this.bm25Scores=bm25Scores; this.repoText=repoText; this.rrfOrder=rrfOrder; this.hybridOrder=hybridOrder; this.confirmQueries=confirmQueries; this.ghQuery=ghQuery; this.sigTokens=sigTokens; this.resultSummary=resultSummary; this.trustRow=trustRow; this.trustHtml=trustHtml; this.ghShape=ghShape; this.lastPage=lastPage; this.installCmd=installCmd; this.snapHtml=snapHtml; this.cleanLang=cleanLang; this.relaxedQueries=relaxedQueries; this.trustScore=trustScore; this.trustOrder=trustOrder; this.trustSort=trustSort; this.sortBox=sortBox; this.TRUST_RANK_NOTE=TRUST_RANK_NOTE; this.__trust=__trust;").call(s, document, global.localStorage || {getItem:()=>null,setItem(){},removeItem(){}});
+  " this.keep=keep; this.ragRan=ragRan; this.hasDesc=hasDesc; this.descHtml=descHtml; this.plainDesc=plainDesc; this.tipUrlOk=tipUrlOk; this.clean=clean; this.harmful=harmful; this.harmfulRepo=harmfulRepo; this.prdFeatures=prdFeatures; this.trendingQuery=trendingQuery; this.trendRows=trendRows; this.feedbackUrl=feedbackUrl; this.feedbackPayload=feedbackPayload; this.agoText=agoText; this.cardHtml=cardHtml; this.recentKey=recentKey; this.recentFind=recentFind; this.recentAdd=recentAdd; this.CACHE_V=CACHE_V; this.bm25Scores=bm25Scores; this.repoText=repoText; this.rrfOrder=rrfOrder; this.hybridOrder=hybridOrder; this.confirmQueries=confirmQueries; this.ghQuery=ghQuery; this.sigTokens=sigTokens; this.resultSummary=resultSummary; this.trustRow=trustRow; this.trustHtml=trustHtml; this.ghShape=ghShape; this.lastPage=lastPage; this.installCmd=installCmd; this.snapHtml=snapHtml; this.cleanLang=cleanLang; this.relaxedQueries=relaxedQueries; this.sellConflict=sellConflict; this.sellSummary=sellSummary; this.filterBar=filterBar; this.trustScore=trustScore; this.trustOrder=trustOrder; this.trustSort=trustSort; this.sortBox=sortBox; this.TRUST_RANK_NOTE=TRUST_RANK_NOTE; this.__trust=__trust;").call(s, document, global.localStorage || {getItem:()=>null,setItem(){},removeItem(){}});
 
 // RS16: iOS excludes macOS
 // RS16: expansions are specific on-topic phrases, never a bare category (live regression: "website" -> "frontend framework"
@@ -380,6 +380,7 @@ console.log("prd ok:", f.join(" | "));
 
 // RS82: choosing Trust fetches /api/trust for the top 5 visible cards only and re-orders just those (network mocked)
 (async () => {
+  await Promise.resolve();   // run after the synchronous checks below, so the DOM stand-ins here never leak into them
   const mkCard = (name, i, extra = {}) => { const a = Object.assign({ "data-i": String(i), "data-lang": "" }, extra), kids = [];
     return { name, attrs: a, style: { display: "" }, getAttribute: k => (k in a ? a[k] : null), setAttribute(k, v) { a[k] = v; },
       querySelector: sel => sel === ".pick-cb" ? { getAttribute: () => name } : sel === ".rc-in" ? { appendChild: x => kids.push(x) } : null, kids }; };
@@ -410,3 +411,17 @@ console.log("prd ok:", f.join(" | "));
     console.log("trust sort ok");
   } finally { document.getElementById = realGet; document.createComment = realCC; document.createElement = realCE; global.fetch = realFetch; }
 })().catch(e => { console.error(e); process.exit(1); });
+
+// RS83: selling a closed-source product: the same lines as scripts/scout.py (tests/test_scout.py runs the same file)
+{ const SL = JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures", "selling_cases.json"), "utf8"));
+  SL.conflicts.forEach(c => assert.strictEqual(s.sellConflict(c.spdx), c.expect, String(c.spdx)));
+  SL.summaries.forEach(c => assert.strictEqual(s.sellSummary(c.picks), c.expect, c.name));
+  const gpl = s.cardHtml({name:"a/b", stars:900, spdx:"GPL-3.0", pushed:"2026-10-01", url:"https://github.com/a/b", desc:"x", topics:[], rel:0}, 0, []);
+  const mit = s.cardHtml({name:"a/c", stars:900, spdx:"MIT", pushed:"2026-10-01", url:"https://github.com/a/c", desc:"x", topics:[], rel:0}, 1, []);
+  assert.ok(gpl.includes('class="rc-conflict"') && !mit.includes("rc-conflict") && gpl.includes("data-spdx="));
+  const bar = s.filterBar([{spdx:"GPL-3.0"}, {spdx:"AGPL-3.0"}, {spdx:"MIT"}]);
+  assert.ok(bar.includes('class="rf-sell"') && bar.includes("I&#39;ll sell it (closed source)</span><small>2</small>"));
+  // flags only: the fit order is the same whether or not the visitor sells (RS6); the plan prompt adds the summary line
+  assert.ok(/window\.__selling&&sellSummary\(picks\)\?sellSummary\(picks\)/.test(code));
+  assert.ok(!/__selling[^\n]*(rankByFit|sort\()/.test(code), "selling must never re-rank");
+  console.log("selling ok"); }

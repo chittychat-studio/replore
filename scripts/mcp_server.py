@@ -55,6 +55,9 @@ TOOL = {
             "group": {"type": "boolean", "description": "Group results by query/need (use with all for a PRD)."},
             "trust": {"type": "boolean", "description": "Also check whether the top 5 are safe to build on: security "
                       "health, known vulnerabilities, install command, beginner-friendliness (RS56). Display only."},
+            "selling": {"type": "boolean", "description": "The user will sell a closed-source product: flag each "
+                        "GPL/AGPL-style repo that would force them to open-source their app (RS83). Never removes or "
+                        "re-orders a repo."},
             "rank": {"type": "string", "enum": ["fit", "trust"],
                      "description": "fit (default). trust = opt-in: fit order, then the top 5 re-ordered by a trust "
                                     "score (Scorecard + half Maintained + 2 if no known vulnerabilities; RS82). Use only "
@@ -132,7 +135,7 @@ def call_find_repos(args, fetcher=None, trust_get=None):
             return _bad(f"'{key}' must be a whole number from 0 to {top}.")
         nums[key] = v
     flags = {}
-    for key in ("prefer_starters", "all", "group", "trust"):
+    for key in ("prefer_starters", "all", "group", "trust", "selling"):
         v = args.get(key, False)
         if type(v) is not bool:
             return _bad(f"'{key}' must be true or false.")
@@ -150,6 +153,8 @@ def call_find_repos(args, fetcher=None, trust_get=None):
         return _bad("internal error while searching; nothing was returned. Try again or simplify the search.")
     if not res["candidates"]:   # honest "no match" with excluded counts, not an error; RS78a: suggest broader words
         return _text(scout.render_markdown(res) + "\n\n" + BROADER_HINT, False)
+    if flags["selling"]:
+        scout.mark_selling(res)   # RS83: flags only
     if rank_mode == "trust":
         scout.apply_trust_rank(res, token, trust_get)   # RS82: opt-in; re-orders only the top 5, says so in the output
     elif flags["trust"]:
