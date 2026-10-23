@@ -156,6 +156,12 @@ limit of 10 requests per 10 seconds runs in memory; for a hard limit, add a WAF 
 
 Needs Python 3.11+ (the plugin tells you how to install it if it's missing). Once installed, it is available in every project.
 
+The install also registers Replore's MCP server (`.mcp.json`, SPEC RS32a), so Claude Code gets two tools,
+`find_repos` and `check_repos`, besides `/replore:find`. **Windows:** the server starts with `python3`. If `python3`
+isn't on your PATH (or opens the Microsoft Store), edit the installed plugin's `.mcp.json` (under
+`~/.claude/plugins/`) and change `"command": "python3"` to `"command": "python"`, then restart Claude Code. `/mcp`
+shows whether `replore` is connected. The `/replore:find` skill doesn't need this: it finds a working Python itself.
+
 After the comparison table, ask *"which of these are safe to build on?"* and the plugin runs the same check as the web
 page's **Is it safe to build on?**: security health, known vulnerabilities, an install command, beginner-friendliness and
 the latest release (SPEC RS56). The web page and the plugin share one set of test cases, so they give the same answer.
