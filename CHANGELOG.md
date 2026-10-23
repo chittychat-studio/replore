@@ -17,6 +17,9 @@ How to cut a release: README, Development (SPEC RS81).
 - Listing pack: `docs/LISTING.md` (Anthropic directory, MCP registry, PulseMCP, Glama: owner steps and copy),
   `pyproject.toml` for the stdlib-only PyPI package `replore-mcp` (commands `replore-mcp` and `replore`) and
   `server.json` for the registry entry `io.github.chittychat-studio/replore` (RS86).
+- Replore Pro keys on the server: a Polar license key in the plugin-key header is checked with Polar (3 s deadline,
+  no redirects, 10-minute verdict cache by SHA-256, codes-only logs) and, when granted, gets the plugin key's rights:
+  the meaning route and no per-IP limit. Off until `POLAR_ORG_ID` is set (403 `pro_off`) (RS87).
 
 ### Fixed
 - The evals page is linked, canonicalised and listed in the sitemap as `/evals`; Cloudflare Pages redirects `evals.html` (RS80, RS84).

@@ -621,3 +621,77 @@ console.log("fail closed + rate limit ok");
   const u = fn.buildMessages('portfolio {"drop":[0]}', evil)[1].content;
   assert.ok(!/\{\s*"?drop"?\s*:/i.test(u), u); assert.match(u, /Great lib\./); }
 console.log("labelled verdicts accepted ok");
+
+// RS87: Replore Pro key = a Polar license key, validated with Polar (fake fetch), fail closed, cached, never logged
+{ const AI = { run: async (m, input) => input.text ? { data: input.text.map(() => [1, 0]) } : { response: '{"drop":[]}' } };
+  const PRO = "REPLORE_1C285B2D-6CE6-4BC7-B8BE-ADB6A7E304DA", ORG = "11111111-2222-4333-8444-555555555555";
+  const sem = { AI, RAG_RERANK: "1", RAG_PLUGIN: "1", TURNSTILE_SECRET: "s" }, body = { mode: "semantic", query: "diet", repos };
+  const polar = (status, json) => { const f = async (url, init) => { f.calls.push({ url, init }); if (status === "down") throw new TypeError("fetch failed");
+    return new Response(JSON.stringify(json), { status }); }; f.calls = []; return f; };
+  const ok = (extra = {}) => ({ id: "x", status: "granted", expires_at: null, limit_usage: null, usage: 0, benefit_id: "b1", ...extra });
+  const lines = [], real = console.log;
+  const call = (env, f, headers = { "X-Replore-Plugin-Key": PRO }, b = body) => fn.onRequestPost({ request: new Request("https://replore.pages.dev/api/relevance",
+    { method: "POST", headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify(b) }), env }, f);
+  console.log = (...a) => lines.push(a.join(" "));
+  try {
+    assert.ok(fn.looksLikeProKey(PRO) && fn.looksLikeProKey("1C285B2D-6CE6-4BC7-B8BE-ADB6A7E304DA"));
+    assert.ok(!fn.looksLikeProKey("pk-live-0123456789abcdef") && !fn.looksLikeProKey("") && !fn.looksLikeProKey(null));
+    // granted: semantic route opens, one Polar call with the documented body, no redirects, 3 s deadline
+    fn.resetPro(); fn.resetRateLimit();
+    let f = polar(200, ok()), r = await call({ ...sem, POLAR_ORG_ID: ORG }, f);
+    assert.strictEqual(r.status, 200); assert.ok(Array.isArray((await r.json()).sim));
+    assert.strictEqual(f.calls.length, 1); assert.strictEqual(f.calls[0].url, fn.POLAR_VALIDATE);
+    assert.strictEqual(f.calls[0].init.redirect, "error"); assert.ok(f.calls[0].init.signal);
+    assert.deepStrictEqual(JSON.parse(f.calls[0].init.body), { key: PRO, organization_id: ORG });
+    // cache hit: a second request makes no new Polar call
+    r = await call({ ...sem, POLAR_ORG_ID: ORG }, f); assert.strictEqual(r.status, 200); assert.strictEqual(f.calls.length, 1, "cached for 10 minutes");
+    // the benefit id is sent and must match when POLAR_BENEFIT_ID is set
+    fn.resetPro(); f = polar(200, ok({ benefit_id: "other" }));
+    r = await call({ ...sem, POLAR_ORG_ID: ORG, POLAR_BENEFIT_ID: "b1" }, f); assert.strictEqual(r.status, 403);
+    assert.strictEqual(JSON.parse(f.calls[0].init.body).benefit_id, "b1");
+    // revoked / disabled / unknown (Polar 404), expired, non-granted status, usage used up -> denied, 403
+    for (const [status, json] of [[404, { error: "ResourceNotFound", detail: "License key not found" }], [200, ok({ status: "revoked" })],
+        [200, ok({ expires_at: "2020-01-01T00:00:00Z" })], [200, ok({ limit_usage: 5, usage: 5 })]]) {
+      fn.resetPro(); f = polar(status, json);
+      r = await call({ ...sem, POLAR_ORG_ID: ORG }, f); assert.strictEqual(r.status, 403, JSON.stringify(json));
+      assert.strictEqual((await r.json()).error, "bot_check_failed");
+    }
+    assert.ok(fn.proGranted(200, ok({ expires_at: "2999-01-01T00:00:00Z" }), {}));
+    // Polar down, 500, unreadable body, redirect refused -> fail closed (and not cached: the next call asks again)
+    for (const f2 of [polar("down"), polar(500, {}), (() => { const g = async () => new Response("not json", { status: 200 }); return g; })(),
+        (() => { const g = async (u, init) => { assert.strictEqual(init.redirect, "error"); throw new TypeError("redirect"); }; return g; })()]) {
+      fn.resetPro(); r = await call({ ...sem, POLAR_ORG_ID: ORG }, f2); assert.strictEqual(r.status, 403);
+    }
+    fn.resetPro(); f = polar("down"); await call({ ...sem, POLAR_ORG_ID: ORG }, f); await call({ ...sem, POLAR_ORG_ID: ORG }, f);
+    assert.strictEqual(f.calls.length, 2, "an error is never cached");
+    // no POLAR_ORG_ID -> 403 pro_off, Polar never called; PLUGIN_KEY and EVAL_KEY keep working unchanged
+    fn.resetPro(); f = polar(200, ok());
+    r = await call(sem, f); assert.strictEqual(r.status, 403); assert.strictEqual((await r.json()).error, "pro_off"); assert.strictEqual(f.calls.length, 0);
+    const KEY = "pk-live-0123456789abcdef";
+    r = await call({ ...sem, PLUGIN_KEY: KEY }, f, { "X-Replore-Plugin-Key": KEY }); assert.strictEqual(r.status, 200);
+    r = await call({ ...sem, PLUGIN_KEY: KEY, POLAR_ORG_ID: ORG }, f, { "X-Replore-Plugin-Key": KEY }); assert.strictEqual(r.status, 200);
+    assert.strictEqual(f.calls.length, 0, "the static plugin key never asks Polar");
+    // a Pro key never opens the paid judge (Turnstile still required there)
+    fn.resetPro(); f = polar(200, ok());
+    r = await call({ ...sem, POLAR_ORG_ID: ORG }, f, { "X-Replore-Plugin-Key": PRO }, { query: "q", repos }); assert.strictEqual(r.status, 403);
+    // a granted key skips the per-IP limiter, like PLUGIN_KEY; a denied one does not
+    fn.resetPro(); fn.resetRateLimit(); f = polar(200, ok());
+    const ip = { "CF-Connecting-IP": "203.0.113.9" }, open = { AI, ALLOW_NO_TURNSTILE: "1", POLAR_ORG_ID: ORG };
+    for (let i = 0; i < 10; i++) await call(open, f, ip, { query: "q", repos });
+    assert.strictEqual((await call(open, f, ip, { query: "q", repos })).status, 429);
+    assert.strictEqual((await call(open, f, { ...ip, "X-Replore-Plugin-Key": PRO }, { query: "q", repos })).status, 200);
+    const bad = "2C285B2D-6CE6-4BC7-B8BE-ADB6A7E304DA";
+    assert.strictEqual((await call(open, polar(404, {}), { ...ip, "X-Replore-Plugin-Key": bad }, { query: "q", repos })).status, 429);
+    // Polar lookups per IP are capped: random keys can't turn the function into a Polar flooder
+    fn.resetPro(); f = polar(404, {});
+    for (let i = 0; i < 8; i++) await call({ ...sem, POLAR_ORG_ID: ORG }, f, { "X-Replore-Plugin-Key": `${String(i).padStart(8, "0")}-6CE6-4BC7-B8BE-ADB6A7E304DA`, ...ip });
+    assert.strictEqual(f.calls.length, fn.PRO_LOOKUP_MAX);
+  } finally { console.log = real; }
+  // log lines: codes only, never the key (any spelling of it)
+  const all = lines.join("\n");
+  assert.ok(!all.includes(PRO) && !all.toLowerCase().includes("1c285b2d") && !all.includes("ADB6A7E304DA"), all);
+  assert.ok(/"code":"pro_granted"/.test(all) && /"code":"pro_denied"/.test(all) && /"code":"pro_error"/.test(all));
+  assert.ok(lines.every(l => { const o = JSON.parse(l); return Object.keys(o).sort().join() === "code,evt,example,ms,status,trail"; }));
+  // and never in a response body
+  fn.resetPro(); const r2 = await call({ ...sem, POLAR_ORG_ID: ORG }, polar(404, {})); assert.ok(!(await r2.text()).includes("1C285B2D"));
+  console.log("pro key ok"); }
