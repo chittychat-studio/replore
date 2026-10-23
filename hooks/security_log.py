@@ -113,4 +113,10 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    # RS25: exec-form hook (no shell). Off (the default): exit 0 at once, read nothing, print nothing.
+    if _log_path() is None:
+        sys.exit(0)
+    try:
+        sys.exit(main())
+    except Exception:   # never a non-zero exit from a logging problem; exit 2 would block the prompt
+        sys.exit(0)

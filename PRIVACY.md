@@ -48,7 +48,9 @@ pixels, ads or cookies.
   matched, and the **first 200 characters** of that prompt — to `~/.replore/security.log` (or your path) **on your
   computer**. It is never sent anywhere. Unset the variable to stop; delete the file at any time. This log is an
   audit trail, not a protection: Replore's safety rules work the same whether it is on or off. The MCP server and
-  the script never write it.
+  the script never write it. While the variable is unset, the hook is a no-op: it starts, exits at once and does not
+  read your prompt. It runs as `python3`; on Windows without `python3` it does not start at all (nothing is logged),
+  and you can change the installed hook's `"command"` to `python` in its `hooks/hooks.json` if you want the log.
 
 ## Questions
 

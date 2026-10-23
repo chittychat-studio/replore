@@ -245,12 +245,16 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   the plugin never keeps any part of a user's prompts unless they chose to (RS33). When on, it only logs — it never blocks the user and
   never echoes the prompt back verbatim beyond a short truncated sample — so it is an audit trail, not a gate.
   The guarantee holds from the skill text alone; the hook records attempts for review.
-  **Launcher (peer review 2026-10-18: the hook hard-coded `python3`, which a Windows install usually lacks):** the
-  `hooks.json` command (run by `sh`, or Git Bash on Windows) exits 0 at once when `REPLORE_SECURITY_LOG` is unset, so the
-  default costs no Python start; otherwise it uses the first of `python3`, `python`, `py -3` that actually runs (a
-  Microsoft Store stub that only prints "not found" is skipped) and exits 0 if none does. The entry has a 10-second
-  `timeout`. It always ends with `exit 0` — Python is run, not `exec`'d, because Python itself exits 2 when it can't
-  open the script (second review), which would block the prompt. It can never block a prompt.
+  **Launcher (exec form, 2026-10-23; replaces the 2026-10-18 POSIX one-liner, which failed under PowerShell and which
+  the plugin directory's pre-submission checklist rejects: hook commands may hold no variable but `${CLAUDE_PLUGIN_ROOT}`
+  and no inline program):** `hooks.json` declares `"command": "python3", "args":
+  ["${CLAUDE_PLUGIN_ROOT}/hooks/security_log.py"]` with a 10-second `timeout`; Claude Code spawns it directly, no shell.
+  The hooks reference's `if` field applies only to tool events (on `UserPromptSubmit` a hook with `if` never runs) and
+  there is no per-OS field, so neither is used. With `REPLORE_SECURITY_LOG` unset the script exits 0 at once, before
+  reading stdin, printing nothing. Any error inside the script exits 0, never 2 (exit 2 blocks the prompt). If `python3`
+  is missing, the hook fails to start, which Claude Code treats as a non-blocking error (the default `onFailure`); README
+  and `PRIVACY.md` say the hook is a no-op unless the variable is set and that Windows users without `python3` can change
+  the installed hook's `"command"` to `python`. It can never block a prompt while the plugin's files are intact.
 - **RS27** Similar-repo mode. Given an existing repo (owner/repo or a GitHub URL), find similar open-source
   repos: look up the repo's metadata (topics, language, description), derive search queries from its topics
   (and description keywords when it has few topics), run the normal filter + fit pipeline (RS2–RS5), and exclude

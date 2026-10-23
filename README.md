@@ -168,6 +168,13 @@ isn't on your PATH (or opens the Microsoft Store), edit the installed plugin's `
 `~/.claude/plugins/`) and change `"command": "python3"` to `"command": "python"`, then restart Claude Code. `/mcp`
 shows whether `replore` is connected. The `/replore:find` skill doesn't need this: it finds a working Python itself.
 
+**Optional safety log (off by default).** The plugin also declares a `UserPromptSubmit` hook,
+`python3 ${CLAUDE_PLUGIN_ROOT}/hooks/security_log.py` (SPEC RS25). It is a no-op unless you set the environment
+variable `REPLORE_SECURITY_LOG`: unset, it exits at once without reading your prompt or writing anything. Set it to `1`
+(or a file path) to keep a local log of prompt-injection or harmful-request attempts; see [`PRIVACY.md`](PRIVACY.md).
+On Windows without `python3`, the hook simply fails to start (Claude Code carries on); to use the log there, edit the
+installed plugin's `hooks/hooks.json` and change `"command": "python3"` to `"command": "python"`.
+
 After the comparison table, ask *"which of these are safe to build on?"* and the plugin runs the same check as the web
 page's **Is it safe to build on?**: security health, known vulnerabilities, an install command, beginner-friendliness and
 the latest release (SPEC RS56). The web page and the plugin share one set of test cases, so they give the same answer.
