@@ -354,6 +354,10 @@ var __rvIO=("IntersectionObserver" in window)?new IntersectionObserver(function(
   if(!e.isIntersecting) return; var c=e.target; __rvIO.unobserve(c);
   c.classList.remove("rv-wait","reveal"); void c.offsetWidth; c.classList.add("reveal"); }); },{rootMargin:"0px 0px -30px 0px"}):null;
 function queueReveal(c){ if(!__rvIO||__reduceMotion){ return; } c.classList.add("rv-wait"); __rvIO.observe(c); }
+// RS77: an error is shown like a result: the page switches to the results layout (search on top, error right under
+// it) and scrolls the message into view, so a phone never shows a blank screen with the error far below
+function showErr(out, html){ out.innerHTML='<div class="panel">'+html+'</div>'; syncClearQ();
+  var p=out.querySelector(".panel"); if(p&&p.scrollIntoView&&!inView(p)) try{ p.scrollIntoView({behavior:"smooth",block:"center"}); }catch(_){ p.scrollIntoView(); } }
 function inView(el){ var r=el.getBoundingClientRect(); return r.top<(window.innerHeight||800) && r.bottom>0; }
 // RS47 odometer: one column of 0-9,0-9 per digit; it rolls a full turn and stops on the digit. Screen readers read
 // the plain number (aria-label); when the roll ends, the plain text comes back so saved results stay simple.
@@ -798,9 +802,9 @@ async function run(){
     st.textContent="Add a few words too — what kind of repos like this? e.g. “free ai call”, then Find.";
     var lq=document.getElementById("q"); if(lq){ lq.focus(); lq.scrollIntoView({block:"center"}); }
     return; }
-  if(text.length>200){ st.textContent=""; out.innerHTML='<div class="panel"><p class="err">Too long — use a short sentence (max 200 characters).</p></div>'; return; }
-  if(text && harmful(text)){ out.innerHTML='<div class="panel"><p class="err">I can’t help find tools for that.</p>'+
-    '<p class="mut">For learning security on systems you own, try: "learn web security by hacking a practice app".</p></div>'; return; }
+  if(text.length>200){ st.textContent=""; showErr(out,'<p class="err">Too long. Use a short sentence (max 200 characters).</p>'); return; }
+  if(text && harmful(text)){ showErr(out,'<p class="err">I can’t help find tools for that.</p>'+
+    '<p class="mut">For learning security on systems you own, try: "learn web security by hacking a practice app".</p>'); return; }
 
   var fresh=window.__fresh; window.__fresh=false;
   var hit=fresh?null:recentFind(recentLoad(), recentKey(recentFields()), Date.now());   // RS43 A: same search within the hour
@@ -882,26 +886,26 @@ async function run(){
     animateCards(out); initResultFilter(); st.textContent=""; saveResults(); syncClearQ();
     try{ cleanCards(out); var now=Date.now(); recentSave(recentAdd(recentLoad(), { k:recentKey(recentFields()), v:CACHE_V, t:now, html:snapHtml(out) }, now)); }catch(_){}   // RS43 A
     });
-  }catch(e){ if(gen!==window.__runGen) return; st.textContent=""; out.innerHTML='<div class="panel"><p class="err">'+esc(e.message)+'</p></div>'; }
+  }catch(e){ if(gen!==window.__runGen) return; st.textContent=""; showErr(out,'<p class="err">'+esc(e.message)+'</p>'); }
   finally{ if(gen===window.__runGen){ setGoBusy(false); window.__busy=false; } }
 }
 document.getElementById("go").addEventListener("click",run);
 document.getElementById("prd").addEventListener("change",function(e){
   var f=e.target.files&&e.target.files[0]; if(!f) return;
   var st=document.getElementById("status"), out=document.getElementById("out"), go=document.getElementById("go");
-  if(f.size>400000){ out.innerHTML='<div class="panel"><p class="err">That file is large; paste the key sections instead.</p></div>'; return; }
+  if(f.size>400000){ showErr(out,'<p class="err">That file is large; paste the key sections instead.</p>'); return; }
   var rd=new FileReader();
   rd.onload=async function(){ var text=String(rd.result||"");
     var features=prdFeatures(text);
-    if(!features.length){ out.innerHTML='<div class="panel"><p class="err">Couldn’t find features in that file. Use bullet points or short requirement lines.</p></div>'; return; }
+    if(!features.length){ showErr(out,'<p class="err">Couldn’t find features in that file. Use bullet points or short requirement lines.</p>'); return; }
     var minStars=Math.max(0,parseInt(document.getElementById("minstars").value,10)||0);
     var platform=document.getElementById("platform").value, preferStarters=document.getElementById("starters").value==="yes";
     if(window.__busy){ e.target.value=""; return; }   // RS41: one search at a time
     window.__busy=true; setGoBusy(true); out.innerHTML=""; var gen=++window.__runGen;
     try{ await runFeatures(features,minStars,platform,preferStarters,out,st,gen); }
-    catch(err){ if(gen===window.__runGen){ st.textContent=""; out.innerHTML='<div class="panel"><p class="err">'+esc(err.message)+'</p></div>'; } }
+    catch(err){ if(gen===window.__runGen){ st.textContent=""; showErr(out,'<p class="err">'+esc(err.message)+'</p>'); } }
     finally{ if(gen===window.__runGen){ setGoBusy(false); window.__busy=false; } e.target.value=""; } };
-  rd.onerror=function(){ out.innerHTML='<div class="panel"><p class="err">Could not read that file.</p></div>'; };
+  rd.onerror=function(){ showErr(out,'<p class="err">Could not read that file.</p>'); };
   rd.readAsText(f);
 });
 // Enter searches (like a real search bar); Shift+Enter adds a newline
@@ -1308,7 +1312,7 @@ async function showTrending(kind){
         '<p class="res-note mut trend-note">'+esc(TREND_NOTE[kind])+'</p>'); }
     out.setAttribute("data-gate","trending");
     animateCards(out); initResultFilter(); st.textContent=""; saveResults(); syncClearQ(); });
-  }catch(e){ if(gen!==window.__runGen) return; st.textContent=""; out.innerHTML='<div class="panel"><p class="err">'+esc(e.message)+'</p></div>'; }
+  }catch(e){ if(gen!==window.__runGen) return; st.textContent=""; showErr(out,'<p class="err">'+esc(e.message)+'</p>'); }
 }
 // RS36 thinking orb: a small dotted sphere in a pill ("Solving…"-style), used under the home demo and while searching
 var THINK_DOTS='<span class="tdots" aria-hidden="true"><i>.</i><i>.</i><i>.</i><i>.</i></span>';
@@ -1674,7 +1678,7 @@ function syncClearQ(){ var x=document.getElementById("clearQ"); if(!x) return;
   x.hidden = !((document.getElementById("q").value||"").trim() || (document.getElementById("like").value||"").trim()
     || document.querySelector("#out .rcard, #out .group-h, #out .err"));   // results on screen also count
   // RS24: with results on a single-column screen, fold the intro so the search bar sits right above the matches
-  document.body.classList.toggle("has-results", !!document.querySelector("#out .rcard, #out .group-h"));
+  document.body.classList.toggle("has-results", !!document.querySelector("#out .rcard, #out .group-h, #out .err"));   // RS77: an error counts as a result
   document.body.classList.toggle("view-trending", !!document.querySelector("#out .trend-tabs"));   // RS35: no Rising twice
   var ds=document.getElementById("demoSlot");   // RS24: a demo moved above the search goes once results show
   if(ds && ds.firstChild && document.querySelector("#out .rcard, #out .group-h, #out .err")){ stopDemo("heroDemo"); ds.innerHTML=""; }
