@@ -297,6 +297,10 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   changes. Write the PRD only after I approve, and match what I approved." The plugin skill gives the same order when
   the user asks it to write a plan or PRD from the picks. Why: a visual is approved in seconds and catches a wrong
   idea before a long PRD is built on it. Replore still makes no model call (RS1): the user's own AI makes the visuals.
+- **RS28i** Governance first (owner request 2026-10-23, web and plugin). The plan prompt asks the user's AI to make
+  step 0 of the build plan "set up Governor" (chittychat-studio/Governance-manager, MIT): add the marketplace, install
+  the plugin, run /governor:init, before any code is written. It is a step in the plan the agent follows, not an
+  automatic install.
 - **RS28e** Role line (owner wording 2026-10-14). The plan prompt opens with: "You are the principal architect for
   my vibe coding app, with 15+ years of experience building similar apps." The owner first proposed "my million
   dollar startup"; replaced because most users build small projects, and inflated stakes push the AI to plan for
