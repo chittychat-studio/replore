@@ -54,6 +54,13 @@ var SYN={   // RS16: specific, live-checked phrases only — never a bare catego
 var GENERIC=new Set("website websites web site page webpage app application tool platform".split(" "));   // RS16a: the "shell", least specific
 function kwWords(t){ return t.toLowerCase().replace(/[^a-z0-9 +#.]/g," ").split(/\s+/).filter(function(w){return w&&!STOP.has(w);}); }
 function synFor(w){ return SYN[w]||(w.length>3&&/s$/.test(w)?SYN[w.slice(0,-1)]:null); }   // "maps" -> map
+// RS78: when every search came back empty (GitHub ANDs every word), retry broader: first without version-like words
+// ("opus5.5", "gpt-4o", "v2": model names and versions rarely appear in repo text), then with the two strongest words.
+function relaxedQueries(text, tried){ var w=kwWords(text), plain=w.filter(function(x){ return !/\d/.test(x); }), out=[];
+  function add(q){ q=q.trim(); if(q && (tried||[]).indexOf(q)<0 && out.indexOf(q)<0) out.push(q); }
+  if(plain.length && plain.length<w.length) add(plain.slice(0,3).join(" "));
+  if(plain.length>=2) add(plain.slice(0,2).join(" "));
+  return out.slice(0,2); }
 function keywordQueries(text, platform){
   var words=kwWords(text);
   var core=words.slice(0,3).join(" ").trim();   // GitHub ANDs every word: >3 words usually matches nothing
@@ -848,7 +855,16 @@ async function run(){
       var items=await search(queries[i], minStars);
       if(gen!==window.__runGen) return;
       lists.push(keep(items,minStars,platform,excluded,seen)); }
-    var ranked=rankByFit(lists,preferStarters), top=ranked.slice(0,60);  // sane upper bound; we no longer cap at 20
+    var ranked=rankByFit(lists,preferStarters), relaxNote="";
+    if(!ranked.length && !like && text){   // RS78: nothing matched every word: search broader before giving up
+      var rq=relaxedQueries(text, queries).map(function(q){ return (q+(platform==="ios"?" -topic:macos":"")+(stack?" "+stack:"")).trim(); });
+      for(var ri=0;ri<rq.length;ri++){ if(window.__ghLeft!=null && window.__ghLeft<=1) break;
+        think(st,"Searching broader"); var more=await search(rq[ri], minStars); if(gen!==window.__runGen) return;
+        lists.push(keep(more,minStars,platform,excluded,seen)); }
+      ranked=rankByFit(lists,preferStarters);
+      if(ranked.length) relaxNote="Nothing matched every word, so Leo searched for “"+esc(rq.join("” and “"))+"”.";
+      queries=queries.concat(rq); }
+    var top=ranked.slice(0,60);  // sane upper bound; we no longer cap at 20
     var gate=null;
     if(top.length || window.__ragIndex!==false){ think(st,"Checking which repos fit");   // RS34 check on the top 30; RS42: an empty
       var drops=await relevanceGate(like?(text+" (similar to "+like+")"):text, top.slice(0,30));   // list still asks the index
@@ -880,7 +896,7 @@ async function run(){
         top=keptRows.concat(leftRows.map(function(r){ r.left=1; return r; }));
         gate={ok:true,hidden:drops.length}; } }
     smoothSwap(function(){ if(gen!==window.__runGen) return;   // RS69: the results dissolve in
-    closeDrawer(true); out.innerHTML=render(top,queries,excluded,ranked.length,qtok,heading,window.__likeNote||"",gate);
+    closeDrawer(true); out.innerHTML=render(top,queries,excluded,ranked.length,qtok,heading,(window.__likeNote||"")+relaxNote,gate);
     // RS34: no on-screen note about the AI check; its outcome is kept as an attribute for diagnosis only
     out.setAttribute("data-gate", !gate?"off":gate.ok?"ok:"+gate.hidden:String(gate.error||"fail").replace(/[^a-z0-9_]/gi,"").slice(0,40));
     animateCards(out); initResultFilter(); st.textContent=""; saveResults(); syncClearQ();
