@@ -287,20 +287,20 @@ function trustHtml(gh, tr, spdx, repo){
   if(pk&&pk.status==="ok"&&PKG_RE.test(String(pk.name))&&VER_RE.test(String(pk.version))){
     var ids=(pk.advisories||[]).filter(function(id){ return ADV_RE.test(String(id)); }), n=Math.max(pk.advisoryCount|0, ids.length);
     L.push('<b>Known vulnerabilities</b> in '+esc(pk.name)+' '+esc(pk.version)+': '+(n===0?ico("check")+'none known':
-      '<span class="t-warn-ink">'+ico("alert")+n+' known</span> — '+ids.map(function(id){ return '<a href="https://osv.dev/vulnerability/'+esc(id)+'" target="_blank" rel="noopener noreferrer">'+esc(id)+'</a>'; }).join(", ")+(n>ids.length?' …':'')));
+      '<span class="t-warn-ink">'+ico("alert")+n+' known:</span> '+ids.map(function(id){ return '<a href="https://osv.dev/vulnerability/'+esc(id)+'" target="_blank" rel="noopener noreferrer">'+esc(id)+'</a>'; }).join(", ")+(n>ids.length?' …':'')));
     var cmd=installCmd(pk.system,pk.name);
     if(cmd) L.push('<b>Install</b> <code>'+esc(cmd)+'</code> <button type="button" class="trust-copy" data-cmd="'+esc(cmd)+'" title="Copy the command" aria-label="Copy the command">'+ico("copy")+'</button>');
     var lic=(pk.licenses||[]).filter(function(x){ return /^[A-Za-z0-9.+() -]{1,80}$/.test(String(x)); });
     if(lic.length && lic.indexOf(spdx)<0) L.push('<b>Package license</b> '+esc(lic.join(", "))+' <span class="mut">(the repo says '+esc(spdx||"none")+')</span>');
   } else if(pk&&pk.status==="none") L.push('<b>Package</b> <span class="mut">no published package matched this repo</span>');
   else if(!pk||pk.status==="error") L.push('<b>Known vulnerabilities</b> '+NA);
-  if(gh&&gh.limited) L.push('<span class="mut">GitHub\'s hourly limit is used up — try again later</span>');
+  if(gh&&gh.limited) L.push('<span class="mut">GitHub\'s hourly limit is used up, try again later</span>');
   else {
     L.push('<b>Beginner-friendly</b> '+(gh&&gh.files?[yes(gh.files.readme,"README"),yes(gh.files.contributing,"contributing guide"),yes(gh.files.coc,"code of conduct")].join(" · "):NA)+
       (gh&&gh.gfi!=null?' · '+gh.gfi+' good first issue'+(gh.gfi===1?'':'s'):''));
     L.push('<b>Latest release</b> '+(gh&&gh.release==="none"?'<span class="mut">no releases yet</span>':gh&&gh.release?esc(gh.release.tag)+', '+esc(agoText(gh.release.date)||gh.release.date):NA));
   }
-  return '<ul>'+L.map(function(x){ return '<li>'+x+'</li>'; }).join("")+'</ul><p class="trust-note">For information — it doesn\'t change the ranking. '+
+  return '<ul>'+L.map(function(x){ return '<li>'+x+'</li>'; }).join("")+'</ul><p class="trust-note">For information only. It doesn\'t change the ranking. '+
     'Sources: OpenSSF Scorecard, deps.dev, OSV.dev, GitHub.</p>'; }
 var __trust={};   // RS53: answers kept in page memory per repo, so reopening a row costs nothing
 async function ghTrust(repo){ var H={headers:{"Accept":"application/vnd.github+json"}}, base="https://api.github.com/repos/"+repo;
@@ -559,7 +559,7 @@ function render(top, queries, excluded, totalMatches, qtokens, heading, note, ga
     '<div id="resEmpty" class="res-empty" hidden>No results match these filters. <button type="button" class="link-btn" id="resClear">Clear filters</button></div>'+
     '<div id="resMore" class="res-more-hint" aria-live="polite" hidden></div>'+   /* scroll sentinel: auto-reveals more (RS29) */
     '</div></div>'+
-    '<details class="excl"><summary>How we searched</summary>Searches: '+esc(queries.join("; "))+'. Left out — not open-source: '+excluded.license+
+    '<details class="excl"><summary>How we searched</summary>Searches: '+esc(queries.join("; "))+'. Left out, not open-source: '+excluded.license+
     ', inactive: '+excluded.stale+', too few stars: '+excluded.low+', forks/archived: '+excluded.fork+
     ', harmful: '+excluded.harm+'.</details>';
   if(more>0) h+=PLUGIN_CTA.replace("MORE_LINE",
@@ -806,10 +806,10 @@ function renderGrouped(groups, excluded, note){
     if(!g.repos.length){ h+='<p class="mut" style="margin:0 4px">No match.</p>'; return; }
     h+='<div class="grid">'+g.repos.map(function(r){return cardHtml(r,null,gtokens);}).join("")+'</div>';
   });
-  h+='<details class="excl"><summary>How we searched</summary>'+total+' open-source repos across '+groups.length+' needs. Left out — not open-source: '+
+  h+='<details class="excl"><summary>How we searched</summary>'+total+' open-source repos across '+groups.length+' needs. Left out, not open-source: '+
     excluded.license+', inactive: '+excluded.stale+', too few stars: '+excluded.low+', forks/archived: '+excluded.fork+
     ', harmful: '+excluded.harm+
-    '. Every suitable match that passed the filters, grouped by the first search that found it — not every repo on GitHub.</details>'+
+    '. Every suitable match that passed the filters, grouped by the first search that found it, not every repo on GitHub.</details>'+
     PLUGIN_CTA;
   return h;
 }
@@ -875,7 +875,7 @@ async function run(){
   stopDemo("heroDemo"); out.innerHTML=""; if(window.__resetPicks) window.__resetPicks(); syncClearQ();
   if(!text && !like){ st.textContent="Type what you're building, or paste a repo to find similar ones."; return; }
   if(like && !text){   // similar-repo search needs words too, so results are narrowed to what you actually want (RS27a)
-    st.textContent="Add a few words too — what kind of repos like this? e.g. “free ai call”, then Find.";
+    st.textContent="Add a few words too: what kind of repos like this? e.g. “free ai call”, then Find.";
     var lq=document.getElementById("q"); if(lq){ lq.focus(); lq.scrollIntoView({block:"center"}); }
     return; }
   if(text.length>200){ st.textContent=""; showErr(out,'<p class="err">Too long. Use a short sentence (max 200 characters).</p>'); return; }

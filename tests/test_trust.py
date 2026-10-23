@@ -140,8 +140,8 @@ def test_cli_end_to_end(monkeypatch, capsys):
     monkeypatch.setattr(trust, "get_json", fake(routes))
     assert trust.main(["https://github.com/expressjs/express.git", "nobody/x"]) == 0
     out = capsys.readouterr().out
-    assert "expressjs/express — Safe to build on?" in out and "Security health 8.9/10" in out
-    assert "npm install express" in out and "nobody/x — Safe to build on?" in out and "not found on GitHub" in out
+    assert "expressjs/express: Safe to build on?" in out and "Security health 8.9/10" in out
+    assert "npm install express" in out and "nobody/x: Safe to build on?" in out and "not found on GitHub" in out
     assert "doesn't change the ranking" in out
 
 

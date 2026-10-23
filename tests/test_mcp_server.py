@@ -230,9 +230,11 @@ def test_no_match_suggests_broader_words_and_broadened_note_is_shown():
 
 
 def test_plugin_mcp_json_registers_the_server():
-    """RS32a: /plugin install registers find_repos and check_repos through .mcp.json at the plugin root."""
-    cfg = json.loads((ROOT / ".mcp.json").read_text(encoding="utf-8"))
-    assert list(cfg) == ["mcpServers"] and list(cfg["mcpServers"]) == ["replore"]
+    """RS32a: /plugin install registers find_repos and check_repos through mcpServers in plugin.json (not a root
+    .mcp.json, which Claude Code would also load as a project server for anyone opening the repo, with no plugin root)."""
+    cfg = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
+    assert not (ROOT / ".mcp.json").exists()
+    assert list(cfg["mcpServers"]) == ["replore"]
     srv = cfg["mcpServers"]["replore"]
     assert srv["command"] == "python3" and len(srv["args"]) == 1
     prefix = "${CLAUDE_PLUGIN_ROOT}/"
@@ -241,4 +243,4 @@ def test_plugin_mcp_json_registers_the_server():
     assert script.is_file() and script.name == "mcp_server.py"
     assert {t["name"] for t in mcp_server.TOOLS} == {"find_repos", "check_repos"}
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    assert '"command": "python"' in readme and ".mcp.json" in readme
+    assert '"command": "python"' in readme and "plugin.json" in readme

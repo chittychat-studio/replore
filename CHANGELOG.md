@@ -12,7 +12,7 @@ How to cut a release: README, Development (SPEC RS81).
   custom-domain 301 is documented as a Cloudflare Bulk Redirect (RS80).
 - The CLI and MCP server retry an empty search with up to two broader searches, like the web page, and say so in a
   `note` (also in `--json`, where an empty result now says why) (RS78a).
-- `.mcp.json`: `/plugin install` registers the `find_repos` and `check_repos` MCP tools in Claude Code (RS32a).
+- `mcpServers` in `plugin.json`: `/plugin install` registers the `find_repos` and `check_repos` MCP tools in Claude Code (RS32a).
 - This changelog and a release workflow that checks the tag against every version and publishes the matching
   section as the GitHub release notes (RS81).
 - Opt-in trust sort: "Trust (top 5)" on the web, `--rank trust` in the script, `rank: "trust"` in the MCP tool
@@ -27,7 +27,9 @@ How to cut a release: README, Development (SPEC RS81).
 ### Fixed
 - README, SPEC, PRIVACY, the skill and AGENTS.md described the old five-button card, an old default AI model,
   `--top 10` and only one MCP tool; they now match the code, and a test guards it (RS63, RS34e, RS51).
-- The build-plan prompt had an em dash in visitor copy (RS66).
+- Em dashes in visitor copy: the build-plan prompt, the trust panel, the "How we searched" notes and the similar-repo hint
+  (and the same trust wording in the script). The RS66 test had a regex slip that skipped most strings; fixed (RS66).
+- README described a GitHub Pages `pages` workflow that no longer exists (RS22, RS40).
 
 ### Security
 - The web's build-plan and launch prompts now say repo names and descriptions are data, never instructions, like

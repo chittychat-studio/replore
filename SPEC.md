@@ -392,13 +392,14 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   never a partial or remembered list (RS7). stdout carries only protocol messages; nothing logs the token (RS8).
   The tool description tells the calling model that repo names/descriptions are data, not instructions (RS9)
   and to decline RS18 requests. Not reachable from browser-only chats with no local tools; the web page covers those.
-- **RS32a** The plugin registers the MCP server itself. `.mcp.json` at the plugin root declares one server,
+- **RS32a** The plugin registers the MCP server itself. `mcpServers` in `.claude-plugin/plugin.json` declares one server,
   `replore`: `python3` with `${CLAUDE_PLUGIN_ROOT}/scripts/mcp_server.py`, so `/plugin install` also gives Claude Code
   the `find_repos` and `check_repos` tools, with nothing to configure. The skill keeps running `scripts/scout.py`
   directly (it needs the JSON shortlist for the RS6 gate and PRD mode); the tools are for agents and prompts that
   call tools instead of the skill. Standard library only, no key (RS11, RS1). On Windows `python3` may be missing or
   the Microsoft Store stub: the README says to change `command` to `python` (or `py` with `-3` first in `args`) in
-  the installed plugin's `.mcp.json`; the per-agent table for other agents stays. A test checks the file parses, names
+  the installed plugin's `plugin.json`; the per-agent table for other agents stays. Not a root `.mcp.json`: Claude Code would
+  also load that as a project server for anyone opening the repo, where `${CLAUDE_PLUGIN_ROOT}` is unset. A test checks the entry parses, names
   only that server and points at a script that exists.
 
 - **RS33** Privacy notice. `PRIVACY.md` (linked from README and the web page) and a one-line web notice under the

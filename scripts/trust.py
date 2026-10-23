@@ -277,7 +277,7 @@ def trust_lines(gh, tr, spdx, repo):
         ids = [i for i in (pk.get("advisories") or []) if isinstance(i, str) and ADVISORY_RE.fullmatch(i)]
         n = max(int(pk.get("advisoryCount") or 0), len(ids))
         head = f"Known vulnerabilities in {pk['name']} {pk['version']}: "
-        lines.append(head + ("none known" if n == 0 else f"{n} known — "
+        lines.append(head + ("none known" if n == 0 else f"{n} known: "
                              + ", ".join(f"{i} (https://osv.dev/vulnerability/{i})" for i in ids) + (" …" if n > len(ids) else "")))
         cmd = install_cmd(pk.get("system"), pk.get("name"))
         if cmd:
@@ -290,7 +290,7 @@ def trust_lines(gh, tr, spdx, repo):
     elif not pk or pk.get("status") == "error":
         lines.append("Known vulnerabilities " + na)
     if gh and gh.get("limited"):
-        lines.append("GitHub's hourly limit is used up — try again later (or set GITHUB_TOKEN)")
+        lines.append("GitHub's hourly limit is used up, try again later (or set GITHUB_TOKEN)")
     else:
         f = (gh or {}).get("files")
         mark = lambda b, t: t + (": yes" if b else ": no")   # words, not glyphs (RS55); same words as the web
@@ -303,7 +303,7 @@ def trust_lines(gh, tr, spdx, repo):
     return lines
 
 
-NOTE = "For information — it doesn't change the ranking. Sources: OpenSSF Scorecard, deps.dev, OSV.dev, GitHub."
+NOTE = "For information only. It doesn't change the ranking. Sources: OpenSSF Scorecard, deps.dev, OSV.dev, GitHub."
 
 # ---- RS82: the opt-in trust sort (same formula as web/app.js trustScore; shared cases in tests/fixtures/trust_rank_cases.json)
 TRUST_RANK_N = MAX_REPOS
@@ -347,7 +347,7 @@ def lines_for(result):
 def render(results):
     out = []
     for r in results:
-        out.append(f"{r['repo']} — Safe to build on?")
+        out.append(f"{r['repo']}: Safe to build on?")
         out += ["  " + x for x in (r["lines"] if "lines" in r else lines_for(r))]
         out.append("")
     return "\n".join(out + [NOTE])
@@ -388,7 +388,7 @@ def main(argv=None):
             r = next(checked)
             r["lines"] = lines_for(r)
         else:
-            msg = {"not_found": "not found on GitHub", "limited": "GitHub's hourly limit is used up — try again later (or set GITHUB_TOKEN)"}
+            msg = {"not_found": "not found on GitHub", "limited": "GitHub's hourly limit is used up, try again later (or set GITHUB_TOKEN)"}
             r = {"repo": repo, "error": m["status"], "lines": [msg.get(m["status"], "couldn't check")]}
         results.append(r)
     print(json.dumps(results, indent=2, ensure_ascii=False) if a.json else render(results))

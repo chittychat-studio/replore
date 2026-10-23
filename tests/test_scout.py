@@ -1100,7 +1100,7 @@ def test_rs66_no_em_dashes_in_site_copy():
     visible = re.sub(r"<!--.*?-->|<style.*?</style>|<script.*?</script>", "", html, flags=re.S)
     assert dash not in visible, [l.strip() for l in visible.splitlines() if dash in l][:5]
     js = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
-    string_lit = re.compile(r'"(?:[^"\\n]|\.)*"|' + r"'(?:[^'\\n]|\.)*'")
+    string_lit = re.compile(r'"(?:[^"\\]|\\.)*"|' + r"'(?:[^'\\]|\\.)*'")  # a string literal: no bare quote or backslash; escapes allowed
     hits = []
     for line in js.splitlines():
         code = re.split(r"\s//\s|^\s*//", line)[0]

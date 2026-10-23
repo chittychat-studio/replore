@@ -96,11 +96,8 @@ What you can do there:
 - Light and dark themes, keyboard and screen-reader friendly, and a **Feedback** form for bugs and ideas.
 
 A static page at `web/index.html` powers it. It auto-deploys (Cloudflare Pages) to [replore.cardzo.co.in](https://replore.cardzo.co.in)
-(Cloudflare Pages) on every push to `main`. To self-host it elsewhere, it also deploys free on GitHub Pages:
-
-1. Settings → Pages → Source → **GitHub Actions**.
-2. Push to `main` (the `pages` workflow deploys `web/`), or run the **pages** workflow by hand.
-3. Open the URL the workflow prints.
+(Cloudflare Pages) on every push to `main`. To self-host it, serve the `web/` folder from any static host; only the
+relevance check and the trust check (`functions/api/`, Cloudflare Pages Functions) need Cloudflare.
 
 The page's code is in `web/app.js` (plus `web/theme.js`); its security headers and Content-Security-Policy are in
 `web/_headers` (SPEC RS49), so a new third-party script or API must be added there or the browser blocks it.
@@ -165,9 +162,9 @@ limit of 10 requests per 10 seconds runs in memory; for a hard limit, add a WAF 
 
 Needs Python 3.11+ (the plugin tells you how to install it if it's missing). Once installed, it is available in every project.
 
-The install also registers Replore's MCP server (`.mcp.json`, SPEC RS32a), so Claude Code gets two tools,
+The install also registers Replore's MCP server (`mcpServers` in `.claude-plugin/plugin.json`, SPEC RS32a), so Claude Code gets two tools,
 `find_repos` and `check_repos`, besides `/replore:find`. **Windows:** the server starts with `python3`. If `python3`
-isn't on your PATH (or opens the Microsoft Store), edit the installed plugin's `.mcp.json` (under
+isn't on your PATH (or opens the Microsoft Store), edit the installed plugin's `.claude-plugin/plugin.json` (under
 `~/.claude/plugins/`) and change `"command": "python3"` to `"command": "python"`, then restart Claude Code. `/mcp`
 shows whether `replore` is connected. The `/replore:find` skill doesn't need this: it finds a working Python itself.
 
