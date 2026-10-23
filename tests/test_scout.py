@@ -756,6 +756,10 @@ def test_web_page_is_safe_static(monkeypatch):
     assert "ask me 5 short questions that would most improve this plan" in html and "wait for my answers" in html   # RS28d
     assert "show me what the app will look like: make reference images or a simple" in html   # RS28h
     assert "Write the PRD only after I approve, and match what I approved." in html   # RS28h
+    # RS79: Launch with Leo (nav button, local plan + playbook go-live checklist, hand-off to the user's own AI); Tour in the menu
+    assert 'id="launchBtn"' in html and 'id="launchModal"' in html and "After you go live" in html and "window.__handoff=handoff" in html
+    assert 'class="nav-btn" title="Watch how Replore works">Tour' in html and 'class="gh-credit"' not in html
+    assert "Search Console" in html and "Bing Webmaster Tools" in html and "Turnstile" in html and "sitemap.xml" in html
     assert "Make step 0 of the build plan: set up Governor" in html and "governor@chittychat-governor" in html   # RS28i
     skill = (ROOT / "skills" / "find" / "SKILL.md").read_text(encoding="utf-8")
     assert "Needs first, shell last (RS16a" in skill and "No good match" in skill and "RS28c" in skill   # web and plugin in sync
@@ -852,7 +856,7 @@ def test_accessibility_baseline():
     assert '<p id="srStatus" class="sr-only" role="status" aria-live="polite">' in index and "function resultSummary" in app
     assert 'setAttribute("aria-labelledby",h2.id)' in app
     heads = re.findall(r'<div class="modal" id="[^"]+"><div class="sheet[^"]*">([\s\S]*?)</h2>', index)
-    assert len(heads) == index.count('<div class="modal"') == 9 and not any('class="modal"' in h for h in heads)   # every dialog has its own heading
+    assert len(heads) == index.count('<div class="modal"') == 10 and not any('class="modal"' in h for h in heads)   # every dialog has its own heading
     assert re.search(r"\.x\{[^}]*min-width:32px;min-height:32px", index) and re.search(r"\.cmd \.copy\{[^}]*min-height:26px", index)
     for theme in (index.split(":root{", 1)[1], index.split(':root[data-theme="dark"]{', 1)[1]):
         var = lambda n: re.search(r"--" + n + r":(#[0-9a-f]{6})", theme).group(1)

@@ -1138,8 +1138,22 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
   if(clearBtn) clearBtn.addEventListener("click",function(){
     var cbs=out.querySelectorAll(".pick-cb"); for(var i=0;i<cbs.length;i++) cbs[i].checked=false;
     window.__resetPicks(); });
+  // RS79: one hand-off for every prompt (build plan, launch plan): fill the prompt, wire the three assistants, open
+  var PRD_T=(document.getElementById("prdTitle")||{}).textContent, PRD_I=(document.getElementById("prdIntro")||{}).innerHTML;
+  function handoff(text, title, intro){ var t=document.getElementById("prdTitle"), it=document.getElementById("prdIntro");
+    if(t) t.textContent=title||PRD_T; if(it) it.innerHTML=intro||PRD_I;   // intro is our own markup, never user text
+    if(pre) pre.textContent=text;
+    if(openLink){ var url="https://claude.ai/new?q="+encodeURIComponent(text), tooLong=url.length>7500, note=document.getElementById("prdLong");
+      linkMode(openLink, tooLong ? "https://claude.ai/new" : url, tooLong);
+      var gpt=document.getElementById("prdGpt"), gurl="https://chatgpt.com/?q="+encodeURIComponent(text);
+      if(gpt) linkMode(gpt, gurl.length>7500 ? "https://chatgpt.com/" : gurl, gurl.length>7500);
+      var gn=document.getElementById("prdGemNote"); if(gn) gn.hidden=true; if(note) note.hidden=!tooLong; }
+    var many=document.getElementById("prdMany"); if(many) many.hidden=true;
+    openModal("prdModal"); }
+  window.__handoff=handoff; window.__getPicks=function(){ return picks.slice(); };
   if(goBtn) goBtn.addEventListener("click",function(){ if(!picks.length) return;
-    var text=buildPrompt(); if(pre) pre.textContent=text;
+    var text=buildPrompt(); var t0=document.getElementById("prdTitle"), i0=document.getElementById("prdIntro");
+    if(t0) t0.textContent=PRD_T; if(i0) i0.innerHTML=PRD_I; if(pre) pre.textContent=text;
     if(openLink){ var url="https://claude.ai/new?q="+encodeURIComponent(text);
       var tooLong=url.length>7500, note=document.getElementById("prdLong");
       // RS28g: too long for a pre-filled link -> the button stays, copies the prompt first, then opens the plain page
@@ -1153,7 +1167,7 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
     openModal("prdModal"); });
   // RS28b/RS28g: copy BEFORE opening the tab: once the new tab has focus the browser refuses clipboard writes from this page
   function copyThenOpen(name, openUrl, why){ var text=pre?pre.textContent:"", gn=document.getElementById("prdGemNote");
-    function say(ok){ if(!gn) return; gn.textContent=ok?"Prompt copied — paste it into "+name+why+".":"Couldn't copy automatically — tap the copy icon above, then paste into "+name+"."; gn.hidden=false; }
+    function say(ok){ if(!gn) return; gn.textContent=ok?"Prompt copied. Paste it into "+name+why+".":"Couldn't copy automatically. Tap the copy icon above, then paste into "+name+"."; gn.hidden=false; }
     var copied=false;
     try{ var ta=document.createElement("textarea"); ta.value=text; ta.setAttribute("readonly",""); ta.style.position="fixed"; ta.style.top="0"; ta.style.opacity="0";
       document.body.appendChild(ta); ta.select(); copied=document.execCommand("copy"); document.body.removeChild(ta); }catch(_){}
@@ -1172,6 +1186,134 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
     if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(ok,ok); }
     else { try{ var ta=document.createElement("textarea"); ta.value=text; ta.style.position="fixed"; ta.style.opacity="0";
       document.body.appendChild(ta); ta.focus(); ta.select(); document.execCommand("copy"); document.body.removeChild(ta); ok(); }catch(err){} } });
+})();
+
+
+// ---- RS79: Launch it with Leo. A few tap answers build a hosting plan and a go-live checklist (before and after
+// launch, from Cardzo's go-live playbook). Everything is local; the full plan goes to the user's own AI via the hand-off.
+(function(){
+  var qs=document.getElementById("lnQs"), plan=document.getElementById("lnPlan"); if(!qs||!plan) return;
+  var C={host:"host",data:"data",auth:"auth",pay:"pay",store:"store",cost:"cost",game:"game",live:"live"};
+  var Q=[["kind","What did you build?","host",[["static","Website (no server)"],["next","Next.js / React web app"],["api","Web app with server + database"],["ai","AI app (calls a model)"],["ios","iPhone app"],["android","Android app"],["game","A game"]]],
+    ["gplat","Where does the game run?","game",[["web","In the browser"],["mobile","Phones (app stores)"],["desktop","PC (Steam / itch.io)"]]],
+    ["multi","Players together online?","game",[["no","Single player"],["yes","Multiplayer"]]],
+    ["who","Who will use it?","auth",[["me","Just me"],["test","Friends and testers"],["public","The public"]]],
+    ["data","What data does it keep?","data",[["none","None"],["accounts","User accounts"],["sensitive","Health or other sensitive data"]]],
+    ["paid","How will people pay?","pay",[["free","It's free"],["once","One-time purchase"],["sub","Subscription"],["iap","In-app purchases"]]],
+    ["budget","Monthly budget for hosting","cost",[["free","Free tiers only"],["small","A little"],["any","Whatever it needs"]]]];
+  var A={kind:"next",gplat:"web",multi:"no",who:"public",data:"accounts",paid:"free",budget:"free"}, tab="before";
+  var I={host:'<path d="M3 5.5h14v4H3zM3 11.5h14v4H3z"/><path d="M6 7.5h.01M6 13.5h.01"/>',
+    data:'<ellipse cx="10" cy="5" rx="6" ry="2.5"/><path d="M4 5v10c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5V5M4 10c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5"/>',
+    auth:'<rect x="4.5" y="9" width="11" height="8" rx="2"/><path d="M7 9V6.5a3 3 0 0 1 6 0V9"/>',
+    pay:'<rect x="3" y="5" width="14" height="10" rx="2"/><path d="M3 8.5h14M6 12h3"/>',
+    store:'<path d="M4 7h12l-1 10H5z"/><path d="M7.5 7a2.5 2.5 0 0 1 5 0"/>',
+    cost:'<circle cx="10" cy="10" r="7"/><path d="M10 5v10M12.5 7.5c-.6-.8-1.5-1-2.5-1-1.4 0-2.5.7-2.5 1.8 0 2.6 5 1.3 5 3.9 0 1.1-1.1 1.8-2.5 1.8-1 0-2-.3-2.6-1.1"/>',
+    game:'<rect x="2.5" y="6" width="15" height="9" rx="4"/><path d="M6.5 9v3M5 10.5h3M13 9.5h.01M14.5 11.5h.01"/>'};
+  function cv(k){ return "--rc:var(--ln-"+k+");--rt:var(--lt-"+k+")"; }
+  function row(k,label,html){ return '<dl class="ln-row" style="'+cv(k)+'"><span class="ln-ic" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'+I[k]+'</svg></span><dt>'+label+'</dt><dd>'+html+'</dd></dl>'; }
+  function isMobile(){ return A.kind==="ios"||A.kind==="android"||(A.kind==="game"&&A.gplat==="mobile"); }
+  function rows(){ var k=A.kind, m=isMobile(), out=[];
+    var host={static:["<b>Cloudflare Pages</b>","or GitHub Pages / Netlify. Static files on a global network, free HTTPS."],
+      next:["<b>Vercel</b>","or Cloudflare Pages. Built for Next.js, with a preview for every change."],
+      api:["<b>Render</b>","or Railway / Fly.io. Runs your server; keep the database in the same region."],
+      ai:["<b>Vercel</b> (front end) + <b>Render</b> (API)","Your model key stays on the server, never in the browser."],
+      ios:["<b>Apple App Store</b>","Build with Xcode, or Expo EAS if you used React Native. Beta test with TestFlight."],
+      android:["<b>Google Play</b>","Build with Android Studio, or Expo EAS if you used React Native. Beta test on an internal or closed track."],
+      game:A.gplat==="web"?["<b>itch.io</b> or <b>Cloudflare Pages</b>","itch.io gives you a game page and players; Pages is for your own site."]
+        :A.gplat==="mobile"?["<b>App Store</b> and <b>Google Play</b>","Unity, Godot and most engines export to both. Plan two store listings."]
+        :["<b>Steam</b> or <b>itch.io</b>","Steam has a per-game fee and a review; itch.io is free to publish."]}[k];
+    out.push(row("host",m?"Where it ships":"Host",host[0]+"<small>"+host[1]+"</small>"));
+    if(m){ var st=(k!=="android"?"Apple Developer Program: a yearly fee and an app review before release. ":"")+(k!=="ios"?"Google Play Console: a one-time fee, a review, and a closed test period for new personal accounts. ":"");
+      out.push(row("store","Store account",st+"<small>Check each store's current fees and rules.</small>")); }
+    if(k==="game"&&A.multi==="yes") out.push(row("game","Multiplayer","<b>A realtime game server</b><small>Colyseus or Nakama on Fly.io, or a managed service. Start in one region near your players.</small>"));
+    if(k!=="static"&&!(k==="game"&&A.multi==="no"&&A.data==="none"))
+      out.push(row("data","Database",A.data==="none"&&k!=="api"?"Not needed yet<small>Add Supabase or Neon (Postgres) when you need to save things.</small>":"<b>Supabase</b><small>or Neon. Managed Postgres with backups; Supabase adds sign-in and realtime.</small>"));
+    out.push(row("auth","Sign-in",A.data==="none"?"No sign-in needed.":A.data==="accounts"?"Use a sign-in service (Supabase Auth or Clerk"+(m?", plus Sign in with Apple on iPhone if you offer other social logins":"")+"). Don't build your own passwords.":"Use a sign-in service and keep sensitive data out of logs. Check the privacy rules where your users live before launch."));
+    if(A.paid!=="free"){ var pay;
+      if(m) pay="<b>"+(k==="android"?"Google Play Billing":k==="ios"?"Apple In-App Purchase":"Apple In-App Purchase and Google Play Billing")+"</b><small>Digital items sold inside a store app usually must use the store's own payments; physical goods and services can use Stripe. Rules vary by country, so check before launch.</small>";
+      else if(k==="game") pay="<b>"+(A.gplat==="desktop"?"Steam or itch.io checkout":"itch.io payments or Stripe")+"</b><small>Let the store handle payments and sales tax where you can.</small>";
+      else pay="<b>Stripe</b> "+(A.paid==="sub"?"Billing (subscriptions)":"Checkout")+"<small>Or Paddle / Lemon Squeezy, which also handle sales tax as the seller.</small>";
+      out.push(row("pay","Payments",pay)); }
+    out.push(row("cost","Cost",A.budget==="free"?"Start on free tiers. Check each provider's current limits before launch day.":A.budget==="small"?"Free tiers to start; upgrade the database first when you grow.":"Pick paid plans with backups and support from day one."));
+    return out; }
+  // before launch / after you go live (after: from Cardzo's go-live playbook)
+  function lists(){ var k=A.kind, m=isMobile(), web=!m&&!(k==="game"&&A.gplat==="desktop"), B=[], L=[];
+    function add(arr,g,t,sm){ arr.push([g,t,sm||""]); }
+    add(B,"Safety","Set up Governor in your coding agent first, so it asks before deploying","github.com/chittychat-studio/Governance-manager");
+    add(B,"Safety","Put secrets (API keys) in the host's environment settings, never in code");
+    if(m){ add(B,"Store","Store listing: icon, screenshots, description, privacy policy URL and the data-safety / privacy answers");
+      add(B,"Store",(k==="android"?"Run a closed test with real testers":k==="ios"?"Send a TestFlight build to testers":"Test with TestFlight and a Play closed track")+" before you submit for review"); }
+    else { add(B,"Safety","Set up a staging copy and turn on preview deploys"); }
+    if(A.data!=="none") add(B,"Data","Turn on database backups and test one restore");
+    if(k==="ai") add(B,"Safety","Set a spending limit and a rate limit on your model key");
+    if(A.paid!=="free"){ add(B,"Money","Test a full purchase and a refund in test mode"); add(B,"Money","Add terms, a privacy policy and a refund policy before taking money"); }
+    if(k==="game") add(B,"Game","Add a crash reporter and test on the slowest device you support");
+    if(web){
+      add(L,"Security","HTTPS everywhere: the http and www addresses redirect to your main https address","Behind Cloudflare use SSL mode Full (Strict) with an Origin Certificate; never Flexible.");
+      add(L,"Security","Security headers: Content-Security-Policy, HSTS, X-Content-Type-Options, Referrer-Policy, Permissions-Policy","Check them at securityheaders.com.");
+      add(L,"Security","Forms use POST with a token, are rate limited, and show user input as text only");
+      add(L,"Security","Run a dependency audit (npm audit or pip-audit) and fix high-severity issues");
+      add(L,"Bots","Add Cloudflare Turnstile (free) to sign-up and contact forms, plus a hidden honeypot field");
+      add(L,"Bots","Rate-limit by real visitor IP (behind Cloudflare, CF-Connecting-IP only from Cloudflare's ranges)");
+      add(L,"Bots","Check search engines are not blocked: Search Console URL inspection, Test live URL","It should say the page can be indexed.");
+      add(L,"SEO","Each page: a unique title (45 to 60 characters) and description (140 to 160), canonical URL, one H1, alt text");
+      add(L,"SEO","Share image 1200x630, Open Graph tags and JSON-LD; check with Google's Rich Results Test");
+      add(L,"SEO","sitemap.xml lists every page, and robots.txt points to it");
+      add(L,"SEO","PageSpeed Insights: 90+ on mobile");
+      add(L,"Google","Search Console: add a Domain property, verify with the DNS TXT record (keep that record)","Use a business Google account on your domain email.");
+      add(L,"Google","Sitemaps: type sitemap.xml after the pre-filled address, then Submit","An empty box submits your homepage and shows \"Sitemap is HTML\". 0 discovered pages for the first day is normal.");
+      add(L,"Google","URL inspection: Request indexing for the homepage and your top pages","About 10 requests a day; the homepage usually appears in 1 to 3 days.");
+      add(L,"Bing","Bing Webmaster Tools: sign in, Import your site from Search Console, submit the sitemap if it is missing","Bing also powers ChatGPT search and DuckDuckGo.");
+      add(L,"Bing","Turn on IndexNow (Cloudflare: Caching, Crawler Hints) so Bing hears about page changes");
+    } else {
+      add(L,"Store","Watch crash reports and store reviews daily for the first week, and reply to reviews");
+      add(L,"Store","Release in stages (Play staged rollout, App Store phased release) so a bad build reaches few people");
+      add(L,"Store","Keep the privacy labels and data-safety answers true after every update");
+      add(L,"SEO","A simple website for the app: store badges, a privacy policy page, a support email, and the same SEO basics");
+      add(L,"Google","Add that website to Google Search Console and Bing Webmaster Tools and submit its sitemap");
+    }
+    if(A.data!=="none"||A.paid!=="free") add(L,"Legal","Privacy policy names every service that handles user data (host, database, email, payments)");
+    add(L,"Email","If you send email: SPF, DKIM and DMARC records on your domain, so mail is not marked as spam");
+    add(L,"Safety","Uptime and error monitoring, and a feedback link people can find");
+    return {before:B, after:L}; }
+  var GC={Safety:"auth",Store:"store",Data:"data",Money:"pay",Game:"game",Security:"auth",Bots:"game",SEO:"host",Google:"cost",Bing:"live",Legal:"pay",Email:"data"};
+  function checklist(items){ var groups=[], by={};
+    items.forEach(function(it){ if(!by[it[0]]){ by[it[0]]=[]; groups.push(it[0]); } by[it[0]].push(it); });
+    return groups.map(function(g){ return '<div class="ln-group" style="--gc:var(--ln-'+GC[g]+')"><b>'+g+'</b><ul class="ln-check">'+by[g].map(function(it){
+      return '<li><input type="checkbox" aria-label="'+esc(it[1])+'"><span>'+esc(it[1])+(it[2]?'<small>'+esc(it[2])+'</small>':'')+'</span></li>'; }).join("")+'</ul></div>'; }).join(""); }
+  function render(){
+    var shown=Q.filter(function(q){ return (q[0]!=="gplat"&&q[0]!=="multi")||A.kind==="game"; });
+    qs.innerHTML=shown.map(function(q,n){ return '<div class="ln-q" role="group" aria-label="'+q[1]+'" style="--qc:var(--ln-'+q[2]+');--qt:var(--lt-'+q[2]+')"><b><i>'+(n+1)+'</i>'+q[1]+'</b><div class="ln-chips">'+
+      q[3].map(function(o){ return '<button type="button" class="ln-chip" data-k="'+q[0]+'" data-v="'+o[0]+'" aria-pressed="'+(A[q[0]]===o[0])+'">'+o[1]+'</button>'; }).join("")+'</div></div>'; }).join("");
+    var L=lists(), risk=A.data==="sensitive"||(A.paid!=="free"&&A.who==="public")?'<span class="ln-tag w">Extra care</span>':'<span class="ln-tag ok">Standard</span>';
+    plan.innerHTML='<h3>Leo’s launch plan</h3><p class="ln-say">Here’s where I’d put it, and what to check. '+risk+'</p>'+rows().join("")+
+      '<div class="ln-tabs" role="tablist"><button type="button" role="tab" class="ln-tab" data-t="before" aria-selected="'+(tab==="before")+'">Before launch</button>'+
+      '<button type="button" role="tab" class="ln-tab" data-t="after" aria-selected="'+(tab==="after")+'">After you go live</button></div>'+
+      checklist(L[tab])+
+      '<div class="ln-acts"><button type="button" class="ln-btn main" id="lnAsk">Get the full plan from your AI</button><button type="button" class="ln-btn" id="lnCopy">Copy checklist</button></div>'+
+      '<p class="ln-fine">Suggestions, not endorsements. Check each provider’s current pricing and store rules.</p>'; }
+  function answers(){ return Q.filter(function(q){ return (q[0]!=="gplat"&&q[0]!=="multi")||A.kind==="game"; }).map(function(q){
+    var o=q[3].filter(function(x){ return x[0]===A[q[0]]; })[0]; return q[1]+" "+(o?o[1]:""); }).join("\n"); }
+  function plainList(arr){ return arr.map(function(it){ return "- ["+it[0]+"] "+it[1]+(it[2]?" ("+it[2]+")":""); }).join("\n"); }
+  function prompt(){ var L=lists(), q=((document.getElementById("q")||{}).value||"").trim(), picks=window.__getPicks?window.__getPicks():[];
+    return "You are a senior DevOps and launch engineer. Help me launch my app safely.\n\n"+(q?"I built: "+q+"\n":"")+
+      "My answers:\n"+answers()+"\n\n"+(picks.length?"It is built on these open-source repos:\n"+picks.map(function(r,i){ return (i+1)+". "+r.name+": "+r.url; }).join("\n")+"\n\n":"")+
+      "Starting checklist (from Replore):\nBefore launch:\n"+plainList(L.before)+"\nAfter go-live:\n"+plainList(L.after)+"\n\n"+
+      "First ask me up to 5 short questions that would most change the plan, all in one numbered message, then wait for my answers. "+
+      "Then write a launch plan: where to host and why (check today's free-tier limits and prices; say when you are unsure), "+
+      "staging and production, secrets, database and backups, sign-in, payments (store rules for iPhone and Android), domain and HTTPS, "+
+      "security headers, bot protection, monitoring, SEO with Google Search Console and Bing Webmaster Tools, legal pages, "+
+      "and a day-1 and week-1 checklist with exact steps. Keep Governor on in my coding agent and ask me before any deploy."; }
+  qs.addEventListener("click",function(e){ var c=e.target.closest&&e.target.closest(".ln-chip"); if(!c) return; A[c.getAttribute("data-k")]=c.getAttribute("data-v"); render(); });
+  plan.addEventListener("click",function(e){ var t=e.target;
+    var tb=t.closest&&t.closest(".ln-tab"); if(tb){ tab=tb.getAttribute("data-t"); render(); return; }
+    if(t.closest&&t.closest("#lnAsk")&&window.__handoff){ window.__handoff(prompt(),"Your launch plan, by your own AI",
+      "Replore doesn't write it: your <b>own</b> AI does, free and private. The prompt has your answers, the checklist and the repos you picked. Copy it into any AI agent, or open it in Claude, ChatGPT or Gemini."); return; }
+    if(t.closest&&t.closest("#lnCopy")){ var L=lists(), txt="Before launch:\n"+plainList(L.before)+"\n\nAfter you go live:\n"+plainList(L.after), b=t.closest("#lnCopy");
+      var ok=function(){ b.textContent="Copied"; setTimeout(function(){ b.textContent="Copy checklist"; },1400); };
+      try{ navigator.clipboard.writeText(txt).then(ok,function(){}); }catch(_){} } });
+  var lb=document.getElementById("launchBtn"); if(lb) lb.addEventListener("click",function(){ openModal("launchModal"); });
+  render();
 })();
 
 // ---- the animated "How it works" explainer (the in-page video) ----

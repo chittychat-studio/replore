@@ -1046,6 +1046,16 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   use fewer words). GitHub matches every word, so when all queries return nothing the page searches again without
   version-like words (model names and versions such as opus5.5 or gpt-4o rarely appear in repo text), then with the two
   strongest words, within the same rate-limit guard, and says so above the results.
+- **RS79** Launch it with Leo (owner 2026-10-23, from a mock-up). A Launch button in the top menu opens a window: a few
+  tap answers (what you built, including iPhone, Android and games; who uses it; data; how people pay; budget) build a
+  colour-coded plan (host or store, store accounts, multiplayer, database, sign-in, payments with store billing rules on
+  mobile, cost) and a checklist in two tabs: Before launch (Governor first, secrets, staging, backups, payment tests,
+  legal pages) and After you go live, from Cardzo's go-live playbook (HTTPS and Cloudflare Full Strict, security
+  headers, form safety, Turnstile and rate limits, SEO basics, Search Console and Bing Webmaster Tools with the
+  sitemap pitfall, IndexNow, PageSpeed, SPF/DKIM/DMARC, monitoring). Nothing runs on a server; "Get the full plan from
+  your AI" reuses the plan hand-off (Claude, ChatGPT, Gemini) with the answers, checklist and picked repos. Tour is a top
+  menu button; the GitHub credit line moved from the footer into Privacy.
+  The top bar stacks above the page, so the phone menu's items are tappable (the hero covered them).
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
 - **RX3** Ranking by forks, trending or download counts. (Relevance, stars and license-freedom are the only
