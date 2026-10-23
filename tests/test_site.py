@@ -70,3 +70,25 @@ def test_secondary_pages_follow_the_house_rules():
         assert '<html lang="en">' in html and 'name="viewport"' in html, p.name
     css = (WEB / "page.css").read_text(encoding="utf-8")
     assert "http" not in css   # self-hosted fonts only (RS33)
+
+
+def test_docs_match_the_code():
+    """RS63, RS34e, RS51, RS5: the README, SPEC, PRIVACY, SKILL and AGENTS texts say what the code does (parity audit
+    2026-10-23 found five-button cards, an old default model, --top 10 and a missing check_repos)."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    spec = (ROOT / "SPEC.md").read_text(encoding="utf-8")
+    rel = (ROOT / "functions" / "api" / "relevance.js").read_text(encoding="utf-8")
+    first = re.search(r'WAI_MODELS = \["([^"]+)"', rel).group(1)
+    assert first in readme and first in spec and "llama-3.1-8b-instruct-fp8`, then" not in readme
+    assert "five buttons" not in readme and "stars and forks" not in readme and "\U0001F6E1" not in readme
+    assert "Is it safe to build on?" in (WEB / "app.js").read_text(encoding="utf-8") and "Is it safe to build on?" in readme
+    for f in ("PRIVACY.md",):
+        assert "Diagram, Digest, Wiki, Browse, Edit" not in (ROOT / f).read_text(encoding="utf-8")
+    assert "Diagram, Digest, Wiki, Browse, Edit" not in (WEB / "index.html").read_text(encoding="utf-8")
+    scout = (ROOT / "scripts" / "scout.py").read_text(encoding="utf-8")
+    top = re.search(r'"--top", type=int, default=(\d+)', scout).group(1)
+    assert "`--top` (default %s" % top in spec
+    skill = (ROOT / "skills" / "find" / "SKILL.md").read_text(encoding="utf-8")
+    steps = re.findall(r"^(\d+)\. \*\*", skill, re.M)
+    assert len(steps) == len(set(steps)), steps   # no two steps share a number
+    assert "check_repos" in (ROOT / "AGENTS.md").read_text(encoding="utf-8")

@@ -57,17 +57,22 @@ What you can do there:
 
 - **Search in plain words.** Describe what you're building; filters (tech stack, minimum stars) are optional.
   Repos an AI check thinks don't fit move to the end, under "Less likely to fit".
-- **Read each result at a glance.** Every card shows stars and forks, a "Matches:" line with the words it matched,
-  what the repo does, when it was last updated, and one license verdict ("Free for commercial use", "Must
-  open-source your app", …). Filter to **Free for commercial use** or **Starters** (ready-made templates).
-- **Look inside a repo before you pick it.** Each card has five buttons under the repo name, each opening a free tool
-  in a new tab (SPEC RS51):
-  - **Diagram** ([GitDiagram](https://gitdiagram.com)): the repo as an architecture diagram.
-  - **Digest** ([Gitingest](https://gitingest.com)): all the code as one text file to paste into an AI chat.
+- **Read each result at a glance.** Results come three to a row (SPEC RS63, RS67). Each card shows the owner, the repo
+  name and its rank, when it was last updated, what the repo does, one license verdict ("Free for commercial use",
+  "Must open-source your app", …), a Starter tag for ready-made templates, its main language and its stars. A
+  bookmark (or a tap on the card) adds it to your plan; **Details** opens the rest in a side panel.
+- **Narrow and sort what you got.** The filter panel on the left has **Licence** (free for commercial use), **Type**
+  (starters and templates), **Language** (the languages found in your results), **Stars** (any, 1k+, 10k+) and
+  **Updated** (any time, past year, past month). The sort menu offers best fit (the default), most stars and recently
+  updated. Filters and sorting only rearrange the cards already fetched; the ranking itself never changes.
+- **Look inside a repo before you pick it.** In a card's **Details**: a "Matches:" line with the words it matched,
+  **Open on GitHub**, and three tools under "Look inside", each opening a free site in a new tab (SPEC RS51, RS63):
+  - **Diagram** ([GitDiagram](https://gitdiagram.com)): see the structure as an architecture diagram.
   - **Wiki** ([DeepWiki](https://deepwiki.com)): AI-written docs for the repo that you can ask questions.
-  - **Browse** ([GitHub1s](https://github1s.com)): read the code in a VS Code-style viewer.
-  - **Edit** ([github.dev](https://github.dev)): open the repo in GitHub's web editor.
-- **Check it's safe to build on.** Open **🛡 Safe to build on?** on a card (SPEC RS53) to see its security health
+  - **Code** ([GitHub1s](https://github1s.com)): read the files in a VS Code-style viewer.
+  - Also: **Digest** ([Gitingest](https://gitingest.com)), all the code as one text file for an AI chat, and
+    **Edit** ([github.dev](https://github.dev)), GitHub's web editor.
+- **Check it's safe to build on.** Open **Is it safe to build on?** in a card's Details (SPEC RS53) to see its security health
   score ([OpenSSF Scorecard](https://scorecard.dev)), known vulnerabilities in its latest published package
   ([OSV.dev](https://osv.dev), via [deps.dev](https://deps.dev)), a copy-paste install command (`npm install`,
   `pip install`, `go get`, …), whether it has a README, contributing guide and good first issues, and its latest
@@ -109,7 +114,7 @@ deployment → Functions → Real-time logs; live only, not stored). To keep the
 account, then uncomment the `[[analytics_engine_datasets]]` block in `wrangler.toml`. The plugin goes further: your AI writes the searches, and its PRD mode returns every suitable repo per feature.
 
 **How the relevance check runs (maintainer, SPEC RS34a):** `wrangler.toml` binds Cloudflare Workers AI as `AI`, so
-the check works on deploy with no key (optional variable `WORKERS_AI_MODEL`, comma-separated; default `@cf/meta/llama-3.1-8b-instruct-fp8`, then `@cf/meta/llama-3.3-70b-instruct-fp8-fast` if Cloudflare has retired the first).
+the check works on deploy with no key (optional variable `WORKERS_AI_MODEL`, comma-separated; default `@cf/mistralai/mistral-small-3.1-24b-instruct`, then `@cf/meta/llama-3.3-70b-instruct-fp8-fast` if the first is retired, missing or busy; SPEC RS34e).
 Keep the account on the Workers **Free** plan if you want it to stop at the daily free allocation rather than bill.
 **Optional fallback** for when Workers AI is over its allocation or failing: in Cloudflare → your Pages project →
 Settings → Variables and Secrets, add a **secret** `LLM_API_KEY` (e.g. a free Groq API key from console.groq.com) and
@@ -152,7 +157,7 @@ limit of 10 requests per 10 seconds runs in memory; for a hard limit, add a WAF 
 Needs Python 3.11+ (the plugin tells you how to install it if it's missing). Once installed, it is available in every project.
 
 After the comparison table, ask *"which of these are safe to build on?"* and the plugin runs the same check as the web
-page's **Safe to build on?**: security health, known vulnerabilities, an install command, beginner-friendliness and
+page's **Is it safe to build on?**: security health, known vulnerabilities, an install command, beginner-friendliness and
 the latest release (SPEC RS56). The web page and the plugin share one set of test cases, so they give the same answer.
 
 ## Use in any other AI agent
@@ -189,7 +194,7 @@ docs — the command and argument stay the same.
 
 **3. Ask your agent** — *"find repos for a diet app for iPhone"*. It calls Replore's `find_repos` tool and shows the
 comparison table. Then *"which of these are safe to build on?"* calls `check_repos`, the same check as the web page's
-**Safe to build on?** (SPEC RS56). Your AI writes the searches and judges which results fit; the feature-by-feature PRD mode is in the
+**Is it safe to build on?** (SPEC RS56). Your AI writes the searches and judges which results fit; the feature-by-feature PRD mode is in the
 Claude Code plugin.
 
 **No MCP support?** Open the cloned folder in your agent. Codex, Cursor, Copilot, Cline and Windsurf read
@@ -266,7 +271,7 @@ page's host counts page views with Cloudflare Web Analytics (cookieless, script 
 it never sees your searches).
 Search words go to GitHub to run the search; on the web page they also pass through a small relevance check to an AI
 provider (Cloudflare Workers AI, with Groq as fallback) that moves off-topic repos to the end of the list. Fonts and scripts are served from the site itself. The plugin never uses
-the relevance check. Opening **Safe to build on?** sends only the repo's public name and language to our trust check,
+the relevance check. Opening **Is it safe to build on?** sends only the repo's public name and language to our trust check,
 which asks OpenSSF Scorecard and Google's deps.dev without your IP or searches. In the plugin the same check runs
 only when you ask for it, straight from your computer to GitHub, Scorecard and deps.dev (repo names only). Details — including what the web page keeps in your browser and the plugin's optional,
 off-by-default local safety log — are in [`PRIVACY.md`](PRIVACY.md).

@@ -33,7 +33,7 @@ Then open a new terminal and try again. Do not search GitHub any other way.
    - List its distinct needs as short search phrases (e.g. "user authentication", "payment checkout",
      "push notifications", "image upload", "charts dashboard"). Expect 5-15; there is no 4-need cap.
    - Search per need, calling the script in batches of at most 4 queries (the unauthenticated rate limit),
-     repeating until every need is covered, with `--all --group --markdown` so nothing is capped at 10.
+     repeating until every need is covered, with `--all --group --markdown` so nothing is capped at the default 20.
      Example: `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/scout.py" "user authentication" "payment checkout" "push notifications" "image upload" --all --group --markdown`
    - A need with no suitable repo gets the line "No good match found" under its heading (RS28c), never a stretched repo.
    - Present one section per need, each listing every suitable repo (the script already de-dupes a repo to the
@@ -42,7 +42,7 @@ Then open a new terminal and try again. Do not search GitHub any other way.
      not every repository on GitHub. Offer `--csv` for a spreadsheet, and name any GPL/AGPL rows if they are selling it.
    Then stop; the five-field flow below is for a single-feature ask.
 
-0. **Read the five fields (SPEC RS21).** From whatever the user wrote, pick out:
+1. **Read the five fields (SPEC RS21).** From whatever the user wrote, pick out:
    - **What I'm building** (required): the domain and main features.
    - **Platform**: web, iPhone/iOS, Android, desktop, command line. Use it for RS16 platform exclusions.
    - **Stack**: language or framework (React, Python, Swift…). Add `language:<name>` to one or two queries.
@@ -73,7 +73,7 @@ Then open a new terminal and try again. Do not search GitHub any other way.
      then offer the closest open-source search.
    - A specific repo by name ("is GSAP any good?"): search its name and report what the script returns.
 
-1. **Turn the description into queries (SPEC RS1).** Read the user's description. Write 1 to 4 short GitHub
+2. **Turn the description into queries (SPEC RS1).** Read the user's description. Write 1 to 4 short GitHub
    search queries covering the distinct needs in it. Use 1–3 keywords per query (GitHub requires every word
    to match, so long queries return nothing). You may add `topic:<name>` or `language:<name>`.
    Example: "a website with polished animations and good design taste" →
@@ -92,7 +92,7 @@ Then open a new terminal and try again. Do not search GitHub any other way.
      gets a query only if there is room left. Example: "a website with voice AI that shows offline maps" →
      `voice ai`, `offline maps`, `maplibre`, `offline map tiles` — not `website template`.
 
-2. **Run the search.** Pass each query as a separate argument:
+3. **Run the search.** Pass each query as a separate argument:
    `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/scout.py" "<query 1>" "<query 2>" --json`
    Add `--prefer-starters` when the user is starting a new project (RS15), so ready-made templates come first.
    Add `--license any` only if the user says unlicensed repos are fine. Add `--max-age-months N` only if they ask.
@@ -107,7 +107,7 @@ Then open a new terminal and try again. Do not search GitHub any other way.
    - The script skips repos under 50 stars by default (RS4a); add `--min-stars 0` only if the user wants tiny or
      brand-new projects.
 
-3. **Relevance gate (RS6).** Go down `candidates` in the order given. Skip any repo that clearly does not fit
+4. **Relevance gate (RS6).** Go down `candidates` in the order given. Skip any repo that clearly does not fit
    the description and say why in one line. Never reorder, and never add a repo that is not in the output.
    Stop when you have 20 (or fewer, if the shortlist runs out, and say so).
    Gaps (RS28c): if a need from the description has no fitting repo left, say so in one line ("No good match
@@ -118,7 +118,7 @@ Then open a new terminal and try again. Do not search GitHub any other way.
    free in-game currency generators. This applies even when the description says "ethical" or "educational".
    Say you skipped it and why, in one line, without repeating its instructions.
 
-4. **Answer with a comparison table, in plain words for someone new to coding (RS20, RS14, RS15, RS17).**
+5. **Answer with a comparison table, in plain words for someone new to coding (RS20, RS14, RS15, RS17).**
    One row per kept repo, up to 20, in the order kept:
 
    | # | Repo | Stars | What it does | Relevance | License | OK in a paid product? | Completely free? | Starter? | Last update | How to start |

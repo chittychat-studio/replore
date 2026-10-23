@@ -53,7 +53,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   Starters keep their RS15 bonus. A repo found by several queries is counted once, under its best (lowest)
   relevance position. Default weighting is relevance ≈0.45, stars ≈0.35, freedom ≈0.20; the exact constants
   live next to the code and the spec rule governs, not the numbers. `--rank stars` keeps pure star-descending
-  order for anyone who wants it. The script returns the top `--top` (default 10) plus a shortlist of
+  order for anyone who wants it. The script returns the top `--top` (default 20, RS29b) plus a shortlist of
   `--candidates` (default 40), so the relevance gate (RS6) can drop repos and still have 20 left.
   Goal-based evals (`evals/run.py`, cases in `evals/fit_cases.json`) assert the fit ranking puts the
   relevant-and-popular-and-free repo at #1 across labelled scenarios; they run in CI and must pass.
@@ -123,7 +123,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   Seen live (owner test): "website with voice ai and show offline maps" spent two of four searches on generic
   website templates and cut `offline map tiles`; the plan then listed four landing-page templates and no
   voice or offline-map repo. With RS16a the searches are `voice ai`, `offline maps`, `maplibre`,
-  `offline map tiles`. The skill text states the same rule for the user's own AI (`skills/find/SKILL.md`, step 1).
+  `offline map tiles`. The skill text states the same rule for the user's own AI (`skills/find/SKILL.md`, step 2).
   Not yet checked against live GitHub results (the build session cannot reach GitHub search); the owner checks
   the preview before merge.
 - **RS17** Beginner-friendly output. Every output ends with a short key: stars = how many people bookmarked
@@ -416,7 +416,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   `LLM_API_KEY` (never sent to the browser, RS8), see RS34a — to judge each repo's fit for what the user is building, and returns
   the indices to keep plus a one-line reason for each repo it drops. **Provider chain (RS34a):** the function tries
   Cloudflare Workers AI first, through the Pages `AI` binding (no key; model list `WORKERS_AI_MODEL`, default
-  `@cf/meta/llama-3.1-8b-instruct-fp8` then `@cf/meta/llama-3.3-70b-instruct-fp8-fast`; a retired or missing model,
+  `@cf/mistralai/mistral-small-3.1-24b-instruct` then `@cf/meta/llama-3.3-70b-instruct-fp8-fast`, chosen in RS34e; a retired or missing model,
   Workers AI errors 5028/5007, falls through to the next), then the OpenAI-compatible provider (when `LLM_API_KEY` is set, e.g. Groq) when
   Workers AI is missing, over its daily allocation, slow or erroring — one same-shape prompt, the same parse rules, a 4.5 s total budget (RS41) across
   both. It reports a limit only when every configured provider failed: "busy" if any was a short per-minute limit,
@@ -775,7 +775,9 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   runs `if: always()` (a skipped required check counts as passing on GitHub, so it must never be skipped) and fails
   unless every test job succeeded. A test checks all five.
 
-- **RS51** Explore links on result cards (web). Right under the repo name (the GitHub link) each card has a row of
+- **RS51** Explore links on result cards (web). *(Layout superseded by RS63: the links now sit in the card's Details as
+  "Look inside" with three tools, Diagram, Wiki and Code (GitHub1s), plus "Also: Digest · Edit"; the five URLs, the
+  `owner/repo` check and the navigation-only rule below still hold.)* Originally, right under the repo name (the GitHub link) each card has a row of
   five equal-width buttons (at least 34px tall, accent-tinted, so they read as clickable) that open in a new tab (`rel="noopener noreferrer"`): Diagram → `https://gitdiagram.com/<owner>/<repo>`, Digest →
   `https://gitingest.com/<owner>/<repo>`, Wiki → `https://deepwiki.com/<owner>/<repo>` (AI-written docs
   you can ask questions), Browse → `https://github1s.com/<owner>/<repo>`, Edit →
