@@ -62,7 +62,7 @@ code{font-family:var(--f-mono);font-size:.92em}
 .pro-acts{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:20px 0 0}
 .pp-buy{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 22px;border-radius:999px;background:var(--btn-grad);
   color:#fff;text-decoration:none;font-weight:700;font-size:15.5px}
-.pp-buy s{opacity:.75;font-weight:500}
+.pro-acts s{opacity:.75;font-weight:500}
 .pro-have{display:inline-flex;align-items:center;box-sizing:border-box;min-height:44px;padding:0 18px;border-radius:999px;border:1px solid var(--line);
   background:transparent;color:var(--ink);font:600 14.5px var(--f-body);cursor:pointer;text-decoration:none}
 .pro-have:hover,.pro-have:focus-visible{border-color:var(--accent);color:var(--accent-ink)}

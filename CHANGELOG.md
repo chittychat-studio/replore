@@ -31,8 +31,9 @@ How to cut a release: README, Development (SPEC RS81).
 - Web: when this browser's storage holds a Pro key (`replore.key`), the page sends it with its relevance checks in the
   same header. PRIVACY has the row (RS87, RS43).
 - `docs/MONETIZATION.md`: the owner's monetisation plan with a status per step and the owner's account checklist (RS88).
-- "Leo, Pro" window and a Pro button in the top menu: the sign-up offer line, monthly and yearly Stripe Payment Links
-  (a prefilled promotion code allowed), "I have a key", save or remove a key kept in this browser, and the saved key
+- "Leo, Pro" window and a Pro button in the top menu: the launch-offer line (half price on the first year when paid
+  yearly), monthly and yearly Stripe Payment Links (a prefilled promotion code allowed on either; a struck-through
+  old price on either button), "I have a key", save or remove a key kept in this browser, and the saved key
   shown back with Copy buttons for it and for the plugin's `REPLORE_KEY=` line. Hidden until the owner sets `PRO_URL`
   in `web/pro-core.js`; the privacy window names the key and Stripe (RS89).
 - New page `/pro`: the same window as a page, and where a buyer lands after Stripe checkout to get their key (shown,

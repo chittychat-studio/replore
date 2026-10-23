@@ -20,11 +20,15 @@ owner, no code), **not started**. "Not verified" marks a number or fact I could 
 ## 2. Replore Pro: hosted key
 
 - **Price (planned):** 8 USD a month or 72 USD a year.
-- **Sign-up offer (owner's copy, shipped as the default in `web/pro-core.js`):** "Sign-up offer: your first month is
-  3.99 USD, then 8 USD a month. Cancel any time." The monthly button reads "Get a key," with 8 USD struck through and
-  "3.99 USD for your first month"; the yearly button reads "Yearly, 72 USD a year". In Stripe this is a
-  **coupon "4.01 USD off, once"** (amount off, duration once, on the monthly price) with the **promotion code `FIRST399`**, prefilled on
-  the monthly Payment Link by appending `?prefilled_promo_code=FIRST399` to it. The yearly link carries no code.
+- **Launch offer (owner's copy, shipped as the default in `web/pro-core.js`, changed 2026-10-24):** "Launch offer: pay
+  yearly and your first year is half price, 36 USD instead of 72. Cancel any time." The monthly button reads "Get a
+  key, 8 USD a month"; the yearly button reads "Yearly," with 72 USD struck through and "36 USD for your first year".
+  In Stripe this is a **coupon "50% off", duration **once**** (a percentage coupon was the only kind the owner's
+  dashboard offered), restricted to the Replore Pro product, with a **promotion code** (owner's choice of name)
+  prefilled on the **yearly** Payment Link by appending `?prefilled_promo_code=CODE` to it. The monthly link carries
+  no code and has "Allow promotion codes" **off**, which is the only thing keeping the 50% off the monthly price
+  (a coupon applies to a product, not to one of its prices). "Once" on a yearly subscription means the first year
+  only; the renewal is 72 USD.
 - **Seller:** Stripe Payment Links on Cardzo's existing Stripe account (the same account as the tip link). **Stripe
   replaces the earlier merchant-of-record plan** (named in `CHANGELOG.md`): its payouts need an Indian bank account
   Cardzo does not have, so that route is dropped entirely.
@@ -102,10 +106,10 @@ request caps (30 repos, 100-character descriptions), **not measured**.
 
 - [ ] **Stripe, product:** Product catalogue, Add product "Replore Pro" with two recurring prices: 8 USD monthly and
       72 USD yearly. Copy both **price ids** (`price_...`) from the product page.
-- [ ] **Stripe, offer:** Coupons, New: amount off 4.01 USD, duration **once**, applies to the Replore Pro product; add a
-      **promotion code** `FIRST399`.
-- [ ] **Stripe, Payment Links:** one for the monthly price and one for the yearly price. On each: allow promotion codes;
-      After payment, "Don't show confirmation page", redirect to exactly
+- [ ] **Stripe, offer:** Coupons, New: 50% off, duration **once**, applies to the Replore Pro product only; add a
+      **promotion code** (any name, letters and digits).
+- [ ] **Stripe, Payment Links:** one for the monthly price and one for the yearly price. Allow promotion codes on the
+      **yearly** link only (off on the monthly one, or the 50% applies there too). On each: After payment, "Don't show confirmation page", redirect to exactly
       `https://replore.cardzo.co.in/pro?session_id={CHECKOUT_SESSION_ID}`; collect tax automatically (**Stripe Tax**).
 - [ ] **Stripe Tax:** Settings, Tax: add the head office address, the product tax code for software/SaaS, and the
       registrations you hold; Stripe Tax only collects where a registration is added (you are the seller of record).
@@ -119,8 +123,8 @@ request caps (30 repos, 100-character descriptions), **not measured**.
       Until all three are set the Pro route answers `pro_off`.
 - [ ] **Test end to end** with Stripe test mode first: a test restricted key and test links on a Preview deployment
       (`test_` links are refused on the live hosts).
-- [ ] **`web/pro-core.js`:** paste the monthly link with `?prefilled_promo_code=FIRST399` into `PRO_URL` and the yearly
-      link into `PRO_URL_YEAR`; run `python ops/stamp_assets.py`; ship. The Pro button and window appear, and `/pro` shows
+- [ ] **`web/pro-core.js`:** paste the monthly link into `PRO_URL` and the yearly link with `?prefilled_promo_code=CODE`
+      into `PRO_URL_YEAR`; run `python ops/stamp_assets.py`; ship. The Pro button and window appear, and `/pro` shows
       the buy buttons.
 - [ ] Turn the meaning route on (`RAG_PLUGIN=1` and `RAG_RERANK=1`), or Pro unlocks only the rate-limit skip.
 - [ ] **PyPI** account with 2FA, then publish `replore-mcp` (docs/LISTING.md).

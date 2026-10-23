@@ -1257,9 +1257,11 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   window stay hidden (`hidden`), like the tip link (RS44); the owner pastes the two Stripe Payment Links to go live.
   `proUrlOk` accepts `https://buy.stripe.com/` with one path segment of `[A-Za-z0-9_-]` and at most the query
   `?prefilled_promo_code=` + `[A-Z0-9_-]{1,30}` (any other parameter, a fragment or another host is refused), and a
-  `test_` link is refused on the live hosts. `PRO_PRICE`, `PRO_PRICE_WAS`, `PRO_PRICE_YEAR` and `PRO_OFFER` hold the
-  owner's offer copy (values in `docs/MONETIZATION.md` and `pro-core.js`, never here, RS88) and show only inside this
-  window and on the RS90 page; empty means hidden. The pure helpers `proButtons` and `proReveal` decide what shows and
+  `test_` link is refused on the live hosts. `PRO_PRICE`, `PRO_PRICE_WAS`, `PRO_PRICE_YEAR`, `PRO_PRICE_YEAR_WAS` and
+  `PRO_OFFER` hold the owner's offer copy (values in `docs/MONETIZATION.md` and `pro-core.js`, never here, RS88) and
+  show only inside this window and on the RS90 page; empty means hidden. Both buttons have the same shape (label, an
+  optional struck-through "was" price, the price), so an offer can sit on the monthly or the yearly button; the
+  promotion code goes on whichever link the offer belongs to (2026-10-24: the yearly one). The pure helpers `proButtons` and `proReveal` decide what shows and
   are tested without a DOM. Tap targets are 44px; one column on phones (560px and under). No em dash (RS66), no emoji or
   glyph icon (RS55); CSP unchanged (Stripe is only a link and a server-side call). The in-page privacy window and
   `PRIVACY.md` disclose the key.

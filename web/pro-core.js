@@ -4,10 +4,11 @@
 "use strict";
 // The owner's switches. PRO_URL empty = the Pro button and window stay hidden and /pro says keys are not on sale yet.
 // PRO_URL / PRO_URL_YEAR: Stripe Payment Links (monthly / yearly), optionally with ?prefilled_promo_code=CODE.
-// PRO_PRICE_WAS: an old price shown struck through next to PRO_PRICE (empty = hidden). PRO_OFFER: one offer line (empty = hidden).
-var PRO_URL="", PRO_URL_YEAR="";   // the owner pastes the two Stripe Payment Links here (monthly with ?prefilled_promo_code=FIRST399)
-var PRO_PRICE="3.99 USD for your first month", PRO_PRICE_WAS="8 USD", PRO_PRICE_YEAR="72 USD a year",
-  PRO_OFFER="Sign-up offer: your first month is 3.99 USD, then 8 USD a month. Cancel any time.";   // owner's copy 2026-10-23
+// PRO_PRICE_WAS / PRO_PRICE_YEAR_WAS: an old price shown struck through before PRO_PRICE / PRO_PRICE_YEAR (empty = hidden).
+// PRO_OFFER: one offer line (empty = hidden).
+var PRO_URL="", PRO_URL_YEAR="";   // the owner pastes the two Stripe Payment Links here (yearly with ?prefilled_promo_code=CODE)
+var PRO_PRICE="8 USD a month", PRO_PRICE_WAS="", PRO_PRICE_YEAR="36 USD for your first year", PRO_PRICE_YEAR_WAS="72 USD",
+  PRO_OFFER="Launch offer: pay yearly and your first year is half price, 36 USD instead of 72. Cancel any time.";   // owner's copy 2026-10-24
 var PRO_KEY="replore.key", PRO_SHAPE=/^rp\.sub_[A-Za-z0-9_]{8,80}\.[0-9a-f]{16}$/;   // RS87: rp.<Stripe subscription id>.<signature>
 var PRO_LIVE_HOSTS=["replore.cardzo.co.in","replore.pages.dev"];
 // RS90: a one-time marker set when a buy link on this site is clicked, so /pro saves a claimed key on its own only after a
@@ -33,12 +34,13 @@ function proKeySave(v){ var k=String(v==null?"":v).trim();   // stored only if i
   return proKeyGet()===k; }
 function proKeyRemove(){ try{ localStorage.removeItem(PRO_KEY); }catch(_){} }
 // pure: what the buy area shows. Nothing (on:false) until PRO_URL is a valid link; the yearly button only with PRO_URL_YEAR.
+// Both buttons have the same shape (label, an optional struck-through "was" price, the price), so an offer can sit on either.
 function proButtons(c, host){ c=c||{};
   if(!proUrlOk(c.url, host)) return {on:false, month:null, year:null, offer:""};
   return {on:true, month:{href:c.url, label:"Get a key, ", price:String(c.price||""), was:String(c.was||"").trim()},
-    year:proUrlOk(c.urlYear, host)&&c.priceYear ? {href:c.urlYear, label:"Yearly, "+c.priceYear} : null,
+    year:proUrlOk(c.urlYear, host)&&c.priceYear ? {href:c.urlYear, label:"Yearly, ", price:String(c.priceYear), was:String(c.wasYear||"").trim()} : null,
     offer:String(c.offer||"").trim()}; }
-function proConfig(){ return {url:PRO_URL, urlYear:PRO_URL_YEAR, price:PRO_PRICE, priceYear:PRO_PRICE_YEAR, was:PRO_PRICE_WAS, offer:PRO_OFFER}; }
+function proConfig(){ return {url:PRO_URL, urlYear:PRO_URL_YEAR, price:PRO_PRICE, priceYear:PRO_PRICE_YEAR, was:PRO_PRICE_WAS, wasYear:PRO_PRICE_YEAR_WAS, offer:PRO_OFFER}; }
 // pure: the saved key shown back (so moving to another browser or the plugin is copy-paste), or null
 function proReveal(k){ k=String(k==null?"":k).trim(); if(!PRO_SHAPE.test(k)) return null;
   return {key:k, env:"REPLORE_KEY="+k, hint:PRO_ENV_HINT}; }
@@ -59,7 +61,7 @@ function proView(p){ var $=function(id){ return document.getElementById(p+id); }
 function proMount(p, host){ var $=function(id){ return document.getElementById(p+id); }, b=proButtons(proConfig(), host);
   var buy=$("Buy"), yr=$("Year"), off=$("Offer");
   if(buy){ if(b.month){ buy.href=b.month.href; proBuyLabel(buy,b.month); } buy.hidden=!b.month; }
-  if(yr){ if(b.year){ yr.href=b.year.href; yr.textContent=b.year.label; } yr.hidden=!b.year; }
+  if(yr){ if(b.year){ yr.href=b.year.href; proBuyLabel(yr,b.year); } yr.hidden=!b.year; }
   if(off){ off.textContent=b.offer; off.hidden=!b.offer; }
   if(buy) buy.addEventListener("click",proCheckoutMark);
   if(yr) yr.addEventListener("click",proCheckoutMark);

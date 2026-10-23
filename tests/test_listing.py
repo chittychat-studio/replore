@@ -116,7 +116,7 @@ def test_monetisation_plan_and_prices_stay_out_of_the_spec():
     plan = (ROOT / "docs" / "MONETIZATION.md").read_text(encoding="utf-8")
     for s in ("8 USD a month", "72 USD a year", "Stripe Payment Link", "99 USD a month", "25 USD a seat", "own GitHub token",
               "0.011 USD per 1,000 neurons", "PRO_SIGNING_SECRET", "STRIPE_SECRET_KEY", "PRO_PRICE_IDS", "Stripe Tax",
-              "seller of record", "FIRST399", "4.01 USD off", "restricted key",
+              "seller of record", "50% off", "duration **once**", "restricted key",
               "https://replore.cardzo.co.in/pro?session_id={CHECKOUT_SESSION_ID}", "PyPI", "PulseMCP", "Anthropic paid plan"):
         assert s in plan, s
     assert "not verified" in plan.lower()
