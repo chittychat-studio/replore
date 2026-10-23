@@ -18,7 +18,7 @@ NOW = dt.datetime(2026, 10, 12, tzinfo=dt.timezone.utc)
 
 def _page():
     """The whole web page as shipped: markup + its scripts (RS49 moved the code out of index.html into app.js)."""
-    return "\n".join((ROOT / "web" / f).read_text(encoding="utf-8") for f in ("index.html", "theme.js", "app.js"))
+    return "\n".join((ROOT / "web" / f).read_text(encoding="utf-8") for f in ("index.html", "theme.js", "pro-core.js", "app.js"))
 
 
 def repo(name, stars, spdx="MIT", pushed="2026-09-01T00:00:00Z", **kw):
@@ -920,7 +920,9 @@ def test_privacy_notice_matches_what_the_code_does():
     assert 'id="privacyModal"' in html and "PRIVACY.md" in html and "privacy-note" in html
     assert "PRIVACY.md" in readme and "not legal advice" in priv and "Last updated" in priv
     # "no cookies / no analytics / no tracking" must stay literally true
-    for banned in ("document.cookie", "sessionStorage", "indexedDB", "gtag(", "googletagmanager", "plausible",
+    # RS90: the only sessionStorage use is the one-time checkout marker, disclosed in PRIVACY.md
+    assert re.findall(r"sessionStorage\.\w+\(([^,)]*)", html) == ["PRO_CHECKOUT"] * 3 and "`replore.checkout`" in priv
+    for banned in ("document.cookie", "indexedDB", "gtag(", "googletagmanager", "plausible",
                    "sendBeacon", "posthog", "umami", "analytics.js"):
         assert banned not in html, banned
     # only these hosts are contacted; PRIVACY.md names each of them

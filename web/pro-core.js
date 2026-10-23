@@ -10,6 +10,14 @@ var PRO_PRICE="3.99 USD for your first month", PRO_PRICE_WAS="8 USD", PRO_PRICE_
   PRO_OFFER="Sign-up offer: your first month is 3.99 USD, then 8 USD a month. Cancel any time.";   // owner's copy 2026-10-23
 var PRO_KEY="replore.key", PRO_SHAPE=/^rp\.sub_[A-Za-z0-9_]{8,80}\.[0-9a-f]{16}$/;   // RS87: rp.<Stripe subscription id>.<signature>
 var PRO_LIVE_HOSTS=["replore.cardzo.co.in","replore.pages.dev"];
+// RS90: a one-time marker set when a buy link on this site is clicked, so /pro saves a claimed key on its own only after a
+// checkout this browser started (a crafted /pro link carrying someone else's session can never replace a key). sessionStorage: this tab only,
+// survives Stripe's redirect back, removed when /pro reads it.
+var PRO_CHECKOUT="replore.checkout";
+function proCheckoutMark(){ try{ var a=new Uint8Array(16); crypto.getRandomValues(a);
+  sessionStorage.setItem(PRO_CHECKOUT,Array.prototype.map.call(a,function(b){ return ("0"+b.toString(16)).slice(-2); }).join("")); }catch(_){} }
+function proCheckoutTake(){ var v=""; try{ v=sessionStorage.getItem(PRO_CHECKOUT)||""; sessionStorage.removeItem(PRO_CHECKOUT); }catch(_){}
+  return /^[0-9a-f]{32}$/.test(v); }
 var PRO_ENV_HINT="For the plugin: in Claude Code, set it in your shell before you start claude; in an MCP config, add it as an env entry.";
 // RS89: a Stripe Payment Link only (same rule as the tip link, RS44), plus an optional prefilled promotion code; a test_
 // link is refused on the live hosts
@@ -53,6 +61,8 @@ function proMount(p, host){ var $=function(id){ return document.getElementById(p
   if(buy){ if(b.month){ buy.href=b.month.href; proBuyLabel(buy,b.month); } buy.hidden=!b.month; }
   if(yr){ if(b.year){ yr.href=b.year.href; yr.textContent=b.year.label; } yr.hidden=!b.year; }
   if(off){ off.textContent=b.offer; off.hidden=!b.offer; }
+  if(buy) buy.addEventListener("click",proCheckoutMark);
+  if(yr) yr.addEventListener("click",proCheckoutMark);
   var have=$("Have"), form=$("Form"), rm=$("Remove"), cp=$("Copy"), ecp=$("EnvCopy");
   if(have) have.addEventListener("click",function(){ proView(p); var i=$("Key"); if(i&&!i.closest("[hidden]")) i.focus(); });
   if(form) form.addEventListener("submit",function(e){ e.preventDefault(); var i=$("Key");

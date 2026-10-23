@@ -503,7 +503,7 @@ const GOOD = "rp.sub_1QabcDEF234ghiJKL.0123456789abcdef";
 
 // RS90: the /pro page's claim helpers (pure, no DOM)
 { const pro = fs.readFileSync(path.join(__dirname, "..", "web", "pro.js"), "utf8").replace('"use strict";', "");
-  const P = new Function("localStorage", coreCode + "\n" + pro + "; return {claimView, claimSession, claimCleanUrl, CLAIM_REASONS};")(LS);
+  const P = new Function("localStorage", coreCode + "\n" + pro + "; return {claimView, claimSession, claimCleanUrl, CLAIM_REASONS, claimDecision, CLAIM_ASK_NEW, CLAIM_ASK_OTHER};")(LS);
   const KEY = "rp.sub_1QabcDEF234ghiJKL.0123456789abcdef", SID = "cs_test_a1B2c3D4e5F6g7H8i9J0";
   const v = P.claimView(200, { key: KEY, renews: "2026-11-23" });
   assert.deepStrictEqual(v, { ok: true, key: KEY, on: "Pro is on in this browser.", renews: "Your subscription renews on 2026-11-23.",
@@ -527,4 +527,22 @@ const GOOD = "rp.sub_1QabcDEF234ghiJKL.0123456789abcdef";
   assert.strictEqual(P.claimCleanUrl("/pro", "?a=1&session_id=" + SID + "&b=2", "#x"), "/pro?a=1&b=2#x");
   // the key never goes into a URL; the session id is sent only in the POST body to our own function
   assert.ok(!/session_id=[^"]*\+\s*(v\.key|k\b)/.test(pro) && !/[?&]key=/.test(pro));
+  // security review: auto-save only after a checkout this browser started, never over a different saved key
+  const OTHER = "rp.sub_1QotherKEY99999.fedcba9876543210";
+  assert.strictEqual(P.claimDecision(true, "", KEY), "save");
+  assert.strictEqual(P.claimDecision(false, "", KEY), "ask", "a crafted link without our checkout marker never saves");
+  assert.strictEqual(P.claimDecision(true, OTHER, KEY), "ask", "never over a different key, marker or not");
+  assert.strictEqual(P.claimDecision(false, OTHER, KEY), "ask");
+  assert.strictEqual(P.claimDecision(false, KEY, KEY), "save", "the same key again changes nothing");
+  [P.CLAIM_ASK_NEW, P.CLAIM_ASK_OTHER].forEach(x => assert.ok(!/—/.test(x), x));
+  assert.ok(/nonce=proCheckoutTake\(\)/.test(pro) && /claimDecision\(nonce, had, v\.key\)/.test(pro) && (pro.match(/proKeySave\(/g) || []).length === 2);
+  // the checkout marker: random, one tab, read once
+  const SS = { m: {}, getItem(k){ return k in this.m ? this.m[k] : null; }, setItem(k, v){ this.m[k] = String(v); }, removeItem(k){ delete this.m[k]; } };
+  const C = new Function("localStorage", "sessionStorage", "crypto", coreCode + "; return {proCheckoutMark, proCheckoutTake, PRO_CHECKOUT};")(LS, SS, require("crypto").webcrypto);
+  assert.strictEqual(C.proCheckoutTake(), false);
+  C.proCheckoutMark(); assert.ok(/^[0-9a-f]{32}$/.test(SS.m["replore.checkout"]));
+  const first = SS.m["replore.checkout"]; C.proCheckoutMark(); assert.notStrictEqual(SS.m["replore.checkout"], first, "random each time");
+  assert.strictEqual(C.proCheckoutTake(), true); assert.strictEqual(C.proCheckoutTake(), false, "used once");
+  SS.m["replore.checkout"] = "1"; assert.strictEqual(C.proCheckoutTake(), false, "a forged marker is not ours");
+  assert.ok(/buy\.addEventListener\("click",proCheckoutMark\)/.test(coreCode) && /yr\.addEventListener\("click",proCheckoutMark\)/.test(coreCode));
   console.log("pro page ok"); }

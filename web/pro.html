@@ -10,8 +10,8 @@
      are in pro-core.js (shared with the window); the page logic is pro.js. No inline script (RS49), no emoji (RS55),
      no em dash (RS66), 44px targets. -->
 <script src="/theme.js?v=d156f907a3"></script>
-<script src="/pro-core.js?v=f9016d18c4" defer></script>
-<script src="/pro.js?v=20a62c1c1b" defer></script>
+<script src="/pro-core.js?v=40c22795a2" defer></script>
+<script src="/pro.js?v=bc69301b2f" defer></script>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/fonts.css">
 <link rel="stylesheet" href="/page.css">
@@ -27,6 +27,8 @@
     <p id="ppClaimMsg" class="sp-lead" hidden></p>
     <div id="ppClaimOk" hidden>
       <p id="ppClaimOn" class="pp-on"></p>
+      <p class="pp-ask"><button type="button" id="ppUse" class="pro-save" hidden>Use this key in this browser</button>
+        <button type="button" id="ppKeepMine" class="link-btn" hidden>Keep my current key</button></p>
       <div class="pro-in"><input id="ppClaimKey" type="text" readonly aria-label="Your Pro key" spellcheck="false">
         <button type="button" id="ppClaimCopy" class="pro-copy">Copy</button></div>
       <div class="pro-in pro-reveal"><input id="ppClaimEnv" type="text" readonly aria-label="Setting for the plugin" spellcheck="false">

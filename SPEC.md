@@ -1181,7 +1181,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   package and registry versions equal `plugin.json` (RS50) and the identifiers match (tested). Publishing is the
   owner's step; nothing in CI uploads.
 - **RS87** Replore Pro key (owner plan 2026-10-23; builds on RS34g, RS34h, RS42; amended 2026-10-23: Stripe replaces
-  the earlier merchant of record, which pays out only to a bank account in a country Cardzo has none in). The owner
+  the earlier merchant of record, whose payouts need an Indian bank account Cardzo does not have). The owner
   sells Pro with a **Stripe Payment Link** and is the seller of record. There is no key store: a **Pro key** is a signed
   subscription token, `rp.<subscription id>.<sig>`, where `<subscription id>` is the Stripe subscription id (`sub_` then
   `[A-Za-z0-9_]`, 8-80 characters after the prefix) and `<sig>` is the first 16 hex characters of
@@ -1197,7 +1197,8 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   off: a semantic request carrying a Pro-shaped key that is not `PLUGIN_KEY` gets 403 `pro_off`. Neither secret ever
   leaves the server or appears in a log or a response. Keys are issued by RS90.
   **Server** (`functions/api/relevance.js`): the key arrives in the header the plugin already sends,
-  `X-Replore-Plugin-Key` (one header for both, no new name). It is checked first, in constant time, against `PLUGIN_KEY`
+  `X-Replore-Plugin-Key` (one header for both, no new name). The web never saves a claimed key over another one on its
+  own (RS90 checkout marker). It is checked first, in constant time, against `PLUGIN_KEY`
   (and `X-Replore-Eval-Key` against `EVAL_KEY`) exactly as before (RS34g, unchanged). Only if that fails and the value
   has the Pro shape, the function recomputes the signature and compares it in constant time; a bad signature is refused
   with no Stripe call (so the endpoint cannot be used to probe Stripe). A good signature leads to
@@ -1252,7 +1253,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   plugin line `REPLORE_KEY=<key>` in a second read-only field with its own Copy button, and one sentence on where to set
   it (Claude Code: in the shell before `claude`; an MCP config: an `env` entry), so moving the key to another browser
   or to the plugin is copy and paste; opening the window with a stored key shows that state. The key is never put in a
-  URL, a log or the feedback form. **Switches** live in `web/pro-core.js`, loaded before `app.js` on the page and by the
+  URL, a log or the feedback form; clicking a buy link sets the RS90 one-time checkout marker. **Switches** live in `web/pro-core.js`, loaded before `app.js` on the page and by the
   RS90 page, so both read one copy: `PRO_URL` (monthly) and `PRO_URL_YEAR` (yearly) are empty, so the button and the
   window stay hidden (`hidden`), like the tip link (RS44); the owner pastes the two Stripe Payment Links to go live.
   `proUrlOk` accepts `https://buy.stripe.com/` with one path segment of `[A-Za-z0-9_-]` and at most the query
@@ -1282,9 +1283,16 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   link, canonical and sitemap entry use `/pro`, RS80): the RS89 window as a page, same copy, image, pills, buttons and
   key form (ids prefixed `pp`). With `session_id` in the address, it shows a claim state: it POSTs the id to
   `/api/pro/claim`, removes `session_id` from the address bar (`history.replaceState`), and on success shows the key in
-  a read-only JetBrains Mono field with a Copy button, saves it to `localStorage["replore.key"]`, says "Pro is on in this
-  browser" and the renewal date, and tells the buyer to keep the key for the plugin and MCP server (`REPLORE_KEY`). On
-  failure it shows the plain-English reason for the code and a "Try again" link. The strings come from pure functions in
+  a read-only JetBrains Mono field with a Copy button, saves it to `localStorage["replore.key"]` only as below, says "Pro
+  is on in this browser" and the renewal date, and tells the buyer to keep the key for the plugin and MCP server (`REPLORE_KEY`). On
+  failure it shows the plain-English reason for the code and a "Try again" link. **No key swap by link (security review
+  2026-10-23):** a crafted `/pro?session_id=` link to someone else's paid session must not replace a visitor's key. The
+  buy links (window and page) put a random one-time marker in `sessionStorage["replore.checkout"]` when clicked (it
+  survives Stripe's top-level redirect back); `/pro` reads and deletes it, and `claimDecision(hasMarker, storedKey,
+  claimedKey)` saves the claimed key by itself only with the marker and no different key already saved. Otherwise the
+  key is shown read-only with Copy, a "Use this key in this browser" button that saves it on click, and, when another
+  key is saved, a "Keep my current key" button that closes the claim state. It never saves over a different key on its
+  own. The strings come from pure functions in
   `pro.js` (tested without a DOM). While `PRO_URL` is empty the page is still reachable but shows "Keys are not on sale
   yet." and no buy button. The owner sets the Payment Link's success URL to
   `https://replore.cardzo.co.in/pro?session_id={CHECKOUT_SESSION_ID}`. Linked from the page footer and listed in the

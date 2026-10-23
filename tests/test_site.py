@@ -163,13 +163,14 @@ def test_pro_page_is_static_csp_safe_and_linked():
               "<i>Meaning ranking</i><i>No queue on the AI check</i><i>Web and every agent</i>", ">I have a key</button>",
               'placeholder="Paste it here"', "Pro is on for this browser", ">Remove key</button>", "Keys are not on sale yet.",
               "Stays in this browser. I check it with Stripe, who sold it to you, and never keep it.",
-              'id="ppClaim"', 'id="ppClaimKey" type="text" readonly', 'id="ppClaimCopy"', 'id="ppRetry"', 'id="ppOffer"', 'id="ppYear"'):
+              'id="ppClaim"', 'id="ppClaimKey" type="text" readonly', 'id="ppClaimCopy"', 'id="ppRetry"', 'id="ppOffer"', 'id="ppYear"',
+              '>Use this key in this browser</button>', '>Keep my current key</button>'):
         assert s in html, s
     # the only network call is to its own claim function; text only through textContent / value
     assert re.findall(r'fetch\("([^"]+)"', js) == ["/api/pro/claim"] and "innerHTML" not in js + core
     assert "https://" not in js and "history.replaceState" in js
     assert "—" not in js + core and not BANNED.search(js + core)
-    for sel in (".pp-buy{", ".pro-have{", ".pro-in input{", ".pro-save{", ".pro-copy{", ".pro-on .link-btn{"):
+    for sel in (".pp-buy{", ".pro-have{", ".pro-in input{", ".pro-save{", ".pro-copy{", ".pp-ask .link-btn{"):
         rule = css[css.index(sel):css.index("}", css.index(sel))]
         assert "min-height:44px" in rule, sel
     assert "@media (max-width:560px)" in css and ".sr-only{" in css

@@ -81,7 +81,9 @@ code{font-family:var(--f-mono);font-size:.92em}
 .pro-on,.pp-on{margin:0;font-weight:600;display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px}
 .pp-on{margin:0 0 10px}
 .link-btn{background:none;border:0;color:var(--accent-ink);font:inherit;font-weight:600;cursor:pointer;padding:0}
-.pro-on .link-btn{min-height:44px}
+.pro-on .link-btn,.pp-ask .link-btn{min-height:44px}
+.pp-ask{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin:0 0 10px}
+.pp-ask:not(:has(button:not([hidden]))){display:none}
 .pro-note,.pro-hint{margin:10px 0 0;font-size:12.5px;color:var(--muted)}
 .pp-err{margin:0 0 6px;padding:10px 14px;border-radius:10px;background:var(--warnbg);color:var(--warn);font-weight:600}
 @media (max-width:560px){

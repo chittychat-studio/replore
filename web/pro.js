@@ -19,6 +19,14 @@ function claimSession(search){ var m=/[?&]session_id=([^&#]*)/.exec(String(searc
 // pure: the address without session_id (other parameters kept), for history.replaceState
 function claimCleanUrl(path, search, hash){ var q=String(search||"").replace(/^\?/,"").split("&").filter(function(p){ return p && !/^session_id(=|$)/.test(p); });
   return String(path||"/pro")+(q.length?"?"+q.join("&"):"")+String(hash||""); }
+// pure (RS90 security review): save the claimed key on its own only after a checkout this browser started (the marker
+// from proCheckoutMark) and never over a different key already saved; otherwise ask
+function claimDecision(hasNonce, storedKey, claimedKey){
+  if(storedKey && storedKey===claimedKey) return "save";   // already this key: nothing changes
+  if(!hasNonce || storedKey) return "ask";
+  return "save"; }
+var CLAIM_ASK_NEW="This key is not saved in this browser yet. Use it here if you just bought it, or copy it.";
+var CLAIM_ASK_OTHER="This browser already has a different Pro key saved. It stays unless you choose this one.";
 // pure: what the claim state says, from the reply's HTTP status and JSON body (null when it was not JSON or never came)
 function claimView(status, body){
   var k=body&&typeof body.key==="string"?body.key:"";
@@ -33,7 +41,7 @@ function claimView(status, body){
 (function(){ if(typeof document==="undefined" || typeof location==="undefined" || !document.getElementById("ppMain")) return;
   var host=location.hostname, b=proMount("pp", host), $=function(id){ return document.getElementById(id); };
   var notSale=$("ppNotSale"); if(notSale) notSale.hidden=b.on;
-  var id=claimSession(location.search);
+  var id=claimSession(location.search), nonce=proCheckoutTake();   // the marker is used once, whatever happens next
   if(!/[?&]session_id=/.test(location.search)) return;
   try{ history.replaceState(null,"",claimCleanUrl(location.pathname,location.search,location.hash)); }catch(_){}
   var box=$("ppClaim"), msg=$("ppClaimMsg"), ok=$("ppClaimOk"), err=$("ppClaimErr"), retry=$("ppRetry");
@@ -46,10 +54,14 @@ function claimView(status, body){
   fetch("/api/pro/claim",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({session_id:id})})
     .then(function(r){ return r.json().then(function(j){ return [r.status,j]; },function(){ return [r.status,null]; }); })
     .then(function(a){ var v=claimView(a[0],a[1]); if(!v.ok) return fail(v);
-      proKeySave(v.key); proView("pp");
+      var had=proKeyGet(), d=claimDecision(nonce, had, v.key), use=$("ppUse"), keep=$("ppKeepMine"), on=$("ppClaimOn");
       if(msg) msg.hidden=true;
       $("ppClaimKey").value=v.key; $("ppClaimEnv").value=v.env;
-      $("ppClaimOn").textContent=v.on; $("ppClaimRenews").textContent=v.renews; $("ppClaimKeep").textContent=v.keep;
+      $("ppClaimRenews").textContent=v.renews; $("ppClaimKeep").textContent=v.keep;
+      if(d==="save"){ proKeySave(v.key); proView("pp"); on.textContent=v.on; }
+      else { on.textContent=had?CLAIM_ASK_OTHER:CLAIM_ASK_NEW; if(use) use.hidden=false; if(keep&&had) keep.hidden=false;
+        if(use) use.addEventListener("click",function(){ if(proKeySave(v.key)){ proView("pp"); on.textContent=v.on; use.hidden=true; if(keep) keep.hidden=true; } });
+        if(keep) keep.addEventListener("click",function(){ box.hidden=true; }); }
       ok.hidden=false;
       var c=$("ppClaimCopy"); if(c){ c.addEventListener("click",function(){ proCopy($("ppClaimKey"),c); }); c.focus(); }
       var e=$("ppClaimEnvCopy"); if(e) e.addEventListener("click",function(){ proCopy($("ppClaimEnv"),e); }); })
