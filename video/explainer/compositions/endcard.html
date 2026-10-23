@@ -1,15 +1,16 @@
 <template>
   <style>
-    @font-face { font-family: "Anton"; src: url("assets/fonts/anton-latin.woff2") format("woff2"); }
+    @font-face { font-family: "Instrument Serif"; font-weight: 400; src: url("assets/fonts/instrumentserif-latin-400.woff2") format("woff2"); }
+    @font-face { font-family: "Inter Tight"; font-weight: 100 900; src: url("assets/fonts/intertight-latin.woff2") format("woff2"); }
     @font-face { font-family: "JetBrains Mono"; font-weight: 500; src: url("assets/fonts/jbmono-latin-500.woff2") format("woff2"); }
     #root { position: absolute; inset: 0; overflow: hidden; background: radial-gradient(70% 70% at 78% 10%, rgba(156,192,216,0.18), transparent 70%), linear-gradient(180deg, #2b4560 0%, #1b2f43 58%, #111e2c 100%); }
     #ec-map { position: absolute; left: 0; top: 0; }
-    #ec-title { position: absolute; left: 192px; top: 190px; font: 400 156px/1.0 "Anton", sans-serif; color: #fff; letter-spacing: -0.01em; }
+    #ec-title { position: absolute; left: 192px; top: 190px; font: 800 150px/1.02 "Inter Tight", sans-serif; letter-spacing: -0.045em; color: #fff; }
     #ec-title .w { display: inline-block; }
-    #ec-title .l2 { color: #c7d6e2; }
+    #ec-title .l2 { color: #c7d6e2; font: 400 1.1em/1 "Instrument Serif", Georgia, serif; letter-spacing: -0.01em; }
     #ec-brand { position: absolute; left: 192px; top: 640px; display: flex; align-items: center; gap: 24px; }
     #ec-mark { width: 110px; height: 110px; }
-    #ec-name { font: 400 88px "Anton", sans-serif; color: #fff; }
+    #ec-name { font: 800 88px "Inter Tight", sans-serif; letter-spacing: -0.035em; color: #fff; }
     #ec-url { position: absolute; left: 192px; top: 790px; font: 500 38px "JetBrains Mono", monospace; color: #c7d6e2; }
     #ec-bot { position: absolute; left: 0; top: 0; width: 0; height: 0; }
     #ec-bot video { position: absolute; left: -290px; top: -545px; width: 580px; height: 550px; }
