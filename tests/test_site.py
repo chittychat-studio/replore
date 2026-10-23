@@ -146,3 +146,30 @@ def test_handoff_prompts_carry_the_data_guard():
     assert js.count('"+DATA_GUARD+"') == 2
     assert 'built on these open-source GitHub repos. "+DATA_GUARD' in js and 'It is built on these open-source repos. "+DATA_GUARD' in js
     assert "listed — don't" not in js
+
+
+def test_pro_page_is_static_csp_safe_and_linked():
+    """RS90: /pro is the Leo, Pro window as a page plus the claim state; no inline script, canonical /pro, in the sitemap
+    and the page footer, same copy as the window, 44px targets, and it calls only its own site (CSP unchanged)."""
+    html = (WEB / "pro.html").read_text(encoding="utf-8")
+    js = (WEB / "pro.js").read_text(encoding="utf-8")
+    core = (WEB / "pro-core.js").read_text(encoding="utf-8")
+    css = (WEB / "page.css").read_text(encoding="utf-8")
+    assert '<link rel="canonical" href="' + CANON + 'pro">' in html
+    assert CANON + "pro</loc>" in (WEB / "sitemap.xml").read_text(encoding="utf-8")
+    assert 'href="/pro">' in (WEB / "index.html").read_text(encoding="utf-8")
+    assert re.search(r'<script src="/pro-core\.js\?v=[0-9a-f]{10}" defer></script>\s*<script src="/pro\.js\?v=[0-9a-f]{10}" defer></script>', html)
+    for s in ("Leo, <em>Pro</em>", "Want me to read for meaning too? Today I match your words.",
+              "<i>Meaning ranking</i><i>No queue on the AI check</i><i>Web and every agent</i>", ">I have a key</button>",
+              'placeholder="Paste it here"', "Pro is on for this browser", ">Remove key</button>", "Keys are not on sale yet.",
+              "Stays in this browser. I check it with Stripe, who sold it to you, and never keep it.",
+              'id="ppClaim"', 'id="ppClaimKey" type="text" readonly', 'id="ppClaimCopy"', 'id="ppRetry"', 'id="ppOffer"', 'id="ppYear"'):
+        assert s in html, s
+    # the only network call is to its own claim function; text only through textContent / value
+    assert re.findall(r'fetch\("([^"]+)"', js) == ["/api/pro/claim"] and "innerHTML" not in js + core
+    assert "https://" not in js and "history.replaceState" in js
+    assert "—" not in js + core and not BANNED.search(js + core)
+    for sel in (".pp-buy{", ".pro-have{", ".pro-in input{", ".pro-save{", ".pro-copy{", ".pro-on .link-btn{"):
+        rule = css[css.index(sel):css.index("}", css.index(sel))]
+        assert "min-height:44px" in rule, sel
+    assert "@media (max-width:560px)" in css and ".sr-only{" in css

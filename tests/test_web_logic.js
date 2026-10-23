@@ -500,3 +500,31 @@ const GOOD = "rp.sub_1QabcDEF234ghiJKL.0123456789abcdef";
   const fb = code.slice(code.indexOf("function feedbackPayload"), code.indexOf("function feedbackPayload") + 1200);
   assert.ok(!/replore\.key|proKey|PRO_KEY/.test(fb));
   console.log("pro window ok"); }
+
+// RS90: the /pro page's claim helpers (pure, no DOM)
+{ const pro = fs.readFileSync(path.join(__dirname, "..", "web", "pro.js"), "utf8").replace('"use strict";', "");
+  const P = new Function("localStorage", coreCode + "\n" + pro + "; return {claimView, claimSession, claimCleanUrl, CLAIM_REASONS};")(LS);
+  const KEY = "rp.sub_1QabcDEF234ghiJKL.0123456789abcdef", SID = "cs_test_a1B2c3D4e5F6g7H8i9J0";
+  const v = P.claimView(200, { key: KEY, renews: "2026-11-23" });
+  assert.deepStrictEqual(v, { ok: true, key: KEY, on: "Pro is on in this browser.", renews: "Your subscription renews on 2026-11-23.",
+    keep: "Keep this key somewhere safe: it is how you turn Pro on in another browser, and the plugin and MCP server read it as REPLORE_KEY.",
+    env: "REPLORE_KEY=" + KEY });
+  assert.strictEqual(P.claimView(200, { key: KEY, renews: null }).renews, "");
+  assert.strictEqual(P.claimView(200, { key: KEY, renews: "<b>soon</b>" }).renews, "");
+  // failures: plain-English reasons per code; anything unexpected (bad key shape, not JSON, network) reads as "could not reach Stripe"
+  for (const [st, body, code] of [[403, { error: "not_paid" }, "not_paid"], [403, { error: "not_pro" }, "not_pro"], [404, { error: "unknown_session" }, "unknown_session"],
+      [400, { error: "bad_session" }, "bad_session"], [429, { error: "rate_limited" }, "rate_limited"], [503, { error: "pro_off" }, "pro_off"],
+      [503, { error: "stripe_error" }, "stripe_error"], [200, { key: "rp.bad" }, "stripe_error"], [200, null, "stripe_error"], [0, null, "stripe_error"],
+      [500, { error: "<script>" }, "stripe_error"]]) {
+    const f = P.claimView(st, body); assert.strictEqual(f.ok, false); assert.strictEqual(f.reason, P.CLAIM_REASONS[code], code);
+  }
+  Object.values(P.CLAIM_REASONS).forEach(r => assert.ok(!/—/.test(r) && !/[\u{1F000}-\u{1FAFF}☀-➿]/u.test(r), r));
+  // the session id from the address, shape-checked; the address without it
+  assert.strictEqual(P.claimSession("?session_id=" + SID), SID);
+  assert.strictEqual(P.claimSession("?a=1&session_id=" + SID + "&b=2"), SID);
+  ["", "?session_id=", "?session_id=cs_live_short", "?session_id=" + SID + "%2F..", "?session_id=%E0%A4%A", "?xsession_id=" + SID].forEach(q => assert.strictEqual(P.claimSession(q), "", q));
+  assert.strictEqual(P.claimCleanUrl("/pro", "?session_id=" + SID, ""), "/pro");
+  assert.strictEqual(P.claimCleanUrl("/pro", "?a=1&session_id=" + SID + "&b=2", "#x"), "/pro?a=1&b=2#x");
+  // the key never goes into a URL; the session id is sent only in the POST body to our own function
+  assert.ok(!/session_id=[^"]*\+\s*(v\.key|k\b)/.test(pro) && !/[?&]key=/.test(pro));
+  console.log("pro page ok"); }
