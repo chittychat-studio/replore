@@ -1210,6 +1210,14 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   `web/_headers` (CSP) is unchanged: Polar is called server-side only. **Planned, not built** (so nobody reads them
   as shipped): searches on the user's own GitHub token, PRD batch over 20 repos, saved shortlists, a licence-policy
   mode. Prices live only in `docs/MONETIZATION.md`, never in this SPEC or on the site until the owner publishes them.
+- **RS88** Monetisation plan (owner plan 2026-10-23). `docs/MONETIZATION.md` keeps the owner's plan in the owner's order
+  (distribution first; Replore Pro hosted key with Polar as merchant of record; sponsored starter slots per intent
+  category, labelled and never in the ranking, RS9 and RX3; affiliate "how to start" links disclosed in `PRIVACY.md`; a
+  Team tier; an API only on request and on the customer's own GitHub token; Workers AI unit economics), each step with
+  a status (done, built, owner step, not started), the owner's checklist of accounts and dashboard variables, and every
+  figure it could not confirm marked "not verified". Planned prices live in that file only: `SPEC.md` and `README.md`
+  never state them (tested); the site shows a price only where the owner placed it in a picked design. Sponsored slots,
+  affiliate links, Team and the API each need their own rule (and PRIVACY change) before any code.
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
 - **RX3** Ranking by forks, trending or download counts. (Relevance, stars and license-freedom are the only

@@ -25,6 +25,7 @@ How to cut a release: README, Development (SPEC RS81).
   `description`. README has a Replore Pro section (where to buy: coming soon) and PRIVACY a row for the key (RS87).
 - Web plumbing, nothing visible: when this browser's storage holds `replore.key`, the page sends it with its relevance
   checks in the same header; nothing on the page writes it yet. PRIVACY has the row (RS87, RS43).
+- `docs/MONETIZATION.md`: the owner's monetisation plan with a status per step and the owner's account checklist (RS88).
 
 ### Fixed
 - The evals page is linked, canonicalised and listed in the sitemap as `/evals`; Cloudflare Pages redirects `evals.html` (RS80, RS84).
