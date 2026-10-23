@@ -7,6 +7,9 @@ How to cut a release: README, Development (SPEC RS81).
 
 ## [Unreleased]
 
+### Fixed
+- The evals page is linked, canonicalised and listed in the sitemap as `/evals`; Cloudflare Pages redirects `evals.html` (RS80, RS84).
+
 ### Added
 - SEO basics: `robots.txt`, `sitemap.xml`, a canonical link and a 404 page in the site's look; the pages.dev to
   custom-domain 301 is documented as a Cloudflare Bulk Redirect (RS80).

@@ -117,8 +117,10 @@ def test_evals_page_is_static_csp_safe_and_linked():
     assert re.search(r'<script src="/evals\.js\?v=[0-9a-f]{10}" defer></script>', html)
     assert 'id="fitCases"' in html and 'id="hybridCases"' in html and "<noscript>" in html
     assert 'fetch("/evals.json"' in js and "innerHTML" not in js and "—" not in js and not BANNED.search(js)
-    assert 'href="evals.html"' in (WEB / "index.html").read_text(encoding="utf-8")
-    assert CANON + "evals.html" in (WEB / "sitemap.xml").read_text(encoding="utf-8")
+    # Cloudflare Pages serves clean URLs (evals.html answers 308 to /evals), so every link, the canonical and the sitemap use /evals
+    assert 'href="/evals">' in (WEB / "index.html").read_text(encoding="utf-8")
+    assert CANON + "evals</loc>" in (WEB / "sitemap.xml").read_text(encoding="utf-8")
+    assert 'href="' + CANON + 'evals">' in html and "evals.html" not in (WEB / "sitemap.xml").read_text(encoding="utf-8")
 
 
 def test_secondary_page_scripts_carry_the_current_hash():
