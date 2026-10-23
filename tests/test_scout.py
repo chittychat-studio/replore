@@ -665,16 +665,18 @@ def test_web_page_is_safe_static(monkeypatch):
     assert not _re.search(r"github_pat_[A-Za-z0-9_]{20,}", html)
     assert 'id="token"' not in html and "findrepo_gh_token" not in html
     assert "models.github" not in html and "Authorization" not in html
-    # RS33: no third-party asset requests — GSAP 3.12.5 and the fonts are self-hosted; page degrades without GSAP
+    # RS33: no third-party asset requests; the fonts are self-hosted. RS91: no animation library at all
     index = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
     srcs = _re.findall(r'<script[^>]+src="([^"]+)"', index)
     srcs = [s.split("?v=")[0] for s in srcs]   # RS52: app.js / theme.js carry a ?v=<hash> stamp
-    assert srcs == ["theme.js", "vendor/gsap.min.js", "pro-core.js", "app.js"], srcs   # RS49: no inline script; app.js after GSAP and pro-core.js (RS89)
-    assert '<script src="vendor/gsap.min.js" defer>' in index and _re.search(r'<script src="app\.js\?v=[0-9a-f]{10}" defer>', index)   # RS24: GSAP first
+    assert srcs == ["theme.js", "pro-core.js", "app.js"], srcs   # RS49: no inline script; app.js after pro-core.js (RS89)
+    assert _re.search(r'<script src="app\.js\?v=[0-9a-f]{10}" defer>', index)
     assert not _re.search(r"<script(?![^>]*src=)[^>]*>", index) and not _re.search(r"\son[a-z]+\s*=", index)
     assert "<html lang=\"en\">" in index   # RS24: no forced light theme; the system setting applies until the visitor picks one
-    gsap = (ROOT / "web" / "vendor" / "gsap.min.js").read_text(encoding="utf-8")
-    assert gsap.lstrip("/*! \n").startswith("GSAP 3.12.5") and "standard-licen" in gsap  # pinned, license header kept
+    # RS91: GSAP (GreenSock licence, not MIT) is gone; motion is the browser's Web Animations API, guarded by canAnimate()
+    assert not (ROOT / "web" / "vendor" / "gsap.min.js").exists() and "gsap" not in index.lower()
+    app = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
+    assert "window.gsap" not in app and "function canAnimate()" in app
     sheets = _re.findall(r'<link[^>]+rel="stylesheet"[^>]+href="([^"]+)"', html)
     assert sheets == ["fonts.css"], sheets
     fcss = (ROOT / "web" / "fonts.css").read_text(encoding="utf-8")
@@ -979,7 +981,7 @@ def test_rs47_look_and_motion_kit():
         assert fam in fcss, fam
     assert "--accent:#3f6f8e" in html and "--btn-grad:" in html and "192,83,44" not in html
     assert 'class="ln" aria-hidden="true"' in html and 'aria-label="Find it before you build it."' in html and "var segs=" not in html
-    assert "data-magnet" in html and 'G.quickTo(el,"x"' in html and "(hover:hover) and (pointer:fine)" in html
+    assert "data-magnet" in html and "el.style.translate=" in html and "(hover:hover) and (pointer:fine)" in html   # RS91: no GSAP quickTo
     assert "function odometer(" in html and "function snapHtml(" in html and "html:out.innerHTML" not in html
     assert 'class="tring"' not in html and 'class="ttape"' not in html and "TAPE_ICON" not in html and "✦</b>" not in html   # RS62
     assert 'role="listitem"' in html and "rows.slice(1).map" in html   # RS63: every tile is a plain focusable link

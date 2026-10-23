@@ -1,5 +1,5 @@
 // Replore web page logic (SPEC RS22). Moved out of index.html (RS49) so the Content-Security-Policy in web/_headers
-// needs no 'unsafe-inline' for scripts. Loaded with `defer` after vendor/gsap.min.js, so GSAP is defined first (RS24).
+// needs no 'unsafe-inline' for scripts. Loaded with `defer`; motion uses the browser's Web Animations API, no library (RS91).
 "use strict";
 // ---- license sets (mirror of scripts/scout.py; keep in sync) ----
 var OPEN = new Set(["0BSD","AFL-3.0","AGPL-3.0","Apache-2.0","Artistic-2.0","BSD-2-Clause","BSD-3-Clause",
@@ -383,6 +383,15 @@ function showErr(out, html){ out.innerHTML='<div class="panel">'+html+'</div>'; 
 function inView(el){ var r=el.getBoundingClientRect(); return r.top<(window.innerHeight||800) && r.bottom>0; }
 // RS47 odometer: one column of 0-9,0-9 per digit; it rolls a full turn and stops on the digit. Screen readers read
 // the plain number (aria-label); when the roll ends, the plain text comes back so saved results stay simple.
+// RS91: all motion uses the browser's own Web Animations API (no animation library). canAnimate() guards every use,
+// so the page works fully where it is missing; easings match the ones GSAP used (power2/power3/expo out).
+var EASE_P2O="cubic-bezier(.25,.46,.45,.94)", EASE_P2IO="cubic-bezier(.455,.03,.515,.955)", EASE_P3O="cubic-bezier(.215,.61,.355,1)", EASE_EXPO="cubic-bezier(.19,1,.22,1)";
+function canAnimate(){ return !!(document.documentElement && document.documentElement.animate); }
+// a staggered "from" entrance: each element starts at `from` and settles to its own styles; fill:backwards holds the
+// start state during the delay, and nothing is left behind afterwards
+function enterFrom(els, from, o){ [].forEach.call(els||[], function(el,i){
+  var to={}; for(var k in from) to[k]= k==="opacity"?1 : k==="filter"?"blur(0px)" : k==="translate"?"0px 0px" : "none";
+  el.animate([from,to],{duration:o.duration*1000, easing:o.easing, delay:((o.delay||0)+i*(o.stagger||0))*1000, fill:"backwards"}); }); }
 function odometer(el, text, G, delay){
   if(!G || !/\d/.test(text||"")) return;
   var h=""; for(var k=0;k<text.length;k++){ var ch=text.charAt(k);
@@ -392,17 +401,19 @@ function odometer(el, text, G, delay){
   el.setAttribute("aria-label", text); el.setAttribute("data-odo","1"); el.innerHTML=h;
   var cols=el.querySelectorAll(".odo-strip"), left=cols.length;
   for(var c=0;c<cols.length;c++){ var d=+cols[c].getAttribute("data-d");
-    G.fromTo(cols[c],{yPercent:0},{yPercent:-(10+d)*5, duration:1.1+c*.12, ease:"power3.out", delay:delay,
-      onComplete:function(){ if(--left===0){ el.textContent=text; el.removeAttribute("data-odo"); } }}); }
+    var done=function(){ if(--left===0){ el.textContent=text; el.removeAttribute("data-odo"); } };
+    cols[c].animate([{transform:"translateY(0%)"},{transform:"translateY("+(-(10+d)*5)+"%)"}],
+      {duration:(1.1+c*.12)*1000, easing:EASE_P3O, delay:delay*1000, fill:"forwards"}).finished.then(done,done); }
 }
 function animateCards(container){
-  var G=window.gsap, reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches;
+  var G=canAnimate(), reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches;
   attachTilt(container, reduce);
   var all=[].slice.call(container.querySelectorAll(".rcard")), now;
   all.forEach(function(c){ c.classList.remove("rv-wait"); });   // saved results may carry the class; never leave a card invisible
   if(!G||reduce) return;
   now=all.filter(inView);
-  if(now.length) G.from(now,{opacity:0,y:18,rotateX:-8,duration:.5,stagger:.04,ease:"power3.out",transformOrigin:"50% 100%"});
+  now.forEach(function(c){ c.style.transformOrigin="50% 100%"; });
+  enterFrom(now,{opacity:0,transform:"translateY(18px) rotateX(-8deg)"},{duration:.5,stagger:.04,easing:EASE_P3O});
   all.forEach(function(c){ if(now.indexOf(c)<0) queueReveal(c); });   // the rest ease in as they scroll into view
   // RS47: star counts roll in like an odometer (each digit spins a full turn and lands)
   container.querySelectorAll(".cnt").forEach(function(elc,i){ odometer(elc, elc.textContent, G, .1+Math.min(i,12)*.04); });
@@ -1445,15 +1456,19 @@ function buildSteps(host){
 }
 function playExplainer(host){
   var steps=host.querySelectorAll(".step"), dot=host.querySelector(".dot"), track=host.querySelector(".track");
-  var G=window.gsap, reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches;
+  var G=canAnimate(), reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches;
   if(!G||reduce){ for(var i=0;i<steps.length;i++) steps[i].classList.add("on"); if(dot) dot.style.left="100%"; return; }
+  // RS91: the same loop as before on timers + the Web Animations API: step i lights at i*0.9+0.2 s while the dot
+  // glides 0.8 s to its stop; a 0.6 s rest after the last step, then again. It stops once the host leaves the page.
+  var n=steps.length, last=(n-1)*0.9+0.8+0.6;
+  function moveDot(i){ var to=(track.clientWidth*(i/(n-1||1)))+"px", from=getComputedStyle(dot).left;
+    dot.animate([{left:from},{left:to}],{duration:800, easing:EASE_P2IO}); dot.style.left=to; }
   function cycle(){
-    var tl=G.timeline({onComplete:cycle});
-    steps.forEach(function(s,i){
-      tl.call(function(){ for(var k=0;k<steps.length;k++) steps[k].classList.toggle("on",k===i); },null,i*0.9+0.2);
-      tl.to(dot,{left:(track.clientWidth*(i/(steps.length-1||1)))+"px",duration:0.8,ease:"power2.inOut"},i*0.9);
-    });
-    tl.to({},{duration:0.6});
+    if(!host.isConnected) return;
+    for(var i=0;i<n;i++) (function(i){
+      setTimeout(function(){ moveDot(i); }, i*900);
+      setTimeout(function(){ for(var k=0;k<n;k++) steps[k].classList.toggle("on",k===i); }, i*900+200); })(i);
+    setTimeout(cycle, last*1000);
   }
   cycle();
 }
@@ -1624,7 +1639,7 @@ function buildTrendCarousel(){
       var rows=trendRows(got.items,kind).rows.filter(hasDesc).slice(0,5); if(rows.length<3) throw new Error("few");   // RS45: a tile must say what the repo does
       grid.classList.remove("tb-out","tb-in"); grid.innerHTML=html(rows,kind); void grid.offsetWidth;
       if(!reduce){ grid.classList.add("tb-in");
-        var G=window.gsap; if(G) [].forEach.call(grid.querySelectorAll(".tb-n"),function(el,k){ odometer(el, el.textContent, G, .15+k*.07); }); }
+        var G=canAnimate(); if(G) [].forEach.call(grid.querySelectorAll(".tb-n"),function(el,k){ odometer(el, el.textContent, G, .15+k*.07); }); }
       grid.setAttribute("aria-busy","false"); box.hidden=false;
     }).catch(function(){ if(my!==gen) return; grid.classList.remove("tb-out"); grid.setAttribute("aria-busy","false");
       if(kind==="rising") return;   // GitHub unreachable or rate-limited on first load: no section, nothing else changes
@@ -1969,7 +1984,7 @@ document.getElementById("tourBtn").addEventListener("click",function(){ openModa
 // RS47 motion kit (owner request 2026-10-15): hero lines rise out of masks, magnetic buttons with rolling labels.
 // Skipped under reduced motion; the magnet only with a mouse (fine pointer).
 (function(){
-  var G=window.gsap, reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches;
+  var G=canAnimate(), reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches;
   var fine=window.matchMedia&&matchMedia("(hover:hover) and (pointer:fine)").matches;
   // rolling label for the top-bar pills: the text part only (icons stay put)
   document.querySelectorAll(".nav .nav-btn").forEach(function(b){ b.setAttribute("data-magnet","");
@@ -1983,19 +1998,21 @@ document.getElementById("tourBtn").addEventListener("click",function(){ openModa
   [].forEach.call(lines,function(ln){ var parts=ln.textContent.split(" ");
     ln.textContent=""; parts.forEach(function(w,i){ var sp=document.createElement("span"); sp.className="hw"; sp.textContent=w;
       ln.appendChild(sp); words.push(sp); if(i<parts.length-1) ln.appendChild(document.createTextNode(" ")); }); });
-  if(words.length) G.from(words,{opacity:0,y:18,filter:"blur(10px)",duration:.9,ease:"expo.out",stagger:.11,delay:.15,clearProps:"filter"});
+  enterFrom(words,{opacity:0,transform:"translateY(18px)",filter:"blur(10px)"},{duration:.9,easing:EASE_EXPO,stagger:.11,delay:.15});
   if(!fine) return;
+  // RS91: the magnet moves the CSS `translate` property (separate from `transform`, which hover styles own) through a
+  // short transition with a springy overshoot curve; each pointermove simply retargets it.
   document.querySelectorAll("[data-magnet]").forEach(function(el){
-    var xTo=G.quickTo(el,"x",{duration:.9,ease:"elastic.out(1,0.35)"}), yTo=G.quickTo(el,"y",{duration:.9,ease:"elastic.out(1,0.35)"});
+    el.style.transition=(el.style.transition?el.style.transition+",":"")+"translate .9s cubic-bezier(.34,1.56,.64,1)";
     el.addEventListener("pointermove",function(e){ var b=el.getBoundingClientRect();
-      xTo((e.clientX-(b.left+b.width/2))*.35); yTo((e.clientY-(b.top+b.height/2))*.35); });
-    el.addEventListener("pointerleave",function(){ xTo(0); yTo(0); }); });
+      el.style.translate=((e.clientX-(b.left+b.width/2))*.35).toFixed(1)+"px "+((e.clientY-(b.top+b.height/2))*.35).toFixed(1)+"px"; });
+    el.addEventListener("pointerleave",function(){ el.style.translate="0px 0px"; }); });
 }());
 
 // hero entrance
 (function(){
-  var G=window.gsap, reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches;
+  var G=canAnimate(), reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches;
   if(!G||reduce) return;
-  G.from(".topbar, .sub, .vibebar, .modes",{opacity:0,y:16,duration:.5,stagger:.07,ease:"power3.out"});
-  G.from(".quickpicks .chip",{opacity:0,y:8,duration:.4,stagger:.03,delay:.3,ease:"power2.out"});
+  enterFrom(document.querySelectorAll(".topbar, .sub, .vibebar, .modes"),{opacity:0,translate:"0px 16px"},{duration:.5,stagger:.07,easing:EASE_P3O});
+  enterFrom(document.querySelectorAll(".quickpicks .chip"),{opacity:0,translate:"0px 8px"},{duration:.4,stagger:.03,delay:.3,easing:EASE_P2O});
 }());
