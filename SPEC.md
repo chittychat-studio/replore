@@ -1179,6 +1179,36 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   optional `GITHUB_TOKEN` and `REPLORE_KEY`; the README carries the `mcp-name:` ownership line as an HTML comment. The
   package and registry versions equal `plugin.json` (RS50) and the identifiers match (tested). Publishing is the
   owner's step; nothing in CI uploads.
+- **RS87** Replore Pro key (owner plan 2026-10-23; builds on RS34g, RS34h, RS42). A **Pro key** is a Polar license key:
+  Polar (polar.sh) is the merchant of record and issues it as a "license key" benefit when someone buys Pro. The key
+  shape in Polar's docs is a UUID4 with an optional brandable prefix (`<PREFIX>_<UUID4>`, e.g. `1C285B2D-6CE6-...`).
+  **Server** (`functions/api/relevance.js`): the key arrives in the header the plugin already sends,
+  `X-Replore-Plugin-Key` (one header for both, no new name). It is checked first, in constant time, against `PLUGIN_KEY`
+  (and `X-Replore-Eval-Key` against `EVAL_KEY`) exactly as before (RS34g, unchanged). Only if that fails, the variable
+  `POLAR_ORG_ID` is set and the value has the Polar shape, the function asks Polar's public validate endpoint
+  (`POST https://api.polar.sh/v1/customer-portal/license-keys/validate`, body `key`, `organization_id` and, when the
+  variable `POLAR_BENEFIT_ID` is set, `benefit_id`; no Polar token, so no Polar secret is held) with a 3 s deadline and
+  `redirect: "error"`. Granted means HTTP 200 with `status` `"granted"`, `expires_at` null or in the future, the benefit
+  matching `POLAR_BENEFIT_ID` when set, and `usage` below `limit_usage` when a limit is set. Polar answers 404 for a key
+  that is unknown, revoked, disabled or expired (its documented error); that and any non-granted reply is a denial. A
+  network error, timeout, redirect, other status or unreadable body is an error. **Fail closed:** only a granted
+  verdict opens anything. The verdict (granted or denied, never an error) is cached in the isolate's memory for 10
+  minutes keyed by the SHA-256 hex of the key (at most 5,000 entries); the key itself is never stored, logged or
+  returned. Polar lookups are rate-limited per IP (best effort, in memory, 5 per minute), so random keys cannot turn
+  the function into a Polar flooder. Each fresh lookup logs one RS34d record with a code only: `pro_granted`,
+  `pro_denied` or `pro_error`. Without `POLAR_ORG_ID` the Pro route is off: a semantic request carrying a Polar-shaped
+  key that is not `PLUGIN_KEY` gets 403 `pro_off`. **What a granted key unlocks today** is exactly what `PLUGIN_KEY`
+  unlocks: the meaning route (`mode: "semantic"`, RS42; still answers 404 `semantic_off` until the owner switches
+  `RAG_PLUGIN` and a RAG part on) and skipping the per-IP limiter (RS34g). It never opens the paid AI judge without
+  Turnstile. **Clients:** `scripts/hybrid.py` (the plugin's `--semantic`, `scout.py`) and `scripts/mcp_server.py` read
+  `REPLORE_KEY` first, then the older `REPLORE_PLUGIN_KEY`, and send it only to Replore's hosts (RS34h: https,
+  `replore.cardzo.co.in`, `replore.pages.dev` or one label under it, no port) with redirects refused; never printed.
+  The MCP tool `find_repos` gains an opt-in `semantic` flag with a `description` (sent to Replore's server only when
+  set, like `--semantic`). The web page sends `localStorage["replore.key"]`, when present, in the same header on its
+  `/api/relevance` calls; on the web this only lifts the per-IP limit, since the page never uses `mode: "semantic"`.
+  `web/_headers` (CSP) is unchanged: Polar is called server-side only. **Planned, not built** (so nobody reads them
+  as shipped): searches on the user's own GitHub token, PRD batch over 20 repos, saved shortlists, a licence-policy
+  mode. Prices live only in `docs/MONETIZATION.md`, never in this SPEC or on the site until the owner publishes them.
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
 - **RX3** Ranking by forks, trending or download counts. (Relevance, stars and license-freedom are the only
