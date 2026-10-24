@@ -54,3 +54,45 @@ hard edge.
 - Keep each web clip under about 1.5 MB, muted, playsinline, with a poster.
 - Hash-stamp with ops/stamp_assets.py, and record each file's provenance (Flow, model, date, prompt number) in NOTICE.md.
 - The owner picks the takes before anything ships. The /pro page, Launch window and 404 page use the same stills.
+
+## v3 (owner 2026-10-25): cinematic plates plus a green-screen Leo lit to match
+
+The dark hero now uses the Stitch plate `web/hero-plate-dark.webp` (RS92). These prompts make the 4K versions, the
+light twin, and a Leo that blends into them. Generate the plates first, then light Leo to match them.
+
+### P1. Dark plate, 4K (Flow, Imagen; or Stitch when its quota resets)
+"Ultra-wide 21:9 panoramic backdrop, 3840x1646: a deep obsidian and navy cybernetic data space. A 3D perspective grid
+floor and ceiling of thin neon cyan (#00F0FF) lines receding to a vanishing point slightly right of centre. Holographic
+circular radar HUD rings and telemetry panels glowing cyan in the left third. Floating bokeh light nodes at several
+focal depths, mostly cyan and teal with some electric violet (#B026FF), large and soft in the foreground, small and sharp
+far away. Soft out-of-focus vertical digital code streams in the far distance. Volumetric haze, cinematic depth of field,
+subtle chromatic dispersion. Clean dark negative space in the centre-right for text. No robots, no characters, no text,
+no logos, no watermark."
+
+### P2. Light plate, 4K (same composition)
+"The light-mode twin of P1, same camera and layout: base of soft white and pale ice-blue haze (#F4F9FC to #E3F1F7), grid
+lines and HUD rings in deep teal (#0E7490) and cyan (#0891B2) at gentle contrast, bokeh in cyan and teal with a few soft
+violet (#7C3AED) nodes, distant code streams in pale teal. Bright and airy, never grey or muddy. Clean negative space in
+the centre-right for dark text. No robots, no characters, no text, no logos, no watermark."
+
+### P3. Optional: plate loop (Veo, image-to-video from P1, then from P2)
+"Very slow forward dolly into the grid, bokeh drifting gently at different speeds, code streams falling slowly, HUD
+rings rotating a few degrees. Camera move is smooth and constant. 8 seconds; the last frame matches the first so it
+loops seamlessly. No new objects appear." (Keep under about 2 MB as 1280-wide WebM; the still plate stays as poster.)
+
+### P4. Leo on green, lit for the plates (Veo, image-to-video from the character sheet)
+Prompt: "Leo hovers in place, gently bobbing, his right fingertip touching the edge of a holographic cyan radar ring
+floating at his right, the ring slowly turning. He blinks and smiles at the viewer. Starts and ends on the same pose so it
+loops." Then paste this lighting and green-screen line:
+"Lighting matched to a dark cyber scene: strong neon cyan (#00F0FF) rim light from behind on both edges, a cool cyan glow
+from the ring lighting his right side and hand, soft teal-navy fill, a faint violet kick on his left shoulder. His white
+body shows only cyan, teal and navy reflections; his dark glossy visor reflects the cyan ring, never green. Solid, evenly
+lit chroma green background (#00B140) far behind him, no green bounce or reflections on him, no shadow on the
+background, no floor. Sharp edges, no motion blur, no depth-of-field blur on Leo. No sparks, smoke, particles or lens
+flares (they cannot be keyed). Camera locked off, Leo and the ring fully in frame with wide margins on every side, 16:9."
+Make the intro (fly-in, as clip 0 above) with the same lighting line. On the page Leo gets the theme halo (a dark edge
+in light, a pale rim in dark), so one take serves both themes.
+
+### After v3
+Hand me the files: I key Leo (spill removal, soft matte, feather on every side), cut the plates to WebP (and the loops to
+WebM with a poster), stamp them, and record each file's provenance in NOTICE.md.

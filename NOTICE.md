@@ -14,6 +14,9 @@
   (firebase-app.js) and 59f60ce3adcb4c85a5260e963fd14134eec088de5b18ddfb9e95771c72f65264 (firebase-auth.js).
 
 ## AI-generated media
+- web/hero-plate-dark.webp: the dark hero backdrop, generated in Google Stitch by the owner's account (project "Replore 3D
+  Website Redesign", screen dfc82632552c49138567e59e6980f52f, prompt in the screen title: an ultra-wide cyber data matrix
+  backdrop, no robots, no text), 1376x768, converted to WebP (quality 84) on 2026-10-25.
 - web/leo-intro.webm, web/leo-idle.webm, web/leo-hero.webp: Leo, generated 2026-10-24 in Google Flow by the owner's
   account. Character sheet and frames made with Nano Banana 2.1; the clips (dark-visor version, owner pick) made with Veo 3.1 Lite (720p, 8 s); keyed
   from green and cropped for the web. The sources are in video/explainer/assets/leo/src/. The prompts are in

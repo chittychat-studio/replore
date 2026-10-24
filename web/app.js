@@ -2007,15 +2007,13 @@ function startHeroFx(canvas){
   raf=requestAnimationFrame(tick);
 }
 (function(){ var c=document.getElementById("heroFx"); if(c&&c.getContext&&window.requestAnimationFrame) startHeroFx(c); })();
-// RS92: the search shortcut (header button, Ctrl/Cmd+K), the console's Match a PRD and Find similar chips (the same
+// RS92: the search shortcut (Ctrl/Cmd+K; the header button is gone, owner 2026-10-25), the console's Match a PRD and Find similar chips (the same
 // actions as in Filters), the Tour frame's real duration, and the status bar, which shows only the real search stage
 (function(){
   var mac=/Mac|iPhone|iPad/.test((typeof navigator!=="undefined"&&navigator.platform)||"");
   if(mac) document.querySelectorAll(".kbd-k").forEach(function(k){ k.textContent="⌘K"; });
   function focusQ(){ var q=document.getElementById("q"); if(!q||!q.focus) return; try{ q.focus({preventScroll:true}); }catch(_){ q.focus(); }
     if(q.getBoundingClientRect&&!inView(q)&&q.scrollIntoView) q.scrollIntoView({block:"center"}); }
-  var kb=document.getElementById("kbdSearch");
-  if(kb){ if(mac) kb.setAttribute("aria-label","Search, keyboard shortcut Command K"); kb.addEventListener("click",focusQ); }
   document.addEventListener("keydown",function(e){ if((e.ctrlKey||e.metaKey)&&!e.altKey&&!e.shiftKey&&(e.key==="k"||e.key==="K")){ e.preventDefault(); closeModals(); focusQ(); } });
   var lk=document.getElementById("vbLike"); if(lk) lk.addEventListener("click",function(){ openModal("likeModal"); });
   var pr=document.getElementById("vbPrd");
@@ -2050,11 +2048,10 @@ function startHeroFx(canvas){
 
 // typewriter headline (desktop + mobile); full text stays for no-JS / reduced motion
 
-// ---- light / dark theme toggle (per-viewer convenience; falls back to system) ----
+// ---- light / dark theme toggle (per-viewer convenience; dark until the visitor picks, RS24) ----
 (function(){
   var btn=document.getElementById("theme"), root=document.documentElement, KEY="findrepo_theme";
-  function sysDark(){ return window.matchMedia && matchMedia("(prefers-color-scheme:dark)").matches; }
-  function current(){ return root.getAttribute("data-theme") || (sysDark()?"dark":"light"); }
+  function current(){ return root.getAttribute("data-theme")==="light"?"light":"dark"; }
   function paint(){ btn.innerHTML = ico(current()==="dark" ? "sun" : "moon"); }   // RS44a, RS55: line icons, never a colour emoji
   var saved; try{ saved=localStorage.getItem(KEY); }catch(e){}
   if(saved==="dark"||saved==="light") root.setAttribute("data-theme",saved);
