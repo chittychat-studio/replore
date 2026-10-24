@@ -1,5 +1,34 @@
 # Replore explainer: three storylines
 
+## v2, PICKED (owner, 2026-10-24): "Error night, then Leo" (RS92 look)
+The owner's brief: blend the Stitch design (Leo in cyber mode) with our struggling vibe coder, who builds from
+scratch, hits errors everywhere, and then Leo comes in to help with repos. This replaces the map/scout world of the
+v1 mix below. Contour lines stay banned (the owner rejected them twice). 16:9, about 52 s, muted-friendly (captions on screen).
+
+1. **Hook (0-5 s), the desk at night, warm and real:** the laptop clock reads 11:40 pm. She types "build me a
+   chatbot that answers questions from my PDFs" and starts from an empty folder.
+2. **Everything breaks (5-16 s):** a fast montage of from-scratch pain. The code piles up, then red error blocks
+   stack: `ModuleNotFoundError`, `CORS error`, `undefined is not a function`, a failed deploy. The clock rolls to
+   1:20 am. She rubs her eyes. The colour drains toward grey-red.
+3. **The switch (16-20 s):** she opens Replore and types the same sentence. Hard cut into the site's cyber hero: the
+   cyan grid, drifting particles and code rain, matching the web page exactly.
+4. **Leo arrives (20-30 s):** the hero clip from LEO_FLOW_STITCH.md. Leo flies in, turns once, touches the
+   holographic radar ring, and it spins up. On-screen stages as mono pills: Searching GitHub, Ranking by fit.
+5. **The repos land (30-42 s):** three real result cards slide out of the ring into the site's card-shuffle deck
+   (real repos from a real scout.py run; stars and licence from the live data, never invented). Leo gives a
+   thumbs-up. Back at her desk: the errors are gone, a working chat app answers a question from her PDF, and the
+   clock reads 11:52 pm.
+6. **Claim and end card (42-52 s):** a cyber backdrop, Leo hovering beside the ring. "Find it before you build it."
+   replore.cardzo.co.in, plus "Free. No sign-up."
+
+**Sources:**
+- **Leo shots:** Flow (Veo), per LEO_FLOW_STITCH.md.
+- **The coder's desk shots:** Flow too, with a matching prompt pack to write next. Pomelli Animate (no API; run it
+  in the owner's signed-in Chrome) is the alternative for short brand clips and the end card.
+- **Screen UI:** the real site captured from the new RS92 build, not mock-ups.
+- **Assembly:** HyperFrames, as in v1; render only after the owner approves the preview.
+- **Order:** the RS92 site ships first, so the tour shows the real UI.
+
 **PICKED (owner, 2026-10-23): A + C mixed, "11:40 pm, then the scout".** A's pain opens the film; the moment she types
 into Replore, the film enters C's world and the scout does the searching. Next: write `SPEC.md` (HyperFrames
 references/spec.md, plus references/types/character.md for the scout), init the project here, build, `check --json`,
