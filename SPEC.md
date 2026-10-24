@@ -1310,6 +1310,21 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   now moves the CSS `translate` property through a springy transition, so it never fights the hover styles that own
   `transform`. Reduced motion still turns everything off (RS47). `web/vendor/` no longer exists, and the test checks
   that no GSAP file or reference remains.
+- **RS92** Stitch look, site-wide (owner 2026-10-24: "I want this to be our UI", a Google Stitch export). This replaces
+  the look of RS65 and RS67 on every screen: home, results, Details panel, every window, `/pro`, `/evals` and the 404 page.
+  It is dark first: obsidian base `#090D16`, surfaces `#0a0e17` / `#181b25` / `#1c1f29` / `#262a34` / `#31353f`, text
+  `#dfe2ef` / `#b9cacb`, headings `#dbfcff`, outline `#3b494b`, neon cyan `#00F0FF` as the accent, with mint `#4edea3`,
+  violet `#8B5CF6`, emerald `#10B981`, amber `#F59E0B` and red `#EF4444`. There is a matching light theme, and the theme
+  toggle stays. The type is Plus Jakarta Sans for headings and UI, and JetBrains Mono for labels, chips and numbers, both
+  self-hosted (OFL). The parts: a frosted sticky header, a 36 px cyber grid behind the hero, a status bar, Leo beside a
+  framed search console, and Trending as the card shuffle deck (pause, Previous, Next, Shuffle, dots, counter). The owner
+  asked for this design, so its soft cyan glows and the cyan-to-violet title gradient are allowed (they lift the RS65
+  "no glows/gradients" note). The truth rules still hold. Every number on screen comes from the live data, or it is
+  not shown: no invented star counts, latencies, index sizes, scores, velocities or sparklines (RS7, RS67). There is no
+  avatar, because Replore has no accounts. The status bar shows the real search stages (Ready, Searching GitHub,
+  Ranking by fit). The export's emoji become RS55 line icons; Material Symbols, the Tailwind CDN and the hotlinked
+  images are not used (CSP, RS49). Leo stays our own art. Behaviour, ids and data flow are unchanged, and the
+  rules on motion (RS47, RS69, RS91: Web Animations API, reduced motion respected) and on em dashes (RS66) still apply.
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
 - **RX3** Ranking by forks, trending or download counts. (Relevance, stars and license-freedom are the only

@@ -791,7 +791,7 @@ def test_web_page_is_safe_static(monkeypatch):
     assert "function showTrending" in html and 'id="trendCar"' in html and 'id="trendBtn"' in html
     assert "&sort=" in html and "github.com/trending" not in html
     assert "body.view-trending .tcar, body.has-results .tcar{display:none}" in html  # no Rising list twice; results focus
-    assert 'class="tbento"' in html and "tb-big" in html and "tb-sm" in html   # RS63: bento grid, no auto-turning ring
+    assert 'class="tdeck"' in html and "td-card" in html and "tb-big" not in html   # RS92: the card shuffle deck (was the RS63 bento)
     # RS36 thinking orb pill: the search loading indicator (RS61: no longer under the home demo; the ASCII globe is there)
     assert "function startDotOrb" in html and "function think(" in html and 'id="homeThink"' not in html
     assert 'class="think-orb" aria-hidden="true"' in html and "draw(); if(reduce) return;" in html and "canvas.isConnected" in html
@@ -979,12 +979,21 @@ def test_rs47_look_and_motion_kit():
     fcss = (ROOT / "web" / "fonts.css").read_text(encoding="utf-8")
     for fam in ("'Anton'", "'Inter Tight'", "'JetBrains Mono'"):
         assert fam in fcss, fam
-    assert "--accent:#3f6f8e" in html and "--btn-grad:" in html and "192,83,44" not in html
+    # RS92 replaced the RS47 palette with the Stitch tokens (light accent #0091a8, dark neon cyan #00f0ff); still one set
+    # of theme tokens, with --btn-grad the fill every accent button uses
+    assert "--accent:#0091a8" in html and "--accent:#00f0ff" in html and "--btn-grad:" in html and "192,83,44" not in html
+    assert "--accent:#3f6f8e" not in html and "Plus Jakarta Sans" in html
     assert 'class="ln" aria-hidden="true"' in html and 'aria-label="Find it before you build it."' in html and "var segs=" not in html
     assert "data-magnet" in html and "el.style.translate=" in html and "(hover:hover) and (pointer:fine)" in html   # RS91: no GSAP quickTo
     assert "function odometer(" in html and "function snapHtml(" in html and "html:out.innerHTML" not in html
     assert 'class="tring"' not in html and 'class="ttape"' not in html and "TAPE_ICON" not in html and "✦</b>" not in html   # RS62
-    assert 'role="listitem"' in html and "rows.slice(1).map" in html   # RS63: every tile is a plain focusable link
+    # RS92: Trending is the card shuffle deck (was the RS63 bento): pause, Previous, Next, Shuffle, dots and a counter;
+    # only the top card is exposed, the others are aria-hidden and inert; reduced motion stops the auto-shuffle
+    assert 'id="tcarTrack"' in html and 'aria-roledescription="carousel"' in html and 'aria-roledescription="slide"' in html
+    for i in ('id="tcPlay"', 'id="tcPrev"', 'id="tcNext"', 'id="tcShuffle"', 'id="tcCount"', 'id="tcDots"'):
+        assert i in html, i
+    assert "function deckCardHtml(" in html and 'c.inert=true' in html and "!reduce&&!paused&&!hover&&!focus&&visible" in html
+    assert "tbento" not in html and "rows.slice(1).map" not in html
 
 
 
