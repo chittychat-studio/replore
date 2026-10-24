@@ -791,7 +791,7 @@ def test_web_page_is_safe_static(monkeypatch):
     assert "function showTrending" in html and 'id="trendCar"' in html and 'id="trendBtn"' in html
     assert "&sort=" in html and "github.com/trending" not in html
     assert "body.view-trending .tcar, body.has-results .tcar{display:none}" in html  # no Rising list twice; results focus
-    assert 'class="tbento"' in html and "tb-big" in html and "tb-sm" in html   # RS63: bento grid, no auto-turning ring
+    assert 'class="tdeck"' in html and "td-card" in html and "tb-big" not in html   # RS92: the card shuffle deck (was the RS63 bento)
     # RS36 thinking orb pill: the search loading indicator (RS61: no longer under the home demo; the ASCII globe is there)
     assert "function startDotOrb" in html and "function think(" in html and 'id="homeThink"' not in html
     assert 'class="think-orb" aria-hidden="true"' in html and "draw(); if(reduce) return;" in html and "canvas.isConnected" in html
@@ -876,6 +876,12 @@ def test_one_official_deploy_and_cardzo_credit():
     assert 'href="https://cardzo.co.in" target="_blank" rel="noopener noreferrer"' in html and "Cardzo</a> product" in html
 
 
+def test_google_preferred_source_link():
+    """RS93: footer deeplinks to Google's source preferences tool; Google's button script is never loaded."""
+    html = _page()
+    assert 'href="https://www.google.com/preferences/source?q=replore.cardzo.co.in" target="_blank" rel="noopener noreferrer"' in html
+    assert "publisher.js" not in html and "news.google.com" not in (ROOT / "web" / "_headers").read_text(encoding="utf-8")
+
 def test_all_uncaps_and_groups_by_feature():
     """RS23: --all returns every match; groups hold each feature's repos, deduped to the first finder."""
     pages = [[repo("auth/a", 900), repo("shared/x", 500)], [repo("pay/a", 700), repo("shared/x", 500)]]
@@ -930,12 +936,12 @@ def test_privacy_notice_matches_what_the_code_does():
     # only these hosts are contacted; PRIVACY.md names each of them
     hosts = set(re.findall(r"https://([a-z0-9.-]+)", html))
     allowed = {"api.github.com", "github.com", "claude.ai", "claude.com", "replore.pages.dev", "cardzo.co.in", "chatgpt.com", "gemini.google.com", "api.web3forms.com", "groq.com", "www.cloudflare.com", "challenges.cloudflare.com", "buy.stripe.com", "replore.cardzo.co.in", "gitdiagram.com", "gitingest.com", "deepwiki.com", "github1s.com", "github.dev",
-               "scorecard.dev", "osv.dev"}  # RS53 trust links (navigations); RS34/RS34a provider terms, RS34c Turnstile, RS44 tips, RS51 Explore links
+               "scorecard.dev", "osv.dev", "www.google.com"}  # RS93 preferred-source link; RS53 trust links (navigations); RS34/RS34a provider terms, RS34c Turnstile, RS44 tips, RS51 Explore links
     assert hosts <= allowed, hosts - allowed
     for named in ("api.github.com", "Cloudflare", "claude.ai", "security.log", "200 characters", "off by default",
                   "Groq", "Cloudflare Workers AI", "Turnstile", "relevance check", "stores nothing", "Feedback", "chatgpt.com", "gemini.google.com", "Web3Forms", "Stripe",
                   "Cloudflare Web Analytics", "static.cloudflareinsights.com", "cookieless", "gitdiagram.com", "gitingest.com", "deepwiki.com", "github1s.com", "github.dev",
-                  "OpenSSF Scorecard", "api.securityscorecards.dev", "deps.dev", "OSV.dev", "Safe to build on?"):  # RS34/RS53b data flows must be disclosed
+                  "OpenSSF Scorecard", "api.securityscorecards.dev", "deps.dev", "OSV.dev", "Safe to build on?", "www.google.com"):  # RS34/RS53b data flows must be disclosed
         assert named in priv, named
     # RS33: the host's Cloudflare Web Analytics beacon is on, so no copy may promise "no analytics"; each place names it
     for doc, text in (("index.html", html), ("PRIVACY.md", priv), ("README.md", readme)):
@@ -979,12 +985,21 @@ def test_rs47_look_and_motion_kit():
     fcss = (ROOT / "web" / "fonts.css").read_text(encoding="utf-8")
     for fam in ("'Anton'", "'Inter Tight'", "'JetBrains Mono'"):
         assert fam in fcss, fam
-    assert "--accent:#3f6f8e" in html and "--btn-grad:" in html and "192,83,44" not in html
+    # RS92 replaced the RS47 palette with the Stitch tokens (light accent #0091a8, dark neon cyan #00f0ff); still one set
+    # of theme tokens, with --btn-grad the fill every accent button uses
+    assert "--accent:#0091a8" in html and "--accent:#00f0ff" in html and "--btn-grad:" in html and "192,83,44" not in html
+    assert "--accent:#3f6f8e" not in html and "Plus Jakarta Sans" in html
     assert 'class="ln" aria-hidden="true"' in html and 'aria-label="Find it before you build it."' in html and "var segs=" not in html
     assert "data-magnet" in html and "el.style.translate=" in html and "(hover:hover) and (pointer:fine)" in html   # RS91: no GSAP quickTo
     assert "function odometer(" in html and "function snapHtml(" in html and "html:out.innerHTML" not in html
     assert 'class="tring"' not in html and 'class="ttape"' not in html and "TAPE_ICON" not in html and "✦</b>" not in html   # RS62
-    assert 'role="listitem"' in html and "rows.slice(1).map" in html   # RS63: every tile is a plain focusable link
+    # RS92: Trending is the card shuffle deck (was the RS63 bento): pause, Previous, Next, Shuffle, dots and a counter;
+    # only the top card is exposed, the others are aria-hidden and inert; reduced motion stops the auto-shuffle
+    assert 'id="tcarTrack"' in html and 'aria-roledescription="carousel"' in html and 'aria-roledescription="slide"' in html
+    for i in ('id="tcPlay"', 'id="tcPrev"', 'id="tcNext"', 'id="tcShuffle"', 'id="tcCount"', 'id="tcDots"'):
+        assert i in html, i
+    assert "function deckCardHtml(" in html and 'c.inert=true' in html and "!reduce&&!paused&&!hover&&!focus&&visible" in html
+    assert "tbento" not in html and "rows.slice(1).map" not in html
 
 
 
@@ -1083,18 +1098,21 @@ def test_harm_filter_shared_cases():
 
 def test_home_demo_is_the_real_product_and_honest():
     """RS61/RS67: the home demo types real quick-pick searches into the search bar's placeholder, with no network call,
-    no invented numbers and no example cards; the ASCII globe is desktop only."""
+    no invented numbers and no example cards. RS92: the ASCII globe is gone and Leo is the Flow clip or its still."""
     js = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
     start = js.index("var LIVE_DEMO=")
     block = js[start:js.index("// remember the last results", start)]
     assert "buildLiveDemo(hd)" in js and "fetch(" not in block
     assert block.count('{q:"') == 3 and "kstars(" not in block and "repos fit" not in block
-    assert "max-width: 999px" in block and "prefers-reduced-motion" in block and "isConnected" in block
-    # RS65: the studio stage: bot beside the globe, stage pills; RS67: the search bar joins Leo, no example deck or pointer
-    assert 'class="st-pair"' in block and "scout-hero.webp" in block and "st-pills" in block and "st-rail" not in block
+    assert "prefers-reduced-motion" in block and "isConnected" in block   # RS92: no desktop-only globe, so no width switch here
+    # RS65: the studio stage and stage pills; RS67: the search bar joins Leo, no example deck or pointer.
+    # RS92 (owner 2026-10-24): no ASCII globe anywhere; one Leo: the Flow clips, or leo-hero.webp as the still
+    assert 'class="st-pair"' in block and "leo-hero.webp" in block and "st-pills" in block and "st-rail" not in block
+    assert "globe" not in re.sub(r"//.*", "", js) and "ld-globe" not in _page() and "scout-hero.webp" not in block
+    assert 'class="st-herovid"' in block and "LEO_VIDEO.intro" in block and 'sb.classList.add("herovid")' in block
     assert "st-arrow" not in block and "ld-deck" not in block and "st-cursor" not in block and 'class="st-search"' in block
     assert 'id="stageSlot"' in _page() and 'id="deckSlot"' not in _page() and "function placeSearch" in js
-    assert (ROOT / "web" / "scout-hero.webp").exists() and (ROOT / "web" / "scout-search.webp").exists()
+    assert all((ROOT / "web" / f).exists() for f in ("leo-hero.webp", "leo-intro.webm", "leo-idle.webm", "scout-hero.webp"))
 
 
 def test_rs28h_plugin_shows_visuals_before_prd():

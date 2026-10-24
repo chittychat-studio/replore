@@ -56,7 +56,7 @@ function clean(s){ s=(s||"").replace(/[\u0000-\u001f\u007f-\u009f​-‏‪-‮�
 function kstars(n){return n>=1000?(n/1000).toFixed(n>=10000?0:1)+"k":""+n;}
 
 var STOP=new Set("a an the my our your for to with and or of in on app apps application build building make making want really nice looking simple create please that helps people some something cool new project using use it by from first show as into about i ill i'll sell answers questions".split(" "));
-var SYN={   // RS16: specific, live-checked phrases only — never a bare category ("frontend framework", "game framework")
+var SYN={   // RS16: specific, live-checked phrases only: never a bare category ("frontend framework", "game framework")
  website:["landing page template","website template"], portfolio:["portfolio template","portfolio website"],
  game:["html5 game engine","phaser game"], diet:["calorie counter","nutrition tracker"],
  chatbot:["rag chatbot"], pdf:["chat with pdf"], dashboard:["admin dashboard template"], spreadsheet:["csv dashboard"],
@@ -202,7 +202,7 @@ function rankByFit(lists, preferStarters){
   return all;
 }
 
-// significant (non-stopword) words from what the user typed — used to explain the match
+// significant (non-stopword) words from what the user typed: used to explain the match
 function sigTokens(text){ var out=[], seen={};
   (text||"").toLowerCase().replace(/[^a-z0-9 +#.]/g," ").split(/\s+/).forEach(function(w){
     if(w && w.length>1 && !STOP.has(w) && !seen[w]){ seen[w]=1; out.push(w); } });
@@ -234,7 +234,11 @@ var ICONS={
   moon:'<path d="M13.2 9.6A5.6 5.6 0 0 1 6.4 2.8a5.6 5.6 0 1 0 6.8 6.8z"/>',
   search:'<circle cx="7" cy="7" r="4.6"/><path d="M10.4 10.4l3.4 3.4"/>',
   bookmark:'<path d="M4.2 2.4h7.6v11.2L8 10.9l-3.8 2.7z"/>',
-  bookmarked:'<path d="M4.2 2.4h7.6v11.2L8 10.9l-3.8 2.7z" fill="currentColor"/>'
+  bookmarked:'<path d="M4.2 2.4h7.6v11.2L8 10.9l-3.8 2.7z" fill="currentColor"/>',
+  repo:'<path d="M3.5 2.5h8.5v9H5a1.5 1.5 0 0 0 0 3h7"/><path d="M3.5 2.5v10.5"/><path d="M6 5.5h3.5"/>',   // RS92: the deck's tile icon
+  external:'<path d="M6.5 3.5h-3v9h9v-3"/><path d="M9 2.5h4.5V7M13.5 2.5L7.5 8.5"/>',
+  pause:'<path d="M5.5 3.5v9M10.5 3.5v9"/>',
+  play:'<path d="M5 3.2l7.5 4.8L5 12.8z"/>'
 };
 function ico(n,cls){ return '<svg class="ico'+(cls?' '+cls:'')+'" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor"'+
   ' stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'+ICONS[n]+'</svg>'; }
@@ -252,7 +256,7 @@ function licenseVerdict(spdx){
 function ownerHue(o){ var h=0; for(var k=0;k<o.length;k++) h=(h*31+o.charCodeAt(k))>>>0; return [14,24,32,198,152,268,340][h%7]; }
 function agoText(d){ var t=Date.parse(d); if(!t) return ""; var days=Math.floor((Date.now()-t)/864e5);
   return days<1?"today":days<2?"yesterday":days<31?days+" days ago":days<365?Math.round(days/30)+" mo ago":Math.round(days/365)+" yr ago"; }
-// RS51: "Explore" links — each tool takes the same owner/repo path as github.com; only a well-formed name gets links
+// RS51: "Explore" links: each tool takes the same owner/repo path as github.com; only a well-formed name gets links
 var EXPLORE=[["Diagram","https://gitdiagram.com/","See the repo as an architecture diagram (GitDiagram)"],
   ["Digest","https://gitingest.com/","Turn the code into one text digest to paste into an AI chat (Gitingest)"],
   ["Wiki","https://deepwiki.com/","Read AI-written docs for the repo and ask it questions (DeepWiki)"],
@@ -261,7 +265,7 @@ var EXPLORE=[["Diagram","https://gitdiagram.com/","See the repo as an architectu
 function validRepoName(name){ name=String(name||""); return /^[A-Za-z0-9-]{1,39}\/[A-Za-z0-9._-]{1,100}$/.test(name) && !/\/\.\.?$/.test(name); }
 function exploreLinks(name){ if(!validRepoName(name)) return [];
   return EXPLORE.map(function(e){ return {label:e[0], url:e[1]+name, title:e[2]}; }); }
-// RS53: "Safe to build on?" — fetched only when a visitor opens the row; display only, it never touches the rank (RX3)
+// RS53: "Safe to build on?": fetched only when a visitor opens the row; display only, it never touches the rank (RX3)
 var TRUST_LANGS={JavaScript:1,TypeScript:1,Python:1,Rust:1,Go:1,Ruby:1,"C#":1};   // the languages /api/trust maps to a package ecosystem
 var INSTALL={npm:"npm install ",pypi:"pip install ",cargo:"cargo add ",go:"go get ",rubygems:"gem install ",nuget:"dotnet add package "};
 var PKG_RE=/^[@A-Za-z0-9._\/~+-]{1,214}$/, VER_RE=/^[A-Za-z0-9.+_~-]{1,64}$/, ADV_RE=/^[A-Z][A-Z0-9]{1,15}-[A-Za-z0-9._:-]{1,60}$/, TAG_RE=/^[A-Za-z0-9._\/+@-]{1,80}$/;
@@ -604,14 +608,14 @@ function applyResultFilter(){
     sbs[m].classList.toggle("on",on); sbs[m].setAttribute("aria-pressed",String(on)); }
   syncSelAll();
 }
-// "Select all shown" (RS28a): acts only on visible cards — respects the active filter and scroll-reveal
+// "Select all shown" (RS28a): acts only on visible cards: respects the active filter and scroll-reveal
 function shownPickBoxes(){ var out=document.getElementById("out"); if(!out) return [];
   return Array.prototype.filter.call(out.querySelectorAll(".rcard"),function(c){ return c.style.display!=="none"; })
     .map(function(c){ return c.querySelector(".pick-cb"); }).filter(Boolean); }
 function syncSelAll(){ var b=document.getElementById("resSelAll"); if(!b) return;
   var bx=shownPickBoxes(), all=bx.length>0 && bx.every(function(x){ return x.checked; });
   b.textContent = all ? "Deselect shown" : "Select all shown ("+bx.length+")"; b.classList.toggle("on",all); b.hidden=!bx.length; }
-// infinite scroll: no button — when the sentinel nears the viewport, reveal 10 more (cards are already fetched; no API call)
+// infinite scroll: no button: when the sentinel nears the viewport, reveal 10 more (cards are already fetched; no API call)
 function checkMore(){ requestAnimationFrame(function(){ var s=document.querySelector("#out #resMore");
   if(s && !s.hidden && s.getBoundingClientRect().top < window.innerHeight+400) revealMore(); }); }
 function revealMore(){ window.__resLimit=(window.__resLimit||10)+10; applyResultFilter(); checkMore(); }
@@ -1112,7 +1116,7 @@ document.getElementById("trendBtn").addEventListener("click",function(){ showTre
 document.getElementById("trendHome").addEventListener("click",function(){ showTrending("rising"); });
 document.getElementById("nextBtn").addEventListener("click",function(){ openModal("nextModal"); });
 // RS39 feedback: sent to Cardzo through Web3Forms (public access key, emails hello@cardzo.co.in). Without a key,
-// or if sending fails, the visitor is told plainly and offered the email-app link — never a fake "sent".
+// or if sending fails, the visitor is told plainly and offered the email-app link: never a fake "sent".
 var WEB3FORMS_KEY="615d1716-7fa8-4f30-86a2-623fef081d11";   // owner's public Web3Forms access key (safe to publish; it only lets this form email Cardzo)
 var FB_TYPES=["Bug","Feature request","Content issue","Other"], FB_TO="hello@cardzo.co.in";
 function feedbackPayload(title, type, desc, email){
@@ -1139,7 +1143,7 @@ document.getElementById("fbGo").addEventListener("click",function(){
   var t=$("fbTitle").value, ty=$("fbType").value, d=$("fbDesc").value, em=$("fbEmail").value;
   var p=feedbackPayload(t,ty,d,em); ok.hidden=true;
   if(!p){ err.textContent="Tell me what it's about first."; err.hidden=false; $("fbTitle").focus(); return; }
-  if($("fbBot").checked){ ok.hidden=false; return; }   // honeypot ticked: a bot — pretend, send nothing
+  if($("fbBot").checked){ ok.hidden=false; return; }   // honeypot ticked: a bot: pretend, send nothing
   function fallback(msg){ err.innerHTML=msg+' <a href="'+esc(feedbackUrl(t,ty,d))+'">Email it instead</a> (opens your email app).'; err.hidden=false; }
   if(!WEB3FORMS_KEY){ fallback("Sending from the page isn't set up yet."); return; }
   go.disabled=true; go.textContent="Sending…";
@@ -1263,7 +1267,7 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
   [["prdOpen","Claude"],["prdGpt","ChatGPT"]].forEach(function(p){ var a=document.getElementById(p[0]); if(!a) return;
     a.addEventListener("click",function(e){ if(a.getAttribute("data-copy-first")!=="1") return;   // short prompt: the pre-filled link opens as usual
       e.preventDefault(); copyThenOpen(p[1], a.href, " (the plan is too long to pre-fill)"); }); });
-  var gemBtn=document.getElementById("prdGemini");   // RS28b: Gemini has no pre-fill link — copy, then open it
+  var gemBtn=document.getElementById("prdGemini");   // RS28b: Gemini has no pre-fill link: copy, then open it
   if(gemBtn) gemBtn.addEventListener("click",function(){ copyThenOpen("Gemini","https://gemini.google.com/app"," (it has no pre-fill link)"); });
   if(copyBtn) copyBtn.addEventListener("click",function(){ var text=pre?pre.textContent:"";
     function ok(){ copyBtn.innerHTML=ico("check"); setTimeout(function(){ copyBtn.innerHTML=ico("copy"); },1400); }
@@ -1498,7 +1502,7 @@ function buildDemo(host){
 // stop a carousel's interval (used before its host is replaced, or when the Tour modal closes)
 function stopDemo(id){ var h=document.getElementById(id); if(h&&h.__stopDemo) h.__stopDemo(); }
 // empty-state in the results panel: the animated demo carousel (home view)
-// ---- RS35: trending gallery — three API-sorted lists, fetched only when opened, cached 30 min per tab ----
+// ---- RS35: trending gallery: three API-sorted lists, fetched only when opened, cached 30 min per tab ----
 var TREND_TABS={rising:"Rising", stars:"Most stars", forks:"Most forks"};
 var TREND_NOTE={
   rising:"Created in the last 30 days, most stars first.",
@@ -1602,49 +1606,103 @@ function think(st, text){
   st.innerHTML=thinkPill(text,"think-sm"); startDotOrb(st.querySelector(".think-orb"));
 }
 
-// RS35 home carousel: top Rising repos, rotates itself, pauses on hover/focus/touch, still under reduced motion
+// RS35 home carousel. RS92: Trending on GitHub is the card shuffle deck (frontend-stack pattern, Web Animations API and
+// CSS transitions only, RS91). Up to 6 real repos from the open tab's list: the top card slides off and tucks under the
+// deck about every 4 s; paused on hover, keyboard focus, a hidden tab, off screen or the Pause button. Previous, Next,
+// Shuffle and the dots always work. Reduced motion: no auto-shuffle, and the buttons swap the top card at once.
+// Only the top card is exposed; the others are aria-hidden and inert. Each list is fetched only when its tab is first
+// opened (cached 30 min, RS35).
+var DECK_N=6, DECK_MS=4000, DECK_TINT=["cyan","violet","mint"];
+var DECK_FRONT="translateY(0px) translateZ(0px) scale(1)";
+function deckCardHtml(r, k, n, kind){
+  var p=String(r.name).split("/"), o=p[0], nm=p.slice(1).join("/"), v=licenseVerdict(r.spdx), xs=exploreLinks(r.name), lang=cleanLang(r.lang);
+  var spdx=/^[A-Za-z0-9.+-]{1,40}$/.test(r.spdx||"")&&r.spdx!=="NOASSERTION"?r.spdx:"";
+  var lic=v.c==="t-good"?'<span class="td-lic ok" title="'+esc(v.t)+'">'+ico("check")+'Commercial OK'+(spdx?' · '+esc(spdx):'')+'</span>'
+    :'<span class="td-lic '+(v.i==="ban"?"no":"warn")+'">'+ico(v.i)+esc(v.t)+(spdx?' · '+esc(spdx):'')+'</span>';
+  var tl=[lang].concat((r.topics||[]).filter(function(t){ return /^[a-z0-9][a-z0-9-]{0,49}$/.test(t); })).filter(Boolean).slice(0,4);
+  var badge=kind==="rising"?"New this month":r.starter?"Template":"";
+  var tools=xs.filter(function(x){ return x.label==="Diagram"||x.label==="Wiki"||x.label==="Browse"; }).map(function(x){
+    return '<a href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer" title="'+esc(x.title)+'">'+esc(x.label==="Browse"?"Code":x.label)+'</a>'; }).join("");
+  return '<article class="td-card" data-tint="'+DECK_TINT[k%3]+'" role="group" aria-roledescription="slide" aria-label="'+(k+1)+' of '+n+': '+esc(r.name)+'">'+
+    '<div class="td-top"><span class="td-tile" aria-hidden="true">'+ico("repo")+'</span>'+
+      '<div class="td-id"><a class="td-name" href="'+esc(r.url)+'" target="_blank" rel="noopener"><span class="owner">'+esc(o)+' / </span>'+esc(nm)+'</a>'+
+        '<span class="td-line">'+(badge?'<span class="td-badge">'+esc(badge)+'</span>':'')+(tl.length?'<span class="td-topics">'+tl.map(esc).join(" · ")+'</span>':'')+'</span></div>'+
+      '<a class="td-gh" href="'+esc(r.url)+'" target="_blank" rel="noopener" aria-label="Open '+esc(r.name)+' on GitHub" title="Open on GitHub">'+ico("external")+'</a></div>'+
+    '<p class="td-desc">'+esc(plainDesc(r.desc))+'</p>'+
+    '<div class="td-metrics"><span class="td-m"><small>GitHub stars</small><b>'+ico("star","td-star")+'<span class="td-n">'+kstars(r.stars)+'</span></b></span>'+
+      '<span class="td-m"><small>Forks</small><b>'+ico("fork")+kstars(r.forks)+'</b></span>'+
+      '<span class="td-m"><small>Updated</small><b>'+esc(agoText(r.pushed)||r.pushed)+'</b></span>'+lic+'</div>'+
+    (tools?'<div class="td-foot"><span class="td-look">Look inside</span><nav class="td-tools" aria-label="Look inside '+esc(r.name)+'">'+tools+'</nav></div>':'')+
+  '</article>'; }
 function buildTrendCarousel(){
-  // RS63: Trending on GitHub as a bento grid with three tabs. #1: big tile with what it does, the number, licence and
-  // Look-inside tools; #2-#5: scoreboard tiles (licence pill only when NOT free to use). Switching tabs slides the tiles
-  // in one after another and rolls the numbers. Each list is fetched only when its tab is first opened (cached 30 min, RS35).
-  var box=document.getElementById("trendCar"), grid=document.getElementById("tcarTrack"); if(!box||!grid) return;
-  var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches;
-  var LAB={rising:"rising this month", stars:"most starred", forks:"most forked"}, cur="", gen=0;
-  var tex=""; for(var y=0;y<18;y++){ for(var x=0;x<96;x++){ var v=asciiNoise(x*.09,y*.16+3); tex+=ASCII_RAMP[Math.min(ASCII_RAMP.length-1,Math.floor(v*v*ASCII_RAMP.length))]; } tex+="\n"; }
-  var split=function(n){ var p=String(n).split("/"); return {o:p[0], r:p.slice(1).join("/")}; };
-  function html(rows, kind){
-    var num=function(r){ return kstars(kind==="forks"?r.forks:r.stars); }, unit=kind==="forks"?"forks":"stars";
-    var a=rows[0], an=split(a.name), av=licenseVerdict(a.spdx), xs=exploreLinks(a.name);
-    var big='<div class="tb-big" role="listitem" style="--i:0"><pre class="tb-tex" aria-hidden="true">'+tex+'</pre>'+
-      '<span class="tb-top"><span class="tb-lab">#1 '+LAB[kind]+'</span><span class="tb-nw"><span class="tb-n">'+num(a)+'</span><i class="tb-u">'+unit+'</i></span></span>'+   // RS74: count top right, like the small cards
-      '<a class="tb-name" href="'+esc(a.url)+'" target="_blank" rel="noopener"><span class="owner">'+esc(an.o)+' / </span>'+esc(an.r)+'</a>'+
-      '<p class="tb-desc">'+esc(plainDesc(a.desc))+'</p>'+
-      '<div class="tb-facts"><span class="tag '+av.c+'">'+ico(av.i)+esc(av.t)+'</span></div>'+
-      (xs.length?'<div class="tb-tools">'+xs.filter(function(x){ return x.label==="Diagram"||x.label==="Wiki"||x.label==="Browse"; }).map(function(x){
-        return '<a href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer" title="'+esc(x.title)+'">'+esc(x.label==="Browse"?"Code":x.label)+'</a>'; }).join("")+'</div>':'')+
-      '</div>';
-    return big+rows.slice(1).map(function(r,k){ var n=split(r.name), v=licenseVerdict(r.spdx);
-      return '<a class="tb-sm" role="listitem" style="--i:'+(k+1)+'" href="'+esc(r.url)+'" target="_blank" rel="noopener">'+
-        '<span class="tb-top"><span class="tb-lab">#'+(k+2)+'</span><span class="tb-nw"><span class="tb-n">'+num(r)+'</span><i class="tb-u">'+unit+'</i></span></span>'+   // RS72: say what the number is
-        '<b title="'+esc(r.name)+'">'+esc(n.r)+'</b><small>'+esc(plainDesc(r.desc))+'</small>'+
-        (v.c==="t-good"?'':'<span class="tag '+v.c+'">'+ico(v.i)+esc(v.t)+'</span>')+'</a>'; }).join("");
-  }
+  var box=document.getElementById("trendCar"), deck=document.getElementById("tcarTrack"); if(!box||!deck||!box.querySelector) return;
+  var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches, G=canAnimate();
+  var note=document.getElementById("tcarNote"), cnt=document.getElementById("tcCount"), dots=document.getElementById("tcDots"), play=document.getElementById("tcPlay");
+  var cur="", gen=0, order=[], paused=false, hover=false, focus=false, visible=true, busy=false;
+  var EASE_OUT="cubic-bezier(.22,1,.36,1)";
+  function layout(){ order.forEach(function(c,i){ c.setAttribute("data-pos",String(Math.min(i,3))); c.style.zIndex=String(30-i);
+      if(i){ c.setAttribute("aria-hidden","true"); c.inert=true; } else { c.removeAttribute("aria-hidden"); c.inert=false; } });
+    var top=order[0], k=top?+top.getAttribute("data-k"):0;
+    if(cnt) cnt.textContent=order.length?(k+1)+" / "+order.length:"";
+    if(dots) [].forEach.call(dots.children,function(d,j){ var on=j===k; d.classList.toggle("on",on); if(on) d.setAttribute("aria-current","true"); else d.removeAttribute("aria-current"); }); }
+  function hold(el){ el.style.transition="none"; return function(){ void el.offsetWidth; el.style.transition=""; }; }
+  function step(dir){ if(busy||order.length<2) return; var anim=G&&!reduce;
+    if(dir>0){ var top=order[0]; order.push(order.shift());
+      if(!anim){ layout(); return; } busy=true;
+      var a=top.animate([{transform:DECK_FRONT,opacity:1},{transform:"translate(110%,-4%) rotate(6deg)",opacity:0}],{duration:420,easing:EASE_OUT,fill:"forwards"});
+      layout();   // the rest move up one while the top card slides off; it lands at the back, unseen
+      var done=function(){ var back=hold(top); a.cancel(); back(); busy=false; }; a.finished.then(done,done); }
+    else { var nt=order.pop(); order.unshift(nt);
+      if(!anim){ layout(); return; } busy=true; var back2=hold(nt); layout();
+      var b=nt.animate([{transform:"translate(-110%,-4%) rotate(-6deg)",opacity:0},{transform:DECK_FRONT,opacity:1}],{duration:520,easing:EASE_OUT});
+      var done2=function(){ back2(); busy=false; }; b.finished.then(done2,done2); } }
+  function front(k){ var i=-1; order.forEach(function(c,j){ if(+c.getAttribute("data-k")===k) i=j; }); if(i<=0) return;
+    order=order.slice(i).concat(order.slice(0,i)); layout(); }
+  function shuffle(){ if(order.length<2) return; var o=order.slice(), first=o[0];
+    for(var i=o.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)), t=o[i]; o[i]=o[j]; o[j]=t; }
+    if(o[0]===first) o.push(o.shift()); order=o; layout(); }
+  function canRun(){ return !reduce&&!paused&&!hover&&!focus&&visible&&!document.hidden&&!box.hidden; }
+  var ticking=0;   // the timer starts once a list is on screen
+  box.addEventListener("pointerenter",function(e){ if(e.pointerType==="mouse") hover=true; });
+  box.addEventListener("pointerleave",function(){ hover=false; });
+  box.addEventListener("focusin",function(){ focus=true; });
+  box.addEventListener("focusout",function(e){ if(!box.contains(e.relatedTarget)) focus=false; });
+  if(window.IntersectionObserver) new IntersectionObserver(function(es){ visible=es[0].isIntersecting; }).observe(deck);
+  // the deck is as tall as its tallest card (measured at its natural height), so no card has an empty band
+  function fit(){ if(!order.length||!deck.classList) return; deck.classList.add("td-measure"); var h=0;
+    order.forEach(function(c){ h=Math.max(h,c.offsetHeight||0); }); deck.classList.remove("td-measure");
+    if(h) deck.style.setProperty("--deck-h",Math.ceil(h)+"px"); }
+  var fitW=0; if(window.ResizeObserver) new ResizeObserver(function(es){ var w=Math.round(es[0].contentRect.width); if(w!==fitW){ fitW=w; fit(); } }).observe(deck);
+  if(document.fonts&&document.fonts.ready) document.fonts.ready.then(fit,function(){});
+  function paintPlay(){ if(!play) return; play.setAttribute("aria-pressed",String(paused));
+    play.innerHTML=ico(paused?"play":"pause")+'<span class="tc-pl">'+(paused?"Auto-shuffle off":"Auto-shuffle on")+'</span>';
+    play.title=paused?"Start the auto-shuffle":"Pause the auto-shuffle"; }
+  if(play){ if(reduce) play.hidden=true; play.addEventListener("click",function(){ paused=!paused; paintPlay(); }); }
+  var on=function(id,f){ var el=document.getElementById(id); if(el) el.addEventListener("click",f); };
+  on("tcPrev",function(){ step(-1); }); on("tcNext",function(){ step(1); }); on("tcShuffle",shuffle);
+  box.addEventListener("keydown",function(e){ if((e.key!=="ArrowLeft"&&e.key!=="ArrowRight")||(e.target&&e.target.closest&&e.target.closest(".tb-tabs"))) return;
+    e.preventDefault(); step(e.key==="ArrowRight"?1:-1); });
   function show(kind){
     if(kind===cur) return; var my=++gen; cur=kind;
     [].forEach.call(box.querySelectorAll(".tb-tab"),function(t){ var on=t.getAttribute("data-k")===kind; t.classList.toggle("on",on); t.setAttribute("aria-selected",String(on)); });
-    grid.setAttribute("aria-label",(kind==="rising"?"Rising repos this month":kind==="stars"?"Most-starred repos":"Most-forked repos"));
-    grid.setAttribute("aria-busy","true");
-    if(grid.firstChild && !reduce) grid.classList.add("tb-out");
+    deck.setAttribute("aria-label",(kind==="rising"?"Rising repos this month":kind==="stars"?"Most-starred repos":"Most-forked repos"));
+    deck.setAttribute("aria-busy","true");
+    if(deck.firstChild && !reduce) deck.classList.add("td-out");
     return fetchTrending(kind).then(function(got){ if(my!==gen) return;
-      var rows=trendRows(got.items,kind).rows.filter(hasDesc).slice(0,5); if(rows.length<3) throw new Error("few");   // RS45: a tile must say what the repo does
-      grid.classList.remove("tb-out","tb-in"); grid.innerHTML=html(rows,kind); void grid.offsetWidth;
-      if(!reduce){ grid.classList.add("tb-in");
-        var G=canAnimate(); if(G) [].forEach.call(grid.querySelectorAll(".tb-n"),function(el,k){ odometer(el, el.textContent, G, .15+k*.07); }); }
-      grid.setAttribute("aria-busy","false"); box.hidden=false;
-    }).catch(function(){ if(my!==gen) return; grid.classList.remove("tb-out"); grid.setAttribute("aria-busy","false");
+      var rows=trendRows(got.items,kind).rows.filter(hasDesc).slice(0,DECK_N); if(rows.length<3) throw new Error("few");   // RS45: a card must say what the repo does
+      deck.classList.remove("td-out","td-in"); deck.innerHTML=rows.map(function(r,k){ return deckCardHtml(r,k,rows.length,kind); }).join("");
+      order=[].slice.call(deck.children); order.forEach(function(c,k){ c.setAttribute("data-k",String(k)); });
+      if(dots) dots.innerHTML=rows.map(function(r,k){ return '<button type="button" class="tc-dot" data-k="'+k+'" aria-label="Show '+esc(r.name)+'"></button>'; }).join("");
+      if(note) note.textContent=TREND_NOTE[kind]||"";
+      layout(); fit(); void deck.offsetWidth;
+      if(!reduce){ deck.classList.add("td-in"); if(G){ var n=deck.querySelector(".td-n"); if(n) odometer(n, n.textContent, G, .2); } }
+      deck.setAttribute("aria-busy","false"); box.hidden=false;
+      if(!ticking&&!reduce) ticking=setInterval(function(){ if(canRun()) step(1); }, DECK_MS);
+    }).catch(function(){ if(my!==gen) return; deck.classList.remove("td-out"); deck.setAttribute("aria-busy","false");
       if(kind==="rising") return;   // GitHub unreachable or rate-limited on first load: no section, nothing else changes
       cur=""; show("rising"); });
   }
+  if(dots) dots.addEventListener("click",function(e){ var d=e.target&&e.target.closest&&e.target.closest(".tc-dot"); if(d) front(+d.getAttribute("data-k")); });
   [].forEach.call(box.querySelectorAll(".tb-tab"),function(t){ t.addEventListener("click",function(){ show(t.getAttribute("data-k")); }); });
   box.querySelector(".tb-tabs").addEventListener("keydown",function(e){ if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight") return;
     var ts=[].slice.call(box.querySelectorAll(".tb-tab")), i=ts.indexOf(document.activeElement); if(i<0) return; e.preventDefault();
@@ -1689,78 +1747,41 @@ function showHome(){
   if(window.__resetPicks) window.__resetPicks();
 }
 // ---- RS61: home demo = the real product, live. A quick-pick search types itself, then Replore's real top results for
-// it land as cards (licence verdict pops, Explore buttons light in turn), over an ASCII globe of GitHub (desktop only).
+// it land as cards (licence verdict pops, Explore buttons light in turn). RS92: the ASCII globe is gone (owner 2026-10-24).
 // The cards are what scout.py returned for these searches on 2026-10-23 (site keyword queries, fit ranking); they are
 // examples of the output, refreshed by hand, and say so. No network call, so the home screen costs no GitHub quota.
 var LIVE_DEMO=[   // RS67: the example searches Leo types into the search bar (no example cards any more)
   {q:"a portfolio website with smooth scroll animations"},
   {q:"a chatbot that answers questions from my PDFs, Python"},
   {q:"dashboard to show my sales spreadsheet as charts"}];
-var ASCII_RAMP=" .:-=+*#%@";
-function asciiNoise(x,y){ function h(a,b){ var s=Math.sin(a*127.1+b*311.7)*43758.5453; return s-Math.floor(s); }
-  var xi=Math.floor(x), yi=Math.floor(y), xf=x-xi, yf=y-yi, u=xf*xf*(3-2*xf), v=yf*yf*(3-2*yf);
-  var a=h(xi,yi), b=h(xi+1,yi), c=h(xi,yi+1), d=h(xi+1,yi+1); return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v; }
-// the ASCII globe: GitHub as a world of characters; spins up while a search runs (demo or real)
-function startAsciiGlobe(canvas, reduce){
-  if(!canvas || !canvas.getContext) return;   // no canvas: the cards alone carry the demo
-  var g=canvas.getContext("2d"); if(!g) return;
-  var t=0, spin=.22, boost=0, live=true, raf=0, last=0;
-  function css(n){ return getComputedStyle(canvas).getPropertyValue(n).trim()||"#5b88a6"; }   // RS65: the stage tokens
-  function draw(){ var r=canvas.getBoundingClientRect(), d=Math.min(window.devicePixelRatio||1,1.5);
-    if(!r.width||!r.height) return;
-    if(canvas.width!==Math.round(r.width*d)||canvas.height!==Math.round(r.height*d)){ canvas.width=Math.round(r.width*d); canvas.height=Math.round(r.height*d); }   // RS65: height too
-    var W=canvas.width, H=canvas.height, cell=Math.max(8,Math.round(Math.min(W,H)/40)), cols=Math.floor(W/cell), rows=Math.floor(H/(cell*1.6));
-    g.clearRect(0,0,W,H); g.font="700 "+Math.round(cell*1.3)+"px "+(css("--f-mono")||"monospace"); g.textBaseline="top";   // RS65: bolder
-    var ink=css("--globe-ink"), dim=css("--globe-dim");   // RS76: per-theme globe inks
-    var cx=cols*.5, cy=rows*.5, R=Math.min(rows*.47, cols*.29);
-    for(var j=0;j<rows;j++) for(var i=0;i<cols;i++){ var x=(i-cx)/R*.62, y=(j-cy)/R, r2=x*x+y*y; if(r2>1) continue;
-      var z=Math.sqrt(1-r2), lon=Math.atan2(x,z)+t, lat=Math.asin(y), light=.3+.7*z;
-      var land=asciiNoise(lon*2.2+10,lat*3+4)>.52, grid=Math.abs(Math.sin(lon*6))<.06||Math.abs(Math.sin(lat*6))<.05;
-      var v=land?.55+.45*light:grid?.45*light:.3*light;   // RS65: the whole sphere reads, not just the land
-      g.globalAlpha=land?.55+.45*light:.32+.33*light; g.fillStyle=land?ink:dim;
-      g.fillText(ASCII_RAMP[Math.min(ASCII_RAMP.length-1,Math.floor(v*ASCII_RAMP.length))],i*cell,j*cell*1.6); }
-    g.globalAlpha=1; }
-  function frame(now){ if(!live) return; if(!canvas.isConnected){ live=false; return; }   // home screen replaced: stop for good
-    var dt=last?Math.min(.1,(now-last)/1000):0; last=now;
-    var busy=boost>0||document.body.classList.contains("searching");
-    spin+=((busy?1.6:.22)-spin)*(1-Math.exp(-dt*2.5)); t+=dt*spin; if(boost>0) boost-=dt;
-    var hidden=canvas.parentNode&&canvas.parentNode.parentNode&&canvas.parentNode.parentNode.classList.contains("show-cards");
-    if(!hidden) draw(); raf=requestAnimationFrame(frame); }
-  canvas.__boost=function(s){ boost=Math.max(boost,s||1.4); };
-  // RS76: a theme switch redraws at once, even while the globe is paused or off screen
-  if(window.MutationObserver) new MutationObserver(function(){ if(canvas.isConnected) draw(); }).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
-  try{ matchMedia("(prefers-color-scheme: dark)").addEventListener("change",function(){ if(canvas.isConnected) draw(); }); }catch(_){}
-  canvas.__stop=function(){ live=false; cancelAnimationFrame(raf); };
-  if(reduce){ draw(); return; }
-  if(window.IntersectionObserver) new IntersectionObserver(function(es){ var v=es[0].isIntersecting;
-    if(v&&!live){ live=true; last=0; raf=requestAnimationFrame(frame); } else if(!v){ live=false; cancelAnimationFrame(raf); } }).observe(canvas);
-  document.addEventListener("visibilitychange",function(){ if(document.hidden){ live=false; cancelAnimationFrame(raf); } });
-  raf=requestAnimationFrame(frame);
-}
+// RS92 (owner 2026-10-24): Leo's hero video. The intro plays once (his fly-in), then the idle clip loops, also during a
+// search. With these empty (Safari), the <video data-leo-intro data-leo-idle> slot stays hidden and Leo is the
+// leo-hero.webp still with the Web Animations fly-in and the CSS float. The old Leo art (sprites, peek clip) is retired.
+// Owner picked the Flow (Veo) clips 2026-10-24. Safari cannot play VP9 with alpha, so it keeps the CSS fly-in and the still.
+var LEO_VIDEO=/^((?!chrome|chromium|android|crios|fxios|edg).)*safari/i.test(navigator.userAgent||"")?{intro:"", idle:""}:{intro:"leo-intro.webm?v=4ab4a8c5e5", idle:"leo-idle.webm?v=1ca511a5c6"};
 function buildLiveDemo(host){
   if(!host || host.dataset.built) return; host.dataset.built="1";
   var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches;
-  var wide=!(window.matchMedia&&matchMedia("(max-width: 999px)").matches);
-  // RS65: the studio stage. Leo, the scout bot, stands beside the ASCII globe of GitHub. RS67 (hero option A): his
-  // words, the search stages (pills) and the search bar sit beside him; the example search types itself into the bar's
-  // placeholder, so there is no separate typed line and no example cards. Phones get Leo and his words (no globe).
+  // RS92 (owner 2026-10-24): Leo is the left column's hero, on his own (the ASCII globe is gone). The Flow clips play
+  // where the browser can show alpha video: the intro once, then the idle loop, which keeps playing during a search.
+  // Safari (no VP9 alpha), reduced motion or a failed clip show the same Leo as a still (leo-hero.webp), with the
+  // fly-in and idle float where motion is allowed. Only one Leo ever shows. RS67: his words, the stage and the search
+  // bar sit beside him; the example search types itself into the bar's placeholder.
   var STAGES="Searching|Ranking by fit|Licence check|Ready".split("|");
   host.innerHTML='<div class="ld st">'+
     '<div class="st-stage">'+
       '<div class="st-pair" aria-hidden="true">'+
-        (wide?'<div class="st-g"><canvas class="ld-globe"></canvas><span class="st-sh"></span></div>':'')+
-        '<div class="st-b"><img class="st-bot" src="scout-hero.webp" alt="" width="180" height="184" decoding="async"><span class="st-sprite"></span><span class="st-sh"></span>'+
-        (wide&&!reduce?'<video class="st-peekvid" muted playsinline preload="auto" aria-hidden="true"></video>':'')+'</div></div>'+
+        '<div class="st-fly"><div class="st-b"><img class="st-bot" src="leo-hero.webp?v=1ca927d5e6" alt="" width="560" height="530" decoding="async">'+   // RS92: .st-fly carries the fly-in, .st-b the idle float
+        '<video class="st-herovid" data-leo-intro="" data-leo-idle="" muted playsinline autoplay preload="none" poster="leo-hero.webp?v=1ca927d5e6" aria-hidden="true" hidden></video>'+   // RS92 hook, see LEO_VIDEO
+        '</div></div></div>'+
+      '<span class="leo-pill" aria-hidden="true"><i></i>Leo · <span data-hstat>Ready</span></span>'+   // RS92: the real stage (heroStage)
     '</div>'+
     '<div class="st-side">'+
       '<p class="st-say"><b>Hello there!</b><em>I’m Leo.</em><span class="st-say-t">Tell me your idea. I’ll find free GitHub repos for it and help you plan.</span>'+
         '<span class="st-pills" aria-hidden="true">'+STAGES.map(function(t){ return '<i>'+t+'</i>'; }).join("")+'</span></p>'+   // the search stages, as pills
       '<div class="st-search"></div>'+   // RS67: placeSearch() moves the search bar here on wide home screens
     '</div></div>';
-  var globe=host.querySelector(".ld-globe"),
-      label=host.querySelector(".st-label"), bot=host.querySelector(".st-bot"),
-      rail=[].slice.call(host.querySelectorAll(".st-pills i"));
-  if(globe) startAsciiGlobe(globe, reduce);
+  var label=host.querySelector(".st-label"), bot=host.querySelector(".st-bot"), rail=[].slice.call(host.querySelectorAll(".st-pills i"));
   var qin=document.getElementById("q");
   var sb=bot&&bot.parentNode, say=host.querySelector(".st-say"), sayT=host.querySelector(".st-say-t"), SAY=sayT?sayT.textContent:"";
   var sayTimer=0;
@@ -1768,87 +1789,65 @@ function buildLiveDemo(host){
     if(reduce||!sayT.classList){ sayT.textContent=txt; return; }
     sayT.classList.add("swap"); clearTimeout(sayTimer);   // RS69: his words fade out and back in, never jump
     sayTimer=setTimeout(function(){ sayT.textContent=txt; sayT.classList.remove("swap"); }, 180); }
-  // RS65: Leo is interactive. He peeks out, waves hello, reacts while you type, and searches (magnifier sweep) when you
-  // press Enter. Animations are sprite sheets cut from the Veo clips (work in every browser, no video alpha needed).
-  var spr=sb&&sb.querySelector&&sb.querySelector(".st-sprite"), canAnim=!!(bot&&globe&&!reduce&&bot.classList&&sb&&sb.classList&&bot.addEventListener);
-  var SPR={wave:["scout-wave.webp",31,2.6], search:["scout-searching.webp",36,3]};
-  function sprite(name, loop, done){ if(!canAnim||!spr) { if(done) done(); return; } var d=SPR[name];
-    spr.style.backgroundImage="url("+d[0]+")"; spr.style.backgroundSize=(d[1]*100)+"% 100%";
-    spr.style.animation="none"; void spr.offsetWidth;
-    spr.style.animation="leoSprite "+d[2]+"s steps("+(d[1]-1)+") "+(loop?"infinite":"1 forwards");
-    sb.classList.add("animating");
-    if(!loop&&done) spr.addEventListener("animationend",function f(){ spr.removeEventListener("animationend",f); done(); }); }
-  function still(){ if(sb&&sb.classList) sb.classList.remove("animating");   // RS69: the sprite dissolves back into the still
-    setTimeout(function(){ if(spr&&sb&&sb.classList&&!sb.classList.contains("animating")) spr.style.animation="none"; }, 400); }
-  var greeted=false, started=false;
+  var started=false, greeted=false;
   function startDemo(){ if(started) return; started=true; run(); }
-  function greet(){ if(greeted) return; greeted=true; speak(SAY); sprite("wave", false, function(){ still(); startDemo(); }); }
-  // the peek: Leo's Flow/Veo clip (he peeks from behind the globe, looks around, hops out) where the browser can show
-  // see-through video; Safari cannot, so it gets the CSS peek instead
-  var pv=sb&&sb.querySelector&&sb.querySelector(".st-peekvid"), ua=(navigator&&navigator.userAgent)||"";
-  var alphaVideo=!!pv&&!/^((?!chrome|android|crios|fxios|edg).)*safari/i.test(ua);
-  function cssPeek(){ bot.classList.add("peek"); sb.classList.add("peeking");
-    bot.addEventListener("animationend",function(){ bot.classList.remove("peek"); sb.classList.remove("peeking"); greet(); },{once:true});
-    setTimeout(greet, 3400); }
-  if(canAnim&&alphaVideo){ var done=false, fin=function(){ if(done) return; done=true;
-      sb.classList.add("peekfade"); greet();   // RS69: the clip dissolves into the waving sprite instead of cutting
-      setTimeout(function(){ sb.classList.remove("videopeek","peekfade"); }, 450); };
-    sb.classList.add("videopeek"); pv.addEventListener("ended",fin); pv.addEventListener("error",function(){ sb.classList.remove("videopeek"); if(!done){ done=true; cssPeek(); } });
-    pv.src="leo-peek.webm?v=7193e5672f"; var pp=pv.play&&pv.play(); if(pp&&pp.catch) pp.catch(function(){ sb.classList.remove("videopeek"); if(!done){ done=true; cssPeek(); } });
-    setTimeout(fin, 6500); setTimeout(startDemo, 10000); }
-  else if(canAnim){ cssPeek(); setTimeout(startDemo, 7000); }   // fallbacks if an animation event never fires
-  else { speak(SAY); }
+  function greet(){ if(greeted) return; greeted=true; speak(SAY); setTimeout(startDemo, 1500); }
+  var fly=host.querySelector(".st-fly"), hv=host.querySelector(".st-herovid");
+  function still(){   // the fallback: the same Leo as a still, flying in where motion is allowed
+    if(hv){ hv.hidden=true; try{ hv.removeAttribute("src"); if(hv.load) hv.load(); }catch(_){} }
+    if(sb&&sb.classList) sb.classList.remove("herovid");
+    if(fly&&fly.animate&&canAnimate()&&!reduce){ var landed=false, land=function(){ if(landed) return; landed=true; greet(); };
+      fly.animate([{transform:"translate3d(-100px,-60px,-500px) rotateY(-90deg) scale(.6)",opacity:0},
+        {transform:"translate3d(-15px,10px,-80px) rotateY(15deg) scale(.95)",opacity:1,offset:.7},
+        {transform:"translate3d(0px,0px,0px) rotateY(0deg) scale(1)",opacity:1}],{duration:1800,easing:"cubic-bezier(.2,.8,.25,1)"}).finished.then(land,land);
+      setTimeout(land, 2600); }
+    else greet(); }
+  if(hv&&hv.play&&sb&&sb.classList&&LEO_VIDEO.intro&&LEO_VIDEO.idle&&!reduce){   // RS92: the hero video (fly-in once, then the idle loop)
+    var failed=false, fail=function(){ if(failed) return; failed=true; still(); };
+    hv.setAttribute("data-leo-intro",LEO_VIDEO.intro); hv.setAttribute("data-leo-idle",LEO_VIDEO.idle); hv.hidden=false; sb.classList.add("herovid");
+    var toIdle=function(){ hv.removeEventListener("ended",toIdle); hv.loop=true; hv.src=LEO_VIDEO.idle; var q=hv.play(); if(q&&q.catch) q.catch(fail); greet(); };
+    hv.addEventListener("ended",toIdle); hv.addEventListener("error",fail);
+    hv.src=LEO_VIDEO.intro; var hp=hv.play(); if(hp&&hp.catch) hp.catch(fail);
+    setTimeout(greet, 6000); }   // his words never wait on the clip
+  else still();
   // typing: Leo pauses the example and answers you
   if(qin&&qin.addEventListener){
     qin.addEventListener("input",function(){ if(document.body.classList.contains("searching")) return;
-      if(qin.value.trim()){ paused=true; clear(); still(); pose("hero"); stage(-1,""); speak("Sounds good! Press Enter and I’ll go look."); }
+      if(qin.value.trim()){ paused=true; clear(); stage(-1,""); speak("Sounds good! Press Enter and I’ll go look."); }
       else { speak(SAY); } });
     qin.addEventListener("blur",function(){ if(!qin.value.trim()&&paused&&!document.body.classList.contains("searching")){ paused=false; speak(SAY); run(); } }); }
   var timers=[], k=0, paused=false;
   function later(f,ms){ timers.push(setTimeout(f,ms)); }
   function clear(){ timers.forEach(clearTimeout); timers=[]; }
   function stage(i, txt){ rail.forEach(function(li,j){ li.classList.toggle("on", j===i); }); if(label) label.textContent=txt||""; }
-  function pose(p){ if(!bot) return; var src=p==="search"?"scout-search.webp":"scout-hero.webp";
-    if(bot.getAttribute&&bot.getAttribute("src")===src) return;
-    if(reduce||typeof bot.cloneNode!=="function"||!bot.parentNode||!bot.offsetWidth){ bot.src=src; return; }
-    // RS69: the old pose stays on top and fades out while the new one shows through (a dissolve, not a cut)
-    var ghost=bot.cloneNode(false); ghost.className="st-bot st-ghost"; ghost.setAttribute("alt","");
-    ghost.style.cssText="position:absolute;left:"+bot.offsetLeft+"px;top:"+bot.offsetTop+"px;width:"+bot.offsetWidth+"px;margin:0;z-index:2;transition:opacity .4s ease";
-    bot.parentNode.insertBefore(ghost, bot.nextSibling); bot.src=src;
-    setTimeout(function(){ ghost.style.opacity="0"; }, 30); setTimeout(function(){ if(ghost.parentNode) ghost.parentNode.removeChild(ghost); }, 480); }
   // RS67: the example search types itself into the search bar's placeholder (never over what a visitor typed)
   var PH=(qin&&qin.getAttribute&&qin.getAttribute("placeholder"))||"What are you building?";
   function ph(t){ if(!qin||qin.value||document.activeElement===qin) return; qin.setAttribute("placeholder",t); }
   if(qin&&qin.addEventListener) qin.addEventListener("focus",function(){ qin.setAttribute("placeholder",PH); });
   function run(){ clear(); if(paused||!host.isConnected||document.body.classList.contains("searching")) return;
     var n=LIVE_DEMO.length, ex=LIVE_DEMO[((k%n)+n)%n]; k++;
-    stage(-1,""); pose("hero");
+    stage(-1,"");
     if(reduce){ stage(3,"Ready"); return; }
     var step=Math.max(28,Math.min(55,1700/ex.q.length));
     later(function(){ ph(""); }, 400);
     for(var i=1;i<=ex.q.length;i++) (function(m){ later(function(){ ph(ex.q.slice(0,m)); }, 400+m*step); })(i);
     var t0=400+ex.q.length*step+350;
-    later(function(){ stage(0,"Searching GitHub"); pose("search"); if(globe&&globe.__boost) globe.__boost(2.4); }, t0);
+    later(function(){ stage(0,"Searching GitHub"); }, t0);
     later(function(){ stage(1,"Ranking by fit"); }, t0+800);
     later(function(){ stage(2,"Licence check"); }, t0+1450);
-    later(function(){ stage(3,"Ready"); pose("hero"); }, t0+2100);
+    later(function(){ stage(3,"Ready"); }, t0+2100);
     later(function(){ ph(PH); stage(-1,""); }, t0+5600);
     later(run, t0+7400); }
-  // RS65: a real search takes over the stage: the bot searches, the rail and label follow it, the example cards leave
+  // RS65: a real search takes over the stage: his words and the rail follow it (RS92: the idle clip keeps playing)
   var busy=false;
   function onSearch(){ var on=document.body.classList.contains("searching");
     if(on&&!busy){ busy=true; clear(); var qv=document.getElementById("q");
-      if(qv) qv.setAttribute("placeholder",PH); stage(0,"Searching GitHub"); pose("search"); speak("On it! Searching GitHub for you…"); sprite("search", true);
+      if(qv) qv.setAttribute("placeholder",PH); stage(0,"Searching GitHub"); speak("On it! Searching GitHub for you…");
       later(function(){ stage(1,"Ranking by fit"); }, 1400); later(function(){ stage(2,"Licence check"); }, 2800); }
-    else if(!on&&busy){ busy=false; still(); speak(SAY); if(!document.body.classList.contains("has-results")&&host.isConnected){ paused=false; run(); } } }
+    else if(!on&&busy){ busy=false; speak(SAY); if(!document.body.classList.contains("has-results")&&host.isConnected){ paused=false; run(); } } }
   if(window.MutationObserver) new MutationObserver(onSearch).observe(document.body,{attributes:true,attributeFilter:["class"]});
-  // RS76: scrolling spins the globe faster for a moment (it eases back on its own)
-  if(globe&&!reduce&&window.addEventListener){ var lastY=window.scrollY||0;
-    window.addEventListener("scroll",function(){ var y=window.scrollY||0, dy=Math.abs(y-lastY); lastY=y;
-      if(dy>2&&host.isConnected&&globe.__boost) globe.__boost(Math.min(3, 1.3+dy/60)); },{passive:true}); }
-  host.__stopDemo=function(){ paused=true; clear(); if(qin&&!qin.value) qin.setAttribute("placeholder",PH); };   // the globe keeps turning on the stage; it stops itself once removed
+  host.__stopDemo=function(){ paused=true; clear(); if(qin&&!qin.value) qin.setAttribute("placeholder",PH); };
   host.__playDemo=function(){ if(paused){ paused=false; run(); } };
-  if(!canAnim) startDemo();
 }
 // remember the last results so a page refresh brings them back (cached locally, no new API call)
 // RS44: the owner's Stripe Payment Link (public URL, no key). Empty = all tip elements stay hidden.
@@ -1890,7 +1889,7 @@ function snapHtml(root){ var c=root.cloneNode(true), o=c.querySelectorAll('.cnt[
   var tg=c.querySelector&&c.querySelector(".grid");   // RS82: a saved copy is always in fit order, without trust lines
   if(tg){ orderGrid(tg,"fit"); [].forEach.call(c.querySelectorAll(".rc-trust"),function(x){ x.remove(); });
     var tn=c.querySelector("#resTrustNote"); if(tn){ tn.hidden=true; tn.textContent=""; } }
-  var t=c.querySelectorAll("details.trust");   // RS53d: an opened trust panel is never saved — closed and emptied
+  var t=c.querySelectorAll("details.trust");   // RS53d: an opened trust panel is never saved: closed and emptied
   for(var k=0;k<t.length;k++){ t[k].removeAttribute("open"); var b=t[k].querySelector(".trust-body"); if(b){ b.innerHTML=""; b.removeAttribute("data-done"); } }
   return c.innerHTML; }
 function saveResults(){ try{ var out=document.getElementById("out"); cleanCards(out);
@@ -1948,6 +1947,72 @@ function syncClearQ(){ var x=document.getElementById("clearQ"); if(!x) return;
   ["q","like"].forEach(function(id){ var el=document.getElementById(id); if(el) el.addEventListener("input",syncClearQ); });
 })();
 document.getElementById("tourBtn").addEventListener("click",function(){ openModal("howModal"); });
+// RS92 (owner 2026-10-24): the hero backdrop is one layer under everything in the band (the CSS grid and colour fields
+// are .hero::after). This canvas adds the data particles (1-2px, mostly cyan, some violet; dense on Leo's side, thinning
+// toward the console so text stays readable) and faint code-rain columns at the far edges only. DPR-aware, resizes with
+// the hero, redraws at most ~30 fps, pauses off screen or in a hidden tab, and draws one still frame under reduced motion.
+var HERO_RAIN=["{ }","</>","=>","import","git push","npm i","stars","MIT","fork","pull","diff","const","README","async","fetch","main","clone","v1.2"];
+function startHeroFx(canvas){
+  if(!canvas||!canvas.getContext||canvas.__fx) return; var g=canvas.getContext("2d"); if(!g) return; canvas.__fx=1;
+  var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches;
+  var W=0,H=0,dpr=1,pts=[],cols=[],raf=0,last=0,visible=true,rainY=0;
+  function dark(){ return (getComputedStyle(document.documentElement).getPropertyValue("--hero-band")||"").trim().toLowerCase()==="#070b14"; }
+  function rnd(a,b){ return a+Math.random()*(b-a); }
+  function build(){ var r=canvas.getBoundingClientRect(); W=Math.round(r.width); H=Math.round(r.height); if(!W||!H) return;
+    dpr=Math.min(window.devicePixelRatio||1,2); canvas.width=Math.round(W*dpr); canvas.height=Math.round(H*dpr);
+    var wide=W>=1000, n=Math.min(wide?520:160, Math.round(W*H/(wide?2600:5200))); pts=[];
+    for(var i=0;i<n;i++){ var x=wide?W*Math.pow(Math.random(),1.7):W*Math.random();   // wide: denser on Leo's (left) side
+      pts.push({x:x,y:Math.random()*H,r:Math.random()<.75?1:1.8,a:rnd(.15,.65),v:Math.random()<.22,vy:-rnd(.04,.16),vx:rnd(-.03,.03)}); }
+    cols=[]; if(W>=700){ cols.push({x:10,al:"left",off:0,sp:.22}); cols.push({x:W-10,al:"right",off:7,sp:.28}); } }   // one column per far edge, never behind text
+  function fade(x){ if(W<1000) return .55; var t=(x/W-.42)/.3; t=t<0?0:t>1?1:t; return 1-.8*t*t*(3-2*t); }   // thin toward the console
+  function draw(){ if(!W||!H) return; var d=dark(); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,W,H);
+    for(var i=0;i<pts.length;i++){ var p=pts[i], a=p.a*fade(p.x)*(d?1:.12);
+      g.globalAlpha=a; g.fillStyle=d?(p.v?"#8b5cf6":"#00f0ff"):"#475569"; g.fillRect(p.x,p.y,p.r,p.r); }
+    if(cols.length){ g.font="500 12px "+(getComputedStyle(document.documentElement).getPropertyValue("--f-mono")||"monospace"); 
+      g.fillStyle=d?"#00f0ff":"#475569"; g.globalAlpha=d?.05:.045;
+      cols.forEach(function(c){ g.textAlign=c.al; var step=26, start=((rainY*c.sp+c.off)%step)-step;
+        for(var y=start, k=0; y<H+step; y+=step, k++){ g.fillText(HERO_RAIN[(k+Math.floor((rainY*c.sp+c.off)/step)+c.off)%HERO_RAIN.length], c.x, y); } }); }
+    g.globalAlpha=1; }
+  function tick(now){ raf=requestAnimationFrame(tick); if(!visible||document.hidden||!canvas.isConnected) return; if(now-last<33) return; last=now;
+    for(var i=0;i<pts.length;i++){ var p=pts[i]; p.y+=p.vy; p.x+=p.vx; if(p.y<-2) p.y=H+2; if(p.x<-2) p.x=W+2; if(p.x>W+2) p.x=-2; }
+    rainY+=1; draw(); }
+  build(); draw();
+  if(window.ResizeObserver) new ResizeObserver(function(){ build(); draw(); }).observe(canvas);
+  if(window.MutationObserver) new MutationObserver(draw).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+  try{ matchMedia("(prefers-color-scheme: dark)").addEventListener("change",draw); }catch(_){}
+  if(reduce) return;   // one still frame
+  if(window.IntersectionObserver) new IntersectionObserver(function(es){ visible=es[0].isIntersecting; }).observe(canvas);
+  raf=requestAnimationFrame(tick);
+}
+(function(){ var c=document.getElementById("heroFx"); if(c&&c.getContext&&window.requestAnimationFrame) startHeroFx(c); })();
+// RS92: the search shortcut (header button, Ctrl/Cmd+K), the console's Match a PRD and Find similar chips (the same
+// actions as in Filters), the Tour frame's real duration, and the status bar, which shows only the real search stage
+(function(){
+  var mac=/Mac|iPhone|iPad/.test((typeof navigator!=="undefined"&&navigator.platform)||"");
+  if(mac) document.querySelectorAll(".kbd-k").forEach(function(k){ k.textContent="⌘K"; });
+  function focusQ(){ var q=document.getElementById("q"); if(!q||!q.focus) return; try{ q.focus({preventScroll:true}); }catch(_){ q.focus(); }
+    if(q.getBoundingClientRect&&!inView(q)&&q.scrollIntoView) q.scrollIntoView({block:"center"}); }
+  var kb=document.getElementById("kbdSearch");
+  if(kb){ if(mac) kb.setAttribute("aria-label","Search, keyboard shortcut Command K"); kb.addEventListener("click",focusQ); }
+  document.addEventListener("keydown",function(e){ if((e.ctrlKey||e.metaKey)&&!e.altKey&&!e.shiftKey&&(e.key==="k"||e.key==="K")){ e.preventDefault(); closeModals(); focusQ(); } });
+  var lk=document.getElementById("vbLike"); if(lk) lk.addEventListener("click",function(){ openModal("likeModal"); });
+  var pr=document.getElementById("vbPrd");
+  if(pr) pr.addEventListener("keydown",function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); document.getElementById("prd").click(); } });
+  var tv=document.getElementById("tourVideo"), tm=document.getElementById("tourMeta");
+  if(tv&&tm) tv.addEventListener("loadedmetadata",function(){ var d=Math.round(tv.duration||0);
+    if(d>0&&isFinite(d)) tm.textContent="Explainer · "+Math.floor(d/60)+":"+String(d%60).padStart(2,"0"); });
+  if(!document.body||!window.MutationObserver) return;
+  function heroStage(){ var t, b=document.body.classList, busy=b.contains("searching");
+    if(busy){ var x=document.querySelector("#status .think-txt"), s=x?x.textContent:""; t=/fit|meaning/i.test(s)?"Ranking by fit":"Searching GitHub"; }
+    else { var n=document.querySelectorAll("#out .rcard").length; t=n?n+" result"+(n===1?"":"s"):"Ready"; }
+    document.querySelectorAll("[data-hstat]").forEach(function(el){ if(el.textContent!==t) el.textContent=t;
+      var pill=el.closest&&el.closest(".hs-pill, .leo-pill"); if(pill) pill.classList.toggle("busy",busy); }); }
+  var mo=new MutationObserver(heroStage), st=document.getElementById("status"), out=document.getElementById("out");
+  mo.observe(document.body,{attributes:true,attributeFilter:["class"]});
+  if(st) mo.observe(st,{childList:true,subtree:true,characterData:true});
+  if(out) mo.observe(out,{childList:true});
+  heroStage();
+})();
 
 // mobile menu: the menu button toggles the nav dropdown; close on pick or outside click
 (function(){ var tog=document.getElementById("navToggle"), nav=document.getElementById("nav");
@@ -1998,7 +2063,7 @@ document.getElementById("tourBtn").addEventListener("click",function(){ openModa
   [].forEach.call(lines,function(ln){ var parts=ln.textContent.split(" ");
     ln.textContent=""; parts.forEach(function(w,i){ var sp=document.createElement("span"); sp.className="hw"; sp.textContent=w;
       ln.appendChild(sp); words.push(sp); if(i<parts.length-1) ln.appendChild(document.createTextNode(" ")); }); });
-  enterFrom(words,{opacity:0,transform:"translateY(18px)",filter:"blur(10px)"},{duration:.9,easing:EASE_EXPO,stagger:.11,delay:.15});
+  enterFrom(words,{opacity:0,transform:"translateY(18px)"},{duration:.9,easing:EASE_EXPO,stagger:.11,delay:.15});   // RS92: transform and opacity only
   if(!fine) return;
   // RS91: the magnet moves the CSS `translate` property (separate from `transform`, which hover styles own) through a
   // short transition with a springy overshoot curve; each pointermove simply retargets it.

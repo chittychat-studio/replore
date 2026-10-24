@@ -11,7 +11,7 @@ import re
 
 WEB = pathlib.Path(__file__).resolve().parent.parent / "web"
 ASSETS = ("theme.js", "pro-core.js", "app.js")  # RS89: pro-core.js holds the Pro switches and key rules
-MEDIA_IN_JS = ("leo-peek.webm",)                      # referenced as "leo-peek.webm" in app.js
+MEDIA_IN_JS = ("leo-intro.webm", "leo-idle.webm", "leo-hero.webp")  # RS92: the old peek clip is retired                    # referenced as "leo-peek.webm" in app.js
 MEDIA_IN_HTML = ("tour.mp4", "tour-poster.jpg")       # src="..." / poster="..." in index.html
 SECONDARY = {"evals.html": ("theme.js", "evals.js"), "404.html": ("theme.js",),
              "pro.html": ("theme.js", "pro-core.js", "pro.js")}  # RS90  # RS84: secondary pages load scripts by absolute path (/name?v=...)
