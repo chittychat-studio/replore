@@ -123,7 +123,10 @@ try {
 // log lines: one per claim, codes only; never the key, its signature, the session id, the Stripe key or the secret
 const all = lines.join("\n");
 for (const s of [keyIssued, keyIssued.split(".")[2], SID, SUB, STRIPE, SECRET, "a1B2c3D4"]) assert.ok(!all.includes(s), s);
-assert.ok(lines.length > 20 && lines.every(l => { const o = JSON.parse(l); return Object.keys(o).sort().join() === "code,evt,ms,status" && o.evt === "pro_claim"; }));
+assert.ok(lines.length > 20 && lines.every(l => { const o = JSON.parse(l); const k = Object.keys(o).sort().join();
+  return (k === "code,evt,ms,status" || (k === "code,evt,ms,status,upstream" && o.code === "stripe_error" && Number.isInteger(o.upstream))) && o.evt === "pro_claim"; }));
+assert.ok(lines.some(l => { const o = JSON.parse(l); return o.code === "stripe_error" && o.upstream === 401; }), "a 401 from Stripe is logged as upstream 401");
+assert.ok(lines.some(l => { const o = JSON.parse(l); return o.code === "stripe_error" && o.upstream === 0; }), "no answer from Stripe is logged as upstream 0");
 for (const c of ["claim_issued", "not_paid", "unknown_session", "stripe_error", "bad_session", "pro_off", "rate_limited", "not_pro"])
   assert.ok(all.includes(`"code":"${c}"`), c);
 console.log("pro claim ok");

@@ -88,10 +88,10 @@ export async function claim(sessionId, env, fetchImpl = fetch) {
     try {
       res = await fetchImpl(`${STRIPE_API}/checkout/sessions/${sessionId}?expand[]=subscription`, { method: "GET", redirect: "error",
         signal: ctl.signal, headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`, Accept: "application/json" } });
-    } catch { return { status: 503, error: "stripe_error" }; }
+    } catch { return { status: 503, error: "stripe_error", upstream: 0 }; }   // upstream: Stripe's HTTP status for the log (0 = no answer)
     if (res.status === 404) return { status: 404, error: "unknown_session" };
-    if (res.status !== 200) return { status: 503, error: "stripe_error" };
-    try { s = await res.json(); } catch { return { status: 503, error: "stripe_error" }; }
+    if (res.status !== 200) return { status: 503, error: "stripe_error", upstream: res.status };
+    try { s = await res.json(); } catch { return { status: 503, error: "stripe_error", upstream: res.status }; }
   } finally { clearTimeout(timer); }
   if (!s || typeof s !== "object") return { status: 503, error: "stripe_error" };
   if (s.payment_status !== "paid") return { status: 403, error: "not_paid" };
@@ -116,14 +116,18 @@ export async function handleClaim(request, env, fetchImpl = fetch, now = Date.no
   const id = body && typeof body === "object" ? body.session_id : null;
   if (!looksLikeSession(id)) return out(400, { error: "bad_session" });   // before any network call
   const r = await claim(id, env, fetchImpl);
-  return r.status === 200 ? out(200, r.body) : out(r.status, { error: r.error });
+  const res = r.status === 200 ? out(200, r.body) : out(r.status, { error: r.error });
+  if (r.error === "stripe_error") res.__upstream = Number(r.upstream) || 0;   // the owner can tell 401 (key) from 403 (permission) from a timeout
+  return res;
 }
 
 export async function onRequestPost(context, fetchImpl = fetch) {
   const { request, env } = context, t0 = Date.now();
   const res = await handleClaim(request, env || {}, fetchImpl);
   // RS34d: one record per claim, a code only: never the session id, the key, an IP or a secret
-  try { console.log(JSON.stringify({ evt: "pro_claim", code: String(res.__code).replace(/[^a-z_]/g, "").slice(0, 40), status: res.status, ms: Date.now() - t0 })); } catch {}
+  try { const line = { evt: "pro_claim", code: String(res.__code).replace(/[^a-z_]/g, "").slice(0, 40), status: res.status, ms: Date.now() - t0 };
+    if (res.__code === "stripe_error") line.upstream = Number(res.__upstream) || 0;   // Stripe's status, a number only
+    console.log(JSON.stringify(line)); } catch {}
   return res;
 }
 export async function onRequest() { return out(405, { error: "post_only" }); }
