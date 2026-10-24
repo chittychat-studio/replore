@@ -1351,7 +1351,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   depths, HUD rings on Leo's side, distant code streams; no robot, no text). It fills the band edge to edge
   (`background-size: cover`, focus left of centre so the HUD sits behind Leo), drifts slowly like a camera move (scale
   1 to 1.07 over 38 s, alternating; transform only, none under reduced motion), has a shade behind the text column for
-  contrast (a flat 50% shade on screens under 1000 px, where the plate shows its right side, without the HUD rings, owner 2026-10-25) and the same bottom fade into the page. The code-drawn particles
+  contrast (a flat 50% shade on screens under 1000 px, where the plate shows its right side, without the HUD rings, owner 2026-10-25); Leo's soft glow is a radial gradient, not a blur filter, and devices on the still get a flat (non-3D) layer, because WebKit drew a faint box around both on iPhone; phones get tighter spacing above the title and the same bottom fade into the page. The code-drawn particles
   (`#heroFx`) are off. Light theme (owner 2026-10-25: "use the same dark room on the hero for light"): the hero is the
   same dark stage, taking the dark theme's colours inside the hero only (text, console, buttons, Leo's pale rim), while the
   header and the rest of the page stay light and the plate fades into the light page; a light render may replace this later; a 4K dark plate and
@@ -1575,6 +1575,32 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   (this replaces RS34's "no note" for limits only; other failures stay silent). At 0 the page stores only the reset time
   (the RS41 key) and skips the check until then. Plain JS in `web/app.js`, no framework, no em dash (RS66), CSP
   unchanged (RS49: same origin only). Status: implemented and unit-tested; not verified live.
+- **RS97** Pro playbooks as step cards (owner 2026-10-25: "put all these steps ... as playbook for users ... for pro users
+  only", "step by step cards ... like flashcards that they can mark as complete", "ability to go back to earlier step";
+  builds on RS87, RS94; Pro sells hands-on help, not AI ranking). A playbook is a setup guide (the first: adding Google
+  sign-in with Firebase to your own app), split into steps.
+  **Pro only, truly.** The text never sits in this public repo or in the site's static files. The owner keeps the
+  sources in the git-ignored `playbooks/` folder; `ops/playbooks.py` (standard library only) turns each `playbooks/<id>.md`
+  (a `# Title` line, then `## N. Step title` sections) into JSON and prints the `wrangler kv key put` commands that store
+  it in a Cloudflare KV namespace bound to Pages as `PLAYBOOKS` (`pb:index` lists `{id, title, steps}`; `pb:<id>` holds
+  `{id, title, steps: [{title, body}]}`). `GET /api/pro/playbook` (the index) and `GET /api/pro/playbook?id=<id>`
+  (`functions/api/pro/playbook.js`) answer only a granted Pro key (RS87, header `X-Replore-Plugin-Key`) or a signed-in
+  Pro user (RS94, `Authorization: Bearer`); anyone else gets 403 `pro_required`. Fail closed: no `PLAYBOOKS` binding = 503
+  `playbooks_off`; a malformed id (not 1 to 60 of `a-z`, `0-9`, `-`) = 400; an unknown id = 404; a malformed stored record
+  = 503. Same origin only, a best-effort per-IP limit (30 a minute), `Cache-Control: private, no-store`, codes only in
+  logs (never the key, token or text).
+  **The cards** (`web/playbooks.js`, on `/pro` only, plain JS, no library). The Playbooks section stays hidden unless the
+  index answers 200, so non-Pro visitors never see it. One card at a time: step number, title, body, and a "Mark
+  complete" toggle (`aria-pressed`). Back and Next move one step (arrow keys too); a row of step dots jumps to any step,
+  earlier or later, and a done step's dot is filled. A progress line and bar ("4 of 9 done"). Changing card slides it
+  (transform and opacity, about 240 ms; none under reduced motion). Progress (done steps and the last step open) is kept
+  only in this browser, `localStorage` key `replore.pb.<id>`, wrapped in try/catch (RS22); nothing is sent back. Bodies
+  are rendered from a safe subset: paragraphs, `-` bullets, `**bold**`, `` `code` `` and https links (new tab,
+  `rel="noopener noreferrer"`), built with text nodes, never `innerHTML` of the stored text, so a playbook is data, not
+  code (RS9, RS25). No em dash in the copy (RS66). `PRIVACY.md` lists the key (RS33).
+  **Owner steps:** create a KV namespace, bind it to the Pages project as `PLAYBOOKS` (Production and Preview), run
+  `python ops/playbooks.py` and the printed commands, redeploy. Status: the server function is implemented and
+  unit-tested (`tests/test_playbook_fn.mjs`); the cards page, `ops/playbooks.py` and the PRIVACY.md line are not built yet.
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
 - **RX3** Ranking by forks, trending or download counts. (Relevance, stars and license-freedom are the only

@@ -1807,6 +1807,7 @@ var LIVE_DEMO=[   // RS67: the example searches Leo types into the search bar (n
 // too; an iPad can report itself as a Mac, so a Mac with touch counts). They get the still (owner 2026-10-25: green box).
 var LEO_NOALPHA=/^((?!chrome|chromium|android|crios|fxios|edg).)*safari/i.test(navigator.userAgent||"")||/iPhone|iPad|iPod/.test(navigator.userAgent||"")||
   (/Macintosh/.test(navigator.userAgent||"")&&(navigator.maxTouchPoints||0)>1);
+if(LEO_NOALPHA) document.documentElement.classList.add("leo-still");
 var LEO_VIDEO=LEO_NOALPHA?{intro:"", idle:""}:{intro:"leo-intro.webm?v=4ab4a8c5e5", idle:"leo-idle.webm?v=1ca511a5c6"};
 function buildLiveDemo(host){
   if(!host || host.dataset.built) return; host.dataset.built="1";

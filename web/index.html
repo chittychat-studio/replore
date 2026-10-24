@@ -1353,6 +1353,10 @@ body:not(.has-results) .hero > .hero-fx{display:none}
   /* RS92 (owner 2026-10-25: "use the same dark room on the hero for light"): the hero is a dark stage in both themes, so in
      light it takes the dark theme's colours (text, console, buttons, Leo's rim) and the rest of the page stays light */
 :root[data-theme="light"] body:not(.has-results) .hero{--bg:#090d16; --bg2:#0a0e17; --card:#141824; --card-bg:#141824; --card-line:#283135; --card-glow:0,0,0; --ink:#dfe2ef; --muted:#b9cacb; --line:#283135; --accent:#00f0ff; --accent-ink:#00f0ff; --accent2:#8b5cf6; --accent-rgb:0,240,255; --tint:#262a34; --deep:#0a0e17; --btn-grad:#00f0ff; --on-accent:#090d16; --good:#34d399; --warn:#fbbf24; --warnbg:#2e2208; --goodbg:#0b2a20; --offbg:#1c1f29; --shadow:0,0,0; --head:#dbfcff; --s-lowest:#0a0e17; --s-low:#181b25; --s:#1c1f29; --s-high:#262a34; --s-highest:#31353f; --outline:#3b494b; --mint:#4edea3; --violet:#a78bfa; --emerald:#10b981; --amber:#f59e0b; --red:#f87171; --hero-band:#070b14; --grid-line:rgba(0,240,255,.04); --glow:rgba(0,240,255,.45); --glow-soft:rgba(0,240,255,.08); --frost:rgba(9,13,22,.85); --st-light:rgba(156,192,216,.26); --st-a:#34546f; --st-b:#213a51; --st-c:#182b3d; --st-d:#121a22; --st-card:rgba(14,25,37,.62); --rc-dk:#e8eef3;--rc-dk-ink:#14202b;--rc-dk-mut:#52606d; --ln-host:#7db7ea;--ln-data:#7fd19c;--ln-auth:#f0bd6a;--ln-pay:#b9a2f2;--ln-store:#f29a83;--ln-cost:#6fd3d8;--ln-game:#f08cc4;--ln-live:#9cc0d8; --lt-host:#17324a;--lt-data:#173826;--lt-auth:#3a2c14;--lt-pay:#2a2346;--lt-store:#40231c;--lt-cost:#123a3c;--lt-game:#3d1d31;--lt-live:#1d3142; color-scheme:dark;--st-card:rgba(20,24,36,.9);--btn-hover:#7af7ff; --fld-a:rgba(0,240,255,.15);--fld-b:rgba(139,92,246,.18); --leo-a:rgba(0,240,255,.2);--leo-b:rgba(139,92,246,.15);--leo-drop:drop-shadow(0 0 1px rgba(219,252,255,.85)) drop-shadow(0 0 8px rgba(219,252,255,.22)) drop-shadow(0 0 32px rgba(0,240,255,.3)); color:var(--ink)}
+  @media (max-width:699px){   /* owner 2026-10-25: phones, less empty space between the header and the title */
+    body:not(.has-results) .hero{padding-top:6px}
+    body:not(.has-results) .hero .hero-status{margin-bottom:10px}
+    body:not(.has-results) .hero .hero-kicker{margin-top:0;margin-bottom:8px} }
   .hero-status{display:flex;align-items:center;justify-content:space-between;gap:8px 14px;flex-wrap:wrap;margin:0 0 22px;padding:6px 12px 6px 6px;
     border-radius:12px;background:color-mix(in srgb,var(--s-low) 75%,transparent);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border:1px solid var(--o20);text-align:left}
   .hs-pill,.leo-pill{display:inline-flex;align-items:center;gap:8px;padding:4px 10px;border-radius:999px;font:600 10px/1.4 var(--f-mono);letter-spacing:.1em;
@@ -1390,12 +1394,14 @@ body:not(.has-results) .hero > .hero-fx{display:none}
   /* RS92 (owner 2026-10-24): Leo alone is the left column's hero (no globe). One box holds the still and the video, so
      there is no layout shift; the soft blurs sit behind it and nothing masks or clips his radar ring. */
   .st-stage{--leo-x:50%;--leo-w:260px}
-  .st-stage::before,.st-stage::after{content:"";position:absolute;border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);filter:blur(60px)}
-  .st-stage::before{left:var(--leo-x);top:50%;width:320px;height:320px;background:var(--leo-a)}
-  .st-stage::after{left:calc(var(--leo-x) + 70px);top:38%;width:256px;height:256px;background:var(--leo-b)}
+  /* the soft glow is a radial gradient, not filter:blur (WebKit clips blur to the box: a faint rectangle on iPhone, owner 2026-10-25) */
+  .st-stage::before,.st-stage::after{content:"";position:absolute;border-radius:50%;pointer-events:none;transform:translate(-50%,-50%)}
+  .st-stage::before{left:var(--leo-x);top:50%;width:520px;height:520px;max-width:150vw;background:radial-gradient(closest-side,var(--leo-a),transparent)}
+  .st-stage::after{left:calc(var(--leo-x) + 70px);top:38%;width:420px;height:420px;max-width:120vw;background:radial-gradient(closest-side,var(--leo-b),transparent)}
   .st-pair,.demo-slot .st-pair,.stage-slot .st-pair{position:relative;left:auto;bottom:auto;transform:none;display:flex;justify-content:center;width:100%;perspective:1600px}
   .st-fly{position:relative;flex:none;width:var(--leo-w);max-width:100%;perspective:1600px}
   .st-b,.demo-slot .st-b{position:relative;width:100%;aspect-ratio:560/530;animation:leoFloat 6.5s ease-in-out infinite;transform-style:preserve-3d}
+  .leo-still .st-b{transform-style:flat}   /* WebKit draws a box around a filter inside a 3D layer; devices on the still get a flat layer */
   .st-b.herovid{animation:none}   /* the idle clip moves him itself */
   @keyframes leoFloat{0%,100%{transform:translate3d(0,0,0) rotateY(0deg)}25%{transform:translate3d(4px,-10px,0) rotateY(2deg)}
     50%{transform:translate3d(0,-1px,0) rotateY(0deg)}75%{transform:translate3d(-4px,8px,0) rotateY(-2deg)}}
@@ -2123,6 +2129,6 @@ body:not(.has-results) .hero > .hero-fx{display:none}
 
 <script src="pro-core.js?v=3cb6e96e76" defer></script>
 <script src="auth.js?v=f43383d4f7" defer></script>
-<script src="app.js?v=9fbb3dc47a" defer></script>
+<script src="app.js?v=45b5392495" defer></script>
 </body>
 </html>
