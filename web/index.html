@@ -1348,7 +1348,7 @@ body:not(.has-results) .hero > .hero-plate{display:block;position:absolute;z-ind
   .hero-plate::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 0,transparent 36%,rgba(5,8,16,.55) 58%,rgba(5,8,16,.62) 100%)}
   @keyframes plateDrift{from{transform:scale(1) translate3d(0,0,0)}to{transform:scale(1.07) translate3d(-1.2%,-.8%,0)}}
   @media (prefers-reduced-motion:reduce){ .hero-plate i{animation:none} }
-  @media (max-width:999px){ .hero-plate i{background-position:12% 50%} .hero-plate::after{background:rgba(5,8,16,.5)} }
+  @media (max-width:999px){ .hero-plate i{background-position:88% 50%}   /* owner 2026-10-25: phones use the plate's right side (no HUD rings; Leo has his own ring) */ .hero-plate::after{background:rgba(5,8,16,.5)} }
 body:not(.has-results) .hero > .hero-fx{display:none}
   /* RS92 (owner 2026-10-25: "use the same dark room on the hero for light"): the hero is a dark stage in both themes, so in
      light it takes the dark theme's colours (text, console, buttons, Leo's rim) and the rest of the page stays light */
