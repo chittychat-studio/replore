@@ -10,8 +10,9 @@
      are in pro-core.js (shared with the window); the page logic is pro.js. No inline script (RS49), no emoji (RS55),
      no em dash (RS66), 44px targets. -->
 <script src="/theme.js?v=d156f907a3"></script>
-<script src="/pro-core.js?v=eb18699136" defer></script>
+<script src="/pro-core.js?v=3cb6e96e76" defer></script>
 <script src="/pro.js?v=bc69301b2f" defer></script>
+<script src="/auth.js?v=26dd7c5dae" defer></script>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/fonts.css">
 <link rel="stylesheet" href="/page.css">
@@ -53,6 +54,7 @@
     <div class="pro-acts"><a id="ppBuy" class="pp-buy" href="#" target="_blank" rel="noopener noreferrer" hidden>Get a key</a>
       <a id="ppYear" class="pro-have" href="#" target="_blank" rel="noopener noreferrer" hidden>Yearly</a>
       <button type="button" id="ppHave" class="pro-have">I have a key</button></div>
+    <div id="ppAuth" class="auth-box" aria-live="polite" hidden></div>   <!-- RS94: optional Google sign-in (auth.js); stays hidden until sign-in is configured -->
     <form id="ppForm" class="pro-form" autocomplete="off" novalidate>
       <div id="ppEdit"><label for="ppKey">Your key</label>
         <div class="pro-in"><input id="ppKey" type="text" placeholder="Paste it here" autocomplete="off" spellcheck="false" autocapitalize="off">

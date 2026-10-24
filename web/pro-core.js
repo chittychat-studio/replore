@@ -9,6 +9,10 @@
 var PRO_URL="", PRO_URL_YEAR="";   // the owner pastes the two Stripe Payment Links here (yearly with ?prefilled_promo_code=CODE)
 var PRO_PRICE="8 USD a month", PRO_PRICE_WAS="", PRO_PRICE_YEAR="36 USD for your first year", PRO_PRICE_YEAR_WAS="72 USD",
   PRO_OFFER="Launch offer: pay yearly and your first year is half price, 36 USD instead of 72. Cancel any time.";   // owner's copy 2026-10-24
+// RS94: Stripe customer portal login link (Stripe dashboard, Settings, Billing, Customer portal), shown next to "Delete my account"
+// so a signed-in user can cancel; empty = the page says to write to hello@cardzo.co.in instead.
+var PRO_PORTAL_URL="";
+function proPortalOk(u){ return /^https:\/\/billing\.stripe\.com\/p\/login\/[A-Za-z0-9_]{6,80}$/.test(String(u||"")); }
 var PRO_KEY="replore.key", PRO_SHAPE=/^rp\.sub_[A-Za-z0-9_]{8,80}\.[0-9a-f]{16}$/;   // RS87: rp.<Stripe subscription id>.<signature>
 var PRO_LIVE_HOSTS=["replore.cardzo.co.in","replore.pages.dev"];
 // RS90: a one-time marker set when a buy link on this site is clicked, so /pro saves a claimed key on its own only after a
@@ -31,8 +35,11 @@ function proKeyHeader(h){ var k=proKeyGet(); if(k) h["X-Replore-Plugin-Key"]=k; 
 function proKeySave(v){ var k=String(v==null?"":v).trim();   // stored only if it has the Pro shape
   if(!PRO_SHAPE.test(k)) return false;
   try{ localStorage.setItem(PRO_KEY,k); }catch(_){ return false; }
+  proKeyChanged();
   return proKeyGet()===k; }
-function proKeyRemove(){ try{ localStorage.removeItem(PRO_KEY); }catch(_){} }
+function proKeyRemove(){ try{ localStorage.removeItem(PRO_KEY); }catch(_){} proKeyChanged(); }
+// RS94: tells auth.js (sign-in box) that the saved key changed, so "Link my Pro key" shows or hides
+function proKeyChanged(){ try{ document.dispatchEvent(new CustomEvent("replore-key")); }catch(_){} }
 // pure: what the buy area shows. Nothing (on:false) until PRO_URL is a valid link; the yearly button only with PRO_URL_YEAR.
 // Both buttons have the same shape (label, an optional struck-through "was" price, the price), so an offer can sit on either.
 function proButtons(c, host){ c=c||{};

@@ -669,7 +669,7 @@ def test_web_page_is_safe_static(monkeypatch):
     index = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
     srcs = _re.findall(r'<script[^>]+src="([^"]+)"', index)
     srcs = [s.split("?v=")[0] for s in srcs]   # RS52: app.js / theme.js carry a ?v=<hash> stamp
-    assert srcs == ["theme.js", "pro-core.js", "app.js"], srcs   # RS49: no inline script; app.js after pro-core.js (RS89)
+    assert srcs == ["theme.js", "pro-core.js", "auth.js", "app.js"], srcs   # RS49: no inline script; app.js after pro-core.js (RS89); auth.js: optional sign-in (RS94)
     assert _re.search(r'<script src="app\.js\?v=[0-9a-f]{10}" defer>', index)
     assert not _re.search(r"<script(?![^>]*src=)[^>]*>", index) and not _re.search(r"\son[a-z]+\s*=", index)
     assert "<html lang=\"en\">" in index   # RS24: no forced light theme; the system setting applies until the visitor picks one
@@ -1266,3 +1266,92 @@ def test_pro_window_markup_copy_and_switch():
     # the in-page privacy window names the key and Stripe
     priv = html[html.index('id="privacyModal"'):html.index('id="aboutModal"')]
     assert "A Replore Pro key" in priv and "Stripe" in priv
+
+
+def test_rs94_google_signin_is_optional_dormant_and_disclosed():
+    """RS94: optional Google sign-in for Pro. Only firebase-app + firebase-auth are vendored and imported (no Firestore,
+    Storage, Analytics, Performance, Remote Config), the CSP adds only the sign-in hosts, the box sits next to the Pro
+    features only and starts hidden, every stored field the code sets is named in PRIVACY.md's table, payment details are
+    said to be held only by Stripe, and no "no account" claim survives."""
+    web = ROOT / "web"
+    vend = web / "vendor" / "firebase-12.19.0"
+    assert sorted(p.name for p in vend.iterdir()) == ["LICENSE.txt", "firebase-app.js", "firebase-auth.js"]
+    assert "Apache License" in (vend / "LICENSE.txt").read_text(encoding="utf-8")
+    notice = (ROOT / "NOTICE.md").read_text(encoding="utf-8")
+    assert "Firebase JS SDK (Apache License 2.0)" in notice and "12.19.0" in notice
+    auth = (web / "auth.js").read_text(encoding="utf-8")
+    fb_auth = (vend / "firebase-auth.js").read_text(encoding="utf-8")
+    fb_app = (vend / "firebase-app.js").read_text(encoding="utf-8")
+    # imports: the vendored SDK imports only its own app module (no CDN); auth.js imports only the two files
+    assert re.findall(r'(?:from|import)\s*\(?\s*"([^"]+)"', fb_auth) == ["./firebase-app.js"]
+    assert not re.search(r'(?:\bfrom|\bimport)\s*\(?\s*"', fb_app)
+    assert re.findall(r'import\(([^)]*)\)', auth) == ['AUTH_SDK+"firebase-app.js"', 'AUTH_SDK+"firebase-auth.js"']
+    assert 'AUTH_SDK="/vendor/firebase-12.19.0/"' in auth and "gstatic" not in auth + fb_auth
+    banned = re.compile(r"firebase[-/](firestore|storage|analytics|performance|remote-config|database|messaging|functions|installations)", re.I)
+    for f in [web / "auth.js", *(ROOT / "functions").rglob("*.js")]:   # the SDK files only name other modules in a version table; their imports are checked above
+        assert not banned.search(f.read_text(encoding="utf-8")), f
+    for f in (ROOT / "functions").rglob("*.js"):   # no firebase-admin or any Firebase package on the server
+        assert not re.search(r'(from|import\(|require\()\s*"firebase', f.read_text(encoding="utf-8")), f
+    # CSP: exactly the RS94 hosts, each where sign-in needs it, and nothing for accounts.google.com (a popup navigation)
+    hdr = (web / "_headers").read_text(encoding="utf-8")
+    line = [l for l in hdr.splitlines() if "Content-Security-Policy:" in l][0]
+    csp = {d.split()[0]: d.split()[1:] for d in line.split(": ", 1)[1].split("; ")}
+    assert "https://apis.google.com" in csp["script-src"]
+    assert {"https://identitytoolkit.googleapis.com", "https://securetoken.googleapis.com"} <= set(csp["connect-src"])
+    assert "https://*.firebaseapp.com" in csp["frame-src"]
+    google = [h for d in csp.values() for h in d if "google" in h or "firebase" in h]
+    assert sorted(google) == sorted(["https://apis.google.com", "https://identitytoolkit.googleapis.com",
+                                     "https://securetoken.googleapis.com", "https://*.firebaseapp.com"]), google
+    assert "accounts.google.com" not in line and "firebaseapp" not in " ".join(csp["script-src"] + csp["connect-src"])
+    assert set(re.findall(r'fetch\("([^"]+)"', auth)) == {"/api/auth/config"}
+    assert set(re.findall(r'authPost\("([^"]+)"', auth)) == {"/api/auth/refresh", "/api/auth/link", "/api/auth/delete"}
+    assert "innerHTML" not in auth and "https://" not in auth   # text only via textContent; every call is same-origin
+    # the box: next to the Pro features only, hidden until configured; the script on / and /pro only
+    index = (web / "index.html").read_text(encoding="utf-8")
+    pro = (web / "pro.html").read_text(encoding="utf-8")
+    modal = index[index.index('id="proModal"'):index.index('id="pluginModal"')]
+    assert '<div id="proAuth" class="auth-box" aria-live="polite" hidden></div>' in modal and index.count('id="proAuth"') == 1
+    assert '<div id="ppAuth" class="auth-box" aria-live="polite" hidden></div>' in pro
+    assert re.search(r'<script src="auth\.js\?v=[0-9a-f]{10}" defer></script>', index)
+    assert re.search(r'<script src="/auth\.js\?v=[0-9a-f]{10}" defer></script>', pro)
+    for name in ("evals.html", "404.html"):
+        assert "auth.js" not in (web / name).read_text(encoding="utf-8"), name
+    assert 'typeof authHeader==="function"' in (web / "app.js").read_text(encoding="utf-8")
+    # copy rules (RS55, RS66) for the new script
+    string_lit = re.compile(r'"(?:[^"\\]|\\.)*"')
+    dashes = [m for l in auth.splitlines() for m in string_lit.findall(re.split(r"\s//\s|^\s*//", l)[0]) if "—" in m]
+    assert dashes == [] and not re.search("[\U0001F000-\U0001FAFF☀-➿✕×]", auth)
+    for s in ("Sign in with Google", "Sign out", "Delete my account", "does not cancel your Pro subscription", "Link my Pro key to this account"):
+        assert s in auth, s
+    # PRIVACY.md: the complete stored-data table names every field the code stores
+    priv = (ROOT / "PRIVACY.md").read_text(encoding="utf-8")
+    table = priv[priv.index("## What we store about you"):priv.index("## Web page")]
+    gjs = (ROOT / "functions" / "api" / "auth" / "google.js").read_text(encoding="utf-8")
+    fields = re.findall(r'"([a-z_]+)"', re.search(r"CLAIM_FIELDS = \[([^\]]+)\]", gjs).group(1))
+    assert fields == ["pro", "sub_id", "checked_at"]
+    built = re.search(r"function proClaims\([^)]*\) \{ return \{([^}]+)\}", gjs).group(1)
+    assert sorted(re.findall(r"([a-z_]+):", built)) == sorted(fields), built   # the one place claims are built
+    assert "CLAIM_FIELDS.includes(k)" in gjs   # setClaims refuses any other field
+    for f in fields:
+        assert "`%s`" % f in table, f
+    hint = re.search(r'var AUTH_HINT="([^"]+)"', auth).group(1)
+    assert "`%s`" % hint in table and 'localStorage.setItem(AUTH_HINT,"1")' in auth
+    assert set(re.findall(r'localStorage\.setItem\(([A-Z_]+)', auth)) == {"AUTH_HINT"}
+    for s in ("Firebase user id", "email address", "display name", "profile photo URL", "`google.com`", "created",
+              "last signed in", "IndexedDB", "Delete my account", "Sign out", "How long", "How to delete it", "Firebase Authentication"):
+        assert s in table, s
+    for doc, text in (("PRIVACY.md", priv), ("index.html", index)):
+        assert "Payment details are held only by Stripe." in text, doc
+    for host in ("accounts.google.com", "apis.google.com", "firebaseapp.com", "identitytoolkit.googleapis.com", "securetoken.googleapis.com"):
+        assert host in priv, host
+    # no "no account" claim survives where a visitor or a reader of the docs sees it; each says "optional Google sign-in"
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    for doc, text in (("PRIVACY.md", priv), ("README.md", readme), ("index.html", index), ("pro.html", pro),
+                      ("app.js", (web / "app.js").read_text(encoding="utf-8")), ("auth.js", auth)):
+        assert not re.search(r"\bno (user )?accounts?\b", text, re.I), doc
+    for doc, text in (("PRIVACY.md", priv), ("README.md", readme), ("index.html", index)):
+        assert "optional google sign-in" in text.lower(), doc
+    # README owner steps
+    for s in ("FIREBASE_SERVICE_ACCOUNT", "FIREBASE_API_KEY", "FIREBASE_AUTH_DOMAIN", "FIREBASE_PROJECT_ID", "Authorized domains",
+              "`replore.cardzo.co.in` and `replore.pages.dev`", "Firebase Authentication\n   Admin", "enable **Google** only"):
+        assert s in readme, s

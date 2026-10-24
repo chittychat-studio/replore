@@ -24,6 +24,7 @@ jobs:
         with:
           node-version: "22"
       - run: node tests/test_web_logic.js
+      - run: node tests/test_auth_web.js  # RS94 sign-in box logic (no browser, no network)
       - run: node tests/test_relevance_fn.mjs  # RS34 relevance function (fake LLM, no network)
       - run: node tests/test_trust_fn.mjs  # RS53b trust function (fake Scorecard/deps.dev, no network)
       - run: node tests/test_pro_fn.mjs  # RS90 Pro key claim function (fake Stripe, no network)

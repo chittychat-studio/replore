@@ -264,6 +264,36 @@ manage your subscription in Stripe's emails, or write to hello@cardzo.co.in; the
 the subscription ending. **On sale:** once the
 owner pastes the Stripe links; until then `/pro` says keys are not on sale yet.
 
+**Optional Google sign-in (SPEC RS94):** a Pro buyer can sign in with Google on `/pro` or in the Pro window and link
+their key once ("Link my Pro key to this account"); after that, signing in on any browser turns Pro on there, with no
+key to paste. It is optional and only for Pro: search and everything free work signed out, and the plugin and MCP
+server keep using `REPLORE_KEY`. It uses Firebase Authentication (the `firebase-app` and `firebase-auth` browser builds
+of the Firebase JS SDK 12.19.0, vendored in `web/vendor/firebase-12.19.0/`, Apache-2.0). It stays switched off, with no
+button and no Firebase file loaded, until the owner does these steps:
+
+1. Create a Firebase project in the [Firebase console](https://console.firebase.google.com/) (leave Google Analytics off for it). Add a
+   **Web app** to it and note its `apiKey`, `authDomain` (`<project id>.firebaseapp.com`) and `projectId`.
+2. **Authentication, Sign-in method:** enable **Google** only.
+3. **Authentication, Settings, Authorized domains:** keep only `replore.cardzo.co.in` and `replore.pages.dev` (remove
+   `localhost`; the `firebaseapp.com` auth domain stays, Firebase needs it).
+4. **Google Cloud console, APIs and Services, Credentials:** edit the browser API key Firebase made, set **Application
+   restrictions** to **Websites** with `https://replore.cardzo.co.in/*` and `https://replore.pages.dev/*`, and **API
+   restrictions** to the Identity Toolkit API and the Token Service API.
+5. **Google Cloud console, IAM, Service accounts:** create a service account with only the **Firebase Authentication
+   Admin** role and download one JSON key. In Cloudflare (Workers and Pages, the Replore project, Settings, Variables
+   and Secrets, Production) add it as the **secret** `FIREBASE_SERVICE_ACCOUNT` (paste the whole JSON). Never commit
+   it; delete the downloaded file.
+6. In the same place add the plain **variables** `FIREBASE_API_KEY`, `FIREBASE_AUTH_DOMAIN` and `FIREBASE_PROJECT_ID`
+   from step 1. The Pro secrets above (`STRIPE_SECRET_KEY`, `PRO_SIGNING_SECRET`, `PRO_PRICE_IDS`) must be set too.
+7. Optional: in Stripe, turn on the **customer portal** (Settings, Billing, Customer portal) and paste its login link
+   (`https://billing.stripe.com/p/login/...`) into `PRO_PORTAL_URL` in `web/pro-core.js`, so "Delete my account" can
+   point to it; then run `python ops/stamp_assets.py`.
+8. Redeploy. `GET /api/auth/config` answers `{"on": true, ...}` once all of this is set, and the sign-in box appears.
+
+`web/_headers` already allows the sign-in hosts (`apis.google.com`, `identitytoolkit.googleapis.com`,
+`securetoken.googleapis.com` and `*.firebaseapp.com` frames). Accounts are deleted with "Delete my account"; deleting
+does not cancel Stripe.
+
 Planned, not built yet: searches on your own GitHub token, PRD batches over 20 repos, saved shortlists and a
 licence-policy mode.
 
@@ -338,7 +368,7 @@ publishes the section as the GitHub release notes. If anything disagrees it fail
 
 ## Privacy
 
-No account, no database, nothing you type is stored: the makers of Replore never keep your ideas or searches. The web
+Optional Google sign-in for Pro users, no database, nothing you type is stored: the makers of Replore never keep your ideas or searches. Signing in is never needed for search; the complete list of what sign-in stores is the "What we store about you" table in `PRIVACY.md`, and payment details are held only by Stripe. The web
 page's host counts page views with Cloudflare Web Analytics (cookieless, script from `static.cloudflareinsights.com`;
 it never sees your searches).
 Search words go to GitHub to run the search; on the web page they also pass through a small relevance check to an AI

@@ -1,12 +1,46 @@
 # Privacy
 
-*Last updated: 24 October 2026 (an "Add Replore on Google" link in the footer opens Google's source preferences page, only if you click it; earlier: Replore Pro is now sold with Stripe: the key is checked with Stripe, subscription status only, and the new /pro page asks Stripe whether your checkout is paid to show your key; earlier: Replore Pro key sent only to our function, never stored or logged; the optional security-log hook described as a no-op unless switched on; earlier: the Trust sort runs the existing safety check for the top five cards; the Explore links are now the "Look inside" tools in a card's Details, same five sites; earlier: the plugin can run the "Safe to build on?" check too; earlier: "Safe to build on?" check on result cards; earlier: DeepWiki added to the Explore links; Explore links on result cards; Cloudflare Web Analytics page-view counts disclosed; off-topic repos move down, not hidden; optional tips via Stripe; bot check switched on; feedback goes by email to Cardzo). This describes how Replore handles data as built. It is not legal advice.*
+*Last updated: 24 October 2026 (optional Google sign-in for Pro users, with the complete "What we store about you" list, and payment details held only by Stripe; earlier: an "Add Replore on Google" link in the footer opens Google's source preferences page, only if you click it; earlier: Replore Pro is now sold with Stripe: the key is checked with Stripe, subscription status only, and the new /pro page asks Stripe whether your checkout is paid to show your key; earlier: Replore Pro key sent only to our function, never stored or logged; the optional security-log hook described as a no-op unless switched on; earlier: the Trust sort runs the existing safety check for the top five cards; the Explore links are now the "Look inside" tools in a card's Details, same five sites; earlier: the plugin can run the "Safe to build on?" check too; earlier: "Safe to build on?" check on result cards; earlier: DeepWiki added to the Explore links; Explore links on result cards; Cloudflare Web Analytics page-view counts disclosed; off-topic repos move down, not hidden; optional tips via Stripe; bot check switched on; feedback goes by email to Cardzo). This describes how Replore handles data as built. It is not legal advice.*
 
-**Short version:** Replore has no account and no database, and stores nothing you type. Our host counts page views
+**Short version:** Replore has optional Google sign-in for Pro users and no database, and stores nothing you type. Our host counts page views
 with Cloudflare Web Analytics, a cookieless page-view counter that never sees what you type. The people who
 make Replore never keep your ideas, searches or plans. Your search words go to GitHub to run the search and — on the
 web page only — to an AI provider that checks which results fit. Nothing you type is kept by us; if the AI check fails, we
 keep only the error type and time, to fix it.
+
+## What we store about you
+
+Signing in is optional. Search, results, Details, plans, the plugin and the MCP server work signed out exactly as
+before, and nothing free needs an account. Sign-in (Google only, through **Firebase Authentication**) is for Pro users,
+so Pro follows your Google login to any device without a key to paste. If you never sign in, nothing below exists for
+you. This is the complete list (SPEC RS94); we store nothing else about you.
+
+| What | Where it lives | Why | How long | How to delete it |
+|---|---|---|---|---|
+| **Login identity:** your Firebase user id, your Google account's email address, display name and profile photo URL, the sign-in provider (`google.com`), and when the account was created and last signed in | **Firebase Authentication** in Cardzo's Firebase project, on Google's servers under [Google's privacy policy](https://policies.google.com/privacy) | So you can sign in with Google | Until you delete your account | **Delete my account** in the sign-in box on `/pro` or in the Pro window: it deletes the Firebase user at once and signs you out |
+| **Pro link**, stored as custom claims on that same Firebase user: `pro` (whether Pro is active), `sub_id` (your Stripe subscription id) and `checked_at` (when we last asked Stripe) | **Firebase Authentication**, as above. Only our server function sets them | So a signed-in Pro user gets Pro at once. We ask **Stripe** (`api.stripe.com`) whether the subscription is active when you link it, at most once a day after that, and on each new sign-in, so a cancelled subscription stops showing Pro. One subscription links to one account | Until you delete your account | **Delete my account**, as above |
+| **Session:** the sign-in token | **Your browser's IndexedDB**, kept by the Firebase SDK | To keep you signed in on this device | Until you sign out | **Sign out**, or clear this site's data in your browser |
+| **Sign-in hint:** `replore.auth` set to `1`, nothing about you in it | **Your browser's local storage** | So the page knows to load the sign-in code on your next visit; without it the code is never loaded | Until you sign out or delete your account | **Sign out**, or clear this site's data |
+
+**Payment details are held only by Stripe.** Your card number, expiry, CVC, billing name and address, and bank or UPI
+details stay with Stripe (who sells Pro for Cardzo); Replore's code never receives them, never logs them and never asks
+Stripe for them. The Pro link above is the only payment-related data, and it exists only so your Pro status follows your
+login. Deleting your account does not cancel a Stripe subscription: cancel it in Stripe's customer portal (linked next
+to **Delete my account**) or write to hello@cardzo.co.in.
+
+**Never stored, signed in or not:** your searches, results, uploaded plans, feedback text, trust checks, or anything you
+do inside Replore. There is still no database: no Firestore, Realtime Database or Cloud Storage, and Firebase Analytics,
+Performance Monitoring and Remote Config are not loaded.
+
+**Where sign-in sends data.** Only when sign-in is switched on and you use it: your browser loads Replore's own copy of
+the Firebase sign-in code, then talks to **Google** to sign you in: `accounts.google.com` (the Google sign-in window),
+`apis.google.com` (a helper the sign-in window needs), the project's `firebaseapp.com` sign-in page,
+`identitytoolkit.googleapis.com` and `securetoken.googleapis.com` (to sign in and keep the token fresh). Google sees your
+IP address and Google account under its own terms. While you are signed in with Pro, your relevance checks carry the
+sign-in token to **our relevance check** (same site), which checks it with Google's public keys
+(`www.googleapis.com`) and uses it only to skip the per-address limit, like a Pro key. Our sign-in functions use a
+Google service account (`oauth2.googleapis.com`, `identitytoolkit.googleapis.com`) only to set or delete the Pro link and
+to delete your account. They log a code only, never your token, user id, email or key.
 
 ## Web page (replore.cardzo.co.in, also replore.pages.dev)
 

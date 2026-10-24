@@ -3,9 +3,14 @@
 #   challenges.cloudflare.com     Turnstile bot check (RS34c): script, iframe, verification calls
 #   static.cloudflareinsights.com Cloudflare Web Analytics beacon the host injects (RS33); reports to cloudflareinsights.com
 #   api.github.com                the search itself (RS2); api.web3forms.com feedback form (RS39)
+#   apis.google.com, identitytoolkit.googleapis.com, securetoken.googleapis.com, *.firebaseapp.com (frame only)
+#                                 optional Google sign-in for Pro (RS94): the SDK's popup helper script, sign-in and token
+#                                 calls, and the project's auth-domain iframe (the project id is the owner's, hence the
+#                                 wildcard; /api/auth/config accepts only a firebaseapp.com auth domain). Used only after
+#                                 sign-in is configured and a visitor opens it; accounts.google.com is a popup navigation.
 # If Web Analytics is switched off in the Pages dashboard, drop both cloudflareinsights hosts here.
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com; connect-src 'self' https://api.github.com https://api.web3forms.com https://challenges.cloudflare.com https://cloudflareinsights.com; frame-src https://challenges.cloudflare.com; img-src 'self' data: https://avatars.githubusercontent.com; style-src 'self' 'unsafe-inline'; font-src 'self'; base-uri 'self'; form-action 'self' https://api.web3forms.com; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com https://apis.google.com; connect-src 'self' https://api.github.com https://api.web3forms.com https://challenges.cloudflare.com https://cloudflareinsights.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; frame-src https://challenges.cloudflare.com https://*.firebaseapp.com; img-src 'self' data: https://avatars.githubusercontent.com; style-src 'self' 'unsafe-inline'; font-src 'self'; base-uri 'self'; form-action 'self' https://api.web3forms.com; frame-ancestors 'none'
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff

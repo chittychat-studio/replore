@@ -1223,6 +1223,13 @@
   .pro-on .link-btn{min-height:44px}
   .pro-note{margin:10px 0 0;font-size:12.5px;color:var(--muted)}
   .pro-have{display:inline-flex;align-items:center;text-decoration:none;box-sizing:border-box}
+  /* RS94: the sign-in box (auth.js); no motion, 44px targets */
+  .auth-box{margin:18px 0 0;padding:14px 0 0;border-top:1px solid var(--line)}
+  .auth-box .pro-hint{margin:0}
+  .auth-box .pro-acts{margin:10px 0 0}
+  .auth-box .link-btn{min-height:44px}
+  .auth-msg{margin:10px 0 0;font-weight:600;font-size:14px;color:var(--accent-ink)}
+  .auth-danger{border-color:var(--warn);color:var(--warn)}
   .pro-offer{margin:18px 0 0;padding:10px 14px;border-radius:10px;background:rgba(var(--accent-rgb),.12);color:var(--accent-ink);font-weight:600;font-size:14.5px}
   .pro-acts s{opacity:.75;font-weight:500}
   .pro-reveal{margin-top:8px}
@@ -1894,7 +1901,7 @@
 <div class="modal" id="howModal"><div class="sheet tour-sheet">
   <button class="x" data-close aria-label="Close"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   <p class="kicker">Tour</p><h2>How Replore works</h2>
-  <p class="mut">Three steps, right in your browser. No account, no key.</p>
+  <p class="mut">Three steps, right in your browser. No sign-in, no key.</p>
   <div class="tour-frame"><div class="tour-bar" aria-hidden="true"><span><i class="tb-dot"></i>tour.mp4</span><span id="tourMeta">Explainer &middot; 16:9</span></div>
   <video id="tourVideo" class="tour-video" controls muted playsinline preload="none" poster="tour-poster.jpg?v=dd20979073"
     aria-label="Replore explainer video: from a late-night blank chat to the repos that fit, with Leo the scout">
@@ -1919,6 +1926,7 @@
   <div class="pro-acts"><a id="proBuy" class="go-btn" href="#" target="_blank" rel="noopener noreferrer">Get a key</a>
     <a id="proYear" class="pro-have" href="#" target="_blank" rel="noopener noreferrer" hidden>Yearly</a>
     <button type="button" id="proHave" class="pro-have">I have a key</button></div>
+  <div id="proAuth" class="auth-box" aria-live="polite" hidden></div>   <!-- RS94: optional Google sign-in (auth.js); stays hidden until sign-in is configured -->
   <form id="proForm" class="pro-form" autocomplete="off" novalidate>
     <div id="proEdit"><label for="proKey">Your key</label>
       <div class="pro-in"><input id="proKey" type="text" placeholder="Paste it here" autocomplete="off" spellcheck="false" autocapitalize="off">
@@ -2010,7 +2018,7 @@
 <div class="modal" id="privacyModal"><div class="sheet">
   <button class="x" data-close aria-label="Close"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   <p class="kicker">Your data</p><h2>Privacy</h2>
-  <p class="mut">Replore has no account and no user database, and stores nothing you type. Our host counts page views
+  <p class="mut">Replore has optional Google sign-in for Pro users and no user database, and stores nothing you type. Our host counts page views
     with Cloudflare Web Analytics, without cookies (see below).</p>
   <ul class="guide">
     <li><b>Your search words</b> go from your browser straight to <b>GitHub</b> (with your IP address) to run the search.</li>
@@ -2048,6 +2056,11 @@
       to our function, which asks <b>Stripe</b> (who sells Pro) whether its subscription is active, under Stripe's privacy policy. We never
       keep it or log it, and it is never put in the page address or sent with feedback. Remove key, or clear this site's
       data, to delete it.</li>
+    <li><b>Optional Google sign-in</b> (for Pro users, only if you use it): Firebase Authentication, run by Google, keeps your
+      user id, Google email address, name, profile photo URL, the provider (google.com) and when you signed up and last signed in,
+      plus a Pro link (whether Pro is on, your Stripe subscription id and when we last asked Stripe). Your browser keeps the
+      sign-in token in IndexedDB and a <code>replore.auth</code> hint until you sign out. Payment details are held only by Stripe.
+      Delete my account removes it all at once; it does not cancel Stripe. Everything else works signed out.</li>
     <li><b>Uploaded plans</b> are read in your browser and never uploaded; only short feature phrases are searched on GitHub.</li>
     <li><b>Open in Claude</b> or <b>Open in ChatGPT</b> sends the build-plan prompt to your own claude.ai or chatgpt.com
       account, only when you click it. <b>Open in Gemini</b> copies it and opens gemini.google.com; you paste it.</li>
@@ -2090,7 +2103,8 @@
   <p class="mut rag-only" style="margin-top:12px" hidden><b>Hybrid search:</b> repos are ranked by your words and by what you mean, so "voice notes" also finds "speech-to-text". Repos our index finds that the word search missed are checked on GitHub before you see them.</p>
 </div></div>
 
-<script src="pro-core.js?v=eb18699136" defer></script>
-<script src="app.js?v=07f9368932" defer></script>
+<script src="pro-core.js?v=3cb6e96e76" defer></script>
+<script src="auth.js?v=26dd7c5dae" defer></script>
+<script src="app.js?v=389cd3a504" defer></script>
 </body>
 </html>

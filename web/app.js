@@ -691,6 +691,7 @@ async function relevanceGate(query, repos){
   if(Date.now()<aiOffUntil()) return {fail:true,error:"llm_daily_limit",resetsInSec:Math.ceil((aiOffUntil()-Date.now())/1000)};   // don't ask again until it resets
   if(window.__gateCtl) try{ window.__gateCtl.abort(); }catch(_){}   // a newer search supersedes the old check
   var tok=await tokenWithin(5000), hdr=typeof proKeyHeader==="function"?proKeyHeader({"Content-Type":"application/json"}):{"Content-Type":"application/json"};
+  if(typeof authHeader==="function") hdr=await authHeader(hdr);   // RS94: a signed-in Pro user (auth.js); same origin only
   if(tok===TS_LATE) return {fail:true,error:"bot_check_slow"};
   if(tok) hdr["CF-Turnstile-Token"]=tok;
   var ctl=window.AbortController?new AbortController():null, timer=ctl&&setTimeout(function(){ ctl.abort(); },8000);
