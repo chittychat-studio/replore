@@ -876,6 +876,12 @@ def test_one_official_deploy_and_cardzo_credit():
     assert 'href="https://cardzo.co.in" target="_blank" rel="noopener noreferrer"' in html and "Cardzo</a> product" in html
 
 
+def test_google_preferred_source_link():
+    """RS93: footer deeplinks to Google's source preferences tool; Google's button script is never loaded."""
+    html = _page()
+    assert 'href="https://www.google.com/preferences/source?q=replore.cardzo.co.in" target="_blank" rel="noopener noreferrer"' in html
+    assert "publisher.js" not in html and "news.google.com" not in (ROOT / "web" / "_headers").read_text(encoding="utf-8")
+
 def test_all_uncaps_and_groups_by_feature():
     """RS23: --all returns every match; groups hold each feature's repos, deduped to the first finder."""
     pages = [[repo("auth/a", 900), repo("shared/x", 500)], [repo("pay/a", 700), repo("shared/x", 500)]]
@@ -930,12 +936,12 @@ def test_privacy_notice_matches_what_the_code_does():
     # only these hosts are contacted; PRIVACY.md names each of them
     hosts = set(re.findall(r"https://([a-z0-9.-]+)", html))
     allowed = {"api.github.com", "github.com", "claude.ai", "claude.com", "replore.pages.dev", "cardzo.co.in", "chatgpt.com", "gemini.google.com", "api.web3forms.com", "groq.com", "www.cloudflare.com", "challenges.cloudflare.com", "buy.stripe.com", "replore.cardzo.co.in", "gitdiagram.com", "gitingest.com", "deepwiki.com", "github1s.com", "github.dev",
-               "scorecard.dev", "osv.dev"}  # RS53 trust links (navigations); RS34/RS34a provider terms, RS34c Turnstile, RS44 tips, RS51 Explore links
+               "scorecard.dev", "osv.dev", "www.google.com"}  # RS93 preferred-source link; RS53 trust links (navigations); RS34/RS34a provider terms, RS34c Turnstile, RS44 tips, RS51 Explore links
     assert hosts <= allowed, hosts - allowed
     for named in ("api.github.com", "Cloudflare", "claude.ai", "security.log", "200 characters", "off by default",
                   "Groq", "Cloudflare Workers AI", "Turnstile", "relevance check", "stores nothing", "Feedback", "chatgpt.com", "gemini.google.com", "Web3Forms", "Stripe",
                   "Cloudflare Web Analytics", "static.cloudflareinsights.com", "cookieless", "gitdiagram.com", "gitingest.com", "deepwiki.com", "github1s.com", "github.dev",
-                  "OpenSSF Scorecard", "api.securityscorecards.dev", "deps.dev", "OSV.dev", "Safe to build on?"):  # RS34/RS53b data flows must be disclosed
+                  "OpenSSF Scorecard", "api.securityscorecards.dev", "deps.dev", "OSV.dev", "Safe to build on?", "www.google.com"):  # RS34/RS53b data flows must be disclosed
         assert named in priv, named
     # RS33: the host's Cloudflare Web Analytics beacon is on, so no copy may promise "no analytics"; each place names it
     for doc, text in (("index.html", html), ("PRIVACY.md", priv), ("README.md", readme)):

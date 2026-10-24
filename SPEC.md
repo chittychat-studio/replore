@@ -1333,6 +1333,12 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   The ASCII globe is gone (owner 2026-10-24, "no ASCII globe"): Leo alone is the left column's hero, about 440 to 520 px
   wide on laptops and 260 px on phones, and only one Leo ever shows. The idle clip keeps playing during a search, while
   the LEO stage pill shows the real stage; the old Leo art (wave and search sprites, the peek clip) is retired from the hero.
+- **RS93** Google Preferred Sources link (owner 2026-10-24). The home page footer has a plain link, "Add Replore on
+  Google", to Google's source preferences tool: `https://www.google.com/preferences/source?q=replore.cardzo.co.in`
+  (Google's deeplink option; the domain is a subdomain, which Google accepts). It opens in a new tab with
+  `rel="noopener noreferrer"`. Google's JavaScript button (`news.google.com/swg/js/v1/publisher.js`) is not used: it
+  would load a third-party script on every visit and widen the CSP (RS49), so nothing is sent to Google until a reader
+  clicks. It only helps readers who pick Replore, mainly in Top Stories; it is not a ranking fix.
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
 - **RX3** Ranking by forks, trending or download counts. (Relevance, stars and license-freedom are the only
