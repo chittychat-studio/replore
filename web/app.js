@@ -1780,7 +1780,11 @@ var LIVE_DEMO=[   // RS67: the example searches Leo types into the search bar (n
 // search. With these empty (Safari), the <video data-leo-intro data-leo-idle> slot stays hidden and Leo is the
 // leo-hero.webp still with the Web Animations fly-in and the CSS float. The old Leo art (sprites, peek clip) is retired.
 // Owner picked the Flow (Veo) clips 2026-10-24. Safari cannot play VP9 with alpha, so it keeps the CSS fly-in and the still.
-var LEO_VIDEO=/^((?!chrome|chromium|android|crios|fxios|edg).)*safari/i.test(navigator.userAgent||"")?{intro:"", idle:""}:{intro:"leo-intro.webm?v=4ab4a8c5e5", idle:"leo-idle.webm?v=1ca511a5c6"};
+// WebKit cannot show VP9 alpha: desktop Safari, and every iOS browser (Chrome, Firefox, Edge on iPhone/iPad are WebKit
+// too; an iPad can report itself as a Mac, so a Mac with touch counts). They get the still (owner 2026-10-25: green box).
+var LEO_NOALPHA=/^((?!chrome|chromium|android|crios|fxios|edg).)*safari/i.test(navigator.userAgent||"")||/iPhone|iPad|iPod/.test(navigator.userAgent||"")||
+  (/Macintosh/.test(navigator.userAgent||"")&&(navigator.maxTouchPoints||0)>1);
+var LEO_VIDEO=LEO_NOALPHA?{intro:"", idle:""}:{intro:"leo-intro.webm?v=4ab4a8c5e5", idle:"leo-idle.webm?v=1ca511a5c6"};
 function buildLiveDemo(host){
   if(!host || host.dataset.built) return; host.dataset.built="1";
   var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches;

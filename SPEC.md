@@ -1338,7 +1338,8 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   rules on motion (RS47, RS69, RS91: Web Animations API, reduced motion respected) and on em dashes (RS66) still apply.
   Leo is redrawn as Stitch's Leo (white body, glowing cyan smiling visor, LEO on the chest, a holographic radar ring).
   The hero plays two Google Flow (Veo 3.1 Lite) clips, keyed from green and cropped: `web/leo-intro.webm` once, then
-  `web/leo-idle.webm` on a loop, with `web/leo-hero.webp` as the poster. Safari, which can't play VP9 with alpha, and
+  `web/leo-idle.webm` on a loop, with `web/leo-hero.webp` as the poster. Safari and every iOS browser (all WebKit, which can't play VP9
+  with alpha; an iPad reporting as a Mac with touch counts too; amended 2026-10-25 after a green box on iPhone Chrome) and
   reduced motion keep the still. The crop drops Flow's visible Veo mark, so the footer says "Leo animated with Google
   Veo" and NOTICE.md records the provenance; Google's SynthID mark stays in the files.
   The ASCII globe is gone (owner 2026-10-24, "no ASCII globe"): Leo alone is the left column's hero, about 440 to 520 px
