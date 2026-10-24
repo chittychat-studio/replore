@@ -545,6 +545,12 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   did, so fewer checks fit in a day; the example cache (RS34b, bumped to v2 for the new model) and max 120 output
   tokens offset part of it. When the allocation runs out the check is skipped silently (RS34).
 
+  Groq fallback model (2026-10-24): Groq retired `llama-3.1-8b-instant` and `llama-3.3-70b-versatile` on 2026-08-16
+  (console.groq.com/docs/deprecations), so the old default had been failing every fallback call. The default `LLM_MODEL`
+  becomes `openai/gpt-oss-20b`, Groq's named replacement. gpt-oss reasons before it answers and the reasoning shares the
+  completion budget, so gpt-oss models get `reasoning_effort: "low"`, `max_tokens` 600 instead of 120, and, on Groq only,
+  `include_reasoning: false` so the reply carries just the JSON. Other models keep 120 tokens and no reasoning fields.
+  Status: unit-tested; not yet scored by the live eval, which must pass before this counts as verified.
 - **RS37** Copy discipline (web, owner request; audited against the open-source "taste-skill" redesign checklist).
   Visible text earns its place: no eyebrow label repeating the heading, one plain tagline, plain nav labels, no
   lead line explaining the demo, card "why" lines only when the search words actually match (no generic "Related to

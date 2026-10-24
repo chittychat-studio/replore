@@ -127,7 +127,7 @@ Keep the account on the Workers **Free** plan if you want it to stop at the dail
 **Optional fallback** for when Workers AI is over its allocation or failing: in Cloudflare → your Pages project →
 Settings → Variables and Secrets, add a **secret** `LLM_API_KEY` (e.g. a free Groq API key from console.groq.com) and
 redeploy; optional `LLM_BASE_URL` (any OpenAI-compatible endpoint; default Groq) and `LLM_MODEL` (default
-`llama-3.1-8b-instant`). With neither the binding nor the key, the page shows plain keyword results with no note.
+`openai/gpt-oss-20b`; Groq retired `llama-3.1-8b-instant` on 2026-08-16, so remove an `LLM_MODEL` that still names it). With neither the binding nor the key, the page shows plain keyword results with no note.
 **Bot check (SPEC RS34c, recommended):** in Cloudflare → Turnstile, add a widget for your site's hostname
 (Invisible or Managed), then in the Pages project add the variable `TURNSTILE_SITE_KEY` (public) and the **secret**
 `TURNSTILE_SECRET`, and redeploy. Every AI check then needs a fresh Turnstile token. **Without `TURNSTILE_SECRET` the

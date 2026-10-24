@@ -57,6 +57,9 @@ assert.strictEqual(fn.parseDrops('{"keep":[0]}', 3), null);
   const sent = JSON.parse(fakeLLM.last.init.body);
   assert.strictEqual(sent.temperature, 0);
   assert.deepStrictEqual(sent.response_format, { type: "json_object" });
+  // RS34e: default is Groq's gpt-oss-20b (llama-3.1-8b-instant retired 2026-08-16), reasoning kept short and out of the reply
+  assert.strictEqual(sent.model, "openai/gpt-oss-20b");
+  assert.strictEqual(sent.reasoning_effort, "low"); assert.strictEqual(sent.include_reasoning, false); assert.strictEqual(sent.max_tokens, 600);
   assert.ok(!JSON.stringify(out).includes("SECRET")); }
 // provider failures -> error status, never a fabricated answer (RS7)
 assert.strictEqual((await fn.judge("q", repos, env, fakeLLM("x", 429))).status, 503);
@@ -69,7 +72,13 @@ assert.strictEqual((await fn.judge("q", repos, env, async () => { const e = new 
   await fn.judge("q", repos, { ...env, LLM_BASE_URL: "https://gen.example/v1/", LLM_MODEL: "m1", LLM_JSON_MODE: "0" }, f);
   assert.strictEqual(fakeLLM.last.url, "https://gen.example/v1/chat/completions");
   const sent = JSON.parse(fakeLLM.last.init.body);
-  assert.strictEqual(sent.model, "m1"); assert.ok(!("response_format" in sent)); }
+  assert.strictEqual(sent.model, "m1"); assert.ok(!("response_format" in sent));
+  assert.strictEqual(sent.max_tokens, 120); assert.ok(!("reasoning_effort" in sent) && !("include_reasoning" in sent)); }
+// RS34e: gpt-oss on a non-Groq endpoint gets the standard reasoning_effort but not Groq's include_reasoning flag
+{ const f = fakeLLM('{"drop":[]}');
+  await fn.judge("q", repos, { ...env, LLM_BASE_URL: "https://gen.example/v1", LLM_MODEL: "openai/gpt-oss-120b" }, f);
+  const sent = JSON.parse(fakeLLM.last.init.body);
+  assert.strictEqual(sent.reasoning_effort, "low"); assert.ok(!("include_reasoning" in sent)); }
 
 // HTTP handler: config, content type, size, validation; no secret in any response
 assert.strictEqual((await post({ query: "q", repos }, {})).status, 503);
