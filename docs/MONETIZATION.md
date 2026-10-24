@@ -62,6 +62,15 @@ owner, no code), **not started**. "Not verified" marks a number or fact I could 
 `PLUGIN_KEY` unlocks. **Planned, not built:** searches on the user's own GitHub token, PRD batch over 20 repos, saved
 shortlists, licence-policy mode.
 
+**Planned for Pro only (owner 2026-10-24): a launch package of hosting plus a complete SEO template.** Pro's selling
+point is templates and hands-on support, not the AI ranking. A Pro user picks a starter and gets it as a launch-ready
+package: hosting set up for them, and a complete SEO template already wired in (titles and descriptions, Open Graph
+and social cards, structured data, sitemap, robots.txt, canonical URLs, performance and accessibility basics). Free
+users keep the Launch plan in the web app (what to host on and what to do after going live), but not the package.
+**Status:** idea only, not started. It needs its own SPEC rule first, covering what "hosting" means (who owns the
+account and the bill, where it runs, what happens when Pro lapses), the template's licence (it ships to buyers, so it
+must allow resale), and a PRIVACY.md change if Replore ever holds a customer's site or domain details.
+
 ## 3. Sponsored starter slots
 
 - **Plan:** 99 USD a month per intent category (for example "SaaS starter"), one clearly labelled "Sponsored" slot
