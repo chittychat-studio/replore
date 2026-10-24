@@ -15,7 +15,7 @@
   key lives on the server, never in this page); the plugin (Claude Code, or the script in any AI agent) also writes smarter
   queries and reads a whole PRD.
 -->
-<script src="theme.js?v=d156f907a3"></script>   <!-- RS24: saved light/dark choice before first paint; else the system setting -->
+<script src="theme.js?v=9f42b68e11"></script>   <!-- RS24: saved light/dark choice before first paint; else the system setting -->
 <!-- RS57: link previews (WhatsApp, LinkedIn, X, Slack). Image source: ops/share/card.html, rendered by ops/render_share.py -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Replore">
@@ -1324,14 +1324,9 @@
   .nav-star::before{background:var(--s-highest)}
   .nav-star:hover{color:var(--ink);box-shadow:none}
   .nav-star .ico{color:var(--amber)}
-  .kbd-btn{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 10px 0 12px;border:1px solid var(--o20);border-radius:10px;
-    background:var(--s-high);color:var(--muted);font:500 12px var(--f-body);cursor:pointer;transition:color .2s,border-color .2s}
-  .kbd-btn:hover{color:var(--ink);border-color:var(--o45)}
-  .kbd-btn .ico{margin:0;width:14px;height:14px}
   kbd,.kbd-k{font:600 10.5px/1 var(--f-mono);letter-spacing:.04em;padding:4px 6px;border-radius:6px;border:1px solid var(--o30);background:var(--s-highest);color:var(--muted)}
   .theme-toggle,.nav-toggle{width:44px;height:44px;border-radius:10px;border:1px solid var(--o20);background:var(--s-high);color:var(--ink)}
   .theme-toggle:hover{border-color:var(--a50);transform:none}
-  @media (max-width:860px){ .kbd-btn{display:none} }
 
   /* hero band: the 36px cyber grid and two soft colour fields, fading into the page */
   body:not(.has-results) .hero::after{top:-100px;bottom:-40px;
@@ -1342,6 +1337,19 @@
   body:not(.has-results) .hero > .hero-fx{display:block;position:absolute;z-index:-1;left:50%;top:-100px;width:100vw;height:calc(100% + 140px);
     transform:translateX(-50%);pointer-events:none;
     -webkit-mask-image:linear-gradient(180deg,#000 0,#000 calc(100% - 160px),transparent 100%);mask-image:linear-gradient(180deg,#000 0,#000 calc(100% - 160px),transparent 100%)}
+  /* RS92 (owner 2026-10-25): in dark the whole hero band is the Stitch 3D cyber plate (web/hero-plate-dark.webp), with a
+     slow camera drift (transform only; none under reduced motion), a shade behind the text column for readability and the
+     same bottom fade into the page. The code-drawn particles are off in dark. Light keeps the grid band until a light plate. */
+  .hero-plate{display:none}
+:root[data-theme="dark"] body:not(.has-results) .hero > .hero-plate{display:block;position:absolute;z-index:-1;left:50%;top:-100px;width:100vw;
+    height:calc(100% + 140px);transform:translateX(-50%);overflow:hidden;pointer-events:none;
+    -webkit-mask-image:linear-gradient(180deg,#000 0,#000 calc(100% - 160px),transparent 100%);mask-image:linear-gradient(180deg,#000 0,#000 calc(100% - 160px),transparent 100%)}
+  .hero-plate i{position:absolute;inset:-4%;background:url(hero-plate-dark.webp) 30% 50%/cover no-repeat;animation:plateDrift 38s ease-in-out infinite alternate}
+  .hero-plate::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 0,transparent 36%,rgba(5,8,16,.55) 58%,rgba(5,8,16,.62) 100%)}
+  @keyframes plateDrift{from{transform:scale(1) translate3d(0,0,0)}to{transform:scale(1.07) translate3d(-1.2%,-.8%,0)}}
+  @media (prefers-reduced-motion:reduce){ .hero-plate i{animation:none} }
+  @media (max-width:999px){ .hero-plate i{background-position:12% 50%} .hero-plate::after{background:rgba(5,8,16,.5)} }
+:root[data-theme="dark"] body:not(.has-results) .hero > .hero-fx{display:none}
   .hero-status{display:flex;align-items:center;justify-content:space-between;gap:8px 14px;flex-wrap:wrap;margin:0 0 22px;padding:6px 12px 6px 6px;
     border-radius:12px;background:color-mix(in srgb,var(--s-low) 75%,transparent);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border:1px solid var(--o20);text-align:left}
   .hs-pill,.leo-pill{display:inline-flex;align-items:center;gap:8px;padding:4px 10px;border-radius:999px;font:600 10px/1.4 var(--f-mono);letter-spacing:.1em;
@@ -1372,9 +1380,10 @@
   /* Leo blends into the stage (owner 2026-10-24): two soft colour blurs behind him on dark (none on light, a surface
      shadow instead), a radial mask on his wrapper so no edge shows, a 3D fly-in (app.js, on .st-fly) and an idle float
      on .st-b, so neither fights the peek, wave or sweep sprites inside it. Reduced motion: none of it. */
-  :root{--leo-a:transparent;--leo-b:transparent;--leo-drop:drop-shadow(0 14px 18px rgba(15,23,42,.18))}
-  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--leo-a:rgba(0,240,255,.2);--leo-b:rgba(139,92,246,.15);--leo-drop:drop-shadow(0 0 35px rgba(0,240,255,.4))} }
-  :root[data-theme="dark"]{--leo-a:rgba(0,240,255,.2);--leo-b:rgba(139,92,246,.15);--leo-drop:drop-shadow(0 0 35px rgba(0,240,255,.4))}
+  :root{--leo-a:transparent;--leo-b:transparent;   /* RS92 (owner 2026-10-25): light theme = a dark edge in our ink colour, dark theme = a light rim in the heading colour */
+    --leo-drop:drop-shadow(0 0 1px rgba(15,23,42,.55)) drop-shadow(0 0 6px rgba(15,23,42,.16)) drop-shadow(0 16px 18px rgba(15,23,42,.18))}
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--leo-a:rgba(0,240,255,.2);--leo-b:rgba(139,92,246,.15);--leo-drop:drop-shadow(0 0 1px rgba(219,252,255,.85)) drop-shadow(0 0 8px rgba(219,252,255,.22)) drop-shadow(0 0 32px rgba(0,240,255,.3))} }
+  :root[data-theme="dark"]{--leo-a:rgba(0,240,255,.2);--leo-b:rgba(139,92,246,.15);--leo-drop:drop-shadow(0 0 1px rgba(219,252,255,.85)) drop-shadow(0 0 8px rgba(219,252,255,.22)) drop-shadow(0 0 32px rgba(0,240,255,.3))}
   /* RS92 (owner 2026-10-24): Leo alone is the left column's hero (no globe). One box holds the still and the video, so
      there is no layout shift; the soft blurs sit behind it and nothing masks or clips his radar ring. */
   .st-stage{--leo-x:50%;--leo-w:260px}
@@ -1723,13 +1732,13 @@
       title="Optional tip. It helps us keep Replore free and fund more open-source projects."><svg class="nav-ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6h9v4.5a3.5 3.5 0 0 1-3.5 3.5h-2a3.5 3.5 0 0 1-3.5-3.5z"/><path d="M11.5 7.5h1a2 2 0 0 1 0 4h-1.2"/><path d="M5.5 1.8v2M8 1.8v2"/></svg>Tip</a>
   </nav>
   <div class="topbar-right">
-    <button id="kbdSearch" class="kbd-btn" type="button" title="Jump to the search box" aria-label="Search, keyboard shortcut Control K"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="4.6"/><path d="M10.4 10.4l3.4 3.4"/></svg><span>Search</span><kbd class="kbd-k" aria-hidden="true">Ctrl K</kbd></button>   <!-- RS92: focuses #q, also Ctrl/Cmd+K -->
     <button id="navToggle" class="nav-toggle" aria-label="Menu" aria-controls="nav" aria-expanded="false"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/></svg></button>
     <button id="theme" class="theme-toggle" title="Switch light / dark" aria-label="Switch light / dark"></button>
   </div>
 </header>
 <main class="page">
   <section class="hero">
+    <div class="hero-plate" aria-hidden="true"><i></i></div>   <!-- RS92 (2026-10-25): the Stitch cyber plate, dark theme -->
     <canvas class="hero-fx" id="heroFx" aria-hidden="true"></canvas>   <!-- RS92: particles and edge code rain over the CSS grid (app.js startHeroFx) -->
     <div class="hero-status"><span class="hs-pill"><i class="hs-dot" aria-hidden="true"></i><span class="hs-txt" data-hstat>Ready</span></span>   <!-- RS92: the real search stage (heroStage() in app.js) -->
       <span class="hs-note">Live GitHub search <span aria-hidden="true">&middot;</span> nothing you type is stored</span></div>
@@ -2109,6 +2118,6 @@
 
 <script src="pro-core.js?v=3cb6e96e76" defer></script>
 <script src="auth.js?v=f43383d4f7" defer></script>
-<script src="app.js?v=f14c581ac7" defer></script>
+<script src="app.js?v=61b4853853" defer></script>
 </body>
 </html>

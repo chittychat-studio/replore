@@ -220,8 +220,9 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   shown as the results panel's empty state; a current screenshot of the live page (`web/tour.png`) is committed
   under `web/` and shown in the Tour.
   Type follows RS47 (self-hosted Anton / Inter Tight / JetBrains Mono, no external stylesheet) with a full system
-  fallback if a font fails to load; sizes and weights are raised for prominence and legibility. The page follows the visitor's system setting (`prefers-color-scheme`) until they pick one (peer review 2026-10-18
-  reversed the earlier hard-coded `data-theme="light"`, which made the dark-mode CSS unreachable); a toggle switches theme and the choice is
+  fallback if a font fails to load; sizes and weights are raised for prominence and legibility. The page opens in dark until the visitor picks a theme (owner 2026-10-25: "default the site to dark"; this replaces
+  following `prefers-color-scheme`, set after the peer review 2026-10-18 reversed an earlier hard-coded `data-theme="light"`):
+  `web/theme.js` sets `data-theme="dark"` before first paint when nothing is saved, so the dark CSS is always reachable; a toggle switches theme and the choice is
   remembered in `localStorage` (a per-viewer convenience, wrapped in try/catch) and restored by `web/theme.js` before first paint. No key or token is ever stored (RS22).
   Each result — web card and script row alike — carries a one-line *why relevant* note derived from the search:
   the user's own matching words if they appear in the repo name/description, else a best-match fallback. It is
@@ -1343,6 +1344,19 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   The ASCII globe is gone (owner 2026-10-24, "no ASCII globe"): Leo alone is the left column's hero, about 440 to 520 px
   wide on laptops and 260 px on phones, and only one Leo ever shows. The idle clip keeps playing during a search, while
   the LEO stage pill shows the real stage; the old Leo art (wave and search sprites, the peek clip) is retired from the hero.
+  **Cyber hero backdrop** (owner 2026-10-25: "a 3D cinematic site", "don't guess and draw"; approved as "ok this is
+  good"). In dark the whole hero band is a rendered plate from the owner's Stitch project "Replore 3D Website Redesign":
+  `web/hero-plate-dark.webp` (a 3D perspective grid receding to the centre, cyan and violet bokeh at several focal
+  depths, HUD rings on Leo's side, distant code streams; no robot, no text). It fills the band edge to edge
+  (`background-size: cover`, focus left of centre so the HUD sits behind Leo), drifts slowly like a camera move (scale
+  1 to 1.07 over 38 s, alternating; transform only, none under reduced motion), has a shade behind the text column for
+  contrast (a flat 50% shade on screens under 1000 px) and the same bottom fade into the page. The code-drawn particles
+  (`#heroFx`) are off in dark. Light keeps the grid band and particles until a light plate exists; a 4K dark plate and
+  a light plate come next from Google Flow or Stitch (`video/explainer/LEO_FLOW_STITCH.md` v3). Provenance in `NOTICE.md`.
+  **Leo blending.** Leo stays a chroma-green Flow clip, keyed with spill removal (green capped by red and blue), a
+  1 px matte soften and a feather on all four sides (no hard crop line), and graded toward the scene's teal; a soft
+  teal floor glow sits under him. His edge halo follows the theme (owner 2026-10-25): in light, a 1 px contour and soft
+  shadow in the ink colour `#0f172a`; in dark, a 1 px rim in the heading colour `#dbfcff` with a wider soft cyan glow. New takes follow `video/explainer/LEO_FLOW_STITCH.md` v3 (lit to match this backdrop).
 - **RS93** Google Preferred Sources link (owner 2026-10-24). The home page footer has a plain link, "Add Replore on
   Google", to Google's source preferences tool: `https://www.google.com/preferences/source?q=replore.cardzo.co.in`
   (Google's deeplink option; the domain is a subdomain, which Google accepts). It opens in a new tab with
