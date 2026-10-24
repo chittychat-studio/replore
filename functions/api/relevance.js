@@ -5,6 +5,7 @@
 // shows its normal keyword results with a note (never a blank page, never invented repos — RS7).
 
 import { looksLikeProKey, proOn, proSigOk, proSubId, proItemOk, GRANTED, STRIPE_API } from "./pro/claim.js";   // RS87/RS90 shared Pro-key helpers
+import { signedInUser } from "./auth/session.js";   // RS94: a signed-in Pro user (Firebase ID token) = a granted Pro key on the web
 const MAX_BODY = 16384, MAX_QUERY = 200, MAX_REPOS = 30, MAX_DESC = 160, TIMEOUT_MS = 4500;   // RS41: verify (≤3 s) + AI stays inside the page's 8 s wait
 // control, zero-width, bidi and line/paragraph-separator characters (built from code points so no invisible char sits in the source)
 const CTRL = new RegExp("[" + [[0x00, 0x1f], [0x7f, 0x9f], [0x200b, 0x200f], [0x2028, 0x2029], [0x202a, 0x202e], [0x2066, 0x2069]]
@@ -377,6 +378,7 @@ async function handlePost(request, env, fetchImpl, waitUntil) {
   const keyed = evalKeyOk(request, env) || pluginKeyOk(request, env);   // RS34g: valid-key callers skip the per-IP limit
   let wait = keyed ? 0 : rateLimit(request.headers.get("CF-Connecting-IP"));   // before the body is read or anything is spent
   if (wait && await proKeyOk(request, env, fetchImpl)) wait = 0;   // RS87: a granted Pro key skips the limit like PLUGIN_KEY
+  if (wait && (await signedInUser(request, env) || {}).pro) wait = 0;   // RS94: so does a signed-in Pro user
   if (wait) return json(429, { error: "rate_limited", resetsInSec: wait }, {}, { "Retry-After": String(wait) });
   const ct = request.headers.get("Content-Type") || "";
   if (ct.split(";")[0].trim().toLowerCase() !== "application/json") return json(415, { error: "json_only" });
