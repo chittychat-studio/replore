@@ -1280,7 +1280,8 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   subscription's `current_period_end`, or its first item's on newer Stripe API versions; `null` when neither is
   there) with `Cache-Control: no-store`. The key is deterministic, so claiming the same session again returns the same
   key and nothing is stored. One log line per claim with a code only (`claim_issued` or the error code), never the
-  session id, the key or a secret. **Page** (`web/pro.html` + `web/pro.js`, styles in `web/page.css`, served at `/pro`:
+  session id, the key or a secret. A `stripe_error` line also carries `upstream`, Stripe's HTTP status as a number
+  (0 = no answer), so the owner can tell a wrong key (401) from a missing permission (403) or a timeout (2026-10-24). **Page** (`web/pro.html` + `web/pro.js`, styles in `web/page.css`, served at `/pro`:
   link, canonical and sitemap entry use `/pro`, RS80): the RS89 window as a page, same copy, image, pills, buttons and
   key form (ids prefixed `pp`). With `session_id` in the address, it shows a claim state: it POSTs the id to
   `/api/pro/claim`, removes `session_id` from the address bar (`history.replaceState`), and on success shows the key in
