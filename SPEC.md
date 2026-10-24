@@ -1371,13 +1371,13 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   One subscription links to one account.
   **Delete.** The account menu has "Delete my account": it deletes the Firebase user and its claims at once and signs
   out. It does not cancel a Stripe subscription; the page says so and links Stripe's customer portal.
-  **Secrets.** The Firebase web config (apiKey, authDomain, projectId) is a public identifier, not a secret; its API
+  **Secrets.** The Firebase web config (apiKey, projectId) and the Google OAuth Web client id are public identifiers, not secrets; the API
   key is restricted by HTTP referrer to replore.cardzo.co.in and replore.pages.dev. The service-account credential the
   server needs to set claims is a Cloudflare Pages secret, never committed, printed or logged (as RS8). Authorized
   domains in Firebase: only those two hosts.
-  **CSP and privacy (RS33, RS49).** The Google sign-in hosts (accounts.google.com, apis.google.com, the project's
-  firebaseapp.com auth domain, identitytoolkit.googleapis.com, securetoken.googleapis.com) are added to the CSP only
-  for what sign-in needs. In the same change that ships sign-in, `PRIVACY.md`, the web notice and README replace every
+  **CSP and privacy (RS33, RS49).** Only the Google sign-in sources sign-in needs are added to the CSP, path-scoped
+  where Google allows it (amended 2026-10-24 after a security review: `apis.google.com` has JSONP endpoints that defeat a
+  CSP, and a `*.firebaseapp.com` wildcard matches every Firebase project, so neither is ever allowed; see Build). In the same change that ships sign-in, `PRIVACY.md`, the web notice and README replace every
   "no account" claim with "optional Google sign-in", and `PRIVACY.md` gains a "What we store about you" table listing
   each item above with where it lives, why, how long, and how to delete it, plus the sentence that payment details
   are held only by Stripe. Tests check that every stored field the code sets is named in that table, that no "no
@@ -1389,13 +1389,20 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   12.19.0, only its `firebase-app.js` and `firebase-auth.js` browser builds, vendored at
   `web/vendor/firebase-12.19.0/` with its licence (the build's one CDN import rewritten to `./firebase-app.js`); no
   other Firebase module is shipped or imported. *Dormant switch:* `GET /api/auth/config` (`functions/api/auth/config.js`,
-  the same pattern as the Turnstile site key in RS34c) answers `{"on": true, apiKey, authDomain, projectId}` only when
-  the plain variables `FIREBASE_API_KEY`, `FIREBASE_AUTH_DOMAIN` (must be `<id>.firebaseapp.com`) and
-  `FIREBASE_PROJECT_ID`, the secret `FIREBASE_SERVICE_ACCOUNT` (the service-account JSON) and the RS87 Pro switches are
+  the same pattern as the Turnstile site key in RS34c) answers `{"on": true, apiKey, projectId, clientId}` only when
+  the plain variables `FIREBASE_API_KEY`, `FIREBASE_PROJECT_ID` and `FIREBASE_GOOGLE_CLIENT_ID`, the secret `FIREBASE_SERVICE_ACCOUNT` (the service-account JSON) and the RS87 Pro switches are
   all set; otherwise `{"on": false}`, and the page renders no sign-in UI and loads no Firebase file. *Page:*
   `web/auth.js` (a classic script on `/` and `/pro`, no inline code) asks for the config only on `/pro`, when the Pro
-  window opens, or when this browser signed in before; it then loads the vendored SDK, signs in with a Google popup
-  (redirect when the popup is blocked or unsupported) and keeps the session in IndexedDB (browserLocalPersistence).
+  window opens, or when this browser signed in before; it then loads the vendored SDK with `initializeAuth` and
+  IndexedDB persistence (no popup or redirect resolver, so the SDK never loads `apis.google.com` or frames a
+  `firebaseapp.com` page). *Sign-in (amended 2026-10-24, security review):* never `signInWithPopup` or
+  `signInWithRedirect`. Only when the visitor presses "Sign in with Google" does the page load **Google Identity
+  Services** (`https://accounts.google.com/gsi/client`), which shows Google's own button and prompt; its callback's
+  Google ID token goes to Firebase as `signInWithCredential(auth, GoogleAuthProvider.credential(idToken))`. Delete's
+  recent-sign-in step is `reauthenticateWithCredential` with a fresh GIS token. GIS needs the OAuth Web client id, the
+  plain variable `FIREBASE_GOOGLE_CLIENT_ID` (`<digits>-<id>.apps.googleusercontent.com`, the Web client Firebase
+  creates in Google Cloud); without it sign-in stays dormant. No auth domain is used, so `FIREBASE_AUTH_DOMAIN` is not
+  needed.
   It also keeps one hint in localStorage, `replore.auth` = `1`, set on sign-in and removed on sign-out or delete, so
   later visits know to load the SDK (item 3 above; it holds nothing about the user). On the web a signed-in Pro user's
   relevance checks carry `Authorization: Bearer <Firebase ID token>`, which `/api/relevance` treats like a granted Pro
@@ -1418,12 +1425,15 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   `pro: false` and keeps the link; a Stripe error changes nothing and answers 503 (fail closed). `POST /api/auth/delete`
   needs a sign-in in the last 5 minutes (else 401 `reauth`, and the page asks Google again), then `accounts:delete`.
   All four routes: same-origin only, JSON only, at most 1 KB, a best-effort per-IP limit in memory, `Cache-Control:
-  no-store`, codes only in replies and logs (never the token, uid, email, key or a secret). *CSP:* `script-src` adds
-  `https://apis.google.com` (the SDK's popup helper), `connect-src` adds `https://identitytoolkit.googleapis.com` and
-  `https://securetoken.googleapis.com`, `frame-src` adds `https://*.firebaseapp.com` (the project id is the owner's
-  choice, so the auth domain is not known when `_headers` is written; the config route accepts only a firebaseapp.com
-  auth domain). `accounts.google.com` opens only inside the popup or redirect, a navigation the CSP does not govern,
-  so it is not added. *Delete* links Stripe's customer portal through `PRO_PORTAL_URL` in `web/pro-core.js` (a
+  no-store`, codes only in replies and logs (never the token, uid, email, key or a secret). *CSP* (amended 2026-10-24,
+  security review; as Google's GIS CSP guidance says): `script-src` adds `https://accounts.google.com/gsi/client`,
+  `frame-src` and `connect-src` add `https://accounts.google.com/gsi/`, `style-src` adds
+  `https://accounts.google.com/gsi/style`, `default-src` adds `https://accounts.google.com/gsi/` (Google's recommended
+  fallback), and `connect-src` also adds `https://identitytoolkit.googleapis.com` and
+  `https://securetoken.googleapis.com` (the SDK's sign-in and token calls). `apis.google.com`, any `firebaseapp.com`
+  host and `www.googleapis.com` are never in the CSP (the token-key fetch is server-side). No
+  Cross-Origin-Opener-Policy is set (GIS needs none with FedCM, and none is the browser default). GIS may read or set
+  Google's own cookies on `accounts.google.com`; `PRIVACY.md` says so. *Delete* links Stripe's customer portal through `PRO_PORTAL_URL` in `web/pro-core.js` (a
   `https://billing.stripe.com/p/login/...` link, owner-set; while empty the page says to write to hello@cardzo.co.in).
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
