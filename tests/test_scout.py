@@ -1238,7 +1238,7 @@ def test_pro_window_markup_copy_and_switch():
     assert html.index('id="pluginBtn"') < html.index('id="proBtn"') < html.index('id="starBtn"')   # after Plugin
     start = html.index('<div class="modal pro-el" id="proModal" hidden>')
     win = html[start:html.index("<div class=\"modal\" id=\"pluginModal\"", start)]
-    for s in ("<h2>Leo, <em>Pro</em></h2>", 'aria-label="Close"', 'src="scout-hero.webp" alt="Leo, the Replore scout" width="150"',
+    for s in ("<h2>Leo, <em>Pro</em></h2>", 'aria-label="Close"', 'src="leo-hero.webp?v=1ca927d5e6" alt="Leo, the Replore scout" width="150"',   # RS92 2026-10-25: the current Leo
               "Want me to read for meaning too? Today I match your words. With Pro I also match what a repo\n      does, so the ones that say it differently still turn up.",
               "<i>Meaning ranking</i><i>No queue on the AI check</i><i>Web and every agent</i>",
               'id="proBuy" class="go-btn" href="#" target="_blank" rel="noopener noreferrer"', ">I have a key</button>",

@@ -1328,7 +1328,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   violet `#8B5CF6`, emerald `#10B981`, amber `#F59E0B` and red `#EF4444`. There is a matching light theme, and the theme
   toggle stays. The type is Plus Jakarta Sans for headings and UI, and JetBrains Mono for labels, chips and numbers, both
   self-hosted (OFL). The parts: a frosted sticky header, a 36 px cyber grid behind the hero, a status bar, Leo beside a
-  framed search console, and Trending as the card shuffle deck (pause, Previous, Next, Shuffle, dots, counter). The owner
+  framed search console, and Trending as the card shuffle deck (pause, Previous, Next, Shuffle, dots, counter; swipe the top card sideways to send it under the deck, which loops forever, with the next two cards clearly peeking below: owner 2026-10-25). The owner
   asked for this design, so its soft cyan glows and the cyan-to-violet title gradient are allowed (they lift the RS65
   "no glows/gradients" note). The truth rules still hold. Every number on screen comes from the live data, or it is
   not shown: no invented star counts, latencies, index sizes, scores, velocities or sparklines (RS7, RS67). There is no
@@ -1344,15 +1344,17 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   Veo" and NOTICE.md records the provenance; Google's SynthID mark stays in the files.
   The ASCII globe is gone (owner 2026-10-24, "no ASCII globe"): Leo alone is the left column's hero, about 440 to 520 px
   wide on laptops and 260 px on phones, and only one Leo ever shows. The idle clip keeps playing during a search, while
-  the LEO stage pill shows the real stage; the old Leo art (wave and search sprites, the peek clip) is retired from the hero.
+  the LEO stage pill shows the real stage; the old Leo art (wave and search sprites, the peek clip) is retired from the hero, and (owner 2026-10-25: "pro still has old leo") the Launch window, the Pro window, `/pro` and the feedback chat show `web/leo-hero.webp` instead of the old `scout-hero.webp`.
   **Cyber hero backdrop** (owner 2026-10-25: "a 3D cinematic site", "don't guess and draw"; approved as "ok this is
   good"). In dark the whole hero band is a rendered plate from the owner's Stitch project "Replore 3D Website Redesign":
   `web/hero-plate-dark.webp` (a 3D perspective grid receding to the centre, cyan and violet bokeh at several focal
   depths, HUD rings on Leo's side, distant code streams; no robot, no text). It fills the band edge to edge
   (`background-size: cover`, focus left of centre so the HUD sits behind Leo), drifts slowly like a camera move (scale
   1 to 1.07 over 38 s, alternating; transform only, none under reduced motion), has a shade behind the text column for
-  contrast (a flat 50% shade on screens under 1000 px) and the same bottom fade into the page. The code-drawn particles
-  (`#heroFx`) are off in dark. Light keeps the grid band and particles until a light plate exists; a 4K dark plate and
+  contrast (a flat 50% shade on screens under 1000 px, where the plate shows its right side, without the HUD rings, owner 2026-10-25) and the same bottom fade into the page. The code-drawn particles
+  (`#heroFx`) are off. Light theme (owner 2026-10-25: "use the same dark room on the hero for light"): the hero is the
+  same dark stage, taking the dark theme's colours inside the hero only (text, console, buttons, Leo's pale rim), while the
+  header and the rest of the page stay light and the plate fades into the light page; a light render may replace this later; a 4K dark plate and
   a light plate come next from Google Flow or Stitch (`video/explainer/LEO_FLOW_STITCH.md` v3). Provenance in `NOTICE.md`.
   **Leo blending.** Leo stays a chroma-green Flow clip, keyed with spill removal (green capped by red and blue), a
   1 px matte soften and a feather on all four sides (no hard crop line), and graded toward the scene's teal; a soft
