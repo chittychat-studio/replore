@@ -1668,6 +1668,12 @@ function buildTrendCarousel(){
   box.addEventListener("focusin",function(){ focus=true; });
   box.addEventListener("focusout",function(e){ if(!box.contains(e.relatedTarget)) focus=false; });
   if(window.IntersectionObserver) new IntersectionObserver(function(es){ visible=es[0].isIntersecting; }).observe(deck);
+  // the deck is as tall as its tallest card (measured at its natural height), so no card has an empty band
+  function fit(){ if(!order.length||!deck.classList) return; deck.classList.add("td-measure"); var h=0;
+    order.forEach(function(c){ h=Math.max(h,c.offsetHeight||0); }); deck.classList.remove("td-measure");
+    if(h) deck.style.setProperty("--deck-h",Math.ceil(h)+"px"); }
+  var fitW=0; if(window.ResizeObserver) new ResizeObserver(function(es){ var w=Math.round(es[0].contentRect.width); if(w!==fitW){ fitW=w; fit(); } }).observe(deck);
+  if(document.fonts&&document.fonts.ready) document.fonts.ready.then(fit,function(){});
   function paintPlay(){ if(!play) return; play.setAttribute("aria-pressed",String(paused));
     play.innerHTML=ico(paused?"play":"pause")+'<span class="tc-pl">'+(paused?"Auto-shuffle off":"Auto-shuffle on")+'</span>';
     play.title=paused?"Start the auto-shuffle":"Pause the auto-shuffle"; }
@@ -1688,7 +1694,7 @@ function buildTrendCarousel(){
       order=[].slice.call(deck.children); order.forEach(function(c,k){ c.setAttribute("data-k",String(k)); });
       if(dots) dots.innerHTML=rows.map(function(r,k){ return '<button type="button" class="tc-dot" data-k="'+k+'" aria-label="Show '+esc(r.name)+'"></button>'; }).join("");
       if(note) note.textContent=TREND_NOTE[kind]||"";
-      layout(); void deck.offsetWidth;
+      layout(); fit(); void deck.offsetWidth;
       if(!reduce){ deck.classList.add("td-in"); if(G){ var n=deck.querySelector(".td-n"); if(n) odometer(n, n.textContent, G, .2); } }
       deck.setAttribute("aria-busy","false"); box.hidden=false;
       if(!ticking&&!reduce) ticking=setInterval(function(){ if(canRun()) step(1); }, DECK_MS);

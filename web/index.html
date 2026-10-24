@@ -1490,13 +1490,14 @@
   .tc-ic{width:32px;padding:0}
   .tc-play[aria-pressed="false"] .ico{color:var(--accent-ink)}
   .tc-count{min-width:48px;text-align:right;font:700 13px var(--f-mono);color:var(--accent-ink)}
-  .tdeck{position:relative;height:300px;max-width:56rem;margin:0 auto 70px;perspective:1200px;transform-style:preserve-3d}
+  .tdeck{position:relative;height:var(--deck-h,300px);max-width:56rem;margin:0 auto 70px;perspective:1200px;transform-style:preserve-3d}
   .tdeck.td-out{opacity:0;transition:opacity .18s ease}
   .tdeck.td-in{animation:fadeIn .45s ease both}
   .td-card{position:absolute;inset:0;display:flex;flex-direction:column;gap:14px;padding:24px;border-radius:24px;overflow:hidden;
     background:color-mix(in srgb,var(--card) 95%,transparent);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);
     border:1px solid var(--o30);box-shadow:0 30px 60px -34px rgba(var(--shadow),.55);transform-origin:50% 100%;will-change:transform;
     transition:transform .65s cubic-bezier(.34,1.56,.64,1),opacity .65s ease}
+  .td-card,.tdeck.td-measure .td-card{bottom:auto;height:auto}   /* each card is its own natural height (no empty band); app.js fit() sizes the deck to the tallest */
   .td-card[data-pos="0"]{transform:translateY(0px) translateZ(0px) scale(1);opacity:1;border-color:var(--a30);box-shadow:0 30px 60px -34px rgba(var(--shadow),.55),0 0 40px var(--glow-soft)}
   .td-card[data-pos="1"]{transform:translateY(16px) translateZ(-40px) scale(.95) rotate(.8deg);opacity:.85}
   .td-card[data-pos="2"]{transform:translateY(32px) translateZ(-80px) scale(.9) rotate(-.8deg);opacity:.62}
@@ -1515,7 +1516,7 @@
   .td-gh{flex:none;width:44px;height:44px;border-radius:12px;display:grid;place-items:center;border:1px solid var(--o30);background:var(--s);color:var(--ink);transition:border-color .2s,color .2s}
   .td-gh:hover{border-color:var(--a50);color:var(--accent-ink);text-decoration:none}
   .td-gh .ico{margin:0;width:16px;height:16px}
-  .td-desc{margin:0;font-size:15px;line-height:1.55;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .td-desc{margin:0;font-size:15px;line-height:1.55;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:3.1em}   /* two lines always, so every card in the deck is the same height */
   .td-metrics{display:flex;align-items:center;flex-wrap:wrap;gap:12px 26px;padding:12px 16px;border-radius:12px;background:color-mix(in srgb,var(--bg) 75%,transparent);border:1px solid var(--o20)}
   .td-m{display:grid;gap:4px}
   .td-m small{font:600 10px/1 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
@@ -1539,7 +1540,7 @@
   .tc-dot.on{width:28px;background:var(--accent);box-shadow:0 0 8px rgba(var(--accent-rgb),.7)}
   .tc-dot:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
   @media (max-width:700px){
-    .tc-title h2{font-size:24px} .tdeck{height:440px;margin-bottom:76px}
+    .tc-title h2{font-size:24px} .tdeck{margin-bottom:76px}
     .td-card{padding:18px;gap:12px} .td-metrics{gap:10px 18px;padding:10px 12px} .td-lic,.td-card .td-lic{margin-left:0}
     .tb-tab,.trend-tab{min-height:44px} .tcar-head .tb-tabs{width:100%} .tcar-head .tb-tab{flex:1;padding:0 8px}
     .tc-pl{display:none} .tc-play{width:32px;padding:0}
@@ -1687,6 +1688,10 @@
   .pro-offer{background:var(--a12);color:var(--accent-ink);border-radius:12px}
   .pro-form{border-top-color:var(--o30)}
   .fb-fab{border-radius:12px}
+  /* the floating Feedback pill shows only on the home view, where nothing sits under it; with results or the Details
+     panel open it hides (the footer's Feedback link stays), and the page keeps room below the footer for it */
+  body.has-results .fb-fab,body.drawer-open .fb-fab{display:none}
+  @media (min-width:1000px){ .page{padding-bottom:84px} .fb-fab{padding:0 14px;right:16px;bottom:16px} }
   @media (min-width:1000px){ .fb-fab{min-height:44px;background:var(--s-low);border:1px solid var(--a30);color:var(--accent-ink);font:600 12px var(--f-mono);
     letter-spacing:.06em;text-transform:uppercase;box-shadow:0 0 20px var(--glow-soft)} }
   .prd-bar{background:color-mix(in srgb,var(--s) 95%,transparent);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid var(--a30);
@@ -2094,6 +2099,6 @@
 </div></div>
 
 <script src="pro-core.js?v=eb18699136" defer></script>
-<script src="app.js?v=0a864864bd" defer></script>
+<script src="app.js?v=7442662645" defer></script>
 </body>
 </html>
