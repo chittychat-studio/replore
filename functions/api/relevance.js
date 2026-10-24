@@ -92,10 +92,17 @@ export async function limitInfo(res, now = Date.now()) {
   return classifyLimit(res.status, text, Number.isFinite(ra) && ra > 0 ? Math.ceil(ra) : null, now);
 }
 
+// RS34e: Groq retired llama-3.1-8b-instant on 2026-08-16; gpt-oss-20b is its named replacement.
+export const GROQ_DEFAULT_MODEL = "openai/gpt-oss-20b";
 export async function judge(query, repos, env, fetchImpl = fetch, ms = TIMEOUT_MS) {
   const base = String(env.LLM_BASE_URL || "https://api.groq.com/openai/v1").replace(/\/+$/, "");
-  const model = env.LLM_MODEL || "llama-3.1-8b-instant";
-  const payload = { model, messages: buildMessages(query, repos), temperature: 0, max_tokens: 120 };
+  const model = env.LLM_MODEL || GROQ_DEFAULT_MODEL;
+  const reasons = /(^|\/)gpt-oss/.test(model);   // RS34e: gpt-oss thinks first, and its reasoning shares the completion budget
+  const payload = { model, messages: buildMessages(query, repos), temperature: 0, max_tokens: reasons ? 600 : 120 };
+  if (reasons) {
+    payload.reasoning_effort = "low";
+    if (/^https:\/\/api\.groq\.com\//.test(base)) payload.include_reasoning = false;   // Groq-only flag: the reply carries the answer only
+  }
   if (env.LLM_JSON_MODE !== "0") payload.response_format = { type: "json_object" };
   const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), ms);
   let res, data;
