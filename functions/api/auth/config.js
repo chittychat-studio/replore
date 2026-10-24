@@ -1,5 +1,5 @@
-// SPEC RS94: GET /api/auth/config. The public Firebase web config (apiKey, authDomain, projectId: identifiers, not
-// secrets; the API key is referrer-restricted in Google Cloud), exposed the way the Turnstile site key is (RS34c).
+// SPEC RS94: GET /api/auth/config. The public Firebase web config (apiKey, projectId) and the Google OAuth Web client id
+// for Google Identity Services (clientId): identifiers, not secrets; the API key is referrer-restricted. Exposed the way the Turnstile site key is (RS34c).
 // {"on": false} until every switch is set, and then the page renders no sign-in UI and loads no Firebase file.
 
 import { webConfig } from "./session.js";

@@ -10,17 +10,18 @@ export const SKEW_SEC = 60, KEYS_MIN_SEC = 60, KEYS_MAX_SEC = 86400, KEYS_DEFAUL
 export const PRO_FRESH_SEC = 26 * 3600;   // claims rechecked at most once a day (refresh.js); older than this = not Pro
 const MAX_TOKEN = 4096;
 const PROJECT_SHAPE = /^[a-z][a-z0-9-]{4,38}[a-z0-9]$/;
-const AUTH_DOMAIN_SHAPE = /^[a-z0-9][a-z0-9-]{0,62}\.firebaseapp\.com$/;
+const CLIENT_ID_SHAPE = /^[0-9]{6,20}-[a-z0-9]{10,64}\.apps\.googleusercontent\.com$/;   // the OAuth Web client id GIS needs
 const API_KEY_SHAPE = /^[A-Za-z0-9_-]{30,60}$/;
 export const SUB_ID_SHAPE = /^sub_[A-Za-z0-9_]{8,80}$/;
 
 export const projectOk = env => !!env && PROJECT_SHAPE.test(String(env.FIREBASE_PROJECT_ID || ""));
-// the public web config (RS94: an identifier, not a secret), or null when it is not fully and validly set
+// the public web config (RS94: identifiers, not secrets), or null when it is not fully and validly set. No auth domain:
+// sign-in goes through Google Identity Services + signInWithCredential, never a popup or redirect (RS94 security review)
 export function webConfig(env) {
   if (!projectOk(env)) return null;
-  const apiKey = String(env.FIREBASE_API_KEY || ""), authDomain = String(env.FIREBASE_AUTH_DOMAIN || "").toLowerCase();
-  if (!API_KEY_SHAPE.test(apiKey) || !AUTH_DOMAIN_SHAPE.test(authDomain)) return null;
-  return { apiKey, authDomain, projectId: String(env.FIREBASE_PROJECT_ID) };
+  const apiKey = String(env.FIREBASE_API_KEY || ""), clientId = String(env.FIREBASE_GOOGLE_CLIENT_ID || "");
+  if (!API_KEY_SHAPE.test(apiKey) || !CLIENT_ID_SHAPE.test(clientId)) return null;
+  return { apiKey, projectId: String(env.FIREBASE_PROJECT_ID), clientId };
 }
 
 // test seams: a fake fetch and a fixed clock (seconds); production uses the real ones

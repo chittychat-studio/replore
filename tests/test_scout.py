@@ -830,7 +830,7 @@ def test_security_headers_and_csp():
     assert h["Permissions-Policy"] == "camera=(), microphone=(), geolocation=()"
     csp = {d.split()[0]: d.split()[1:] for d in h["Content-Security-Policy"].split("; ")}
     assert "'unsafe-inline'" not in csp["script-src"] and "'unsafe-eval'" not in csp["script-src"]
-    assert csp["frame-ancestors"] == ["'none'"] and csp["default-src"] == ["'self'"]
+    assert csp["frame-ancestors"] == ["'none'"] and csp["default-src"] == ["'self'", "https://accounts.google.com/gsi/"]   # RS94: GIS's fallback
     app = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
     fetched = set(re.findall(r'fetch\("https://([a-z0-9.-]+)', app)) | {"api.github.com"}
     assert {"https://" + x for x in fetched} <= set(csp["connect-src"]), fetched
@@ -1292,20 +1292,30 @@ def test_rs94_google_signin_is_optional_dormant_and_disclosed():
         assert not banned.search(f.read_text(encoding="utf-8")), f
     for f in (ROOT / "functions").rglob("*.js"):   # no firebase-admin or any Firebase package on the server
         assert not re.search(r'(from|import\(|require\()\s*"firebase', f.read_text(encoding="utf-8")), f
-    # CSP: exactly the RS94 hosts, each where sign-in needs it, and nothing for accounts.google.com (a popup navigation)
+    # CSP (RS94 security review, RS49): Google Identity Services path-scoped exactly as Google's guidance says, plus the
+    # SDK's two API hosts; never apis.google.com (JSONP), any firebaseapp.com host, a wildcard or www.googleapis.com
     hdr = (web / "_headers").read_text(encoding="utf-8")
     line = [l for l in hdr.splitlines() if "Content-Security-Policy:" in l][0]
     csp = {d.split()[0]: d.split()[1:] for d in line.split(": ", 1)[1].split("; ")}
-    assert "https://apis.google.com" in csp["script-src"]
-    assert {"https://identitytoolkit.googleapis.com", "https://securetoken.googleapis.com"} <= set(csp["connect-src"])
-    assert "https://*.firebaseapp.com" in csp["frame-src"]
-    google = [h for d in csp.values() for h in d if "google" in h or "firebase" in h]
-    assert sorted(google) == sorted(["https://apis.google.com", "https://identitytoolkit.googleapis.com",
-                                     "https://securetoken.googleapis.com", "https://*.firebaseapp.com"]), google
-    assert "accounts.google.com" not in line and "firebaseapp" not in " ".join(csp["script-src"] + csp["connect-src"])
+    for bad in ("apis.google.com", "firebaseapp.com", "www.googleapis.com", "*"):
+        assert bad not in line.replace("'self'", ""), bad
+    gis = {"default-src": ["https://accounts.google.com/gsi/"], "script-src": ["https://accounts.google.com/gsi/client"],
+           "frame-src": ["https://accounts.google.com/gsi/"], "style-src": ["https://accounts.google.com/gsi/style"],
+           "connect-src": ["https://accounts.google.com/gsi/", "https://identitytoolkit.googleapis.com", "https://securetoken.googleapis.com"]}
+    google = {d: [h for h in v if "google" in h] for d, v in csp.items()}
+    assert {d: v for d, v in google.items() if v} == gis, google
+    for d, v in google.items():   # every accounts.google.com source carries a /gsi/ path, never the bare host
+        assert all(h.startswith("https://accounts.google.com/gsi/") for h in v if "accounts.google.com" in h), (d, v)
+    assert "frame-ancestors 'none'" in line
     assert set(re.findall(r'fetch\("([^"]+)"', auth)) == {"/api/auth/config"}
     assert set(re.findall(r'authPost\("([^"]+)"', auth)) == {"/api/auth/refresh", "/api/auth/link", "/api/auth/delete"}
-    assert "innerHTML" not in auth and "https://" not in auth   # text only via textContent; every call is same-origin
+    assert "innerHTML" not in auth   # text only via textContent
+    assert re.findall(r'"(https://[^"]+)"', auth) == ["https://accounts.google.com/gsi/client"]   # the only outside URL: GIS, on demand
+    for gone in ("signInWithPopup(", "signInWithRedirect(", "getRedirectResult(", "getAuth(", "reauthenticateWithPopup("):
+        assert gone not in auth, gone   # these pull apis.google.com or frame a firebaseapp.com page
+    assert "signInWithCredential(AUTH.auth" in auth and "reauthenticateWithCredential(AUTH.user" in auth
+    assert "initializeAuth(app" in auth and "GoogleAuthProvider.credential(idToken)" in auth
+    assert auth.index("function authGisLoad") < auth.index("function authSignIn") and "authGisLoad().then" in auth
     # the box: next to the Pro features only, hidden until configured; the script on / and /pro only
     index = (web / "index.html").read_text(encoding="utf-8")
     pro = (web / "pro.html").read_text(encoding="utf-8")
@@ -1342,8 +1352,9 @@ def test_rs94_google_signin_is_optional_dormant_and_disclosed():
         assert s in table, s
     for doc, text in (("PRIVACY.md", priv), ("index.html", index)):
         assert "Payment details are held only by Stripe." in text, doc
-    for host in ("accounts.google.com", "apis.google.com", "firebaseapp.com", "identitytoolkit.googleapis.com", "securetoken.googleapis.com"):
+    for host in ("accounts.google.com/gsi/", "identitytoolkit.googleapis.com", "securetoken.googleapis.com"):
         assert host in priv, host
+    assert "Google's own cookies" in priv and "Replore sets no cookie" in priv and "apis.google.com" not in priv
     # no "no account" claim survives where a visitor or a reader of the docs sees it; each says "optional Google sign-in"
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     for doc, text in (("PRIVACY.md", priv), ("README.md", readme), ("index.html", index), ("pro.html", pro),
@@ -1352,6 +1363,8 @@ def test_rs94_google_signin_is_optional_dormant_and_disclosed():
     for doc, text in (("PRIVACY.md", priv), ("README.md", readme), ("index.html", index)):
         assert "optional google sign-in" in text.lower(), doc
     # README owner steps
-    for s in ("FIREBASE_SERVICE_ACCOUNT", "FIREBASE_API_KEY", "FIREBASE_AUTH_DOMAIN", "FIREBASE_PROJECT_ID", "Authorized domains",
+    assert "FIREBASE_AUTH_DOMAIN" not in readme
+    for s in ("FIREBASE_SERVICE_ACCOUNT", "FIREBASE_API_KEY", "FIREBASE_GOOGLE_CLIENT_ID", "FIREBASE_PROJECT_ID", "Authorized domains", "Web client ID",
+              "Authorized JavaScript origins",
               "`replore.cardzo.co.in` and `replore.pages.dev`", "Firebase Authentication\n   Admin", "enable **Google** only"):
         assert s in readme, s

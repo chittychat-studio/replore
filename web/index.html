@@ -2060,7 +2060,8 @@
       user id, Google email address, name, profile photo URL, the provider (google.com) and when you signed up and last signed in,
       plus a Pro link (whether Pro is on, your Stripe subscription id and when we last asked Stripe). Your browser keeps the
       sign-in token in IndexedDB and a <code>replore.auth</code> hint until you sign out. Payment details are held only by Stripe.
-      Delete my account removes it all at once; it does not cancel Stripe. Everything else works signed out.</li>
+      Delete my account removes it all at once; it does not cancel Stripe. Signing in loads Google's sign-in from
+      accounts.google.com only when you press Sign in with Google; Google may use its own cookies there. Everything else works signed out.</li>
     <li><b>Uploaded plans</b> are read in your browser and never uploaded; only short feature phrases are searched on GitHub.</li>
     <li><b>Open in Claude</b> or <b>Open in ChatGPT</b> sends the build-plan prompt to your own claude.ai or chatgpt.com
       account, only when you click it. <b>Open in Gemini</b> copies it and opens gemini.google.com; you paste it.</li>
@@ -2104,7 +2105,7 @@
 </div></div>
 
 <script src="pro-core.js?v=3cb6e96e76" defer></script>
-<script src="auth.js?v=26dd7c5dae" defer></script>
+<script src="auth.js?v=f43383d4f7" defer></script>
 <script src="app.js?v=389cd3a504" defer></script>
 </body>
 </html>

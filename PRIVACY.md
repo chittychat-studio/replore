@@ -32,11 +32,14 @@ to **Delete my account**) or write to hello@cardzo.co.in.
 do inside Replore. There is still no database: no Firestore, Realtime Database or Cloud Storage, and Firebase Analytics,
 Performance Monitoring and Remote Config are not loaded.
 
-**Where sign-in sends data.** Only when sign-in is switched on and you use it: your browser loads Replore's own copy of
-the Firebase sign-in code, then talks to **Google** to sign you in: `accounts.google.com` (the Google sign-in window),
-`apis.google.com` (a helper the sign-in window needs), the project's `firebaseapp.com` sign-in page,
-`identitytoolkit.googleapis.com` and `securetoken.googleapis.com` (to sign in and keep the token fresh). Google sees your
-IP address and Google account under its own terms. While you are signed in with Pro, your relevance checks carry the
+**Where sign-in sends data.** Only when sign-in is switched on and you use it. When you press **Sign in with Google**,
+your browser loads **Google Identity Services** from `accounts.google.com/gsi/` (Google's sign-in button and prompt; it
+is not loaded before you press it). Google sees that you are signing in to Replore, your IP address and browser, and
+which Google account you pick, and it may read or set **Google's own cookies** on `accounts.google.com` (for example
+to know you are already signed in to Google), under [Google's privacy policy](https://policies.google.com/privacy);
+Replore sets no cookie and cannot read Google's. Google hands your browser a sign-in token, which Replore's own copy of
+the Firebase sign-in code sends to `identitytoolkit.googleapis.com` and then keeps fresh with
+`securetoken.googleapis.com`. No other Google script runs on the page. While you are signed in with Pro, your relevance checks carry the
 sign-in token to **our relevance check** (same site), which checks it with Google's public keys
 (`www.googleapis.com`) and uses it only to skip the per-address limit, like a Pro key. Our sign-in functions use a
 Google service account (`oauth2.googleapis.com`, `identitytoolkit.googleapis.com`) only to set or delete the Pro link and

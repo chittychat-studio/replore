@@ -14,10 +14,10 @@ new Function("localStorage", "fetch",
 
 (async () => {
   // the config answer must be complete and well formed, or there is no sign-in UI
-  const good = { on: true, apiKey: "AIzaSyA-test_key_0123456789abcdefghijk", authDomain: "replore-test.firebaseapp.com", projectId: "replore-test" };
+  const good = { on: true, apiKey: "AIzaSyA-test_key_0123456789abcdefghijk", projectId: "replore-test", clientId: "123456789012-abcdefghijklmnop0123.apps.googleusercontent.com" };
   assert.ok(s.authCfgOk(good));
-  for (const bad of [null, {}, { on: false }, { ...good, on: "true" }, { ...good, apiKey: "" }, { ...good, authDomain: "evil.example.com" },
-    { ...good, authDomain: "replore-test.firebaseapp.com.evil.io" }, { ...good, projectId: "Bad Id" }])
+  for (const bad of [null, {}, { on: false }, { ...good, on: "true" }, { ...good, apiKey: "" }, { ...good, clientId: "" },
+    { ...good, clientId: "123456789012-abcdefghijklmnop0123.apps.googleusercontent.com.evil.io" }, { ...good, clientId: "evil.example.com" }, { ...good, projectId: "Bad Id" }])
     assert.ok(!s.authCfgOk(bad), JSON.stringify(bad));
   // Pro only from fresh claims our server set (same rule as session.js)
   const now = 1793000000, SUB = "sub_1QabcDEF234ghiJKL";

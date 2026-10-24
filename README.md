@@ -272,10 +272,14 @@ of the Firebase JS SDK 12.19.0, vendored in `web/vendor/firebase-12.19.0/`, Apac
 button and no Firebase file loaded, until the owner does these steps:
 
 1. Create a Firebase project in the [Firebase console](https://console.firebase.google.com/) (leave Google Analytics off for it). Add a
-   **Web app** to it and note its `apiKey`, `authDomain` (`<project id>.firebaseapp.com`) and `projectId`.
-2. **Authentication, Sign-in method:** enable **Google** only.
+   **Web app** to it and note its `apiKey` and `projectId` (the `authDomain` is not used: sign-in goes through Google
+   Identity Services, never a Firebase popup or redirect).
+2. **Authentication, Sign-in method:** enable **Google** only. Open the Google provider's **Web SDK configuration** and
+   copy the **Web client ID** (the same id is in Google Cloud console, APIs and Services, Credentials, OAuth 2.0 Client
+   IDs, "Web client (auto created by Google Service)"). In that Web client, set **Authorized JavaScript origins** to
+   `https://replore.cardzo.co.in` and `https://replore.pages.dev` only.
 3. **Authentication, Settings, Authorized domains:** keep only `replore.cardzo.co.in` and `replore.pages.dev` (remove
-   `localhost`; the `firebaseapp.com` auth domain stays, Firebase needs it).
+   `localhost`).
 4. **Google Cloud console, APIs and Services, Credentials:** edit the browser API key Firebase made, set **Application
    restrictions** to **Websites** with `https://replore.cardzo.co.in/*` and `https://replore.pages.dev/*`, and **API
    restrictions** to the Identity Toolkit API and the Token Service API.
@@ -283,15 +287,16 @@ button and no Firebase file loaded, until the owner does these steps:
    Admin** role and download one JSON key. In Cloudflare (Workers and Pages, the Replore project, Settings, Variables
    and Secrets, Production) add it as the **secret** `FIREBASE_SERVICE_ACCOUNT` (paste the whole JSON). Never commit
    it; delete the downloaded file.
-6. In the same place add the plain **variables** `FIREBASE_API_KEY`, `FIREBASE_AUTH_DOMAIN` and `FIREBASE_PROJECT_ID`
-   from step 1. The Pro secrets above (`STRIPE_SECRET_KEY`, `PRO_SIGNING_SECRET`, `PRO_PRICE_IDS`) must be set too.
+6. In the same place add the plain **variables** `FIREBASE_API_KEY` and `FIREBASE_PROJECT_ID` from step 1 and
+   `FIREBASE_GOOGLE_CLIENT_ID` (the Web client ID from step 2, `<digits>-<id>.apps.googleusercontent.com`). The Pro secrets above (`STRIPE_SECRET_KEY`, `PRO_SIGNING_SECRET`, `PRO_PRICE_IDS`) must be set too.
 7. Optional: in Stripe, turn on the **customer portal** (Settings, Billing, Customer portal) and paste its login link
    (`https://billing.stripe.com/p/login/...`) into `PRO_PORTAL_URL` in `web/pro-core.js`, so "Delete my account" can
    point to it; then run `python ops/stamp_assets.py`.
 8. Redeploy. `GET /api/auth/config` answers `{"on": true, ...}` once all of this is set, and the sign-in box appears.
 
-`web/_headers` already allows the sign-in hosts (`apis.google.com`, `identitytoolkit.googleapis.com`,
-`securetoken.googleapis.com` and `*.firebaseapp.com` frames). Accounts are deleted with "Delete my account"; deleting
+`web/_headers` already allows the sign-in sources, path-scoped as Google's Identity Services guidance says
+(`https://accounts.google.com/gsi/client`, `/gsi/` frames and calls, `/gsi/style`) plus `identitytoolkit.googleapis.com`
+and `securetoken.googleapis.com`; `apis.google.com` and `firebaseapp.com` are never allowed. Accounts are deleted with "Delete my account"; deleting
 does not cancel Stripe.
 
 Planned, not built yet: searches on your own GitHub token, PRD batches over 20 repos, saved shortlists and a

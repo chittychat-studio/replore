@@ -22,7 +22,7 @@ const pkcs8 = Buffer.from(await crypto.subtle.exportKey("pkcs8", saKeys.privateK
 const SA = JSON.stringify({ type: "service_account", project_id: PROJECT, client_email: "replore-claims@replore-test.iam.gserviceaccount.com",
   private_key: "-----BEGIN PRIVATE KEY-----\n" + pkcs8.match(/.{1,64}/g).join("\n") + "\n-----END PRIVATE KEY-----\n" });
 const PRO_KEY = `rp.${SUB}.${createHmac("sha256", SECRET).update(SUB).digest("hex").slice(0, 16)}`;
-const env = { FIREBASE_API_KEY: "AIzaSyA-test_key_0123456789abcdefghijk", FIREBASE_AUTH_DOMAIN: "replore-test.firebaseapp.com",
+const env = { FIREBASE_API_KEY: "AIzaSyA-test_key_0123456789abcdefghijk", FIREBASE_GOOGLE_CLIENT_ID: "123456789012-abcdefghijklmnop0123.apps.googleusercontent.com",
   FIREBASE_PROJECT_ID: PROJECT, FIREBASE_SERVICE_ACCOUNT: SA, PRO_SIGNING_SECRET: SECRET, STRIPE_SECRET_KEY: "rk_test_RESTRICTEDsecret123",
   PRO_PRICE_IDS: "price_ProMonth01" };
 
@@ -142,10 +142,12 @@ try {
 
   // ---- config: dormant until everything is set ----
   const cfg = async e => (await config.onRequestGet({ env: e })).json();
-  assert.deepStrictEqual(await cfg(env), { on: true, apiKey: env.FIREBASE_API_KEY, authDomain: "replore-test.firebaseapp.com", projectId: PROJECT });
-  for (const k of ["FIREBASE_API_KEY", "FIREBASE_AUTH_DOMAIN", "FIREBASE_PROJECT_ID", "FIREBASE_SERVICE_ACCOUNT", "STRIPE_SECRET_KEY", "PRO_SIGNING_SECRET", "PRO_PRICE_IDS"])
+  assert.deepStrictEqual(await cfg(env), { on: true, apiKey: env.FIREBASE_API_KEY, projectId: PROJECT, clientId: "123456789012-abcdefghijklmnop0123.apps.googleusercontent.com" });
+  for (const k of ["FIREBASE_API_KEY", "FIREBASE_GOOGLE_CLIENT_ID", "FIREBASE_PROJECT_ID", "FIREBASE_SERVICE_ACCOUNT", "STRIPE_SECRET_KEY", "PRO_SIGNING_SECRET", "PRO_PRICE_IDS"])
     assert.deepStrictEqual(await cfg({ ...env, [k]: "" }), { on: false }, k);
-  assert.deepStrictEqual(await cfg({ ...env, FIREBASE_AUTH_DOMAIN: "evil.example.com" }), { on: false }, "only a firebaseapp.com auth domain");
+  for (const bad of ["evil.example.com", "123.apps.googleusercontent.com", "123456789012-abcdefghijklmnop0123.apps.googleusercontent.com.evil.io"])
+    assert.deepStrictEqual(await cfg({ ...env, FIREBASE_GOOGLE_CLIENT_ID: bad }), { on: false }, "only a Google OAuth Web client id: " + bad);
+  assert.ok(!("authDomain" in await cfg(env)), "no auth domain: sign-in never uses a Firebase popup or redirect");
   assert.deepStrictEqual(await cfg({ ...env, FIREBASE_SERVICE_ACCOUNT: "{not json" }), { on: false });
   assert.deepStrictEqual(await cfg({}), { on: false });
   const cr = await config.onRequestGet({ env });
