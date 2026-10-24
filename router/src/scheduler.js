@@ -170,7 +170,12 @@ export class Scheduler {
       const used = this.credits.get(hash) || 0;
       const reset = Math.ceil(P.msToUtcMidnight(now) / 1000);
       if (used >= cap) { this.counters.fallback.credits++; this.dirty.state = true; return { deny: "credits", resetsInSec: reset, credits: { left: 0, cap } }; }
-      if (!this.credits.has(hash) && this.credits.size >= P.MAX_CREDIT_IDS) this.evictCredits();   // never lock new visitors out
+      if (!this.credits.has(hash) && this.credits.size >= P.MAX_CREDIT_IDS) {
+        this.evictCredits();   // make room for new visitors, never by freeing an exhausted id
+        if (this.credits.size >= P.HARD_MAX_CREDIT_IDS) {
+          this.counters.fallback.credits++; this.counters.creditsFull = (this.counters.creditsFull || 0) + 1; this.dirty.state = true;
+          return { deny: "credits_full", resetsInSec: reset, credits: { left: 0, cap } }; }
+      }
     }
     const creditsInfo = () => {
       if (hash) return { left: Math.max(0, cap - (this.credits.get(hash) || 0)), cap };
@@ -199,11 +204,12 @@ export class Scheduler {
     return { grant: { id: p.id, ticket, check: checkId, waitMs: pk.waitMs }, credits: creditsInfo(),
       trace: pk.blocked.map(b => ({ id: b.p.id, pool: b.p.pool, why: b.why })) };
   }
-  // RS96: the id table is full: drop 10%, ids that used a single credit first, then the oldest (Map keeps insertion order)
+  // RS96: the id table is full: drop up to 10%, ids that used a single credit first, then the oldest (Map keeps insertion
+  // order); an id at the anonymous cap is never dropped, or flooding the table would give it a fresh allowance
   evictCredits() {
-    const target = Math.ceil(P.MAX_CREDIT_IDS * P.EVICT_SHARE); let n = 0;
+    const target = Math.ceil(P.MAX_CREDIT_IDS * P.EVICT_SHARE), floor = this.cfg.credits.anon; let n = 0;
     for (const [k, v] of this.credits) { if (n >= target) break; if (v <= 1) { this.credits.delete(k); this.refunds.delete(k); n++; } }
-    for (const k of this.credits.keys()) { if (n >= target) break; this.credits.delete(k); this.refunds.delete(k); n++; }
+    for (const [k, v] of this.credits) { if (n >= target) break; if (v < floor) { this.credits.delete(k); this.refunds.delete(k); n++; } }
     this.counters.evicted = (this.counters.evicted || 0) + n; this.dirty.credits = this.dirty.state = true;
   }
   gc(now) {

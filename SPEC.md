@@ -1417,9 +1417,13 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   day. All four numbers are environment settings.
   **Storage.** The DO keeps, per day, only a salted one-way hash (SHA-256 of a random salt made fresh each UTC day, the
   kind and the IP or uid, first 16 hex characters) and a count. The IP itself is never written; the salt and the table are
-  replaced at 00:00 UTC, so hashes cannot be linked across days. The table holds at most 50,000 ids; when it is full the
-  router evicts 10% (ids that used one credit first, then the oldest), so a new visitor is never refused for lack of
-  room (an evicted id simply starts again at its full allowance). `PRIVACY.md` says so (RS33).
+  replaced at 00:00 UTC, so hashes cannot be linked across days. The table holds 50,000 ids; when it is full the
+  router evicts up to 10% (ids that used one credit first, then the oldest), so a new visitor is not refused for lack of
+  room (an evicted id simply starts again at its full allowance). An id whose count has reached the anonymous cap is
+  never evicted (security review: otherwise flooding the table with new addresses would hand exhausted ids a fresh
+  allowance). When too few ids can be evicted the table grows, to a hard limit of 75,000 ids (the credits row stays
+  under the Durable Object's 2 MB row limit); at that limit a new id gets the keyword results (`credits_full`, shown as
+  used up until 00:00 UTC) while every id already in the table keeps its count. `PRIVACY.md` says so (RS33).
   **API and page.** The JSON reply carries `credits: {left, cap}` whenever a credit was counted (never anything
   private); an exhausted visitor gets 429 `credits_used_up` with `resetsInSec` and `credits`. The page shows one quiet
   line above the results, "AI ranking: 4 of 5 searches left today", and at 0 "AI ranking is used up for today, resets

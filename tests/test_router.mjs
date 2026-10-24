@@ -258,6 +258,19 @@ console.log("wait-if-it-fits ok");
   assert.strictEqual(s3.credits.size, P.MAX_CREDIT_IDS - P.MAX_CREDIT_IDS * P.EVICT_SHARE + 1);
   assert.ok(s3.credits.has("x0") && !s3.credits.has("x1"), "ids that used one credit go first");
   assert.strictEqual(s3.status().fallbacks.credits, 0);
+  // security review fix 4: eviction never frees an exhausted id; past the hard limit a new id gets keyword results
+  const s5 = mk(); for (let i = 0; i < P.MAX_CREDIT_IDS; i++) s5.credits.set("e" + i, i < 100 ? 2 : 5);
+  g = await s5.acquire({ check: check({ credit: anon }) });
+  assert.ok(g.grant, "room is made from ids below the cap");
+  assert.strictEqual(s5.credits.size, P.MAX_CREDIT_IDS - 100 + 1);
+  assert.ok([...s5.credits.values()].filter(v => v >= 5).length === P.MAX_CREDIT_IDS - 100, "every exhausted id kept");
+  const s6 = mk(); for (let i = 0; i < P.HARD_MAX_CREDIT_IDS; i++) s6.credits.set("f" + i, 5);
+  g = await s6.acquire({ check: check({ credit: { kind: "anon", id: "198.51.100.77" } }) });
+  assert.strictEqual(g.deny, "credits_full"); assert.deepStrictEqual(g.credits, { left: 0, cap: 5 }); assert.ok(g.resetsInSec > 0);
+  assert.strictEqual(s6.credits.size, P.HARD_MAX_CREDIT_IDS, "nothing evicted, nothing added");
+  assert.strictEqual(s6.status().fallbacks.credits, 1);
+  const s7 = mk(); for (let i = 0; i < P.HARD_MAX_CREDIT_IDS; i++) s7.credits.set((0x1000000000000000n + BigInt(i) * 7919n).toString(16), 20);
+  assert.ok(s7.creditsBlob().length < 2 * 1024 * 1024, "a full table fits one DO row");
   // security review fix 3: at most 2 refunds per id per day, whatever the client reports
   const s4 = mk(), heavy = { kind: "anon", id: "192.0.2.50" };
   for (let i = 0; i < 4; i++) { const gi = await s4.acquire({ check: check({ credit: heavy }) }); s4.report({ refund: true, check: gi.grant.check }); }

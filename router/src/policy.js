@@ -43,6 +43,8 @@ export const EWMA_ALPHA = 0.25, SLOW_MS = 2700, MIN_SUCCESS = 0.7, PROBE_AFTER_M
 export const MIN_RUN_MS = 1500, MAX_WAIT_MS = 2000, MAX_ATTEMPTS = 3;
 export const PACER_BURST = 0.10;
 export const CREDITS_ANON = 5, CREDITS_SIGNED_IN = 20, MAX_CREDIT_IDS = 50000, EVICT_SHARE = 0.10, MAX_REFUNDS = 2;
+// RS96: hard limit on the id table (about 21 bytes an id keeps the credits row under the DO's 2 MB row limit)
+export const HARD_MAX_CREDIT_IDS = 75000;
 // RS96: the credit id for an IP. IPv4 stays the full address; IPv6 is reduced to its /64 prefix (one household or phone
 // holds a whole /64, so per-address credits would be unlimited); an IPv4-mapped IPv6 address counts as the IPv4 one.
 export function normIp(ip) {
