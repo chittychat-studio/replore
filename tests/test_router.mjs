@@ -251,9 +251,25 @@ console.log("wait-if-it-fits ok");
   // credits are counted only when an AI check runs: a denied check costs nothing
   const s2 = mk(); s2.cfg.providers.forEach(p => { s2.prov.get(p.id).coolUntil = T + 1e9; s2.prov.get(p.id).coolDaily = true; });
   g = await s2.acquire({ check: check({ credit: anon }) }); assert.strictEqual(g.deny, "daily"); assert.deepStrictEqual(g.credits, { left: 5, cap: 5 });
-  // the id table is bounded: past it a new id gets keyword results (fail closed on spend)
-  const s3 = mk(); for (let i = 0; i < P.MAX_CREDIT_IDS; i++) s3.credits.set("x" + i, 1);
-  assert.strictEqual((await s3.acquire({ check: check({ credit: anon }) })).deny, "credits_full"); }
+  // security review fix 2: a full id table never locks new visitors out; it evicts 10%, one-credit ids first
+  const s3 = mk(); for (let i = 0; i < P.MAX_CREDIT_IDS; i++) s3.credits.set("x" + i, i % 2 ? 1 : 3);
+  g = await s3.acquire({ check: check({ credit: anon }) });
+  assert.ok(g.grant, "a new visitor is served"); assert.deepStrictEqual(g.credits, { left: 4, cap: 5 });
+  assert.strictEqual(s3.credits.size, P.MAX_CREDIT_IDS - P.MAX_CREDIT_IDS * P.EVICT_SHARE + 1);
+  assert.ok(s3.credits.has("x0") && !s3.credits.has("x1"), "ids that used one credit go first");
+  assert.strictEqual(s3.status().fallbacks.credits, 0);
+  // security review fix 3: at most 2 refunds per id per day, whatever the client reports
+  const s4 = mk(), heavy = { kind: "anon", id: "192.0.2.50" };
+  for (let i = 0; i < 4; i++) { const gi = await s4.acquire({ check: check({ credit: heavy }) }); s4.report({ refund: true, check: gi.grant.check }); }
+  assert.strictEqual([...s4.credits.values()][0], 2, "4 checks, only 2 handed back"); }
+// security review fix 2: IPv6 is counted per /64, IPv4 per address
+assert.strictEqual(P.normIp("203.0.113.7"), "203.0.113.7");
+assert.strictEqual(P.normIp("2001:db8:1:2:3:4:5:6"), "2001:db8:1:2::/64");
+assert.strictEqual(P.normIp("2001:DB8:1:2::9"), "2001:db8:1:2::/64");
+assert.strictEqual(P.normIp("2001:db8::1"), "2001:db8:0:0::/64");
+assert.strictEqual(P.normIp("2001:0db8:0001:0002:ffff::"), "2001:db8:1:2::/64");
+assert.strictEqual(P.normIp("::ffff:198.51.100.4"), "198.51.100.4");
+assert.notStrictEqual(P.normIp("2001:db8:1:3::1"), P.normIp("2001:db8:1:2::1"));
 console.log("credits ok");
 
 // ---- owner status: counts and states, never a key, key tag, salt or hash ----

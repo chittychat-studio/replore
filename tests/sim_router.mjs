@@ -67,7 +67,7 @@ async function simulate({ budget, proBudget, label }) {
     const iso = isolates[k % isolates.length], u = rnd();
     const tier = u < 0.01 ? "pro" : "free";
     const credit = tier === "pro" || u > 0.9 ? { kind: "none" } : { kind: "anon", id: "ip" + Math.floor(VISITORS * rnd() ** 2) };   // heavy head
-    let reports = iso.pending; iso.pending = []; let parent = null, left = 4500, exclude = [], done = false;
+    let reports = iso.pending; iso.pending = []; let parent = null, left = 4500, exclude = [], done = false, ranWork = false;
     stats.checks++;
     for (let a = 0; a < P.MAX_ATTEMPTS && left >= 1000; a++) {
       const res = await svc.acquire({ cfg, reports, check: { tier, credit: parent ? null : credit, parent, exclude, estIn: P.estTokens(1900 * 3.6), leftMs: left } });
@@ -79,7 +79,7 @@ async function simulate({ budget, proBudget, label }) {
         if (!freeIds.every(id => blocked.has(id))) stats.paidWhileFreeOpen++;
       }
       const t = T + (g.waitMs || 0); left -= g.waitMs || 0;
-      const out = callProvider(g.id, t); left -= out.ms;
+      const out = callProvider(g.id, t); left -= out.ms; if (out.usage || !/rate_limited|capacity/.test(out.code || "")) ranWork = true;
       const rep = { ticket: g.ticket, id: g.id, check: parent, ok: out.ok, code: out.code, status: out.status, ms: out.ms, usage: out.usage, groq: out.groq };
       if (out.ok) {
         stats.served[p.pool] = (stats.served[p.pool] || 0) + 1;
@@ -89,7 +89,7 @@ async function simulate({ budget, proBudget, label }) {
       }
       exclude.push(g.id); reports = [rep];
     }
-    if (!done && parent) { reports.push({ refund: true, check: parent }); }
+    if (!done && parent && !ranWork) { reports.push({ refund: true, check: parent }); }
     if (!done && reports.length) await svc.report(reports);
     if (!done) stats.denied.keyword = (stats.denied.keyword || 0) + 1;
   }
@@ -114,8 +114,8 @@ async function simulate({ budget, proBudget, label }) {
     if (L.rpm) assert.ok(r.peakRpm <= L.rpm, p.id + " rpm"); if (L.tpm) assert.ok(r.peakTpm <= L.tpm, p.id + " tpm");
     if (L.neurons) assert.ok(r.neu <= L.neurons, p.id + " neurons");
   }
-  assert.ok(out.paidUsd <= budget + 1e-9, "paid spend never above the cap"); assert.ok(out.proUsd <= proBudget + 1e-9, "Pro spend never above its cap");
-  assert.ok(out.ledgerPaid + 1e-9 >= out.paidUsd, "the ledger never under-counts what was billed");
+  assert.ok(billed(paidId) <= budget + 1e-9, "paid spend never above the cap"); assert.ok(billed(proId) <= proBudget + 1e-9, "Pro spend never above its cap");
+  assert.ok(svc.sched.spend.paid.spent + 1e-9 >= billed(paidId), "the ledger never under-counts what was billed");   // unrounded
   assert.strictEqual(stats.paidWhileFreeOpen, 0, "paid used only when every free provider was blocked");
   if (!(budget > 0)) assert.ok(!stats.served.paid, "budget 0: paid overflow off");
   assert.ok(out.doRequests < 100000, "DO requests under the free plan: " + out.doRequests);

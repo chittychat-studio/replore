@@ -42,7 +42,19 @@ export const BREAKER_CONSEC = 3, BREAKER_WINDOW = 20, BREAKER_IN_WINDOW = 5, BRE
 export const EWMA_ALPHA = 0.25, SLOW_MS = 2700, MIN_SUCCESS = 0.7, PROBE_AFTER_MS = 60000;
 export const MIN_RUN_MS = 1500, MAX_WAIT_MS = 2000, MAX_ATTEMPTS = 3;
 export const PACER_BURST = 0.10;
-export const CREDITS_ANON = 5, CREDITS_SIGNED_IN = 20, MAX_CREDIT_IDS = 50000;
+export const CREDITS_ANON = 5, CREDITS_SIGNED_IN = 20, MAX_CREDIT_IDS = 50000, EVICT_SHARE = 0.10, MAX_REFUNDS = 2;
+// RS96: the credit id for an IP. IPv4 stays the full address; IPv6 is reduced to its /64 prefix (one household or phone
+// holds a whole /64, so per-address credits would be unlimited); an IPv4-mapped IPv6 address counts as the IPv4 one.
+export function normIp(ip) {
+  const s = String(ip || "").trim().toLowerCase();
+  if (!s.includes(":")) return s;
+  const mapped = s.match(/^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/); if (mapped) return mapped[1];
+  const parts = s.split("::");
+  if (parts.length > 2) return s;   // not an address: hashed as it is
+  const head = parts[0] ? parts[0].split(":") : [], tail = parts.length === 2 && parts[1] ? parts[1].split(":") : [];
+  const groups = parts.length === 2 ? head.concat(Array(Math.max(0, 8 - head.length - tail.length)).fill("0"), tail) : head;
+  return groups.slice(0, 4).map(g => (parseInt(g, 16) || 0).toString(16)).join(":") + "::/64";
+}
 
 // freellmapi scoring.ts headroomRamp: 1 while >= 20% is left, then linear down to 0.1 at 0%.
 export function headroomRamp(frac) {

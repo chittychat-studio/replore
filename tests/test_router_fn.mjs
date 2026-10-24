@@ -67,9 +67,17 @@ console.log("no binding = today's chain ok");
   assert.strictEqual(AIok.calls, 5, "no AI call once credits are used up"); assert.strictEqual(f.calls.length, 0);
   // another visitor still has their own 5
   assert.deepStrictEqual((await (await post(env, f, { ip: "198.51.100.11" })).json()).credits, { left: 4, cap: 5 });
-  // built-in example searches and EVAL_KEY callers spend no credit
-  const ex = await (await post(env, f, { ip: "198.51.100.10", query: fn.EXAMPLE_QUERIES[0] })).json();
-  assert.strictEqual(ex.drop.length, 1); assert.ok(!("credits" in ex));
+  // security review fix 1: an example TEXT with any repo list is a live call and spends a credit (only a cache hit is free)
+  const exr = await post(env, f, { ip: "198.51.100.10", query: fn.EXAMPLE_QUERIES[0] });
+  assert.strictEqual(exr.status, 429, "the example text does not lift a used-up cap");
+  const ex = await (await post(env, f, { ip: "198.51.100.12", query: fn.EXAMPLE_QUERIES[0] })).json();
+  assert.deepStrictEqual(ex.credits, { left: 4, cap: 5 }, "an example query spends a credit like any search");
+  for (let i = 0; i < 4; i++) await post(env, f, { ip: "198.51.100.12", query: fn.EXAMPLE_QUERIES[i % 3] });
+  assert.strictEqual((await post(env, f, { ip: "198.51.100.12", query: fn.EXAMPLE_QUERIES[0] })).status, 429, "examples are capped too");
+  // security review fix 2: every address in one IPv6 /64 shares one allowance
+  for (let i = 1; i <= 5; i++) assert.strictEqual((await post(env, f, { ip: "2001:db8:7:7::" + i })).status, 200);
+  assert.strictEqual((await post(env, f, { ip: "2001:db8:7:7:aaaa::99" })).status, 429, "a new address in the same /64 has no fresh credits");
+  assert.strictEqual((await post(env, f, { ip: "2001:db8:7:8::1" })).status, 200, "another /64 is another visitor");
   const ev = await post({ ...env, EVAL_KEY: SECRETS.EVAL_KEY }, f, { ip: "198.51.100.10", headers: { "X-Replore-Eval-Key": SECRETS.EVAL_KEY } });
   assert.strictEqual(ev.status, 200); assert.ok(!("credits" in await ev.json()));
   // the DO stores a hash and a count, never the IP
@@ -92,6 +100,26 @@ console.log("credits via the function ok");
   assert.strictEqual(c.status, 200); assert.ok(!c.cacheable); assert.strictEqual(store.size, 1); }
 console.log("cache ok");
 
+// ---- security review fix 3: a credit comes back only when no provider did any work ----
+{ const once = async (AI, f, ip) => { reset(); const R = await router();
+    const env = { ROUTER: R.ROUTER, AI, LLM_API_KEY: SECRETS.LLM_API_KEY, GROQ_FREE_MODELS: "openai/gpt-oss-20b" };
+    const r = await post(env, f, { ip }); const j = await r.json();
+    await new Promise(res => setTimeout(res, 20));   // the background report lands
+    return { r, j, used: [...R.svc.sched.credits.values()][0] || 0 }; };
+  const AIjunk = { run: async () => ({ response: "I think repo 1 is off-topic", usage: { prompt_tokens: 900, completion_tokens: 30 } }) };
+  const groqJunk = provider(() => ({}));
+  groqJunk.calls = []; const junkFetch = async (u, i) => { await groqJunk(u, i); return new Response(JSON.stringify({ choices: [{ message: { content: "no json here" } }], usage: { prompt_tokens: 700, completion_tokens: 50 } }), { status: 200 }); };
+  let o = await once(AIjunk, junkFetch, "192.0.2.10");
+  assert.notStrictEqual(o.r.status, 200); assert.strictEqual(o.used, 1, "unparseable replies with usage: no refund");
+  const AIslow = { run: () => new Promise(() => {}) };   // Workers AI times out after the request was sent
+  const slow = async (u, init) => new Promise((_, rej) => init.signal.addEventListener("abort", () => rej(Object.assign(new Error("t"), { name: "AbortError" }))));
+  o = await once(AIslow, slow, "192.0.2.11");
+  assert.strictEqual(o.used, 1, "timeouts after sending: no refund");
+  const down = async () => { throw new TypeError("connect failed"); };   // nothing reached a provider
+  o = await once(AIdown, down, "192.0.2.12");
+  assert.strictEqual(o.used, 0, "unreachable providers and limit replies: the credit is handed back"); }
+console.log("refund rules ok");
+
 // ---- paid overflow: off by default; with a budget, used only after the free pool, with the paid key ----
 { reset(); const R = await router();
   const groq429 = provider((key) => (key === SECRETS.LLM_API_KEY ? { status: 429, text: "Rate limit reached: tokens per day (TPD): Limit 200000", headers: { "retry-after": "7200" } } : { status: 200 }));
@@ -102,7 +130,9 @@ console.log("cache ok");
   reset(); const R2 = await router(), g2 = provider((key) => (key === SECRETS.LLM_API_KEY ? { status: 429, text: "tokens per day (TPD): Limit 200000" } : {}));
   r = await post({ ...env, ROUTER: R2.ROUTER, ROUTER_DAILY_BUDGET_USD: "4" }, g2, { headers: { "X-Replore-Diag": "1" } }); j = await r.json();
   assert.strictEqual(r.status, 503, "3 attempts, all spent on the free pool (which is now cooling)"); assert.strictEqual(j.diag.length, 3);
-  assert.deepStrictEqual(j.credits, { left: 5, cap: 5 }, "nothing ran: the credit is handed back");
+  assert.deepStrictEqual(j.credits, { left: 4, cap: 5 }, "the reply never overstates what is left");
+  await new Promise(res => setTimeout(res, 20));
+  assert.strictEqual([...R2.svc.sched.credits.values()][0], 0, "only limit replies, no work done: the DO hands the credit back");
   r = await post({ ...env, ROUTER: R2.ROUTER, ROUTER_DAILY_BUDGET_USD: "4" }, g2, { headers: { "X-Replore-Diag": "1" } }); j = await r.json();
   assert.strictEqual(r.status, 200, JSON.stringify(j));
   const keys = g2.calls.map(c => c.key); assert.strictEqual(keys[keys.length - 1], SECRETS.PAID_LLM_API_KEY);

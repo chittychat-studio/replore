@@ -22,7 +22,7 @@ export class Scheduler {
   constructor({ now = Date.now, random = Math.random, digest = sha256hex, salt = randomHex, onLedger = null } = {}) {
     this.now = now; this.random = random; this.digest = digest; this.makeSalt = salt; this.onLedger = onLedger;
     this.cfg = { providers: [], budgets: { paid: 0, pro: 0 }, credits: { anon: P.CREDITS_ANON, user: P.CREDITS_SIGNED_IN } };
-    this.prov = new Map(); this.inflight = new Map(); this.checks = new Map(); this.credits = new Map();
+    this.prov = new Map(); this.inflight = new Map(); this.checks = new Map(); this.credits = new Map(); this.refunds = new Map();
     this.day = null; this.salt = null; this.spend = newSpend(); this.counters = newCounters(); this.errLog = [];
     this.usage = { requests: 0, rows: 0 }; this.seq = 0;
     this.dirty = { state: false, credits: false };
@@ -34,7 +34,7 @@ export class Scheduler {
     const d = P.utcDay(now);
     if (d === this.day) return;
     this.day = d; this.salt = this.makeSalt(16);   // fresh salt: credit hashes can't be linked across days
-    this.credits.clear(); this.spend = newSpend(); this.counters = newCounters(); this.usage = { requests: 0, rows: 0 };
+    this.credits.clear(); this.refunds = new Map(); this.spend = newSpend(); this.counters = newCounters(); this.usage = { requests: 0, rows: 0 };
     for (const st of this.prov.values()) { st.rpd = 0; st.tpd = 0; st.neu = 0; st.calls = 0; st.fails = 0;
       if (st.coolDaily && !st.authoritative) { st.coolUntil = 0; st.coolDaily = false; st.coolWhy = ""; } }
     this.dirty.state = this.dirty.credits = true;
@@ -170,7 +170,7 @@ export class Scheduler {
       const used = this.credits.get(hash) || 0;
       const reset = Math.ceil(P.msToUtcMidnight(now) / 1000);
       if (used >= cap) { this.counters.fallback.credits++; this.dirty.state = true; return { deny: "credits", resetsInSec: reset, credits: { left: 0, cap } }; }
-      if (!this.credits.has(hash) && this.credits.size >= P.MAX_CREDIT_IDS) { this.counters.fallback.credits++; return { deny: "credits_full", resetsInSec: reset, credits: null }; }
+      if (!this.credits.has(hash) && this.credits.size >= P.MAX_CREDIT_IDS) this.evictCredits();   // never lock new visitors out
     }
     const creditsInfo = () => {
       if (hash) return { left: Math.max(0, cap - (this.credits.get(hash) || 0)), cap };
@@ -199,6 +199,13 @@ export class Scheduler {
     return { grant: { id: p.id, ticket, check: checkId, waitMs: pk.waitMs }, credits: creditsInfo(),
       trace: pk.blocked.map(b => ({ id: b.p.id, pool: b.p.pool, why: b.why })) };
   }
+  // RS96: the id table is full: drop 10%, ids that used a single credit first, then the oldest (Map keeps insertion order)
+  evictCredits() {
+    const target = Math.ceil(P.MAX_CREDIT_IDS * P.EVICT_SHARE); let n = 0;
+    for (const [k, v] of this.credits) { if (n >= target) break; if (v <= 1) { this.credits.delete(k); this.refunds.delete(k); n++; } }
+    for (const k of this.credits.keys()) { if (n >= target) break; this.credits.delete(k); this.refunds.delete(k); n++; }
+    this.counters.evicted = (this.counters.evicted || 0) + n; this.dirty.credits = this.dirty.state = true;
+  }
   gc(now) {
     if (this.inflight.size > 2000 || this.seq % 64 === 0) {
       for (const [k, v] of this.inflight) if (now - v.at > 120000) this.inflight.delete(k);
@@ -211,9 +218,10 @@ export class Scheduler {
   report(r) {
     if (!r || typeof r !== "object") return;
     const now = this.now(); this.rollDay(now);
-    if (r.refund && r.check) {   // RS96: every provider failed, so the credit is handed back
-      const c = this.checks.get(r.check);
-      if (c && c.credit && (this.credits.get(c.credit) || 0) > 0) { this.credits.set(c.credit, this.credits.get(c.credit) - 1); this.dirty.credits = true; }
+    if (r.refund && r.check) {   // RS96: no provider call ran, so the credit is handed back (at most MAX_REFUNDS a day per id)
+      const c = this.checks.get(r.check), done = c && c.credit ? this.refunds.get(c.credit) || 0 : 0;
+      if (c && c.credit && (this.credits.get(c.credit) || 0) > 0 && done < P.MAX_REFUNDS) {
+        this.credits.set(c.credit, this.credits.get(c.credit) - 1); this.refunds.set(c.credit, done + 1); this.dirty.credits = true; }
       if (c) c.credit = null;
       this.counters.fallback.failed++; this.dirty.state = true;
     }

@@ -1672,8 +1672,8 @@
       <a href="https://groq.com/privacy-policy/" target="_blank" rel="noopener">Groq</a>). If a check fails we record only the
       error type and time. If the check is unavailable you get the keyword results unchanged.</li>
     <li><b>Daily AI checks:</b> to share the free AI allowance, our server counts how many AI checks you ran today (5 a day;
-      cached answers and our example searches are free). It keeps only that number, under a salted one-way fingerprint of your
-      IP address, never the address itself, and deletes every count at 00:00 UTC.</li>
+      answers served from the cache are free). It keeps only that number, under a salted one-way fingerprint of your
+      IP address (an IPv6 address by its /64 prefix), never the address itself, and deletes every count at 00:00 UTC.</li>
     <li><b>Meaning-based search</b> (only when switched on): the same check asks an AI model what your words mean and looks
       them up in an index of public repo names and descriptions (Cloudflare Vectorize). Every repo found that way is checked
       live on GitHub before you see it.</li>

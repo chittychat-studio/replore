@@ -5,7 +5,7 @@
 // shows its normal keyword results with a note (never a blank page, never invented repos — RS7).
 
 import { looksLikeProKey, proOn, proSigOk, proSubId, proItemOk, GRANTED, STRIPE_API } from "./pro/claim.js";   // RS87/RS90 shared Pro-key helpers
-import { BAD_KEY, MAX_ATTEMPTS, estTokens, outTokens, parseGroqHeaders, parseLimitText, retryAfterSec } from "../../router/src/policy.js";   // RS95
+import { BAD_KEY, MAX_ATTEMPTS, normIp, estTokens, outTokens, parseGroqHeaders, parseLimitText, retryAfterSec } from "../../router/src/policy.js";   // RS95
 import { RouterClient, routerCatalog, reasoningModel } from "../../router/src/client.js";   // RS95: keys stay here; the DO gets none
 const MAX_BODY = 16384, MAX_QUERY = 200, MAX_REPOS = 30, MAX_DESC = 160, TIMEOUT_MS = 4500;   // RS41: verify (≤3 s) + AI stays inside the page's 8 s wait
 // control, zero-width, bidi and line/paragraph-separator characters (built from code points so no invisible char sits in the source)
@@ -235,6 +235,10 @@ export async function signedIn(request, env) {
   catch { return null; }
 }
 const sleep = ms => new Promise(r => setTimeout(r, Math.max(0, ms)));
+// RS96 refunds: a provider did no work only when it was unreachable or refused at once with a rate limit and no usage.
+// Unparseable or soft replies, timeouts after sending, and anything that returned usage all count as work.
+const NO_RUN = new Set(["llm_unreachable", "llm_rate_limited", "llm_daily_limit", "wai_capacity"]);
+export const noProviderRun = (out, sink) => !(sink && sink.usage) && NO_RUN.has(out.code || out.error);
 const label = p => (p.pool === "free" ? p.kind : p.pool === "paid" ? "paid" : "pro");
 async function callProvider(p, k, query, repos, env, fetchImpl, ms, sink) {
   if (p.kind === "workers-ai") {
@@ -250,7 +254,7 @@ export async function routedJudge(query, repos, env, fetchImpl = fetch, budgetMs
   const { cfg, keys } = await routerCatalog(env, waiModels);
   const estIn = estTokens(JSON.stringify(buildMessages(query, repos)).length);
   const later = p => { if (waitUntil) waitUntil(p.catch(() => {})); else p.catch(() => {}); };
-  let reports = client.drain(), doFails = client.takeDoFails(), parent = null, credits = null;
+  let reports = client.drain(), doFails = client.takeDoFails(), parent = null, credits = null, ran = false;   // ran: a provider did work
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     const left = end - Date.now();
     if (left < 1000) break;
@@ -260,7 +264,7 @@ export async function routedJudge(query, repos, env, fetchImpl = fetch, budgetMs
     if (!res) {   // fail-safe: never spend money without the ledger
       client.requeue(reports); client.doFails += doFails;
       diag.push({ p: "router", ms: Date.now() - t0, code: "router_down" });
-      if (parent) client.queue({ refund: true, check: parent });
+      if (parent && !ran) client.queue({ refund: true, check: parent });
       const out = await judgeChain(query, repos, env, fetchImpl, end - Date.now());
       return { ...out, diag: diag.concat(out.diag || []), trail: ["router_down"].concat(out.trail || []) };
     }
@@ -284,6 +288,7 @@ export async function routedJudge(query, repos, env, fetchImpl = fetch, budgetMs
     const sink = {}, t1 = Date.now();
     const out = await callProvider(p, keys.get(g.id), query, repos, env, fetchImpl, Math.max(500, ms), sink);
     const took = Date.now() - t1;
+    if (!noProviderRun(out, sink)) ran = true;
     if (p.kind === "workers-ai" && out.diag) diag.push(...out.diag); else diag.push({ p: label(p), model: p.model, ms: took, code: out.status === 200 ? "ok" : out.error });
     const rep = { ticket: g.ticket, id: g.id, check: parent, ok: out.status === 200, code: out.code, status: sink.upstream || 0, ms: took,
       usage: sink.usage, groq: sink.groq || undefined, learn: sink.learn, retryAfterSec: sink.retryAfterSec || 0, resetsInSec: out.resetsInSec || 0 };
@@ -295,11 +300,8 @@ export async function routedJudge(query, repos, env, fetchImpl = fetch, budgetMs
     }
     fails.push(out); exclude.push(g.id); reports = [rep];
   }
-  // every attempt failed: hand the credit back and report at once (in the background)
-  if (parent) {
-    reports.push({ refund: true, check: parent });
-    if (credits) credits = { left: Math.min(credits.cap, credits.left + 1), cap: credits.cap };
-  }
+  // every attempt failed: report at once (in the background); hand the credit back only if no provider did any work
+  if (parent && !ran) reports.push({ refund: true, check: parent });
   if (reports.length) { const rs = reports; later(client.call(env, "report", rs, 1000).then(r => { if (!r) client.requeue(rs); })); }
   const err = chainError(fails, diag);
   return { ...err, credits };
@@ -537,14 +539,15 @@ async function handlePost(request, env, fetchImpl, waitUntil) {
     : json(out.status, { ...(out.resetsInSec ? { error: out.error, resetsInSec: out.resetsInSec } : { error: out.error }), ...credits, ...diag }, meta);
 }
 const publicCredits = c => (c && Number.isInteger(c.left) && Number.isInteger(c.cap) && c.cap > 0 ? { credits: { left: Math.max(0, c.left), cap: c.cap } } : {});
-// RS95/RS96: who is asking, for the router. EVAL_KEY callers and Pro users have no credit cap; the built-in example
-// searches never spend a credit; a signed-in user (RS94 hook) is keyed by uid, everyone else by IP (hashed in the DO).
+// RS95/RS96: who is asking, for the router. EVAL_KEY callers and Pro users have no credit cap. A signed-in user (RS94
+// hook) is keyed by uid, everyone else by IP (IPv6 by its /64; hashed in the DO). The example texts get no waiver: only a
+// cache hit is free, and a hit never gets this far (security review: the text alone must not lift the cap).
 export async function routerContext(request, env, fetchImpl = fetch, query = "") {
   if (!env.ROUTER || typeof env.ROUTER.idFromName !== "function") return null;
   const owner = evalKeyOk(request, env), user = owner ? null : await signedIn(request, env);
   const pro = !owner && ((user && user.pro) || await proKeyOk(request, env, fetchImpl));
-  const credit = owner || pro || EXAMPLE_SET.has(query) ? { kind: "none" }
-    : user ? { kind: "user", id: user.uid } : { kind: "anon", id: request.headers.get("CF-Connecting-IP") || "no-ip" };
+  const credit = owner || pro ? { kind: "none" }
+    : user ? { kind: "user", id: user.uid } : { kind: "anon", id: normIp(request.headers.get("CF-Connecting-IP")) || "no-ip" };
   return { tier: pro ? "pro" : "free", credit };
 }
 

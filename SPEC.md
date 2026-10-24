@@ -1393,13 +1393,19 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   Status: implemented and unit-tested with fakes; not deployed, not verified live.
 - **RS96** Daily AI search credits (owner decision 2026-10-24: "free limits given as credits for search"; builds on
   RS95, RS34, RS33). The free pool is shared out as daily credits, one credit per AI check that actually runs. An
-  anonymous visitor gets `ROUTER_CREDITS_ANON` (default **5**) per IP address per day; a signed-in user gets
+  anonymous visitor gets `ROUTER_CREDITS_ANON` (default **5**) per IP address per day (an IPv4 address in full, an IPv6
+  address by its /64 prefix, since one household or phone holds a whole /64); a signed-in user gets
   `ROUTER_CREDITS_SIGNED_IN` (default **20**) per account, keyed by the RS94 uid, never the IP; Pro users and callers
   holding `EVAL_KEY` have no credit cap (Pro stays inside the Pro budget). RS94 sign-in is not built on this branch, so
   the signed-in tier is a hook: `relevance.js` calls an injected `signedInUser(request, env)` (RS94's
   `functions/api/auth/session.js`, returning `{uid, pro}` or `null`) only when one has been set with
-  `setSignedInHook`; with none, every caller is anonymous. Free: cached answers (RS43) and the built-in example
-  searches (RS34b), and a check where every provider failed (the credit is handed back). Credits reset at 00:00 UTC.
+  `setSignedInHook`; with none, every caller is anonymous. Free: only a cache hit (RS43), which never reaches the
+  router. The built-in example searches (RS34b) are usually cache hits; an example text sent with any other repo list
+  needs a live call and spends a credit like any search (security review 2026-10-24: the text alone must not waive the
+  cap). **Refunds** (same review): the credit is handed back only when no provider call ran at all, meaning every
+  attempt was a router denial, a cooldown skip, an unreachable provider or a provider's rate-limit reply carrying no
+  usage; never for an unparseable or soft reply, a timeout after the request was sent, or any attempt that returned
+  usage; and at most 2 refunds per id per day (counted in memory only). Credits reset at 00:00 UTC.
   **Why 5 and 20.** With the default budget of 0 the whole site has the free pool only: about 165 Workers AI checks
   (10,000 neurons at about 60 a check) plus about 107 per Groq model (200,000 tokens a day at about 1,860 a check) x 3,
   so about 490 AI checks a day (Mistral not counted, its free limits are unpublished). A visitor runs about 2.5 searches
@@ -1411,8 +1417,9 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   day. All four numbers are environment settings.
   **Storage.** The DO keeps, per day, only a salted one-way hash (SHA-256 of a random salt made fresh each UTC day, the
   kind and the IP or uid, first 16 hex characters) and a count. The IP itself is never written; the salt and the table are
-  replaced at 00:00 UTC, so hashes cannot be linked across days. At most 50,000 ids a day; past that a new id gets
-  keyword results (fail closed on spend). `PRIVACY.md` says so (RS33).
+  replaced at 00:00 UTC, so hashes cannot be linked across days. The table holds at most 50,000 ids; when it is full the
+  router evicts 10% (ids that used one credit first, then the oldest), so a new visitor is never refused for lack of
+  room (an evicted id simply starts again at its full allowance). `PRIVACY.md` says so (RS33).
   **API and page.** The JSON reply carries `credits: {left, cap}` whenever a credit was counted (never anything
   private); an exhausted visitor gets 429 `credits_used_up` with `resetsInSec` and `credits`. The page shows one quiet
   line above the results, "AI ranking: 4 of 5 searches left today", and at 0 "AI ranking is used up for today, resets
