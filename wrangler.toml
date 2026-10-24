@@ -35,3 +35,13 @@ binding = "AI"
 # binding = "REPOS_INDEX"
 # index_name = "replore-repos"
 # Phase 1 needs no binding: set RAG_RERANK=1 (uses the AI binding above).
+
+# RS95/RS96 quota-aware router + daily AI credits: deploy router/ first (cd router && npx wrangler deploy), then uncomment.
+# Without this binding the relevance check runs the RS34a chain unchanged. The router Worker needs no secrets; the keys
+# below stay in this Pages project: MISTRAL_API_KEY (only after switching off training in Mistral's Admin Console),
+# PAID_LLM_API_KEY + ROUTER_DAILY_BUDGET_USD (default 0 = paid overflow off), PRO_LLM_DAILY_BUDGET_USD (default 0 = off),
+# ROUTER_CREDITS_ANON (5), ROUTER_CREDITS_SIGNED_IN (20). Owner status: GET /api/relevance?router=status with EVAL_KEY.
+# [[durable_objects.bindings]]
+# name = "ROUTER"
+# class_name = "RouterDO"
+# script_name = "replore-router"

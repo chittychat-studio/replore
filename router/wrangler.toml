@@ -1,0 +1,15 @@
+# SPEC RS95: the replore-router Worker. It hosts only the RouterDO Durable Object (SQLite-backed, so it runs on the
+# Workers Free plan: 100,000 DO requests and 100,000 rows written per day). Deploy it BEFORE adding the ROUTER binding to
+# the Pages project:  cd router && npx wrangler deploy
+# It needs no secrets: provider keys stay in the Pages project and never reach the Durable Object.
+name = "replore-router"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+[[durable_objects.bindings]]
+name = "ROUTER"
+class_name = "RouterDO"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["RouterDO"]

@@ -6,6 +6,8 @@
 
 import { looksLikeProKey, proOn, proSigOk, proSubId, proItemOk, GRANTED, STRIPE_API } from "./pro/claim.js";   // RS87/RS90 shared Pro-key helpers
 import { signedInUser } from "./auth/session.js";   // RS94: a signed-in Pro user (Firebase ID token) = a granted Pro key on the web
+import { BAD_KEY, MAX_ATTEMPTS, normIp, estTokens, outTokens, parseGroqHeaders, parseLimitText, retryAfterSec } from "../../router/src/policy.js";   // RS95
+import { RouterClient, routerCatalog, reasoningModel } from "../../router/src/client.js";   // RS95: keys stay here; the DO gets none
 const MAX_BODY = 16384, MAX_QUERY = 200, MAX_REPOS = 30, MAX_DESC = 160, TIMEOUT_MS = 4500;   // RS41: verify (≤3 s) + AI stays inside the page's 8 s wait
 // control, zero-width, bidi and line/paragraph-separator characters (built from code points so no invisible char sits in the source)
 const CTRL = new RegExp("[" + [[0x00, 0x1f], [0x7f, 0x9f], [0x200b, 0x200f], [0x2028, 0x2029], [0x202a, 0x202e], [0x2066, 0x2069]]
@@ -93,10 +95,19 @@ export async function limitInfo(res, now = Date.now()) {
   return classifyLimit(res.status, text, Number.isFinite(ra) && ra > 0 ? Math.ceil(ra) : null, now);
 }
 
-export async function judge(query, repos, env, fetchImpl = fetch, ms = TIMEOUT_MS) {
+// RS34e: Groq retired llama-3.1-8b-instant on 2026-08-16; gpt-oss-20b is its named replacement.
+export const GROQ_DEFAULT_MODEL = "openai/gpt-oss-20b";
+// sink (RS95, optional): receives the upstream status, Retry-After, Groq's x-ratelimit-* headers, limits named in an
+// error body and the reply's token usage, so the router can learn from them. Never any text or key.
+export async function judge(query, repos, env, fetchImpl = fetch, ms = TIMEOUT_MS, sink = null) {
   const base = String(env.LLM_BASE_URL || "https://api.groq.com/openai/v1").replace(/\/+$/, "");
-  const model = env.LLM_MODEL || "llama-3.1-8b-instant";
-  const payload = { model, messages: buildMessages(query, repos), temperature: 0, max_tokens: 120 };
+  const model = env.LLM_MODEL || GROQ_DEFAULT_MODEL, onGroq = /^https:\/\/api\.groq\.com\//.test(base);
+  const oss = /(^|\/)gpt-oss/.test(model);   // RS34e: gpt-oss thinks first, and its reasoning shares the completion budget
+  const payload = { model, messages: buildMessages(query, repos), temperature: 0, max_tokens: reasoningModel(model) ? 600 : 120 };
+  if (oss) {
+    payload.reasoning_effort = "low";
+    if (onGroq) payload.include_reasoning = false;   // Groq-only flag: the reply carries the answer only
+  } else if (reasoningModel(model) && onGroq) payload.reasoning_format = "hidden";   // RS95: Qwen3 on Groq, thinking kept out of the reply
   if (env.LLM_JSON_MODE !== "0") payload.response_format = { type: "json_object" };
   const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), ms);
   let res, data;
@@ -110,13 +121,24 @@ export async function judge(query, repos, env, fetchImpl = fetch, ms = TIMEOUT_M
     } catch (e) {
       return e && e.name === "AbortError" ? { status: 504, error: "llm_timeout" } : { status: 502, error: "llm_unreachable" };
     }
+    if (sink) {
+      const get = k => res.headers.get(k);
+      sink.upstream = res.status; sink.groq = onGroq ? parseGroqHeaders(get) : null; sink.retryAfterSec = retryAfterSec(get);
+    }
     if (!res.ok) {
-      const lim = await limitInfo(res);
+      let body = ""; try { body = (await res.text()).slice(0, 2000); } catch {}
+      const ra = Number(res.headers.get("retry-after"));
+      if (sink) sink.learn = parseLimitText(body);   // e.g. "tokens per minute (TPM): Limit 8000" -> a lower limit, never higher
+      const lim = classifyLimit(res.status, body, Number.isFinite(ra) && ra > 0 ? Math.ceil(ra) : null);
       if (lim) return { status: 503, error: lim.error, resetsInSec: lim.resetsInSec };
+      if (res.status === 401 || res.status === 403 || BAD_KEY.test(body)) return { status: 502, error: "llm_auth" };   // RS95 (one-api)
+      if (res.status === 402) return { status: 502, error: "llm_payment" };
+      if (res.status === 404) return { status: 502, error: "llm_model_gone" };
       return { status: 502, error: "llm_error" };
     }
     try { data = await res.json(); } catch { return { status: 502, error: "llm_bad_response" }; }
   } finally { clearTimeout(timer); }
+  if (sink && data && data.usage) sink.usage = { in: Number(data.usage.prompt_tokens) || 0, out: outTokens(data.usage) || 0 };
   const text = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
   const drop = parseDrops(text, repos.length);
   if (!drop) return { status: 502, error: "llm_unparseable" };
@@ -132,7 +154,7 @@ const WAI_CAPACITY = /capacity|too many requests|rate limit/i;
 export const WAI_MODELS = ["@cf/mistralai/mistral-small-3.1-24b-instruct", "@cf/meta/llama-3.3-70b-instruct-fp8-fast"];
 const MODEL_GONE = /^wai_error_(5007|5028)$/;
 const MODEL_BUSY = /^llm_rate_limited$/;   // RS41: a per-minute capacity error tries the next model; a daily one is account-wide
-export async function judgeWorkersAI(query, repos, env, ms = TIMEOUT_MS) {
+export async function judgeWorkersAI(query, repos, env, ms = TIMEOUT_MS, sink = null) {
   const models = env.WORKERS_AI_MODEL ? String(env.WORKERS_AI_MODEL).split(",").map(s => s.trim()).filter(Boolean) : WAI_MODELS;
   const end = Date.now() + ms, diag = [];
   let out;
@@ -140,13 +162,13 @@ export async function judgeWorkersAI(query, repos, env, ms = TIMEOUT_MS) {
     const left = end - Date.now();
     if (left < 500) break;
     const t0 = Date.now();
-    out = await runWorkersAI(model, query, repos, env, left);
+    out = await runWorkersAI(model, query, repos, env, left, sink);
     diag.push({ p: "workers-ai", model, ms: Date.now() - t0, code: out.status === 200 ? "ok" : out.error });   // codes only
     if (!MODEL_GONE.test(out.error || "") && !MODEL_BUSY.test(out.error || "")) return { ...out, diag };
   }
   return out ? { ...out, diag } : { status: 504, error: "wai_timeout", diag };
 }
-async function runWorkersAI(model, query, repos, env, ms) {
+async function runWorkersAI(model, query, repos, env, ms, sink = null) {
   let timer, out;
   try {
     out = await Promise.race([
@@ -161,7 +183,8 @@ async function runWorkersAI(model, query, repos, env, ms) {
     const code = (msg.match(/\b(\d{4})\b/) || [])[1];   // Workers AI numeric error code only — never the message text
     return { status: 502, error: code ? "wai_error_" + code : "wai_error" };
   } finally { clearTimeout(timer); }
-  const r = out && out.response;
+  const r = out && out.response, u = out && out.usage;
+  if (sink && u) sink.usage = { in: Number(u.prompt_tokens) || 0, out: Number(u.completion_tokens) || 0 };   // RS95 neuron tally
   const drop = parseDrops(typeof r === "string" ? r : JSON.stringify(r), repos.length);
   if (!drop) return { status: 502, error: "wai_unparseable" };
   return { status: 200, body: { drop, checked: repos.length } };
@@ -173,6 +196,7 @@ export async function judgeChain(query, repos, env, fetchImpl = fetch, budgetMs 
   const steps = [];
   if (env.AI && typeof env.AI.run === "function") steps.push(ms => judgeWorkersAI(query, repos, env, ms));
   if (env.LLM_API_KEY) steps.push(ms => judge(query, repos, env, fetchImpl, ms));
+  // RS43/RS95: only the primary provider's answer is cacheable here (Workers AI, or the key when there is no binding)
   if (!steps.length) return { status: 503, error: "not_configured" };
   const end = Date.now() + budgetMs, fails = [], diag = [];
   for (let k = 0; k < steps.length; k++) {
@@ -181,9 +205,13 @@ export async function judgeChain(query, repos, env, fetchImpl = fetch, budgetMs 
     const t0 = Date.now();
     const out = await steps[k](k < steps.length - 1 ? Math.min(left, Math.round(budgetMs * 0.6)) : left);  // keep time for the fallback
     diag.push(...(out.diag || [{ p: k === 0 && env.AI ? "workers-ai" : "llm", ms: Date.now() - t0, code: out.status === 200 ? "ok" : out.error }]));
-    if (out.status === 200) return k === 0 ? { ...out, first: true, diag } : { ...out, diag };
+    if (out.status === 200) return k === 0 ? { ...out, cacheable: true, diag } : { ...out, diag };
     fails.push(out);
   }
+  return chainError(fails, diag);
+}
+// RS34a: a limit is reported only when every attempt failed on one: "busy" if any was short, else "used up"
+function chainError(fails, diag) {
   if (!fails.length) return { status: 504, error: "llm_timeout", trail: ["budget"], diag };
   const trail = fails.map(f => f.error);
   const limits = fails.filter(f => f.resetsInSec);
@@ -193,6 +221,92 @@ export async function judgeChain(query, repos, env, fetchImpl = fetch, budgetMs 
     return { status: 503, error: pick[0].error, resetsInSec: Math.min(...pick.map(f => f.resetsInSec)), trail, diag };
   }
   return { ...fails.find(f => !f.resetsInSec), trail, diag };
+}
+
+// ---- RS95 quota-aware router (only when the ROUTER Durable Object binding exists) ----
+// The DO picks the provider (fixed tier order, headroom + health inside a tier, budgets, credits); this function makes
+// the call with its own keys and reports the outcome back on the next DO call. DO unreachable -> no paid call: the RS34a
+// free chain runs here and credits are not enforced (the RS34g per-IP limit still applies).
+export const ROUTER_CLIENT = new RouterClient();
+let signedInHook = signedInUser;   // RS96: RS94's signedInUser(request, env) -> {uid, pro} | null; tests may replace it
+export function setSignedInHook(fn) { signedInHook = typeof fn === "function" ? fn : null; }
+export const signedInHookNow = () => signedInHook;   // tests: the hook in force
+export async function signedIn(request, env) {
+  if (!signedInHook) return null;   // hook cleared (tests): every caller is anonymous
+  try { const u = await signedInHook(request, env); return u && typeof u.uid === "string" && u.uid ? { uid: u.uid, pro: u.pro === true } : null; }
+  catch { return null; }
+}
+const sleep = ms => new Promise(r => setTimeout(r, Math.max(0, ms)));
+// RS96 refunds: a provider did no work only when it was unreachable or refused at once with a rate limit and no usage.
+// Unparseable or soft replies, timeouts after sending, and anything that returned usage all count as work.
+const NO_RUN = new Set(["llm_unreachable", "llm_rate_limited", "llm_daily_limit", "wai_capacity"]);
+export const noProviderRun = (out, sink) => !(sink && sink.usage) && NO_RUN.has(out.code || out.error);
+const label = p => (p.pool === "free" ? p.kind : p.pool === "paid" ? "paid" : "pro");
+async function callProvider(p, k, query, repos, env, fetchImpl, ms, sink) {
+  if (p.kind === "workers-ai") {
+    const out = await judgeWorkersAI(query, repos, env, ms, sink);
+    return out.error === "llm_rate_limited" ? { ...out, code: "wai_capacity" } : { ...out, code: out.error };   // 3040: short cool
+  }
+  const out = await judge(query, repos, { ...env, LLM_API_KEY: k.key, LLM_BASE_URL: k.base, LLM_MODEL: k.model, LLM_JSON_MODE: env.LLM_JSON_MODE }, fetchImpl, ms, sink);
+  return { ...out, code: out.error };
+}
+export async function routedJudge(query, repos, env, fetchImpl = fetch, budgetMs = TIMEOUT_MS, rctx = {}, client = ROUTER_CLIENT, waitUntil) {
+  const end = Date.now() + budgetMs, diag = [], fails = [], exclude = [];
+  const waiModels = env.WORKERS_AI_MODEL ? String(env.WORKERS_AI_MODEL).split(",").map(s => s.trim()).filter(Boolean) : WAI_MODELS;
+  const { cfg, keys } = await routerCatalog(env, waiModels);
+  const estIn = estTokens(JSON.stringify(buildMessages(query, repos)).length);
+  const later = p => { if (waitUntil) waitUntil(p.catch(() => {})); else p.catch(() => {}); };
+  let reports = client.drain(), doFails = client.takeDoFails(), parent = null, credits = null, ran = false;   // ran: a provider did work
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    const left = end - Date.now();
+    if (left < 1000) break;
+    const t0 = Date.now();
+    const res = await client.call(env, "acquire", { cfg, reports, doFails,
+      check: { tier: rctx.tier === "pro" ? "pro" : "free", credit: parent ? null : rctx.credit || null, parent, exclude, estIn, leftMs: left } });
+    if (!res) {   // fail-safe: never spend money without the ledger
+      client.requeue(reports); client.doFails += doFails;
+      diag.push({ p: "router", ms: Date.now() - t0, code: "router_down" });
+      if (parent && !ran) client.queue({ refund: true, check: parent });
+      const out = await judgeChain(query, repos, env, fetchImpl, end - Date.now());
+      return { ...out, diag: diag.concat(out.diag || []), trail: ["router_down"].concat(out.trail || []) };
+    }
+    reports = []; doFails = 0;
+    if (res.credits) credits = res.credits;
+    if (!res.grant) {
+      diag.push({ p: "router", ms: Date.now() - t0, code: res.deny || "none" });
+      if (res.deny === "credits" || res.deny === "credits_full")   // RS96: keyword results, the page says when it resets
+        return { status: 429, error: "credits_used_up", resetsInSec: res.resetsInSec, credits, diag, trail: ["credits"] };
+      if (res.deny === "busy") fails.push({ error: "llm_rate_limited", resetsInSec: res.resetsInSec });
+      else if (res.deny === "daily") fails.push({ error: "llm_daily_limit", resetsInSec: res.resetsInSec });
+      else if (!fails.length) fails.push({ status: 503, error: "not_configured" });
+      break;
+    }
+    const g = res.grant, p = cfg.providers.find(x => x.id === g.id);
+    parent = parent || g.check;
+    if (!p) break;
+    if (g.waitMs > 0) await sleep(Math.min(g.waitMs, end - Date.now() - 1000));   // Portkey: wait only when it fits the budget
+    const room = end - Date.now() - 300;
+    const ms = attempt < MAX_ATTEMPTS - 1 ? Math.min(room, Math.round(budgetMs * 0.6)) : room;
+    const sink = {}, t1 = Date.now();
+    const out = await callProvider(p, keys.get(g.id), query, repos, env, fetchImpl, Math.max(500, ms), sink);
+    const took = Date.now() - t1;
+    if (!noProviderRun(out, sink)) ran = true;
+    if (p.kind === "workers-ai" && out.diag) diag.push(...out.diag); else diag.push({ p: label(p), model: p.model, ms: took, code: out.status === 200 ? "ok" : out.error });
+    const rep = { ticket: g.ticket, id: g.id, check: parent, ok: out.status === 200, code: out.code, status: sink.upstream || 0, ms: took,
+      usage: sink.usage, groq: sink.groq || undefined, learn: sink.learn, retryAfterSec: sink.retryAfterSec || 0, resetsInSec: out.resetsInSec || 0 };
+    if (out.status === 200) {
+      client.queue(rep);   // rides on this isolate's next DO call
+      if (client.stale()) later(client.call(env, "report", client.drain(), 1000));
+      const { diag: _d, code: _c, ...ok } = out;
+      return { ...ok, cacheable: !!p.cacheable, diag, credits };
+    }
+    fails.push(out); exclude.push(g.id); reports = [rep];
+  }
+  // every attempt failed: report at once (in the background); hand the credit back only if no provider did any work
+  if (parent && !ran) reports.push({ refund: true, check: parent });
+  if (reports.length) { const rs = reports; later(client.call(env, "report", rs, 1000).then(r => { if (!r) client.requeue(rs); })); }
+  const err = chainError(fails, diag);
+  return { ...err, credits };
 }
 
 // RS34b: answers for the built-in example searches are cached at Cloudflare's edge for a day, so repeat visitors
@@ -218,7 +332,7 @@ export async function cacheKey(query, repos, origin = "https://replore.pages.dev
   const hex = [...new Uint8Array(await crypto.subtle.digest("SHA-256", data))].map(b => b.toString(16).padStart(2, "0")).join("");
   return new Request(`${origin}/__relevance-cache/v2/${hex}`);   // v2: Mistral + indices-only prompt   // own origin: the Cache API is scoped to the zone
 }
-export async function cachedJudge(query, repos, env, fetchImpl = fetch, cache = globalThis.caches && globalThis.caches.default, origin, waitUntil, budgetMs = TIMEOUT_MS) {
+export async function cachedJudge(query, repos, env, fetchImpl = fetch, cache = globalThis.caches && globalThis.caches.default, origin, waitUntil, budgetMs = TIMEOUT_MS, rctx = null) {
   const usable = !!cache;   // RS43: every search (examples 1 day, everything else 1 hour); stores only which repos to hide
   const ttl = EXAMPLE_SET.has(query) ? CACHE_TTL : RECENT_TTL;
   let key;
@@ -226,8 +340,9 @@ export async function cachedJudge(query, repos, env, fetchImpl = fetch, cache = 
     try { key = await cacheKey(query, repos, origin); const hit = await cache.match(key); if (hit) return { status: 200, body: await hit.json(), cached: true }; }
     catch { key = null; }   // a cache problem never blocks the check
   }
-  const out = await judgeChain(query, repos, env, fetchImpl, budgetMs);
-  if (usable && key && out.status === 200 && out.first) {   // cache only the primary provider's answer
+  const out = rctx && env.ROUTER ? await routedJudge(query, repos, env, fetchImpl, budgetMs, rctx, undefined, waitUntil)
+    : await judgeChain(query, repos, env, fetchImpl, budgetMs);
+  if (usable && key && out.status === 200 && out.cacheable) {   // RS95: a per-provider setting (Workers AI, the Pro model)
     const body = JSON.stringify(out.body);
     const put = Promise.resolve().then(() => cache.put(key, new Response(body, { headers: { "Content-Type": "application/json", "Cache-Control": `max-age=${ttl}` } }))).catch(() => {});
     if (waitUntil) waitUntil(put); else await put;   // RS41: write the cache after the answer is sent
@@ -399,6 +514,7 @@ async function handlePost(request, env, fetchImpl, waitUntil) {
       : json(503, { error: "semantic_unavailable" });
   }
   if (!(await botCheck(request, env, fetchImpl))) return json(403, { error: "bot_check_failed" });
+  const rctx = await routerContext(request, env, fetchImpl, body.query);   // RS95/RS96: null without the ROUTER binding
   const t1 = Date.now(), f = ragFlags(env), origin = new URL(request.url).origin;
   let out, sem = null;
   if (f.index) {   // RS42: indexed repos first (≤ SEM_BUDGET_MS), then ONE AI check over keyword results + indexed repos
@@ -407,9 +523,9 @@ async function handlePost(request, env, fetchImpl, waitUntil) {
   const extra = (sem && sem.neighbors) || [];
   const all = body.repos.concat(extra.map(n => ({ name: n.name, description: n.description, topics: n.topics })));
   if (!all.length) return json(200, { drop: [] });   // nothing to judge (keyword search empty, no indexed repos)
-  if (f.index) out = await cachedJudge(body.query, all, env, fetchImpl, undefined, origin, waitUntil, TIMEOUT_MS - (Date.now() - t1));
+  if (f.index) out = await cachedJudge(body.query, all, env, fetchImpl, undefined, origin, waitUntil, TIMEOUT_MS - (Date.now() - t1), rctx);
   else [out, sem] = await Promise.all([   // rerank only: meaning scores alongside the judge, never longer than it
-    cachedJudge(body.query, all, env, fetchImpl, undefined, origin, waitUntil),
+    cachedJudge(body.query, all, env, fetchImpl, undefined, origin, waitUntil, TIMEOUT_MS, rctx),
     f.rerank ? semanticScores(body.query, body.repos, env).catch(() => null) : null]);
   if (out.status === 200) {
     const n = body.repos.length, gone = new Set();
@@ -421,8 +537,21 @@ async function handlePost(request, env, fetchImpl, waitUntil) {
   }
   const meta = { trail: out.trail, example: EXAMPLE_SET.has(body.query) };
   const diag = request.headers.get("X-Replore-Diag") === "1" && out.diag ? { diag: out.diag } : {};   // codes + timings only
-  return out.status === 200 ? json(200, { ...out.body, ...diag })   // internal flags (first, cached, trail) never leave
-    : json(out.status, { ...(out.resetsInSec ? { error: out.error, resetsInSec: out.resetsInSec } : { error: out.error }), ...diag }, meta);
+  const credits = publicCredits(out.credits);   // RS96: how many AI searches are left today, nothing else
+  return out.status === 200 ? json(200, { ...out.body, ...credits, ...diag })   // internal flags (cacheable, cached, trail) never leave
+    : json(out.status, { ...(out.resetsInSec ? { error: out.error, resetsInSec: out.resetsInSec } : { error: out.error }), ...credits, ...diag }, meta);
+}
+const publicCredits = c => (c && Number.isInteger(c.left) && Number.isInteger(c.cap) && c.cap > 0 ? { credits: { left: Math.max(0, c.left), cap: c.cap } } : {});
+// RS95/RS96: who is asking, for the router. EVAL_KEY callers and Pro users have no credit cap. A signed-in user (RS94
+// hook) is keyed by uid, everyone else by IP (IPv6 by its /64; hashed in the DO). The example texts get no waiver: only a
+// cache hit is free, and a hit never gets this far (security review: the text alone must not lift the cap).
+export async function routerContext(request, env, fetchImpl = fetch, query = "") {
+  if (!env.ROUTER || typeof env.ROUTER.idFromName !== "function") return null;
+  const owner = evalKeyOk(request, env), user = owner ? null : await signedIn(request, env);
+  const pro = !owner && ((user && user.pro) || await proKeyOk(request, env, fetchImpl));
+  const credit = owner || pro ? { kind: "none" }
+    : user ? { kind: "user", id: user.uid } : { kind: "anon", id: normIp(request.headers.get("CF-Connecting-IP")) || "no-ip" };
+  return { tier: pro ? "pro" : "free", credit };
 }
 
 // ---- RS42 semantic half of the hybrid search (dark by default) ----
@@ -494,7 +623,12 @@ export function buildTag() {
   return h.toString(16);
 }
 // RS34c: the page asks which bot check to load (the site key is public by design; the secret never leaves here)
-export async function onRequestGet({ env }) {
+export async function onRequestGet({ request, env }) {
+  if (request && new URL(request.url).searchParams.get("router") === "status" && evalKeyOk(request, env)) {   // RS95: owner only
+    if (!env.ROUTER || typeof env.ROUTER.idFromName !== "function") return json(404, { error: "router_off" });
+    const s = await ROUTER_CLIENT.call(env, "status", undefined, 2000);
+    return s && s.status ? json(200, { status: s.status, text: String(s.text || "") }) : json(503, { error: "router_unreachable" });
+  }
   const f = ragFlags(env);   // RS42: the page shows its RAG wording only when this says a part is on
   return new Response(JSON.stringify({ turnstile: env.TURNSTILE_SITE_KEY || null, v: 2, tag: buildTag(), rag: { rerank: f.rerank, index: f.index } }), {
     headers: { "Content-Type": "application/json", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" },
