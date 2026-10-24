@@ -1758,7 +1758,7 @@ var LIVE_DEMO=[   // RS67: the example searches Leo types into the search bar (n
 // search. With these empty (Safari), the <video data-leo-intro data-leo-idle> slot stays hidden and Leo is the
 // leo-hero.webp still with the Web Animations fly-in and the CSS float. The old Leo art (sprites, peek clip) is retired.
 // Owner picked the Flow (Veo) clips 2026-10-24. Safari cannot play VP9 with alpha, so it keeps the CSS fly-in and the still.
-var LEO_VIDEO=/^((?!chrome|chromium|android|crios|fxios|edg).)*safari/i.test(navigator.userAgent||"")?{intro:"", idle:""}:{intro:"leo-intro.webm?v=44d91c2d51", idle:"leo-idle.webm?v=048dbb648a"};
+var LEO_VIDEO=/^((?!chrome|chromium|android|crios|fxios|edg).)*safari/i.test(navigator.userAgent||"")?{intro:"", idle:""}:{intro:"leo-intro.webm?v=4ab4a8c5e5", idle:"leo-idle.webm?v=1ca511a5c6"};
 function buildLiveDemo(host){
   if(!host || host.dataset.built) return; host.dataset.built="1";
   var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches;
@@ -1771,8 +1771,8 @@ function buildLiveDemo(host){
   host.innerHTML='<div class="ld st">'+
     '<div class="st-stage">'+
       '<div class="st-pair" aria-hidden="true">'+
-        '<div class="st-fly"><div class="st-b"><img class="st-bot" src="leo-hero.webp?v=0df90e4a80" alt="" width="560" height="530" decoding="async">'+   // RS92: .st-fly carries the fly-in, .st-b the idle float
-        '<video class="st-herovid" data-leo-intro="" data-leo-idle="" muted playsinline autoplay preload="none" poster="leo-hero.webp?v=0df90e4a80" aria-hidden="true" hidden></video>'+   // RS92 hook, see LEO_VIDEO
+        '<div class="st-fly"><div class="st-b"><img class="st-bot" src="leo-hero.webp?v=1ca927d5e6" alt="" width="560" height="530" decoding="async">'+   // RS92: .st-fly carries the fly-in, .st-b the idle float
+        '<video class="st-herovid" data-leo-intro="" data-leo-idle="" muted playsinline autoplay preload="none" poster="leo-hero.webp?v=1ca927d5e6" aria-hidden="true" hidden></video>'+   // RS92 hook, see LEO_VIDEO
         '</div></div></div>'+
       '<span class="leo-pill" aria-hidden="true"><i></i>Leo · <span data-hstat>Ready</span></span>'+   // RS92: the real stage (heroStage)
     '</div>'+

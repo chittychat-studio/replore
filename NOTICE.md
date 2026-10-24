@@ -7,7 +7,7 @@
 
 ## AI-generated media
 - web/leo-intro.webm, web/leo-idle.webm, web/leo-hero.webp: Leo, generated 2026-10-24 in Google Flow by the owner's
-  account. Character sheet and frames made with Nano Banana 2.1; the clips made with Veo 3.1 Lite (720p, 8 s); keyed
+  account. Character sheet and frames made with Nano Banana 2.1; the clips (dark-visor version, owner pick) made with Veo 3.1 Lite (720p, 8 s); keyed
   from green and cropped for the web. The sources are in video/explainer/assets/leo/src/. The prompts are in
   video/explainer/LEO_FLOW_STITCH.md. Google's SynthID watermark is embedded; the footer credits Google Veo.
 - video/explainer/assets/audio/vo*.mp3: tour voiceover, ElevenLabs (eleven_multilingual_v2, speed 0.9), generated
