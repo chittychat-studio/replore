@@ -1340,7 +1340,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   `rel="noopener noreferrer"`. Google's JavaScript button (`news.google.com/swg/js/v1/publisher.js`) is not used: it
   would load a third-party script on every visit and widen the CSP (RS49), so nothing is sent to Google until a reader
   clicks. It only helps readers who pick Replore, mainly in Top Stories; it is not a ranking fix.
-- **RS94** Optional Google sign-in with Firebase Authentication (owner 2026-10-24; status: specified, not built).
+- **RS94** Optional Google sign-in with Firebase Authentication (owner 2026-10-24; status: implemented, see Build below).
   **Scope.** One sign-in method: Google, through Firebase Authentication (modular web SDK, vendored on the site at a
   pinned version with its licence, no CDN). Sign-in is optional: search, results, Details, plans, the plugin and the
   MCP server work signed out exactly as before, and nothing free is ever moved behind sign-in. Login is for Pro users
@@ -1385,6 +1385,46 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   **Owner steps:** create the Firebase project, enable the Google provider, set the authorized domains and the
   referrer restriction, and add the service-account secret in Cloudflare. Until those are done the sign-in button does
   not render.
+  **Build (amended 2026-10-24, status: implemented and unit-tested, not verified live).** *SDK:* Firebase JS SDK
+  12.19.0, only its `firebase-app.js` and `firebase-auth.js` browser builds, vendored at
+  `web/vendor/firebase-12.19.0/` with its licence (the build's one CDN import rewritten to `./firebase-app.js`); no
+  other Firebase module is shipped or imported. *Dormant switch:* `GET /api/auth/config` (`functions/api/auth/config.js`,
+  the same pattern as the Turnstile site key in RS34c) answers `{"on": true, apiKey, authDomain, projectId}` only when
+  the plain variables `FIREBASE_API_KEY`, `FIREBASE_AUTH_DOMAIN` (must be `<id>.firebaseapp.com`) and
+  `FIREBASE_PROJECT_ID`, the secret `FIREBASE_SERVICE_ACCOUNT` (the service-account JSON) and the RS87 Pro switches are
+  all set; otherwise `{"on": false}`, and the page renders no sign-in UI and loads no Firebase file. *Page:*
+  `web/auth.js` (a classic script on `/` and `/pro`, no inline code) asks for the config only on `/pro`, when the Pro
+  window opens, or when this browser signed in before; it then loads the vendored SDK, signs in with a Google popup
+  (redirect when the popup is blocked or unsupported) and keeps the session in IndexedDB (browserLocalPersistence).
+  It also keeps one hint in localStorage, `replore.auth` = `1`, set on sign-in and removed on sign-out or delete, so
+  later visits know to load the SDK (item 3 above; it holds nothing about the user). On the web a signed-in Pro user's
+  relevance checks carry `Authorization: Bearer <Firebase ID token>`, which `/api/relevance` treats like a granted Pro
+  key for skipping the per-IP limit (RS87), nothing more. *Server* (Pages Functions, WebCrypto only, no firebase-admin):
+  `functions/api/auth/session.js` verifies ID tokens: RS256 only, signature against Google's securetoken public keys
+  (`https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com`, cached for the reply's
+  `Cache-Control` max-age, 60 s to 24 h, refetched at most once a minute for an unknown key id), `iss` =
+  `https://securetoken.google.com/<project>`, `aud` = the project, `exp` in the future, `iat` and `auth_time` not in
+  the future (60 s skew), `sub` 1 to 128 characters, provider `google.com`. Its `signedInUser(request, env)` returns
+  `{uid, pro}` or `null` and never throws; `pro` is true only when the token's claims say `pro: true` with a
+  `sub_id` and a `checked_at` under 26 hours old. Claims are written only through the Identity Toolkit REST API
+  (`identitytoolkit.googleapis.com`, `accounts:update`), with an OAuth access token from a service-account JWT
+  (RS256, scope `identitytoolkit`) exchanged at `oauth2.googleapis.com`, cached in memory until shortly before it
+  expires; the service-account JSON and the access token are never logged or returned. `POST /api/auth/link` (body
+  `{"key": "rp...."}`, the RS90 key): the key's signature first (no Stripe call when it is wrong), then the RS87
+  subscription check (`validateProKey`); only on "granted" does it scan the project's users (`accounts:batchGet`,
+  fail closed above 50 pages) and refuse with 409 `already_linked` when another account holds the same `sub_id`, then
+  set `{pro: true, sub_id, checked_at}` (seconds). `POST /api/auth/refresh` rechecks with Stripe only when
+  `checked_at` is over 24 hours old or the token's `auth_time` is newer (a new sign-in); granted keeps Pro, denied sets
+  `pro: false` and keeps the link; a Stripe error changes nothing and answers 503 (fail closed). `POST /api/auth/delete`
+  needs a sign-in in the last 5 minutes (else 401 `reauth`, and the page asks Google again), then `accounts:delete`.
+  All four routes: same-origin only, JSON only, at most 1 KB, a best-effort per-IP limit in memory, `Cache-Control:
+  no-store`, codes only in replies and logs (never the token, uid, email, key or a secret). *CSP:* `script-src` adds
+  `https://apis.google.com` (the SDK's popup helper), `connect-src` adds `https://identitytoolkit.googleapis.com` and
+  `https://securetoken.googleapis.com`, `frame-src` adds `https://*.firebaseapp.com` (the project id is the owner's
+  choice, so the auth domain is not known when `_headers` is written; the config route accepts only a firebaseapp.com
+  auth domain). `accounts.google.com` opens only inside the popup or redirect, a navigation the CSP does not govern,
+  so it is not added. *Delete* links Stripe's customer portal through `PRO_PORTAL_URL` in `web/pro-core.js` (a
+  `https://billing.stripe.com/p/login/...` link, owner-set; while empty the page says to write to hello@cardzo.co.in).
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
 - **RX3** Ranking by forks, trending or download counts. (Relevance, stars and license-freedom are the only
