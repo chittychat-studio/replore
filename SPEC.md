@@ -419,7 +419,8 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   locally and only short feature phrases are sent to GitHub; "Open in Claude" sends the prompt to the user's own
   claude.ai account; the plugin's RS25 hook is off by default and, only if the user turns it on, writes a flagged
   prompt's first 200 characters to a log on their own machine and never transmits it; the user's AI agent provider handles
-  their conversation under its own terms. The notice says it is not legal advice and gives a dated version. Any change
+  their conversation under its own terms. When RS94 (optional Google sign-in for Pro) ships, its stored-data list
+  replaces the "no account" fact here. The notice says it is not legal advice and gives a dated version. Any change
   that adds a data flow must update the notice in the same commit.
 
 - **RS34** Web relevance gate (LLM, server-side). After the fit ranking (RS5), the web page sends the user's
@@ -1339,6 +1340,51 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   `rel="noopener noreferrer"`. Google's JavaScript button (`news.google.com/swg/js/v1/publisher.js`) is not used: it
   would load a third-party script on every visit and widen the CSP (RS49), so nothing is sent to Google until a reader
   clicks. It only helps readers who pick Replore, mainly in Top Stories; it is not a ranking fix.
+- **RS94** Optional Google sign-in with Firebase Authentication (owner 2026-10-24; status: specified, not built).
+  **Scope.** One sign-in method: Google, through Firebase Authentication (modular web SDK, vendored on the site at a
+  pinned version with its licence, no CDN). Sign-in is optional: search, results, Details, plans, the plugin and the
+  MCP server work signed out exactly as before, and nothing free is ever moved behind sign-in. Login is for Pro users
+  (owner 2026-10-24: "login is for pro users for easy access to pro features"): a Pro subscriber signs in with Google
+  on any device and gets their Pro features on the web at once (RS87, RS90), without finding, pasting or storing a
+  key. The sign-in button sits on /pro and next to the Pro features, not as a site-wide account wall. Signing in
+  without Pro shows the /pro offer and stores only the login identity below. The plugin and MCP server keep using the
+  Pro key; they never sign in.
+  **What we store about a user, the complete list** (anything not on this list must not be stored; adding a field
+  needs this rule amended first):
+  1. *Login identity*, held by Firebase Authentication in the owner's Firebase project (Google's servers, under
+     Google's terms): the Firebase user id, the Google account's email address, display name and profile photo URL,
+     the sign-in provider (google.com), and the account's created and last-sign-in times. Kept until the user deletes
+     their account (below).
+  2. *Pro link*, stored as Firebase custom claims on that same user, set only by our server function: whether Pro is
+     active, the Stripe subscription id, and when the status was last checked. Nothing else about the payment.
+  3. *Session*, in the user's own browser: the Firebase SDK keeps the sign-in token in IndexedDB until sign-out.
+  **Payment information is never stored by Replore.** Card number, expiry, CVC, billing name and address, bank and
+  UPI details stay with Stripe (the seller-of-record flow in RS87); Replore's code never receives them, never logs
+  them and never asks Stripe for them. The Pro link above is the only payment-related data, and it exists only so a
+  signed-in user's Pro status follows their login.
+  **Never stored**, signed in or not: searches, results, uploaded plans, feedback text, trust checks, or any browsing
+  inside Replore. There is still no database: no Firestore, Realtime Database or Cloud Storage; adding one needs a new
+  rule. Firebase Analytics, Performance Monitoring and Remote Config are not loaded.
+  **Linking Pro.** After a paid checkout (RS90), a signed-in user can link the subscription; the server checks it with
+  Stripe exactly as RS87 does (Pro price or product match) and only then sets the claims. The claims are rechecked
+  against Stripe at most once a day per user and on each new sign-in, so a cancelled subscription stops showing Pro.
+  One subscription links to one account.
+  **Delete.** The account menu has "Delete my account": it deletes the Firebase user and its claims at once and signs
+  out. It does not cancel a Stripe subscription; the page says so and links Stripe's customer portal.
+  **Secrets.** The Firebase web config (apiKey, authDomain, projectId) is a public identifier, not a secret; its API
+  key is restricted by HTTP referrer to replore.cardzo.co.in and replore.pages.dev. The service-account credential the
+  server needs to set claims is a Cloudflare Pages secret, never committed, printed or logged (as RS8). Authorized
+  domains in Firebase: only those two hosts.
+  **CSP and privacy (RS33, RS49).** The Google sign-in hosts (accounts.google.com, apis.google.com, the project's
+  firebaseapp.com auth domain, identitytoolkit.googleapis.com, securetoken.googleapis.com) are added to the CSP only
+  for what sign-in needs. In the same change that ships sign-in, `PRIVACY.md`, the web notice and README replace every
+  "no account" claim with "optional Google sign-in", and `PRIVACY.md` gains a "What we store about you" table listing
+  each item above with where it lives, why, how long, and how to delete it, plus the sentence that payment details
+  are held only by Stripe. Tests check that every stored field the code sets is named in that table, that no "no
+  account" claim survives, and that no Firestore, Storage or Analytics module is imported.
+  **Owner steps:** create the Firebase project, enable the Google provider, set the authorized domains and the
+  referrer restriction, and add the service-account secret in Cloudflare. Until those are done the sign-in button does
+  not render.
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
 - **RX3** Ranking by forks, trending or download counts. (Relevance, stars and license-freedom are the only
