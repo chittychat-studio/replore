@@ -1352,7 +1352,9 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   (`background-size: cover`, focus left of centre so the HUD sits behind Leo), drifts slowly like a camera move (scale
   1 to 1.07 over 38 s, alternating; transform only, none under reduced motion), has a shade behind the text column for
   contrast (a flat 50% shade on screens under 1000 px) and the same bottom fade into the page. The code-drawn particles
-  (`#heroFx`) are off in dark. Light keeps the grid band and particles until a light plate exists; a 4K dark plate and
+  (`#heroFx`) are off. Light theme (owner 2026-10-25: "use the same dark room on the hero for light"): the hero is the
+  same dark stage, taking the dark theme's colours inside the hero only (text, console, buttons, Leo's pale rim), while the
+  header and the rest of the page stay light and the plate fades into the light page; a light render may replace this later; a 4K dark plate and
   a light plate come next from Google Flow or Stitch (`video/explainer/LEO_FLOW_STITCH.md` v3). Provenance in `NOTICE.md`.
   **Leo blending.** Leo stays a chroma-green Flow clip, keyed with spill removal (green capped by red and blue), a
   1 px matte soften and a feather on all four sides (no hard crop line), and graded toward the scene's teal; a soft
