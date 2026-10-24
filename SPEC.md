@@ -1328,7 +1328,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   violet `#8B5CF6`, emerald `#10B981`, amber `#F59E0B` and red `#EF4444`. There is a matching light theme, and the theme
   toggle stays. The type is Plus Jakarta Sans for headings and UI, and JetBrains Mono for labels, chips and numbers, both
   self-hosted (OFL). The parts: a frosted sticky header, a 36 px cyber grid behind the hero, a status bar, Leo beside a
-  framed search console, and Trending as the card shuffle deck (pause, Previous, Next, Shuffle, dots, counter). The owner
+  framed search console, and Trending as the card shuffle deck (pause, Previous, Next, Shuffle, dots, counter; swipe the top card sideways to send it under the deck, which loops forever, with the next two cards clearly peeking below: owner 2026-10-25). The owner
   asked for this design, so its soft cyan glows and the cyan-to-violet title gradient are allowed (they lift the RS65
   "no glows/gradients" note). The truth rules still hold. Every number on screen comes from the live data, or it is
   not shown: no invented star counts, latencies, index sizes, scores, velocities or sparklines (RS7, RS67). There is no
@@ -1344,7 +1344,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   Veo" and NOTICE.md records the provenance; Google's SynthID mark stays in the files.
   The ASCII globe is gone (owner 2026-10-24, "no ASCII globe"): Leo alone is the left column's hero, about 440 to 520 px
   wide on laptops and 260 px on phones, and only one Leo ever shows. The idle clip keeps playing during a search, while
-  the LEO stage pill shows the real stage; the old Leo art (wave and search sprites, the peek clip) is retired from the hero.
+  the LEO stage pill shows the real stage; the old Leo art (wave and search sprites, the peek clip) is retired from the hero, and (owner 2026-10-25: "pro still has old leo") the Launch window, the Pro window, `/pro` and the feedback chat show `web/leo-hero.webp` instead of the old `scout-hero.webp`.
   **Cyber hero backdrop** (owner 2026-10-25: "a 3D cinematic site", "don't guess and draw"; approved as "ok this is
   good"). In dark the whole hero band is a rendered plate from the owner's Stitch project "Replore 3D Website Redesign":
   `web/hero-plate-dark.webp` (a 3D perspective grid receding to the centre, cyan and violet bokeh at several focal

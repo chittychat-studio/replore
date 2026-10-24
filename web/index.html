@@ -1506,9 +1506,11 @@
     transition:transform .65s cubic-bezier(.34,1.56,.64,1),opacity .65s ease}
   .td-card,.tdeck.td-measure .td-card{bottom:auto;height:auto}   /* each card is its own natural height (no empty band); app.js fit() sizes the deck to the tallest */
   .td-card[data-pos="0"]{transform:translateY(0px) translateZ(0px) scale(1);opacity:1;border-color:var(--a30);box-shadow:0 30px 60px -34px rgba(var(--shadow),.55),0 0 40px var(--glow-soft)}
-  .td-card[data-pos="1"]{transform:translateY(16px) translateZ(-40px) scale(.95) rotate(.8deg);opacity:.85}
-  .td-card[data-pos="2"]{transform:translateY(32px) translateZ(-80px) scale(.9) rotate(-.8deg);opacity:.62}
-  .td-card[data-pos="3"]{transform:translateY(45px) translateZ(-120px) scale(.84);opacity:0;pointer-events:none}
+  .td-card[data-pos="1"]{transform:translateY(22px) translateZ(-40px) scale(.955) rotate(.8deg);opacity:.9}   /* owner 2026-10-25: the next two clearly peek */
+  .td-card[data-pos="2"]{transform:translateY(42px) translateZ(-80px) scale(.91) rotate(-.8deg);opacity:.7}
+  .td-card[data-pos="3"]{transform:translateY(56px) translateZ(-120px) scale(.86);opacity:0;pointer-events:none}
+  .tdeck{touch-action:pan-y;-webkit-user-select:none;user-select:none}   /* swipe sideways, scroll up and down */
+  .tdeck .td-card[data-pos="0"]{cursor:grab} .tdeck.td-drag .td-card[data-pos="0"]{cursor:grabbing}
   .td-card[data-tint="cyan"]{--tc:var(--accent-ink)} .td-card[data-tint="violet"]{--tc:var(--violet)} .td-card[data-tint="mint"]{--tc:var(--mint)}
   .td-top{display:flex;align-items:flex-start;gap:14px}
   .td-tile{flex:none;width:48px;height:48px;border-radius:16px;display:grid;place-items:center;color:var(--tc);
@@ -1826,7 +1828,7 @@
 
 <div class="modal" id="launchModal"><div class="sheet ln-sheet">   <!-- RS79: Launch it with Leo -->
   <button class="x" data-close aria-label="Close"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
-  <div class="ln-head"><img src="scout-hero.webp" alt="" width="56" height="58" decoding="async">
+  <div class="ln-head"><img src="leo-hero.webp?v=1ca927d5e6" alt="" width="56" height="53" decoding="async">
     <div><p class="kicker">Launch plan</p><h2>Launch it <em>with Leo</em></h2>
     <p class="mut">Built your app? Answer a few quick questions and I'll plan where it lives, how people pay, and what
       to check before and after you go live.</p></div></div>
@@ -1927,7 +1929,7 @@
 <div class="modal pro-el" id="proModal" hidden><div class="sheet pro-sheet">   <!-- RS89: Leo, Pro (owner pick 2026-10-23); hidden until PRO_URL is set -->
   <div class="pro-head"><div><p class="kicker">Replore Pro</p><h2>Leo, <em>Pro</em></h2></div>
     <button type="button" class="x" data-close aria-label="Close"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>
-  <div class="pro-row"><img src="scout-hero.webp" alt="Leo, the Replore scout" width="150" height="156" decoding="async">
+  <div class="pro-row"><img src="leo-hero.webp?v=1ca927d5e6" alt="Leo, the Replore scout" width="150" height="142" decoding="async">
     <div><p class="pro-say">Want me to read for meaning too? Today I match your words. With Pro I also match what a repo
       does, so the ones that say it differently still turn up.</p>
       <span class="st-pills pro-pills"><i>Meaning ranking</i><i>No queue on the AI check</i><i>Web and every agent</i></span></div></div>
@@ -2002,7 +2004,7 @@
 <button type="button" class="fb-fab" id="fbFab">Feedback</button>
 <div class="modal" id="fbModal"><div class="sheet fb-sheet">
   <button class="x" data-close aria-label="Close"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
-  <div class="fb-leo"><img src="scout-hero.webp" alt="" width="64" height="66" decoding="async">   <!-- RS74: feedback is a chat with Leo -->
+  <div class="fb-leo"><img src="leo-hero.webp?v=1ca927d5e6" alt="" width="64" height="61" decoding="async">   <!-- RS74: feedback is a chat with Leo -->
     <div><p class="kicker">Feedback</p><h2>Tell Leo</h2>
     <p class="mut">Hi, it's Leo! Found a bug, or want something new? Tell me and I'll pass it straight to the Cardzo
       team (hello@cardzo.co.in).</p></div></div>
@@ -2118,6 +2120,6 @@
 
 <script src="pro-core.js?v=3cb6e96e76" defer></script>
 <script src="auth.js?v=f43383d4f7" defer></script>
-<script src="app.js?v=46b83a5fff" defer></script>
+<script src="app.js?v=9fbb3dc47a" defer></script>
 </body>
 </html>

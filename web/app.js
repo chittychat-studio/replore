@@ -1631,7 +1631,9 @@ function think(st, text){
 // RS35 home carousel. RS92: Trending on GitHub is the card shuffle deck (frontend-stack pattern, Web Animations API and
 // CSS transitions only, RS91). Up to 6 real repos from the open tab's list: the top card slides off and tucks under the
 // deck about every 4 s; paused on hover, keyboard focus, a hidden tab, off screen or the Pause button. Previous, Next,
-// Shuffle and the dots always work. Reduced motion: no auto-shuffle, and the buttons swap the top card at once.
+// Shuffle and the dots always work. Swipe (owner 2026-10-25): drag the top card sideways; past about 90 px or a quick
+// flick it flies off that way and tucks under the deck (the deck never ends), a short drag springs back. Vertical drags
+// still scroll the page. Reduced motion: no auto-shuffle, and the buttons and swipes swap the top card at once.
 // Only the top card is exposed; the others are aria-hidden and inert. Each list is fetched only when its tab is first
 // opened (cached 30 min, RS35).
 var DECK_N=6, DECK_MS=4000, DECK_TINT=["cyan","violet","mint"];
@@ -1678,6 +1680,12 @@ function buildTrendCarousel(){
       if(!anim){ layout(); return; } busy=true; var back2=hold(nt); layout();
       var b=nt.animate([{transform:"translate(-110%,-4%) rotate(-6deg)",opacity:0},{transform:DECK_FRONT,opacity:1}],{duration:520,easing:EASE_OUT});
       var done2=function(){ back2(); busy=false; }; b.finished.then(done2,done2); } }
+  // a swiped card leaves from where the finger let go, in the swipe's direction, and tucks under like step(1)
+  function fling(top,dir){ var from=top.style.transform; order.push(order.shift());
+    if(!(G&&!reduce)){ top.style.transform=""; layout(); return; } busy=true;
+    var a=top.animate([{transform:from,opacity:1},{transform:"translateX("+(dir*130)+"%) rotate("+(dir*14)+"deg)",opacity:0}],{duration:380,easing:EASE_OUT,fill:"forwards"});
+    var back=hold(top); top.style.transform=""; layout(); back();
+    var done=function(){ var b2=hold(top); a.cancel(); b2(); busy=false; }; a.finished.then(done,done); }
   function front(k){ var i=-1; order.forEach(function(c,j){ if(+c.getAttribute("data-k")===k) i=j; }); if(i<=0) return;
     order=order.slice(i).concat(order.slice(0,i)); layout(); }
   function shuffle(){ if(order.length<2) return; var o=order.slice(), first=o[0];
@@ -1702,6 +1710,21 @@ function buildTrendCarousel(){
   if(play){ if(reduce) play.hidden=true; play.addEventListener("click",function(){ paused=!paused; paintPlay(); }); }
   var on=function(id,f){ var el=document.getElementById(id); if(el) el.addEventListener("click",f); };
   on("tcPrev",function(){ step(-1); }); on("tcNext",function(){ step(1); }); on("tcShuffle",shuffle);
+  var drag=null, lastStep=0;
+  deck.addEventListener("pointerdown",function(e){ var top=order[0];
+    if(busy||order.length<2||e.button>0||!top||!top.contains(e.target)||(e.target.closest&&e.target.closest("a,button"))) return;
+    drag={x:e.clientX,y:e.clientY,dx:0,v:0,lx:e.clientX,lt:e.timeStamp,id:e.pointerId,top:top,live:false}; });
+  deck.addEventListener("pointermove",function(e){ if(!drag||e.pointerId!==drag.id) return; var dx=e.clientX-drag.x, dy=e.clientY-drag.y;
+    if(!drag.live){ if(Math.abs(dx)<8&&Math.abs(dy)<8) return; if(Math.abs(dy)>Math.abs(dx)){ drag=null; return; }   // a scroll, not a swipe
+      drag.live=true; hover=true; try{ deck.setPointerCapture(e.pointerId); }catch(_){} drag.top.style.transition="none"; deck.classList.add("td-drag"); }
+    var dt=Math.max(1,e.timeStamp-drag.lt); drag.v=(e.clientX-drag.lx)/dt; drag.lx=e.clientX; drag.lt=e.timeStamp; drag.dx=dx;
+    drag.top.style.transform="translateX("+dx.toFixed(1)+"px) rotate("+(dx*.035).toFixed(2)+"deg)"; });
+  function release(e){ if(!drag||e.pointerId!==drag.id) return; var d=drag; drag=null; if(!d.live) return;
+    hover=false; deck.classList.remove("td-drag"); var top=d.top, w=top.offsetWidth||320;
+    if(Math.abs(d.dx)>Math.min(90,w*.25)||(Math.abs(d.v)>.5&&Math.abs(d.dx)>24)){ fling(top,d.dx<0?-1:1); lastStep=Date.now(); return; }
+    var from=top.style.transform; top.style.transition=""; top.style.transform="";   // springs back with a soft overshoot
+    if(G&&!reduce) top.animate([{transform:from},{transform:DECK_FRONT}],{duration:460,easing:"cubic-bezier(.34,1.56,.64,1)"}); }
+  deck.addEventListener("pointerup",release); deck.addEventListener("pointercancel",release);
   box.addEventListener("keydown",function(e){ if((e.key!=="ArrowLeft"&&e.key!=="ArrowRight")||(e.target&&e.target.closest&&e.target.closest(".tb-tabs"))) return;
     e.preventDefault(); step(e.key==="ArrowRight"?1:-1); });
   function show(kind){
@@ -1719,7 +1742,7 @@ function buildTrendCarousel(){
       layout(); fit(); void deck.offsetWidth;
       if(!reduce){ deck.classList.add("td-in"); if(G){ var n=deck.querySelector(".td-n"); if(n) odometer(n, n.textContent, G, .2); } }
       deck.setAttribute("aria-busy","false"); box.hidden=false;
-      if(!ticking&&!reduce) ticking=setInterval(function(){ if(canRun()) step(1); }, DECK_MS);
+      if(!ticking&&!reduce) ticking=setInterval(function(){ if(canRun()&&Date.now()-lastStep>DECK_MS-200) step(1); }, DECK_MS);   // never right after a swipe
     }).catch(function(){ if(my!==gen) return; deck.classList.remove("td-out"); deck.setAttribute("aria-busy","false");
       if(kind==="rising") return;   // GitHub unreachable or rate-limited on first load: no section, nothing else changes
       cur=""; show("rising"); });
