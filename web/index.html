@@ -152,16 +152,12 @@
   /* two clean mode tiles (like the reference's cards) */
   .modes{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
   .demo-slot:empty{display:none} .demo-slot{margin:6px 0 18px;text-align:left}
-  /* RS61: home demo = the live product over an ASCII globe (desktop); one card under the typed query on phones */
+  /* RS61: home demo = the live product (RS92: the ASCII globe is gone, owner 2026-10-24) */
   .ld{position:relative;display:flex;flex-direction:column;gap:12px;padding:6px 4px 0;min-height:360px;text-align:left}
-  /* RS62 globe, then cards: one stage; the globe shows while searching and fades as the cards land in its place */
   .ld-stage{position:relative;width:100%}
-  .ld-globe{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:.85;transition:opacity .5s ease}
-  .ld.show-cards .ld-globe{opacity:0}
   #heroDemo .ld{align-items:center}
   #heroDemo .ld-stage{max-width:430px;min-height:372px}
   #heroDemo .ld-deck,#heroDemo .ld-q{width:100%;max-width:430px}
-  @media (prefers-reduced-motion:reduce){ .ld-globe{transition:none} }
   #heroDemo .ld-note{max-width:430px;width:100%}
   .ld-q{position:relative;z-index:1;display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);
     border-radius:999px;padding:11px 16px;font-size:15px;color:var(--ink);box-shadow:0 10px 30px -18px rgba(var(--shadow),.5);max-width:520px}
@@ -791,8 +787,7 @@
   .st .ld-q{background:none;border:0;box-shadow:none;padding:0;color:var(--muted);font-size:14px;justify-content:center;max-width:100%}
   .st-stage{position:relative;width:100%;max-width:1100px;height:322px}
   .st-pair{position:absolute;left:50%;bottom:62px;transform:translateX(-50%);display:flex;align-items:flex-end;gap:6px}
-  .st-g,.st-b{position:relative}
-  .st-g canvas.ld-globe{position:relative;display:block;width:262px;height:262px;inset:auto;opacity:.92}
+  .st-b{position:relative}
   .st-bot{position:relative;z-index:1;display:block;width:160px;height:auto;margin-bottom:-4px;filter:drop-shadow(0 10px 8px rgba(4,8,12,.35))}
   .st-sh{position:absolute;left:50%;bottom:-12px;transform:translateX(-50%);width:80%;height:22px;border-radius:50%;
     background:radial-gradient(closest-side,rgba(4,8,12,.6),transparent)}
@@ -837,7 +832,6 @@
     .st .ld-q{font-size:13px}
     .st-stage{height:calc(var(--gs) + 58px)}
     .st-pair{bottom:52px}
-    .st-g canvas.ld-globe{width:var(--gs);height:var(--gs)}
     .st-bot{width:calc(var(--gs) * .6)}
     .st-ctrl{bottom:0}
     .st-arrow{width:38px;height:38px;font-size:19px}
@@ -1191,10 +1185,6 @@
   @keyframes rsSideOut{to{transform:translateY(-24px);opacity:.5}}
   @keyframes rsTitleOut{to{transform:translateY(-18px);opacity:.6}}
   @keyframes rsRise{from{opacity:0;transform:translateY(34px)}}
-  /* RS76: the globe has its own inks, brighter in dark mode so the whole sphere reads on navy */
-  :root{--globe-ink:#22374a;--globe-dim:#5b88a6}
-  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--globe-ink:#e6eef4;--globe-dim:#8fb3cf} }
-  :root[data-theme="dark"]{--globe-ink:#e6eef4;--globe-dim:#8fb3cf}
 
   /* RS79 Launch it with Leo: questions on the left, the plan builds live on the right; each part has its own colour */
   :root{--ln-host:#2f6fa3;--ln-data:#2f7d4f;--ln-auth:#a86a12;--ln-pay:#6b4fb3;--ln-store:#c4523a;--ln-cost:#1d7f86;--ln-game:#b83f86;--ln-live:#3f6f8e;
@@ -1294,12 +1284,12 @@
      shuffle deck, cyan-accented cards, panel and windows. Glows and the title gradient are allowed here (RS92). Motion
      stays transform and opacity only, and reduced motion turns it off (the global rule above). ==== */
   :root{color-scheme:light;--st-card:rgba(255,255,255,.9);--rc-dk:var(--card);--rc-dk-ink:var(--ink);--rc-dk-mut:var(--muted);
-    --globe-ink:#0b4f5c;--globe-dim:#6aa9b4;--btn-hover:#00606f;--fld-a:rgba(0,145,168,.06);--fld-b:rgba(124,58,237,.05);
+    --btn-hover:#00606f;--fld-a:rgba(0,145,168,.06);--fld-b:rgba(124,58,237,.05);
     --o20:color-mix(in srgb,var(--outline) 22%,transparent);--o30:color-mix(in srgb,var(--outline) 32%,transparent);--o45:color-mix(in srgb,var(--outline) 48%,transparent);
     --a12:rgba(var(--accent-rgb),.12);--a30:rgba(var(--accent-rgb),.32);--a50:rgba(var(--accent-rgb),.5)}
   @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){color-scheme:dark;--st-card:rgba(20,24,36,.9);
-    --globe-ink:#a8f8ff;--globe-dim:#2f8590;--btn-hover:#7af7ff;--fld-a:rgba(0,240,255,.15);--fld-b:rgba(139,92,246,.18)} }
-  :root[data-theme="dark"]{color-scheme:dark;--st-card:rgba(20,24,36,.9);--globe-ink:#a8f8ff;--globe-dim:#2f8590;--btn-hover:#7af7ff;
+    --btn-hover:#7af7ff;--fld-a:rgba(0,240,255,.15);--fld-b:rgba(139,92,246,.18)} }
+  :root[data-theme="dark"]{color-scheme:dark;--st-card:rgba(20,24,36,.9);--btn-hover:#7af7ff;
     --fld-a:rgba(0,240,255,.15);--fld-b:rgba(139,92,246,.18)}
   body{background:var(--bg);font-family:var(--f-body);letter-spacing:0}
   a{color:var(--accent-ink)}
@@ -1345,8 +1335,6 @@
   body:not(.has-results) .hero > .hero-fx{display:block;position:absolute;z-index:-1;left:50%;top:-100px;width:100vw;height:calc(100% + 140px);
     transform:translateX(-50%);pointer-events:none;
     -webkit-mask-image:linear-gradient(180deg,#000 0,#000 calc(100% - 160px),transparent 100%);mask-image:linear-gradient(180deg,#000 0,#000 calc(100% - 160px),transparent 100%)}
-  .st-herovid{position:absolute;left:50%;bottom:-6px;z-index:2;width:calc(var(--gs,262px) * .97);height:auto;transform:translateX(-50%);pointer-events:none}
-  .st-b.herovid .st-bot,.st-b.herovid .st-sh{visibility:hidden}
   .hero-status{display:flex;align-items:center;justify-content:space-between;gap:8px 14px;flex-wrap:wrap;margin:0 0 22px;padding:6px 12px 6px 6px;
     border-radius:12px;background:color-mix(in srgb,var(--s-low) 75%,transparent);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border:1px solid var(--o20);text-align:left}
   .hs-pill,.leo-pill{display:inline-flex;align-items:center;gap:8px;padding:4px 10px;border-radius:999px;font:600 10px/1.4 var(--f-mono);letter-spacing:.1em;
@@ -1380,18 +1368,22 @@
   :root{--leo-a:transparent;--leo-b:transparent;--leo-drop:drop-shadow(0 14px 18px rgba(15,23,42,.18))}
   @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--leo-a:rgba(0,240,255,.2);--leo-b:rgba(139,92,246,.15);--leo-drop:drop-shadow(0 0 35px rgba(0,240,255,.4))} }
   :root[data-theme="dark"]{--leo-a:rgba(0,240,255,.2);--leo-b:rgba(139,92,246,.15);--leo-drop:drop-shadow(0 0 35px rgba(0,240,255,.4))}
-  .st-stage{--leo-x:calc(50% + var(--gs,262px) * .5)}
-  .demo-slot .st-stage{--leo-x:50%}
-  .st-stage::before,.st-stage::after{content:"";position:absolute;border-radius:50%;pointer-events:none;transform:translateX(-50%);filter:blur(60px)}
-  .st-stage::before{left:var(--leo-x);bottom:0;width:320px;height:320px;background:var(--leo-a)}
-  .st-stage::after{left:calc(var(--leo-x) + 80px);bottom:70px;width:256px;height:256px;background:var(--leo-b)}
-  .st-pair{perspective:1600px}
-  .st-fly{position:relative;padding:24px 40px;margin:-24px -40px;perspective:1600px;
-    -webkit-mask-image:radial-gradient(ellipse 80% 75% at 50% 50%,#000 50%,transparent 100%);mask-image:radial-gradient(ellipse 80% 75% at 50% 50%,#000 50%,transparent 100%)}
-  .st-b{animation:leoFloat 6.5s ease-in-out infinite;transform-style:preserve-3d}
+  /* RS92 (owner 2026-10-24): Leo alone is the left column's hero (no globe). One box holds the still and the video, so
+     there is no layout shift; the soft blurs sit behind it and nothing masks or clips his radar ring. */
+  .st-stage{--leo-x:50%;--leo-w:260px}
+  .st-stage::before,.st-stage::after{content:"";position:absolute;border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);filter:blur(60px)}
+  .st-stage::before{left:var(--leo-x);top:50%;width:320px;height:320px;background:var(--leo-a)}
+  .st-stage::after{left:calc(var(--leo-x) + 70px);top:38%;width:256px;height:256px;background:var(--leo-b)}
+  .st-pair,.demo-slot .st-pair,.stage-slot .st-pair{position:relative;left:auto;bottom:auto;transform:none;display:flex;justify-content:center;width:100%;perspective:1600px}
+  .st-fly{position:relative;flex:none;width:var(--leo-w);max-width:100%;perspective:1600px}
+  .st-b,.demo-slot .st-b{position:relative;width:100%;aspect-ratio:560/530;animation:leoFloat 6.5s ease-in-out infinite;transform-style:preserve-3d}
+  .st-b.herovid{animation:none}   /* the idle clip moves him itself */
   @keyframes leoFloat{0%,100%{transform:translate3d(0,0,0) rotateY(0deg)}25%{transform:translate3d(4px,-10px,0) rotateY(2deg)}
     50%{transform:translate3d(0,-1px,0) rotateY(0deg)}75%{transform:translate3d(-4px,8px,0) rotateY(-2deg)}}
-  .st-bot,.st-sprite{filter:var(--leo-drop)}
+  .st-b .st-bot,.demo-slot .st-b .st-bot,.st-herovid{position:absolute;inset:0;width:100%;height:100%;margin:0;object-fit:contain;transform:none;left:0;bottom:0}
+  .st-b.herovid .st-bot{visibility:hidden}
+  .st-stage,.demo-slot .st-stage{position:relative;height:auto;display:grid;place-items:center;padding:8px 0 36px}
+  .st-bot,.st-herovid{filter:var(--leo-drop)}
   .st-sh{background:radial-gradient(closest-side,rgba(0,0,0,.45),transparent)}
   .leo-pill{position:absolute;left:4px;bottom:0;z-index:4;background:color-mix(in srgb,var(--s-low) 82%,transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
   .demo-slot .leo-pill{display:none}
@@ -1409,8 +1401,7 @@
     body:not(.has-results) .hero-title{grid-area:title;margin:0 0 14px;font-size:clamp(44px,4.4vw,60px)}
     body:not(.has-results) .hero-title .ln{display:block} body:not(.has-results) .hero-title .ln + .ln{margin-left:0}
     body:not(.has-results) .hero > .search{grid-column:1/-1}
-    body:not(.has-results) .hero .st-stage{grid-area:stage;width:100%;max-width:none;height:calc(var(--gs) + 40px);align-self:center}
-    body:not(.has-results) .hero .st-pair{left:50%;transform:translateX(-50%);bottom:24px}
+    body:not(.has-results) .hero .st-stage{grid-area:stage;width:100%;max-width:none;height:auto;align-self:center;--leo-w:clamp(380px,37vw,500px)}
     body:not(.has-results) .hero .st-side{grid-area:side;display:grid;gap:16px;align-content:start}
     body:not(.has-results) .hero .st-say{position:static;width:auto;max-width:36rem;margin:0}
     body:not(.has-results) .st-search #quickpicks{justify-content:flex-start}
@@ -1739,7 +1730,7 @@
     <h2 class="hero-title" id="heroTitle" aria-label="Find it before you build it."><span class="ln" aria-hidden="true"><span class="in">Find it before</span></span><span class="ln" aria-hidden="true"><em class="in">you build it.</em></span></h2>   <!-- RS65 -->
     <p class="sub">Describe what you’re building. Get popular, free-to-use, maintained repos that fit.</p>
     <div id="demoSlot" class="demo-slot"></div>   <!-- RS24: on phones the demo sits here, before the search -->
-    <div id="stageSlot" class="stage-slot"></div>   <!-- RS65: Leo and the globe greet first, above the search -->
+    <div id="stageSlot" class="stage-slot"></div>   <!-- RS65: Leo greets first, above the search (RS92: no globe) -->
 
     <div class="search">
       <div class="vibebar">   <!-- RS92: the framed search console: input row, then the search options and Find -->
@@ -1801,7 +1792,7 @@
       <button type="button" class="link-btn" id="fbBtn">Feedback</button> ·
       <a class="link-btn" href="/evals">How ranking is tested</a> ·   <!-- RS84 -->
       <a class="link-btn" href="/pro">Replore Pro</a>   <!-- RS90 -->
-      <span class="brand-by">· A <a href="https://cardzo.co.in" target="_blank" rel="noopener noreferrer">Cardzo</a> product</span></p>
+      <span class="brand-by">· A <a href="https://cardzo.co.in" target="_blank" rel="noopener noreferrer">Cardzo</a> product</span> <span class="brand-by">· Leo animated with Google Veo</span></p>
   </section>
 </main>
 
@@ -2099,6 +2090,6 @@
 </div></div>
 
 <script src="pro-core.js?v=eb18699136" defer></script>
-<script src="app.js?v=7442662645" defer></script>
+<script src="app.js?v=510d7e17f8" defer></script>
 </body>
 </html>

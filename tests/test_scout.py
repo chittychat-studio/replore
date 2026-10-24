@@ -1092,18 +1092,21 @@ def test_harm_filter_shared_cases():
 
 def test_home_demo_is_the_real_product_and_honest():
     """RS61/RS67: the home demo types real quick-pick searches into the search bar's placeholder, with no network call,
-    no invented numbers and no example cards; the ASCII globe is desktop only."""
+    no invented numbers and no example cards. RS92: the ASCII globe is gone and Leo is the Flow clip or its still."""
     js = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
     start = js.index("var LIVE_DEMO=")
     block = js[start:js.index("// remember the last results", start)]
     assert "buildLiveDemo(hd)" in js and "fetch(" not in block
     assert block.count('{q:"') == 3 and "kstars(" not in block and "repos fit" not in block
-    assert "max-width: 999px" in block and "prefers-reduced-motion" in block and "isConnected" in block
-    # RS65: the studio stage: bot beside the globe, stage pills; RS67: the search bar joins Leo, no example deck or pointer
-    assert 'class="st-pair"' in block and "scout-hero.webp" in block and "st-pills" in block and "st-rail" not in block
+    assert "prefers-reduced-motion" in block and "isConnected" in block   # RS92: no desktop-only globe, so no width switch here
+    # RS65: the studio stage and stage pills; RS67: the search bar joins Leo, no example deck or pointer.
+    # RS92 (owner 2026-10-24): no ASCII globe anywhere; one Leo: the Flow clips, or leo-hero.webp as the still
+    assert 'class="st-pair"' in block and "leo-hero.webp" in block and "st-pills" in block and "st-rail" not in block
+    assert "globe" not in re.sub(r"//.*", "", js) and "ld-globe" not in _page() and "scout-hero.webp" not in block
+    assert 'class="st-herovid"' in block and "LEO_VIDEO.intro" in block and 'sb.classList.add("herovid")' in block
     assert "st-arrow" not in block and "ld-deck" not in block and "st-cursor" not in block and 'class="st-search"' in block
     assert 'id="stageSlot"' in _page() and 'id="deckSlot"' not in _page() and "function placeSearch" in js
-    assert (ROOT / "web" / "scout-hero.webp").exists() and (ROOT / "web" / "scout-search.webp").exists()
+    assert all((ROOT / "web" / f).exists() for f in ("leo-hero.webp", "leo-intro.webm", "leo-idle.webm", "scout-hero.webp"))
 
 
 def test_rs28h_plugin_shows_visuals_before_prd():

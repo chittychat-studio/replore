@@ -1747,74 +1747,33 @@ function showHome(){
   if(window.__resetPicks) window.__resetPicks();
 }
 // ---- RS61: home demo = the real product, live. A quick-pick search types itself, then Replore's real top results for
-// it land as cards (licence verdict pops, Explore buttons light in turn), over an ASCII globe of GitHub (desktop only).
+// it land as cards (licence verdict pops, Explore buttons light in turn). RS92: the ASCII globe is gone (owner 2026-10-24).
 // The cards are what scout.py returned for these searches on 2026-10-23 (site keyword queries, fit ranking); they are
 // examples of the output, refreshed by hand, and say so. No network call, so the home screen costs no GitHub quota.
 var LIVE_DEMO=[   // RS67: the example searches Leo types into the search bar (no example cards any more)
   {q:"a portfolio website with smooth scroll animations"},
   {q:"a chatbot that answers questions from my PDFs, Python"},
   {q:"dashboard to show my sales spreadsheet as charts"}];
-var ASCII_RAMP=" .:-=+*#%@";
-function asciiNoise(x,y){ function h(a,b){ var s=Math.sin(a*127.1+b*311.7)*43758.5453; return s-Math.floor(s); }
-  var xi=Math.floor(x), yi=Math.floor(y), xf=x-xi, yf=y-yi, u=xf*xf*(3-2*xf), v=yf*yf*(3-2*yf);
-  var a=h(xi,yi), b=h(xi+1,yi), c=h(xi,yi+1), d=h(xi+1,yi+1); return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v; }
-// the ASCII globe: GitHub as a world of characters; spins up while a search runs (demo or real)
-function startAsciiGlobe(canvas, reduce){
-  if(!canvas || !canvas.getContext) return;   // no canvas: the cards alone carry the demo
-  var g=canvas.getContext("2d"); if(!g) return;
-  var t=0, spin=.22, boost=0, live=true, raf=0, last=0;
-  function css(n){ return getComputedStyle(canvas).getPropertyValue(n).trim()||"#5b88a6"; }   // RS65: the stage tokens
-  function draw(){ var r=canvas.getBoundingClientRect(), d=Math.min(window.devicePixelRatio||1,1.5);
-    if(!r.width||!r.height) return;
-    if(canvas.width!==Math.round(r.width*d)||canvas.height!==Math.round(r.height*d)){ canvas.width=Math.round(r.width*d); canvas.height=Math.round(r.height*d); }   // RS65: height too
-    var W=canvas.width, H=canvas.height, cell=Math.max(8,Math.round(Math.min(W,H)/40)), cols=Math.floor(W/cell), rows=Math.floor(H/(cell*1.6));
-    g.clearRect(0,0,W,H); g.font="700 "+Math.round(cell*1.3)+"px "+(css("--f-mono")||"monospace"); g.textBaseline="top";   // RS65: bolder
-    var ink=css("--globe-ink"), dim=css("--globe-dim");   // RS76: per-theme globe inks
-    var cx=cols*.5, cy=rows*.5, R=Math.min(rows*.47, cols*.29);
-    for(var j=0;j<rows;j++) for(var i=0;i<cols;i++){ var x=(i-cx)/R*.62, y=(j-cy)/R, r2=x*x+y*y; if(r2>1) continue;
-      var z=Math.sqrt(1-r2), lon=Math.atan2(x,z)+t, lat=Math.asin(y), light=.3+.7*z;
-      var land=asciiNoise(lon*2.2+10,lat*3+4)>.52, grid=Math.abs(Math.sin(lon*6))<.06||Math.abs(Math.sin(lat*6))<.05;
-      var v=land?.55+.45*light:grid?.45*light:.3*light;   // RS65: the whole sphere reads, not just the land
-      g.globalAlpha=land?.55+.45*light:.32+.33*light; g.fillStyle=land?ink:dim;
-      g.fillText(ASCII_RAMP[Math.min(ASCII_RAMP.length-1,Math.floor(v*ASCII_RAMP.length))],i*cell,j*cell*1.6); }
-    g.globalAlpha=1; }
-  function frame(now){ if(!live) return; if(!canvas.isConnected){ live=false; return; }   // home screen replaced: stop for good
-    var dt=last?Math.min(.1,(now-last)/1000):0; last=now;
-    var busy=boost>0||document.body.classList.contains("searching");
-    spin+=((busy?1.6:.22)-spin)*(1-Math.exp(-dt*2.5)); t+=dt*spin; if(boost>0) boost-=dt;
-    var hidden=canvas.parentNode&&canvas.parentNode.parentNode&&canvas.parentNode.parentNode.classList.contains("show-cards");
-    if(!hidden) draw(); raf=requestAnimationFrame(frame); }
-  canvas.__boost=function(s){ boost=Math.max(boost,s||1.4); };
-  // RS76: a theme switch redraws at once, even while the globe is paused or off screen
-  if(window.MutationObserver) new MutationObserver(function(){ if(canvas.isConnected) draw(); }).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
-  try{ matchMedia("(prefers-color-scheme: dark)").addEventListener("change",function(){ if(canvas.isConnected) draw(); }); }catch(_){}
-  canvas.__stop=function(){ live=false; cancelAnimationFrame(raf); };
-  if(reduce){ draw(); return; }
-  if(window.IntersectionObserver) new IntersectionObserver(function(es){ var v=es[0].isIntersecting;
-    if(v&&!live){ live=true; last=0; raf=requestAnimationFrame(frame); } else if(!v){ live=false; cancelAnimationFrame(raf); } }).observe(canvas);
-  document.addEventListener("visibilitychange",function(){ if(document.hidden){ live=false; cancelAnimationFrame(raf); } });
-  raf=requestAnimationFrame(frame);
-}
-// RS92 hook (owner 2026-10-24): Leo's hero video. When the owner adds the files (WebM with alpha, in web/), set both
-// paths here: the intro plays once (his fly-in), then the idle clip loops, and the sprites keep the wave and the search
-// sweep. While these are empty the <video data-leo-intro data-leo-idle> slot stays hidden and Leo uses the CSS/Web
-// Animations fly-in, float and sprites. No file is referenced until it exists.
-var LEO_VIDEO={intro:"", idle:""};
+// RS92 (owner 2026-10-24): Leo's hero video. The intro plays once (his fly-in), then the idle clip loops, also during a
+// search. With these empty (Safari), the <video data-leo-intro data-leo-idle> slot stays hidden and Leo is the
+// leo-hero.webp still with the Web Animations fly-in and the CSS float. The old Leo art (sprites, peek clip) is retired.
+// Owner picked the Flow (Veo) clips 2026-10-24. Safari cannot play VP9 with alpha, so it keeps the CSS fly-in and the still.
+var LEO_VIDEO=/^((?!chrome|chromium|android|crios|fxios|edg).)*safari/i.test(navigator.userAgent||"")?{intro:"", idle:""}:{intro:"leo-intro.webm?v=44d91c2d51", idle:"leo-idle.webm?v=048dbb648a"};
 function buildLiveDemo(host){
   if(!host || host.dataset.built) return; host.dataset.built="1";
   var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches;
-  var wide=!(window.matchMedia&&matchMedia("(max-width: 999px)").matches);
-  // RS65: the studio stage. Leo, the scout bot, stands beside the ASCII globe of GitHub. RS67 (hero option A): his
-  // words, the search stages (pills) and the search bar sit beside him; the example search types itself into the bar's
-  // placeholder, so there is no separate typed line and no example cards. Phones get Leo and his words (no globe).
+  // RS92 (owner 2026-10-24): Leo is the left column's hero, on his own (the ASCII globe is gone). The Flow clips play
+  // where the browser can show alpha video: the intro once, then the idle loop, which keeps playing during a search.
+  // Safari (no VP9 alpha), reduced motion or a failed clip show the same Leo as a still (leo-hero.webp), with the
+  // fly-in and idle float where motion is allowed. Only one Leo ever shows. RS67: his words, the stage and the search
+  // bar sit beside him; the example search types itself into the bar's placeholder.
   var STAGES="Searching|Ranking by fit|Licence check|Ready".split("|");
   host.innerHTML='<div class="ld st">'+
     '<div class="st-stage">'+
       '<div class="st-pair" aria-hidden="true">'+
-        (wide?'<div class="st-g"><canvas class="ld-globe"></canvas><span class="st-sh"></span></div>':'')+
-        '<div class="st-fly"><div class="st-b"><img class="st-bot" src="scout-hero.webp" alt="" width="180" height="184" decoding="async"><span class="st-sprite"></span><span class="st-sh"></span>'+   // RS92: .st-fly carries the fly-in, .st-b the idle float
-        '<video class="st-herovid" data-leo-intro="" data-leo-idle="" muted playsinline autoplay preload="none" poster="scout-hero.webp" aria-hidden="true" hidden></video>'+   // RS92 hook, see LEO_VIDEO
-        (wide&&!reduce&&!canAnimate()?'<video class="st-peekvid" muted playsinline preload="auto" aria-hidden="true"></video>':'')+'</div></div></div>'+
+        '<div class="st-fly"><div class="st-b"><img class="st-bot" src="leo-hero.webp?v=0df90e4a80" alt="" width="560" height="530" decoding="async">'+   // RS92: .st-fly carries the fly-in, .st-b the idle float
+        '<video class="st-herovid" data-leo-intro="" data-leo-idle="" muted playsinline autoplay preload="none" poster="leo-hero.webp?v=0df90e4a80" aria-hidden="true" hidden></video>'+   // RS92 hook, see LEO_VIDEO
+        '</div></div></div>'+
       '<span class="leo-pill" aria-hidden="true"><i></i>Leo · <span data-hstat>Ready</span></span>'+   // RS92: the real stage (heroStage)
     '</div>'+
     '<div class="st-side">'+
@@ -1822,10 +1781,7 @@ function buildLiveDemo(host){
         '<span class="st-pills" aria-hidden="true">'+STAGES.map(function(t){ return '<i>'+t+'</i>'; }).join("")+'</span></p>'+   // the search stages, as pills
       '<div class="st-search"></div>'+   // RS67: placeSearch() moves the search bar here on wide home screens
     '</div></div>';
-  var globe=host.querySelector(".ld-globe"),
-      label=host.querySelector(".st-label"), bot=host.querySelector(".st-bot"),
-      rail=[].slice.call(host.querySelectorAll(".st-pills i"));
-  if(globe) startAsciiGlobe(globe, reduce);
+  var label=host.querySelector(".st-label"), bot=host.querySelector(".st-bot"), rail=[].slice.call(host.querySelectorAll(".st-pills i"));
   var qin=document.getElementById("q");
   var sb=bot&&bot.parentNode, say=host.querySelector(".st-say"), sayT=host.querySelector(".st-say-t"), SAY=sayT?sayT.textContent:"";
   var sayTimer=0;
@@ -1833,101 +1789,65 @@ function buildLiveDemo(host){
     if(reduce||!sayT.classList){ sayT.textContent=txt; return; }
     sayT.classList.add("swap"); clearTimeout(sayTimer);   // RS69: his words fade out and back in, never jump
     sayTimer=setTimeout(function(){ sayT.textContent=txt; sayT.classList.remove("swap"); }, 180); }
-  // RS65: Leo is interactive. He peeks out, waves hello, reacts while you type, and searches (magnifier sweep) when you
-  // press Enter. Animations are sprite sheets cut from the Veo clips (work in every browser, no video alpha needed).
-  var spr=sb&&sb.querySelector&&sb.querySelector(".st-sprite"), canAnim=!!(bot&&globe&&!reduce&&bot.classList&&sb&&sb.classList&&bot.addEventListener);
-  var SPR={wave:["scout-wave.webp",31,2.6], search:["scout-searching.webp",36,3]};
-  function sprite(name, loop, done){ if(!canAnim||!spr) { if(done) done(); return; } var d=SPR[name];
-    spr.style.backgroundImage="url("+d[0]+")"; spr.style.backgroundSize=(d[1]*100)+"% 100%";
-    spr.style.animation="none"; void spr.offsetWidth;
-    spr.style.animation="leoSprite "+d[2]+"s steps("+(d[1]-1)+") "+(loop?"infinite":"1 forwards");
-    sb.classList.add("animating");
-    if(!loop&&done) spr.addEventListener("animationend",function f(){ spr.removeEventListener("animationend",f); done(); }); }
-  function still(){ if(sb&&sb.classList) sb.classList.remove("animating");   // RS69: the sprite dissolves back into the still
-    setTimeout(function(){ if(spr&&sb&&sb.classList&&!sb.classList.contains("animating")) spr.style.animation="none"; }, 400); }
-  var greeted=false, started=false;
+  var started=false, greeted=false;
   function startDemo(){ if(started) return; started=true; run(); }
-  function greet(){ if(greeted) return; greeted=true; speak(SAY); sprite("wave", false, function(){ still(); startDemo(); }); }
-  // the peek: Leo's Flow/Veo clip (he peeks from behind the globe, looks around, hops out) where the browser can show
-  // see-through video; Safari cannot, so it gets the CSS peek instead
-  var pv=sb&&sb.querySelector&&sb.querySelector(".st-peekvid"), ua=(navigator&&navigator.userAgent)||"";
-  var alphaVideo=!!pv&&!/^((?!chrome|android|crios|fxios|edg).)*safari/i.test(ua);
-  function cssPeek(){ bot.classList.add("peek"); sb.classList.add("peeking");
-    bot.addEventListener("animationend",function(){ bot.classList.remove("peek"); sb.classList.remove("peeking"); greet(); },{once:true});
-    setTimeout(greet, 3400); }
-  // RS92 (owner 2026-10-24): Leo flies in (3D, about 1.8 s, Web Animations API, transform and opacity only), then waves.
-  // Where it runs it is his entrance; the peek clip and the CSS peek stay as the fallback where the API is missing.
+  function greet(){ if(greeted) return; greeted=true; speak(SAY); setTimeout(startDemo, 1500); }
   var fly=host.querySelector(".st-fly"), hv=host.querySelector(".st-herovid");
-  if(hv&&LEO_VIDEO.intro&&LEO_VIDEO.idle&&canAnim&&hv.play){   // RS92 hook: the hero video (fly-in once, then the idle loop)
+  function still(){   // the fallback: the same Leo as a still, flying in where motion is allowed
+    if(hv){ hv.hidden=true; try{ hv.removeAttribute("src"); if(hv.load) hv.load(); }catch(_){} }
+    if(sb&&sb.classList) sb.classList.remove("herovid");
+    if(fly&&fly.animate&&canAnimate()&&!reduce){ var landed=false, land=function(){ if(landed) return; landed=true; greet(); };
+      fly.animate([{transform:"translate3d(-100px,-60px,-500px) rotateY(-90deg) scale(.6)",opacity:0},
+        {transform:"translate3d(-15px,10px,-80px) rotateY(15deg) scale(.95)",opacity:1,offset:.7},
+        {transform:"translate3d(0px,0px,0px) rotateY(0deg) scale(1)",opacity:1}],{duration:1800,easing:"cubic-bezier(.2,.8,.25,1)"}).finished.then(land,land);
+      setTimeout(land, 2600); }
+    else greet(); }
+  if(hv&&hv.play&&sb&&sb.classList&&LEO_VIDEO.intro&&LEO_VIDEO.idle&&!reduce){   // RS92: the hero video (fly-in once, then the idle loop)
+    var failed=false, fail=function(){ if(failed) return; failed=true; still(); };
     hv.setAttribute("data-leo-intro",LEO_VIDEO.intro); hv.setAttribute("data-leo-idle",LEO_VIDEO.idle); hv.hidden=false; sb.classList.add("herovid");
-    var toIdle=function(){ hv.removeEventListener("ended",toIdle); hv.loop=true; hv.src=LEO_VIDEO.idle; var q=hv.play(); if(q&&q.catch) q.catch(function(){}); greet(); };
-    hv.addEventListener("ended",toIdle); hv.addEventListener("error",function(){ hv.hidden=true; sb.classList.remove("herovid"); greet(); });
-    hv.src=LEO_VIDEO.intro; var hp=hv.play(); if(hp&&hp.catch) hp.catch(function(){ hv.hidden=true; sb.classList.remove("herovid"); greet(); });
-    setTimeout(startDemo, 9000); }
-  else if(fly&&fly.animate&&canAnimate()&&!reduce){ var landed=false, land=function(){ if(landed) return; landed=true; if(canAnim) greet(); else speak(SAY); };
-    fly.animate([{transform:"translate3d(-100px,-60px,-500px) rotateY(-90deg) scale(.6)",opacity:0},
-      {transform:"translate3d(-15px,10px,-80px) rotateY(15deg) scale(.95)",opacity:1,offset:.7},
-      {transform:"translate3d(0px,0px,0px) rotateY(0deg) scale(1)",opacity:1}],{duration:1800,easing:"cubic-bezier(.2,.8,.25,1)"}).finished.then(land,land);
-    setTimeout(land, 2600); if(canAnim) setTimeout(startDemo, 7000); }
-  else if(canAnim&&alphaVideo){ var done=false, fin=function(){ if(done) return; done=true;
-      sb.classList.add("peekfade"); greet();   // RS69: the clip dissolves into the waving sprite instead of cutting
-      setTimeout(function(){ sb.classList.remove("videopeek","peekfade"); }, 450); };
-    sb.classList.add("videopeek"); pv.addEventListener("ended",fin); pv.addEventListener("error",function(){ sb.classList.remove("videopeek"); if(!done){ done=true; cssPeek(); } });
-    pv.src="leo-peek.webm?v=7193e5672f"; var pp=pv.play&&pv.play(); if(pp&&pp.catch) pp.catch(function(){ sb.classList.remove("videopeek"); if(!done){ done=true; cssPeek(); } });
-    setTimeout(fin, 6500); setTimeout(startDemo, 10000); }
-  else if(canAnim){ cssPeek(); setTimeout(startDemo, 7000); }   // fallbacks if an animation event never fires
-  else { speak(SAY); }
+    var toIdle=function(){ hv.removeEventListener("ended",toIdle); hv.loop=true; hv.src=LEO_VIDEO.idle; var q=hv.play(); if(q&&q.catch) q.catch(fail); greet(); };
+    hv.addEventListener("ended",toIdle); hv.addEventListener("error",fail);
+    hv.src=LEO_VIDEO.intro; var hp=hv.play(); if(hp&&hp.catch) hp.catch(fail);
+    setTimeout(greet, 6000); }   // his words never wait on the clip
+  else still();
   // typing: Leo pauses the example and answers you
   if(qin&&qin.addEventListener){
     qin.addEventListener("input",function(){ if(document.body.classList.contains("searching")) return;
-      if(qin.value.trim()){ paused=true; clear(); still(); pose("hero"); stage(-1,""); speak("Sounds good! Press Enter and I’ll go look."); }
+      if(qin.value.trim()){ paused=true; clear(); stage(-1,""); speak("Sounds good! Press Enter and I’ll go look."); }
       else { speak(SAY); } });
     qin.addEventListener("blur",function(){ if(!qin.value.trim()&&paused&&!document.body.classList.contains("searching")){ paused=false; speak(SAY); run(); } }); }
   var timers=[], k=0, paused=false;
   function later(f,ms){ timers.push(setTimeout(f,ms)); }
   function clear(){ timers.forEach(clearTimeout); timers=[]; }
   function stage(i, txt){ rail.forEach(function(li,j){ li.classList.toggle("on", j===i); }); if(label) label.textContent=txt||""; }
-  function pose(p){ if(!bot) return; var src=p==="search"?"scout-search.webp":"scout-hero.webp";
-    if(bot.getAttribute&&bot.getAttribute("src")===src) return;
-    if(reduce||typeof bot.cloneNode!=="function"||!bot.parentNode||!bot.offsetWidth){ bot.src=src; return; }
-    // RS69: the old pose stays on top and fades out while the new one shows through (a dissolve, not a cut)
-    var ghost=bot.cloneNode(false); ghost.className="st-bot st-ghost"; ghost.setAttribute("alt","");
-    ghost.style.cssText="position:absolute;left:"+bot.offsetLeft+"px;top:"+bot.offsetTop+"px;width:"+bot.offsetWidth+"px;margin:0;z-index:2;transition:opacity .4s ease";
-    bot.parentNode.insertBefore(ghost, bot.nextSibling); bot.src=src;
-    setTimeout(function(){ ghost.style.opacity="0"; }, 30); setTimeout(function(){ if(ghost.parentNode) ghost.parentNode.removeChild(ghost); }, 480); }
   // RS67: the example search types itself into the search bar's placeholder (never over what a visitor typed)
   var PH=(qin&&qin.getAttribute&&qin.getAttribute("placeholder"))||"What are you building?";
   function ph(t){ if(!qin||qin.value||document.activeElement===qin) return; qin.setAttribute("placeholder",t); }
   if(qin&&qin.addEventListener) qin.addEventListener("focus",function(){ qin.setAttribute("placeholder",PH); });
   function run(){ clear(); if(paused||!host.isConnected||document.body.classList.contains("searching")) return;
     var n=LIVE_DEMO.length, ex=LIVE_DEMO[((k%n)+n)%n]; k++;
-    stage(-1,""); pose("hero");
+    stage(-1,"");
     if(reduce){ stage(3,"Ready"); return; }
     var step=Math.max(28,Math.min(55,1700/ex.q.length));
     later(function(){ ph(""); }, 400);
     for(var i=1;i<=ex.q.length;i++) (function(m){ later(function(){ ph(ex.q.slice(0,m)); }, 400+m*step); })(i);
     var t0=400+ex.q.length*step+350;
-    later(function(){ stage(0,"Searching GitHub"); pose("search"); if(globe&&globe.__boost) globe.__boost(2.4); }, t0);
+    later(function(){ stage(0,"Searching GitHub"); }, t0);
     later(function(){ stage(1,"Ranking by fit"); }, t0+800);
     later(function(){ stage(2,"Licence check"); }, t0+1450);
-    later(function(){ stage(3,"Ready"); pose("hero"); }, t0+2100);
+    later(function(){ stage(3,"Ready"); }, t0+2100);
     later(function(){ ph(PH); stage(-1,""); }, t0+5600);
     later(run, t0+7400); }
-  // RS65: a real search takes over the stage: the bot searches, the rail and label follow it, the example cards leave
+  // RS65: a real search takes over the stage: his words and the rail follow it (RS92: the idle clip keeps playing)
   var busy=false;
   function onSearch(){ var on=document.body.classList.contains("searching");
     if(on&&!busy){ busy=true; clear(); var qv=document.getElementById("q");
-      if(qv) qv.setAttribute("placeholder",PH); stage(0,"Searching GitHub"); pose("search"); speak("On it! Searching GitHub for you…"); sprite("search", true);
+      if(qv) qv.setAttribute("placeholder",PH); stage(0,"Searching GitHub"); speak("On it! Searching GitHub for you…");
       later(function(){ stage(1,"Ranking by fit"); }, 1400); later(function(){ stage(2,"Licence check"); }, 2800); }
-    else if(!on&&busy){ busy=false; still(); speak(SAY); if(!document.body.classList.contains("has-results")&&host.isConnected){ paused=false; run(); } } }
+    else if(!on&&busy){ busy=false; speak(SAY); if(!document.body.classList.contains("has-results")&&host.isConnected){ paused=false; run(); } } }
   if(window.MutationObserver) new MutationObserver(onSearch).observe(document.body,{attributes:true,attributeFilter:["class"]});
-  // RS76: scrolling spins the globe faster for a moment (it eases back on its own)
-  if(globe&&!reduce&&window.addEventListener){ var lastY=window.scrollY||0;
-    window.addEventListener("scroll",function(){ var y=window.scrollY||0, dy=Math.abs(y-lastY); lastY=y;
-      if(dy>2&&host.isConnected&&globe.__boost) globe.__boost(Math.min(3, 1.3+dy/60)); },{passive:true}); }
-  host.__stopDemo=function(){ paused=true; clear(); if(qin&&!qin.value) qin.setAttribute("placeholder",PH); };   // the globe keeps turning on the stage; it stops itself once removed
+  host.__stopDemo=function(){ paused=true; clear(); if(qin&&!qin.value) qin.setAttribute("placeholder",PH); };
   host.__playDemo=function(){ if(paused){ paused=false; run(); } };
-  if(!canAnim) startDemo();
 }
 // remember the last results so a page refresh brings them back (cached locally, no new API call)
 // RS44: the owner's Stripe Payment Link (public URL, no key). Empty = all tip elements stay hidden.

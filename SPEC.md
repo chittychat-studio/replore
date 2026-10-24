@@ -1325,6 +1325,14 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   Ranking by fit). The export's emoji become RS55 line icons; Material Symbols, the Tailwind CDN and the hotlinked
   images are not used (CSP, RS49). Leo stays our own art. Behaviour, ids and data flow are unchanged, and the
   rules on motion (RS47, RS69, RS91: Web Animations API, reduced motion respected) and on em dashes (RS66) still apply.
+  Leo is redrawn as Stitch's Leo (white body, glowing cyan smiling visor, LEO on the chest, a holographic radar ring).
+  The hero plays two Google Flow (Veo 3.1 Lite) clips, keyed from green and cropped: `web/leo-intro.webm` once, then
+  `web/leo-idle.webm` on a loop, with `web/leo-hero.webp` as the poster. Safari, which can't play VP9 with alpha, and
+  reduced motion keep the still. The crop drops Flow's visible Veo mark, so the footer says "Leo animated with Google
+  Veo" and NOTICE.md records the provenance; Google's SynthID mark stays in the files.
+  The ASCII globe is gone (owner 2026-10-24, "no ASCII globe"): Leo alone is the left column's hero, about 440 to 520 px
+  wide on laptops and 260 px on phones, and only one Leo ever shows. The idle clip keeps playing during a search, while
+  the LEO stage pill shows the real stage; the old Leo art (wave and search sprites, the peek clip) is retired from the hero.
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
 - **RX3** Ranking by forks, trending or download counts. (Relevance, stars and license-freedom are the only
