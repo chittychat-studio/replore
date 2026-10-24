@@ -27,6 +27,9 @@ jobs:
       - run: node tests/test_relevance_fn.mjs  # RS34 relevance function (fake LLM, no network)
       - run: node tests/test_trust_fn.mjs  # RS53b trust function (fake Scorecard/deps.dev, no network)
       - run: node tests/test_pro_fn.mjs  # RS90 Pro key claim function (fake Stripe, no network)
+      - run: node tests/test_router.mjs  # RS95/RS96 router scheduler, budgets, credits (fake clock, no network)
+      - run: node tests/test_router_fn.mjs  # RS95/RS96 relevance check with the router bound (fake DO and providers)
+      - run: node tests/sim_router.mjs  # RS95 one simulated day at 25,000 checks: limits, budget cap, DO free plan
       - run: python evals/run.py  # RS5: goal-based fit-ranking evals must pass
   # RS50: the one check the `protect main` ruleset requires. It always runs (a skipped required check would count
   # as passing) and passes only when every test job, on every OS, succeeded.

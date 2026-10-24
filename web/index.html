@@ -1661,16 +1661,19 @@
 <div class="modal" id="privacyModal"><div class="sheet">
   <button class="x" data-close>&times;</button>
   <h2>Privacy</h2>
-  <p class="mut">Replore has no account and no user database, and stores nothing you type. Our host counts page views
+  <p class="mut">Replore has no account and stores nothing you type. Our host counts page views
     with Cloudflare Web Analytics, without cookies (see below).</p>
   <ul class="guide">
     <li><b>Your search words</b> go from your browser straight to <b>GitHub</b> (with your IP address) to run the search.</li>
     <li><b>To sort repos by fit</b>, your search words and the list of repos found go through our relevance check (our only
-      server code) to an AI provider (<b>Cloudflare Workers AI</b>, or <b>Groq</b> when that is unavailable or over its daily limit), which judges which repos fit.
+      server code) to an AI provider (<b>Cloudflare Workers AI</b>, or <b>Groq</b> when that is unavailable or over its daily limit, or <b>Mistral AI</b> only if we switch it on), which judges which repos fit.
       We don't store or log them; each provider handles them under its own terms
       (<a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">Cloudflare</a>,
       <a href="https://groq.com/privacy-policy/" target="_blank" rel="noopener">Groq</a>). If a check fails we record only the
       error type and time. If the check is unavailable you get the keyword results unchanged.</li>
+    <li><b>Daily AI checks:</b> to share the free AI allowance, our server counts how many AI checks you ran today (5 a day;
+      cached answers and our example searches are free). It keeps only that number, under a salted one-way fingerprint of your
+      IP address, never the address itself, and deletes every count at 00:00 UTC.</li>
     <li><b>Meaning-based search</b> (only when switched on): the same check asks an AI model what your words mean and looks
       them up in an index of public repo names and descriptions (Cloudflare Vectorize). Every repo found that way is checked
       live on GitHub before you see it.</li>
@@ -1742,6 +1745,6 @@
 </div></div>
 
 <script src="pro-core.js?v=eb18699136" defer></script>
-<script src="app.js?v=6598ca1c44" defer></script>
+<script src="app.js?v=2b3ca143d5" defer></script>
 </body>
 </html>

@@ -563,6 +563,7 @@ function render(top, queries, excluded, totalMatches, qtokens, heading, note, ga
       '<span class="res-count mut">'+n+' result'+(n===1?'':'s')+'</span>'+
       '<span class="res-tools">'+sortBox()+'<button type="button" class="rsel" id="resSelAll" title="Tick every repo shown, for a build plan (RS28a)">Select all shown</button></span></div>'+
     (note?'<p class="res-note mut">'+note+'</p>':'')+  /* note is pre-built HTML: repo name already escaped, rest is our own markup */
+    (gateLine(gate)?'<p class="res-note mut ai-credits" aria-live="polite">'+esc(gateLine(gate))+'</p>':'')+   /* RS96: credits left, or why AI ranking is off */
     '<p id="resTrustNote" class="res-note mut" aria-live="polite" hidden></p>'+   /* RS82: says when the Trust sort re-ordered the top 5 */
     '<div class="res-body">'+filterBar(top)+'<div class="res-main">'+   // RS67: filter panel on the left, cards on the right
     '<div class="grid">'+top.map(function(r,i){   // RS34: AI-dropped repos follow the kept ones under a quiet divider, shown automatically
@@ -683,8 +684,26 @@ function tokenWithin(ms){ return new Promise(function(ok){ var done=false;
 // (loaded before this file), never in a URL, a log or the feedback form.
 var AI_OFF_KEY="replore_ai_off_until";   // RS41: only a reset time, set when the daily AI allowance is used up
 function aiOffUntil(){ try{ return +localStorage.getItem(AI_OFF_KEY)||0; }catch(_){ return 0; } }
+function aiOffSet(sec){ try{ localStorage.setItem(AI_OFF_KEY, String(Date.now()+Math.min(+sec,86400)*1000)); }catch(_){} }
+// RS96: daily AI search credits, as the server reports them ({left, cap}); anything else is ignored
+function creditsOk(c){ return !!(c && typeof c==="object" && c.left===+c.left && c.cap===+c.cap && c.cap>0 && c.left>=0 && c.left<=c.cap && c.left%1===0 && c.cap%1===0); }
+function creditLine(c){ return creditsOk(c) ? "AI ranking: "+c.left+" of "+c.cap+" search"+(c.cap===1?"":"es")+" left today" : ""; }
+function msToUtcMidnight(now){ var d=new Date(now); return Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()+1)-now; }
+// RS96: one plain line when AI ranking is out (credits, or the site's whole allowance); other failures stay silent (RS34)
+var AI_USED_UP="AI ranking is used up for today, resets at 00:00 UTC. Showing keyword results.";
+function aiNote(error, resetsInSec, now){
+  now=now||Date.now();
+  if(error==="credits_used_up") return AI_USED_UP;
+  if(error==="llm_rate_limited") return "AI ranking is busy right now. Showing keyword results.";
+  if(error!=="llm_daily_limit") return "";
+  var ms=Math.max(0,+resetsInSec||0)*1000;
+  if(!ms || Math.abs(ms-msToUtcMidnight(now))<=120000) return AI_USED_UP;
+  var h=Math.round(ms/3600000);
+  return "AI ranking is used up for now, back in about "+(h>=1?h+" hour"+(h===1?"":"s"):Math.max(1,Math.round(ms/60000))+" minutes")+". Showing keyword results.";
+}
+function gateLine(gate){ if(!gate) return ""; return (!gate.ok && aiNote(gate.error,gate.resetsIn)) || creditLine(gate.credits); }
 async function relevanceGate(query, repos){
-  if(Date.now()<aiOffUntil()) return {fail:true,error:"llm_daily_limit",resetsInSec:Math.ceil((aiOffUntil()-Date.now())/1000)};   // don't ask again until it resets
+  if(Date.now()<aiOffUntil()) return {fail:true,error:window.__aiOffWhy||"llm_daily_limit",resetsInSec:Math.ceil((aiOffUntil()-Date.now())/1000)};   // don't ask again until it resets
   if(window.__gateCtl) try{ window.__gateCtl.abort(); }catch(_){}   // a newer search supersedes the old check
   var tok=await tokenWithin(5000), hdr=typeof proKeyHeader==="function"?proKeyHeader({"Content-Type":"application/json"}):{"Content-Type":"application/json"};
   if(tok===TS_LATE) return {fail:true,error:"bot_check_slow"};
@@ -696,10 +715,12 @@ async function relevanceGate(query, repos){
     if(!res.ok){ var er={}; try{ er=await res.json()||{}; }catch(_){}   // read the body once
       if(res.status===404||res.status===405||res.status===501||(res.status===503&&er.error==="not_configured"))
         return "off";   // check not set up (no key / no function): behave as before, no note
-      if(er.error==="llm_daily_limit" && +er.resetsInSec>0) try{ localStorage.setItem(AI_OFF_KEY, String(Date.now()+Math.min(+er.resetsInSec,86400)*1000)); }catch(_){}
-      return {fail:true, error:er.error||("http_"+res.status), resetsInSec:+er.resetsInSec||0}; }   // RS34: say why, incl. when it resets
+      if((er.error==="llm_daily_limit"||er.error==="credits_used_up") && +er.resetsInSec>0){ aiOffSet(er.resetsInSec); window.__aiOffWhy=er.error; }
+      return {fail:true, error:er.error||("http_"+res.status), resetsInSec:+er.resetsInSec||0, credits:creditsOk(er.credits)?er.credits:null}; }   // RS34: say why, incl. when it resets
     var j=await res.json(); if(!Array.isArray(j.drop)) return {fail:true,error:"bad_reply"};
-    var d=j.drop;   // RS42: meaning scores and indexed repos ride along only when the server has them switched on
+    var d=j.drop;
+    if(creditsOk(j.credits)){ d.credits=j.credits;   // RS96: the last credit is spent: skip the check until 00:00 UTC
+      if(j.credits.left===0){ aiOffSet(Math.ceil(msToUtcMidnight(Date.now())/1000)); window.__aiOffWhy="credits_used_up"; } }   // RS42: meaning scores and indexed repos ride along only when the server has them switched on
     if(Array.isArray(j.sim) && j.sim.every(function(x){ return typeof x==="number"; })) d.sim=j.sim;
     if(Array.isArray(j.neighbors)) d.neighbors=j.neighbors.filter(function(x){ return x && typeof x.name==="string" &&
       /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(x.name) && typeof x.score==="number"; }).slice(0,8);
@@ -953,7 +974,7 @@ async function run(){
       if(gen!==window.__runGen) return;
       if(window.__ragCfg) applyRagCopy(ragRan(drops));   // RS42b: claim "words and meaning" only when it ran for this search
       if(drops==="off"){ gate=null; window.__ragIndex=false; }
-      else if(drops&&drops.fail){ gate={ok:false,error:drops.error,resetsIn:drops.resetsInSec}; }
+      else if(drops&&drops.fail){ gate={ok:false,error:drops.error,resetsIn:drops.resetsInSec,credits:drops.credits}; }
       else if(drops){ var dropped={}; drops.forEach(function(d){ dropped[d.i]=1; });   // RS34: off-topic repos go to the end, shown
         var cut=top.slice(0,30);                                                        // after the kept ones, under "Less likely to fit"
         var keptRows=cut.filter(function(r,i){ return !dropped[i]; }), leftRows=cut.filter(function(r,i){ return dropped[i]; });
@@ -976,7 +997,7 @@ async function run(){
           keptRows=hybridOrder(keptRows, like?(text+" "+like):text, sims);
         }
         top=keptRows.concat(leftRows.map(function(r){ r.left=1; return r; }));
-        gate={ok:true,hidden:drops.length}; } }
+        gate={ok:true,hidden:drops.length,credits:drops.credits}; } }
     smoothSwap(function(){ if(gen!==window.__runGen) return;   // RS69: the results dissolve in
     closeDrawer(true); out.innerHTML=render(top,queries,excluded,ranked.length,qtok,heading,(window.__likeNote||"")+relaxNote,gate);
     // RS34: no on-screen note about the AI check; its outcome is kept as an attribute for diagnosis only
