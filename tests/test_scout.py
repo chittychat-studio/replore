@@ -669,7 +669,7 @@ def test_web_page_is_safe_static(monkeypatch):
     index = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
     srcs = _re.findall(r'<script[^>]+src="([^"]+)"', index)
     srcs = [s.split("?v=")[0] for s in srcs]   # RS52: app.js / theme.js carry a ?v=<hash> stamp
-    assert srcs == ["theme.js", "pro-core.js", "app.js"], srcs   # RS49: no inline script; app.js after pro-core.js (RS89)
+    assert srcs == ["theme.js", "pro-core.js", "auth.js", "app.js"], srcs   # RS49: no inline script; app.js after pro-core.js (RS89); auth.js: optional sign-in (RS94)
     assert _re.search(r'<script src="app\.js\?v=[0-9a-f]{10}" defer>', index)
     assert not _re.search(r"<script(?![^>]*src=)[^>]*>", index) and not _re.search(r"\son[a-z]+\s*=", index)
     assert "<html lang=\"en\">" in index   # RS24: no forced light theme; the system setting applies until the visitor picks one
@@ -791,7 +791,7 @@ def test_web_page_is_safe_static(monkeypatch):
     assert "function showTrending" in html and 'id="trendCar"' in html and 'id="trendBtn"' in html
     assert "&sort=" in html and "github.com/trending" not in html
     assert "body.view-trending .tcar, body.has-results .tcar{display:none}" in html  # no Rising list twice; results focus
-    assert 'class="tbento"' in html and "tb-big" in html and "tb-sm" in html   # RS63: bento grid, no auto-turning ring
+    assert 'class="tdeck"' in html and "td-card" in html and "tb-big" not in html   # RS92: the card shuffle deck (was the RS63 bento)
     # RS36 thinking orb pill: the search loading indicator (RS61: no longer under the home demo; the ASCII globe is there)
     assert "function startDotOrb" in html and "function think(" in html and 'id="homeThink"' not in html
     assert 'class="think-orb" aria-hidden="true"' in html and "draw(); if(reduce) return;" in html and "canvas.isConnected" in html
@@ -830,7 +830,7 @@ def test_security_headers_and_csp():
     assert h["Permissions-Policy"] == "camera=(), microphone=(), geolocation=()"
     csp = {d.split()[0]: d.split()[1:] for d in h["Content-Security-Policy"].split("; ")}
     assert "'unsafe-inline'" not in csp["script-src"] and "'unsafe-eval'" not in csp["script-src"]
-    assert csp["frame-ancestors"] == ["'none'"] and csp["default-src"] == ["'self'"]
+    assert csp["frame-ancestors"] == ["'none'"] and csp["default-src"] == ["'self'", "https://accounts.google.com/gsi/"]   # RS94: GIS's fallback
     app = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
     fetched = set(re.findall(r'fetch\("https://([a-z0-9.-]+)', app)) | {"api.github.com"}
     assert {"https://" + x for x in fetched} <= set(csp["connect-src"]), fetched
@@ -875,6 +875,12 @@ def test_one_official_deploy_and_cardzo_credit():
     html = _page()
     assert 'href="https://cardzo.co.in" target="_blank" rel="noopener noreferrer"' in html and "Cardzo</a> product" in html
 
+
+def test_google_preferred_source_link():
+    """RS93: footer deeplinks to Google's source preferences tool; Google's button script is never loaded."""
+    html = _page()
+    assert 'href="https://www.google.com/preferences/source?q=replore.cardzo.co.in" target="_blank" rel="noopener noreferrer"' in html
+    assert "publisher.js" not in html and "news.google.com" not in (ROOT / "web" / "_headers").read_text(encoding="utf-8")
 
 def test_all_uncaps_and_groups_by_feature():
     """RS23: --all returns every match; groups hold each feature's repos, deduped to the first finder."""
@@ -930,12 +936,12 @@ def test_privacy_notice_matches_what_the_code_does():
     # only these hosts are contacted; PRIVACY.md names each of them
     hosts = set(re.findall(r"https://([a-z0-9.-]+)", html))
     allowed = {"api.github.com", "github.com", "claude.ai", "claude.com", "replore.pages.dev", "cardzo.co.in", "chatgpt.com", "gemini.google.com", "api.web3forms.com", "groq.com", "www.cloudflare.com", "challenges.cloudflare.com", "buy.stripe.com", "replore.cardzo.co.in", "gitdiagram.com", "gitingest.com", "deepwiki.com", "github1s.com", "github.dev",
-               "scorecard.dev", "osv.dev"}  # RS53 trust links (navigations); RS34/RS34a provider terms, RS34c Turnstile, RS44 tips, RS51 Explore links
+               "scorecard.dev", "osv.dev", "www.google.com"}  # RS93 preferred-source link; RS53 trust links (navigations); RS34/RS34a provider terms, RS34c Turnstile, RS44 tips, RS51 Explore links
     assert hosts <= allowed, hosts - allowed
     for named in ("api.github.com", "Cloudflare", "claude.ai", "security.log", "200 characters", "off by default",
                   "Groq", "Cloudflare Workers AI", "Turnstile", "relevance check", "stores nothing", "Feedback", "chatgpt.com", "gemini.google.com", "Web3Forms", "Stripe",
                   "Cloudflare Web Analytics", "static.cloudflareinsights.com", "cookieless", "gitdiagram.com", "gitingest.com", "deepwiki.com", "github1s.com", "github.dev",
-                  "OpenSSF Scorecard", "api.securityscorecards.dev", "deps.dev", "OSV.dev", "Safe to build on?"):  # RS34/RS53b data flows must be disclosed
+                  "OpenSSF Scorecard", "api.securityscorecards.dev", "deps.dev", "OSV.dev", "Safe to build on?", "www.google.com"):  # RS34/RS53b data flows must be disclosed
         assert named in priv, named
     # RS33: the host's Cloudflare Web Analytics beacon is on, so no copy may promise "no analytics"; each place names it
     for doc, text in (("index.html", html), ("PRIVACY.md", priv), ("README.md", readme)):
@@ -979,12 +985,21 @@ def test_rs47_look_and_motion_kit():
     fcss = (ROOT / "web" / "fonts.css").read_text(encoding="utf-8")
     for fam in ("'Anton'", "'Inter Tight'", "'JetBrains Mono'"):
         assert fam in fcss, fam
-    assert "--accent:#3f6f8e" in html and "--btn-grad:" in html and "192,83,44" not in html
+    # RS92 replaced the RS47 palette with the Stitch tokens (light accent #0091a8, dark neon cyan #00f0ff); still one set
+    # of theme tokens, with --btn-grad the fill every accent button uses
+    assert "--accent:#0091a8" in html and "--accent:#00f0ff" in html and "--btn-grad:" in html and "192,83,44" not in html
+    assert "--accent:#3f6f8e" not in html and "Plus Jakarta Sans" in html
     assert 'class="ln" aria-hidden="true"' in html and 'aria-label="Find it before you build it."' in html and "var segs=" not in html
     assert "data-magnet" in html and "el.style.translate=" in html and "(hover:hover) and (pointer:fine)" in html   # RS91: no GSAP quickTo
     assert "function odometer(" in html and "function snapHtml(" in html and "html:out.innerHTML" not in html
     assert 'class="tring"' not in html and 'class="ttape"' not in html and "TAPE_ICON" not in html and "✦</b>" not in html   # RS62
-    assert 'role="listitem"' in html and "rows.slice(1).map" in html   # RS63: every tile is a plain focusable link
+    # RS92: Trending is the card shuffle deck (was the RS63 bento): pause, Previous, Next, Shuffle, dots and a counter;
+    # only the top card is exposed, the others are aria-hidden and inert; reduced motion stops the auto-shuffle
+    assert 'id="tcarTrack"' in html and 'aria-roledescription="carousel"' in html and 'aria-roledescription="slide"' in html
+    for i in ('id="tcPlay"', 'id="tcPrev"', 'id="tcNext"', 'id="tcShuffle"', 'id="tcCount"', 'id="tcDots"'):
+        assert i in html, i
+    assert "function deckCardHtml(" in html and 'c.inert=true' in html and "!reduce&&!paused&&!hover&&!focus&&visible" in html
+    assert "tbento" not in html and "rows.slice(1).map" not in html
 
 
 
@@ -1083,18 +1098,21 @@ def test_harm_filter_shared_cases():
 
 def test_home_demo_is_the_real_product_and_honest():
     """RS61/RS67: the home demo types real quick-pick searches into the search bar's placeholder, with no network call,
-    no invented numbers and no example cards; the ASCII globe is desktop only."""
+    no invented numbers and no example cards. RS92: the ASCII globe is gone and Leo is the Flow clip or its still."""
     js = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
     start = js.index("var LIVE_DEMO=")
     block = js[start:js.index("// remember the last results", start)]
     assert "buildLiveDemo(hd)" in js and "fetch(" not in block
     assert block.count('{q:"') == 3 and "kstars(" not in block and "repos fit" not in block
-    assert "max-width: 999px" in block and "prefers-reduced-motion" in block and "isConnected" in block
-    # RS65: the studio stage: bot beside the globe, stage pills; RS67: the search bar joins Leo, no example deck or pointer
-    assert 'class="st-pair"' in block and "scout-hero.webp" in block and "st-pills" in block and "st-rail" not in block
+    assert "prefers-reduced-motion" in block and "isConnected" in block   # RS92: no desktop-only globe, so no width switch here
+    # RS65: the studio stage and stage pills; RS67: the search bar joins Leo, no example deck or pointer.
+    # RS92 (owner 2026-10-24): no ASCII globe anywhere; one Leo: the Flow clips, or leo-hero.webp as the still
+    assert 'class="st-pair"' in block and "leo-hero.webp" in block and "st-pills" in block and "st-rail" not in block
+    assert "globe" not in re.sub(r"//.*", "", js) and "ld-globe" not in _page() and "scout-hero.webp" not in block
+    assert 'class="st-herovid"' in block and "LEO_VIDEO.intro" in block and 'sb.classList.add("herovid")' in block
     assert "st-arrow" not in block and "ld-deck" not in block and "st-cursor" not in block and 'class="st-search"' in block
     assert 'id="stageSlot"' in _page() and 'id="deckSlot"' not in _page() and "function placeSearch" in js
-    assert (ROOT / "web" / "scout-hero.webp").exists() and (ROOT / "web" / "scout-search.webp").exists()
+    assert all((ROOT / "web" / f).exists() for f in ("leo-hero.webp", "leo-intro.webm", "leo-idle.webm", "scout-hero.webp"))
 
 
 def test_rs28h_plugin_shows_visuals_before_prd():
@@ -1248,3 +1266,105 @@ def test_pro_window_markup_copy_and_switch():
     # the in-page privacy window names the key and Stripe
     priv = html[html.index('id="privacyModal"'):html.index('id="aboutModal"')]
     assert "A Replore Pro key" in priv and "Stripe" in priv
+
+
+def test_rs94_google_signin_is_optional_dormant_and_disclosed():
+    """RS94: optional Google sign-in for Pro. Only firebase-app + firebase-auth are vendored and imported (no Firestore,
+    Storage, Analytics, Performance, Remote Config), the CSP adds only the sign-in hosts, the box sits next to the Pro
+    features only and starts hidden, every stored field the code sets is named in PRIVACY.md's table, payment details are
+    said to be held only by Stripe, and no "no account" claim survives."""
+    web = ROOT / "web"
+    vend = web / "vendor" / "firebase-12.19.0"
+    assert sorted(p.name for p in vend.iterdir()) == ["LICENSE.txt", "firebase-app.js", "firebase-auth.js"]
+    assert "Apache License" in (vend / "LICENSE.txt").read_text(encoding="utf-8")
+    notice = (ROOT / "NOTICE.md").read_text(encoding="utf-8")
+    assert "Firebase JS SDK (Apache License 2.0)" in notice and "12.19.0" in notice
+    auth = (web / "auth.js").read_text(encoding="utf-8")
+    fb_auth = (vend / "firebase-auth.js").read_text(encoding="utf-8")
+    fb_app = (vend / "firebase-app.js").read_text(encoding="utf-8")
+    # imports: the vendored SDK imports only its own app module (no CDN); auth.js imports only the two files
+    assert re.findall(r'(?:from|import)\s*\(?\s*"([^"]+)"', fb_auth) == ["./firebase-app.js"]
+    assert not re.search(r'(?:\bfrom|\bimport)\s*\(?\s*"', fb_app)
+    assert re.findall(r'import\(([^)]*)\)', auth) == ['AUTH_SDK+"firebase-app.js"', 'AUTH_SDK+"firebase-auth.js"']
+    assert 'AUTH_SDK="/vendor/firebase-12.19.0/"' in auth and "gstatic" not in auth + fb_auth
+    banned = re.compile(r"firebase[-/](firestore|storage|analytics|performance|remote-config|database|messaging|functions|installations)", re.I)
+    for f in [web / "auth.js", *(ROOT / "functions").rglob("*.js")]:   # the SDK files only name other modules in a version table; their imports are checked above
+        assert not banned.search(f.read_text(encoding="utf-8")), f
+    for f in (ROOT / "functions").rglob("*.js"):   # no firebase-admin or any Firebase package on the server
+        assert not re.search(r'(from|import\(|require\()\s*"firebase', f.read_text(encoding="utf-8")), f
+    # CSP (RS94 security review, RS49): Google Identity Services path-scoped exactly as Google's guidance says, plus the
+    # SDK's two API hosts; never apis.google.com (JSONP), any firebaseapp.com host, a wildcard or www.googleapis.com
+    hdr = (web / "_headers").read_text(encoding="utf-8")
+    line = [l for l in hdr.splitlines() if "Content-Security-Policy:" in l][0]
+    csp = {d.split()[0]: d.split()[1:] for d in line.split(": ", 1)[1].split("; ")}
+    for bad in ("apis.google.com", "firebaseapp.com", "www.googleapis.com", "*"):
+        assert bad not in line.replace("'self'", ""), bad
+    gis = {"default-src": ["https://accounts.google.com/gsi/"], "script-src": ["https://accounts.google.com/gsi/client"],
+           "frame-src": ["https://accounts.google.com/gsi/"], "style-src": ["https://accounts.google.com/gsi/style"],
+           "connect-src": ["https://accounts.google.com/gsi/", "https://identitytoolkit.googleapis.com", "https://securetoken.googleapis.com"]}
+    google = {d: [h for h in v if "google" in h] for d, v in csp.items()}
+    assert {d: v for d, v in google.items() if v} == gis, google
+    for d, v in google.items():   # every accounts.google.com source carries a /gsi/ path, never the bare host
+        assert all(h.startswith("https://accounts.google.com/gsi/") for h in v if "accounts.google.com" in h), (d, v)
+    assert "frame-ancestors 'none'" in line
+    assert set(re.findall(r'fetch\("([^"]+)"', auth)) == {"/api/auth/config"}
+    assert set(re.findall(r'authPost\("([^"]+)"', auth)) == {"/api/auth/refresh", "/api/auth/link", "/api/auth/delete"}
+    assert "innerHTML" not in auth   # text only via textContent
+    assert re.findall(r'"(https://[^"]+)"', auth) == ["https://accounts.google.com/gsi/client"]   # the only outside URL: GIS, on demand
+    for gone in ("signInWithPopup(", "signInWithRedirect(", "getRedirectResult(", "getAuth(", "reauthenticateWithPopup("):
+        assert gone not in auth, gone   # these pull apis.google.com or frame a firebaseapp.com page
+    assert "signInWithCredential(AUTH.auth" in auth and "reauthenticateWithCredential(AUTH.user" in auth
+    assert "initializeAuth(app" in auth and "GoogleAuthProvider.credential(idToken)" in auth
+    assert auth.index("function authGisLoad") < auth.index("function authSignIn") and "authGisLoad().then" in auth
+    # the box: next to the Pro features only, hidden until configured; the script on / and /pro only
+    index = (web / "index.html").read_text(encoding="utf-8")
+    pro = (web / "pro.html").read_text(encoding="utf-8")
+    modal = index[index.index('id="proModal"'):index.index('id="pluginModal"')]
+    assert '<div id="proAuth" class="auth-box" aria-live="polite" hidden></div>' in modal and index.count('id="proAuth"') == 1
+    assert '<div id="ppAuth" class="auth-box" aria-live="polite" hidden></div>' in pro
+    assert re.search(r'<script src="auth\.js\?v=[0-9a-f]{10}" defer></script>', index)
+    assert re.search(r'<script src="/auth\.js\?v=[0-9a-f]{10}" defer></script>', pro)
+    for name in ("evals.html", "404.html"):
+        assert "auth.js" not in (web / name).read_text(encoding="utf-8"), name
+    assert 'typeof authHeader==="function"' in (web / "app.js").read_text(encoding="utf-8")
+    # copy rules (RS55, RS66) for the new script
+    string_lit = re.compile(r'"(?:[^"\\]|\\.)*"')
+    dashes = [m for l in auth.splitlines() for m in string_lit.findall(re.split(r"\s//\s|^\s*//", l)[0]) if "—" in m]
+    assert dashes == [] and not re.search("[\U0001F000-\U0001FAFF☀-➿✕×]", auth)
+    for s in ("Sign in with Google", "Sign out", "Delete my account", "does not cancel your Pro subscription", "Link my Pro key to this account"):
+        assert s in auth, s
+    # PRIVACY.md: the complete stored-data table names every field the code stores
+    priv = (ROOT / "PRIVACY.md").read_text(encoding="utf-8")
+    table = priv[priv.index("## What we store about you"):priv.index("## Web page")]
+    gjs = (ROOT / "functions" / "api" / "auth" / "google.js").read_text(encoding="utf-8")
+    fields = re.findall(r'"([a-z_]+)"', re.search(r"CLAIM_FIELDS = \[([^\]]+)\]", gjs).group(1))
+    assert fields == ["pro", "sub_id", "checked_at"]
+    built = re.search(r"function proClaims\([^)]*\) \{ return \{([^}]+)\}", gjs).group(1)
+    assert sorted(re.findall(r"([a-z_]+):", built)) == sorted(fields), built   # the one place claims are built
+    assert "CLAIM_FIELDS.includes(k)" in gjs   # setClaims refuses any other field
+    for f in fields:
+        assert "`%s`" % f in table, f
+    hint = re.search(r'var AUTH_HINT="([^"]+)"', auth).group(1)
+    assert "`%s`" % hint in table and 'localStorage.setItem(AUTH_HINT,"1")' in auth
+    assert set(re.findall(r'localStorage\.setItem\(([A-Z_]+)', auth)) == {"AUTH_HINT"}
+    for s in ("Firebase user id", "email address", "display name", "profile photo URL", "`google.com`", "created",
+              "last signed in", "IndexedDB", "Delete my account", "Sign out", "How long", "How to delete it", "Firebase Authentication"):
+        assert s in table, s
+    for doc, text in (("PRIVACY.md", priv), ("index.html", index)):
+        assert "Payment details are held only by Stripe." in text, doc
+    for host in ("accounts.google.com/gsi/", "identitytoolkit.googleapis.com", "securetoken.googleapis.com"):
+        assert host in priv, host
+    assert "Google's own cookies" in priv and "Replore sets no cookie" in priv and "apis.google.com" not in priv
+    # no "no account" claim survives where a visitor or a reader of the docs sees it; each says "optional Google sign-in"
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    for doc, text in (("PRIVACY.md", priv), ("README.md", readme), ("index.html", index), ("pro.html", pro),
+                      ("app.js", (web / "app.js").read_text(encoding="utf-8")), ("auth.js", auth)):
+        assert not re.search(r"\bno (user )?accounts?\b", text, re.I), doc
+    for doc, text in (("PRIVACY.md", priv), ("README.md", readme), ("index.html", index)):
+        assert "optional google sign-in" in text.lower(), doc
+    # README owner steps
+    assert "FIREBASE_AUTH_DOMAIN" not in readme
+    for s in ("FIREBASE_SERVICE_ACCOUNT", "FIREBASE_API_KEY", "FIREBASE_GOOGLE_CLIENT_ID", "FIREBASE_PROJECT_ID", "Authorized domains", "Web client ID",
+              "Authorized JavaScript origins",
+              "`replore.cardzo.co.in` and `replore.pages.dev`", "Firebase Authentication\n   Admin", "enable **Google** only"):
+        assert s in readme, s

@@ -116,7 +116,8 @@ It calls the public GitHub search API from the browser (about 10 searches a minu
 the same filters, ranking and license labels as the plugin. The searches are keyword-based; then a small server-side
 **relevance check** (`functions/api/relevance.js`, SPEC RS34) asks an AI which of the top 30 repos don't fit what you
 described, and moves them to the end under a "Less likely to fit" divider. If the check is unavailable or over its free limit, you get the plain keyword
-results. The page shows no note either way; the outcome is in the results' `data-gate` attribute for debugging.
+results. The outcome is in the results' `data-gate` attribute for debugging. With the router on (SPEC RS95, RS96, below), the page shows one quiet line
+with the visitor's AI searches left today, and a plain note when AI ranking is used up or busy; other failures stay silent.
 Failed checks are logged as codes and timings only (SPEC RS34d) to the Cloudflare log (Pages → your project → the
 deployment → Functions → Real-time logs; live only, not stored). To keep them, enable Workers Analytics Engine on the
 account, then uncomment the `[[analytics_engine_datasets]]` block in `wrangler.toml`. The plugin goes further: your AI writes the searches, and its PRD mode returns every suitable repo per feature.
@@ -127,7 +128,33 @@ Keep the account on the Workers **Free** plan if you want it to stop at the dail
 **Optional fallback** for when Workers AI is over its allocation or failing: in Cloudflare → your Pages project →
 Settings → Variables and Secrets, add a **secret** `LLM_API_KEY` (e.g. a free Groq API key from console.groq.com) and
 redeploy; optional `LLM_BASE_URL` (any OpenAI-compatible endpoint; default Groq) and `LLM_MODEL` (default
-`llama-3.1-8b-instant`). With neither the binding nor the key, the page shows plain keyword results with no note.
+`openai/gpt-oss-20b`; Groq retired `llama-3.1-8b-instant` on 2026-08-16, so remove an `LLM_MODEL` that still names it). With neither the binding nor the key, the page shows plain keyword results with no note.
+**Quota-aware router and daily AI credits (maintainer, SPEC RS95, RS96; off until you deploy it).** One Durable Object
+in a small separate Worker (`router/`) decides, per check, which AI to use: the free pool first (Workers AI, then Groq
+free `GROQ_FREE_MODELS` on the one `LLM_API_KEY`, then Mistral free if `MISTRAL_API_KEY` is set), then Groq paid inside a
+hard, paced daily budget, then keyword results with a note. It learns each provider's limits, cools down a provider that
+rate-limits or errors, and hands out the free pool as daily credits (5 per anonymous IP, 20 per signed-in user once RS94
+sign-in exists, Pro uncapped). Without the binding the function runs the chain above, unchanged. To go live:
+1. Deploy the router Worker: `cd router && npx wrangler deploy` (it needs no secrets; it is the Free plan's SQLite Durable
+   Object, 100,000 requests and 100,000 rows written a day, which the design keeps under 40,000 each at 25,000 checks a
+   day; `node tests/sim_router.mjs` shows the numbers).
+2. In `wrangler.toml` (this Pages project) uncomment the `[[durable_objects.bindings]]` block (`name = "ROUTER"`,
+   `class_name = "RouterDO"`, `script_name = "replore-router"`), then redeploy Pages.
+3. Optional, in Pages → Settings → Variables and Secrets: **Mistral** (only after you switch off training on your data in
+   Mistral's Admin Console, and only a standard model, never Labs or Preview): secret `MISTRAL_API_KEY`, optional
+   `MISTRAL_MODEL` (default `mistral-small-latest`) and `MISTRAL_LIMITS` (default `rpm=2,rpd=2000,tpm=50000,tpd=1000000`;
+   copy your real limits from Mistral's Limits page). **Paid overflow** (off while the budget is 0, the default): secret
+   `PAID_LLM_API_KEY` (a Groq key on a paid plan; set a spending limit in Groq's billing too, as a second net) and
+   variable `ROUTER_DAILY_BUDGET_USD` (for example `4`: about 12,700 to 20,500 more checks a day on `openai/gpt-oss-20b`).
+   **Pro** (off while 0): `PRO_LLM_DAILY_BUDGET_USD` (for example `1`); the Pro model `PRO_LLM_MODEL` (default
+   `openai/gpt-oss-120b`) uses `PAID_LLM_API_KEY` unless `PRO_LLM_API_KEY` is set. **Credits:** `ROUTER_CREDITS_ANON`
+   (default 5) and `ROUTER_CREDITS_SIGNED_IN` (default 20).
+4. Check it: `curl -H "X-Replore-Eval-Key: $REPLORE_EVAL_KEY" "https://replore.cardzo.co.in/api/relevance?router=status"`
+   returns the owner-only snapshot (JSON plus an ASCII dashboard: per-provider state, use against limits, cooldowns,
+   budget spent and paced, credit totals, keyword fallbacks, errors, the DO's own requests and rows today). Without the
+   key the address returns the normal public config.
+If the Durable Object is unreachable (250 ms deadline), no paid call is made: the free chain runs in the function and
+credits are not enforced until it is back.
 **Bot check (SPEC RS34c, recommended):** in Cloudflare → Turnstile, add a widget for your site's hostname
 (Invisible or Managed), then in the Pages project add the variable `TURNSTILE_SITE_KEY` (public) and the **secret**
 `TURNSTILE_SECRET`, and redeploy. Every AI check then needs a fresh Turnstile token. **Without `TURNSTILE_SECRET` the
@@ -264,6 +291,41 @@ manage your subscription in Stripe's emails, or write to hello@cardzo.co.in; the
 the subscription ending. **On sale:** once the
 owner pastes the Stripe links; until then `/pro` says keys are not on sale yet.
 
+**Optional Google sign-in (SPEC RS94):** a Pro buyer can sign in with Google on `/pro` or in the Pro window and link
+their key once ("Link my Pro key to this account"); after that, signing in on any browser turns Pro on there, with no
+key to paste. It is optional and only for Pro: search and everything free work signed out, and the plugin and MCP
+server keep using `REPLORE_KEY`. It uses Firebase Authentication (the `firebase-app` and `firebase-auth` browser builds
+of the Firebase JS SDK 12.19.0, vendored in `web/vendor/firebase-12.19.0/`, Apache-2.0). It stays switched off, with no
+button and no Firebase file loaded, until the owner does these steps:
+
+1. Create a Firebase project in the [Firebase console](https://console.firebase.google.com/) (leave Google Analytics off for it). Add a
+   **Web app** to it and note its `apiKey` and `projectId` (the `authDomain` is not used: sign-in goes through Google
+   Identity Services, never a Firebase popup or redirect).
+2. **Authentication, Sign-in method:** enable **Google** only. Open the Google provider's **Web SDK configuration** and
+   copy the **Web client ID** (the same id is in Google Cloud console, APIs and Services, Credentials, OAuth 2.0 Client
+   IDs, "Web client (auto created by Google Service)"). In that Web client, set **Authorized JavaScript origins** to
+   `https://replore.cardzo.co.in` and `https://replore.pages.dev` only.
+3. **Authentication, Settings, Authorized domains:** keep only `replore.cardzo.co.in` and `replore.pages.dev` (remove
+   `localhost`).
+4. **Google Cloud console, APIs and Services, Credentials:** edit the browser API key Firebase made, set **Application
+   restrictions** to **Websites** with `https://replore.cardzo.co.in/*` and `https://replore.pages.dev/*`, and **API
+   restrictions** to the Identity Toolkit API and the Token Service API.
+5. **Google Cloud console, IAM, Service accounts:** create a service account with only the **Firebase Authentication
+   Admin** role and download one JSON key. In Cloudflare (Workers and Pages, the Replore project, Settings, Variables
+   and Secrets, Production) add it as the **secret** `FIREBASE_SERVICE_ACCOUNT` (paste the whole JSON). Never commit
+   it; delete the downloaded file.
+6. In the same place add the plain **variables** `FIREBASE_API_KEY` and `FIREBASE_PROJECT_ID` from step 1 and
+   `FIREBASE_GOOGLE_CLIENT_ID` (the Web client ID from step 2, `<digits>-<id>.apps.googleusercontent.com`). The Pro secrets above (`STRIPE_SECRET_KEY`, `PRO_SIGNING_SECRET`, `PRO_PRICE_IDS`) must be set too.
+7. Optional: in Stripe, turn on the **customer portal** (Settings, Billing, Customer portal) and paste its login link
+   (`https://billing.stripe.com/p/login/...`) into `PRO_PORTAL_URL` in `web/pro-core.js`, so "Delete my account" can
+   point to it; then run `python ops/stamp_assets.py`.
+8. Redeploy. `GET /api/auth/config` answers `{"on": true, ...}` once all of this is set, and the sign-in box appears.
+
+`web/_headers` already allows the sign-in sources, path-scoped as Google's Identity Services guidance says
+(`https://accounts.google.com/gsi/client`, `/gsi/` frames and calls, `/gsi/style`) plus `identitytoolkit.googleapis.com`
+and `securetoken.googleapis.com`; `apis.google.com` and `firebaseapp.com` are never allowed. Accounts are deleted with "Delete my account"; deleting
+does not cancel Stripe.
+
 Planned, not built yet: searches on your own GitHub token, PRD batches over 20 repos, saved shortlists and a
 licence-policy mode.
 
@@ -321,6 +383,9 @@ node tests/test_web_logic.js        # web page logic (no network)
 node tests/test_relevance_fn.mjs    # relevance check function (fake AI)
 node tests/test_trust_fn.mjs        # trust check function (fake Scorecard/deps.dev)
 node tests/test_pro_fn.mjs          # Pro key claim function (fake Stripe)
+node tests/test_router.mjs          # router scheduler, budgets, credits (fake clock)
+node tests/test_router_fn.mjs       # relevance check with the router bound (fake Durable Object and providers)
+node tests/sim_router.mjs           # one simulated day, 25,000 checks: limits, budget cap, free plan
 # tests/fixtures/trust_cases.json is run by the web tests above and by pytest (tests/test_trust.py): one behaviour, two ports
 python3 evals/run.py                # fit-ranking evals
 ```
@@ -338,11 +403,13 @@ publishes the section as the GitHub release notes. If anything disagrees it fail
 
 ## Privacy
 
-No account, no database, nothing you type is stored: the makers of Replore never keep your ideas or searches. The web
+Optional Google sign-in for Pro users, no database, nothing you type is stored: the makers of Replore never keep your ideas or searches. Signing in is never needed for search; the complete list of what sign-in stores is the "What we store about you" table in `PRIVACY.md`, and payment details are held only by Stripe. The only other thing the
+server keeps is a daily count of AI checks per visitor under a salted one-way fingerprint of the IP or account id (never the address or id),
+wiped at 00:00 UTC (SPEC RS96). The web
 page's host counts page views with Cloudflare Web Analytics (cookieless, script from `static.cloudflareinsights.com`;
 it never sees your searches).
 Search words go to GitHub to run the search; on the web page they also pass through a small relevance check to an AI
-provider (Cloudflare Workers AI, with Groq as fallback) that moves off-topic repos to the end of the list. Fonts and scripts are served from the site itself. The plugin never uses
+provider (Cloudflare Workers AI, with Groq as fallback, and Mistral only if switched on) that moves off-topic repos to the end of the list. Fonts and scripts are served from the site itself. The plugin never uses
 the relevance check. Opening **Is it safe to build on?** sends only the repo's public name and language to our trust check,
 which asks OpenSSF Scorecard and Google's deps.dev without your IP or searches. In the plugin the same check runs
 only when you ask for it, straight from your computer to GitHub, Scorecard and deps.dev (repo names only). Details — including what the web page keeps in your browser and the plugin's optional,

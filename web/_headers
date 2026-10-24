@@ -3,9 +3,14 @@
 #   challenges.cloudflare.com     Turnstile bot check (RS34c): script, iframe, verification calls
 #   static.cloudflareinsights.com Cloudflare Web Analytics beacon the host injects (RS33); reports to cloudflareinsights.com
 #   api.github.com                the search itself (RS2); api.web3forms.com feedback form (RS39)
+#   accounts.google.com/gsi/...   optional Google sign-in for Pro (RS94): Google Identity Services, path-scoped exactly as
+#                                 Google's GIS CSP guidance says (client script, /gsi/ frames and calls, /gsi/style, and
+#                                 /gsi/ in default-src as its fallback); loaded only when a visitor presses Sign in.
+#   identitytoolkit.googleapis.com, securetoken.googleapis.com  the Firebase SDK's sign-in and token calls (RS94).
+#   Never allowed (RS94 security review): apis.google.com (JSONP endpoints that defeat a CSP) and any firebaseapp.com host.
 # If Web Analytics is switched off in the Pages dashboard, drop both cloudflareinsights hosts here.
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com; connect-src 'self' https://api.github.com https://api.web3forms.com https://challenges.cloudflare.com https://cloudflareinsights.com; frame-src https://challenges.cloudflare.com; img-src 'self' data: https://avatars.githubusercontent.com; style-src 'self' 'unsafe-inline'; font-src 'self'; base-uri 'self'; form-action 'self' https://api.web3forms.com; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'self' https://accounts.google.com/gsi/; script-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com https://accounts.google.com/gsi/client; connect-src 'self' https://api.github.com https://api.web3forms.com https://challenges.cloudflare.com https://cloudflareinsights.com https://accounts.google.com/gsi/ https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; frame-src https://challenges.cloudflare.com https://accounts.google.com/gsi/; img-src 'self' data: https://avatars.githubusercontent.com; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style; font-src 'self'; base-uri 'self'; form-action 'self' https://api.web3forms.com; frame-ancestors 'none'
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff

@@ -4,3 +4,4 @@ __pycache__/
 
 # local screenshot/recording scratch scripts
 *.cjs
+references/

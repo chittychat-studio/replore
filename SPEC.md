@@ -408,7 +408,9 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
 
 - **RS33** Privacy notice. `PRIVACY.md` (linked from README and the web page) and a one-line web notice under the
   search bar describe data handling exactly as built — no broader promise. Facts it must state: the maintainers run
-  no database or account and keep no searches; the host's **Cloudflare Web Analytics** is on (owner's Pages dashboard
+  no account and keep no searches, and the only server-side store is the RS95/RS96 router's Durable Object (provider
+  counters, the dollar ledger and, per UTC day, a salted one-way hash of each IP or signed-in uid with a credit count, wiped at
+  00:00 UTC; never the IP, the search words or the repos); the host's **Cloudflare Web Analytics** is on (owner's Pages dashboard
   setting, found by peer review 2026-10-18 while the copy still said "no visitor analytics"): a cookieless page-view
   counter whose script Cloudflare injects from `static.cloudflareinsights.com`, recording page address, referrer,
   browser/OS/device type, country and load timings, never the searches — the notice names it, what it records and
@@ -419,7 +421,8 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   locally and only short feature phrases are sent to GitHub; "Open in Claude" sends the prompt to the user's own
   claude.ai account; the plugin's RS25 hook is off by default and, only if the user turns it on, writes a flagged
   prompt's first 200 characters to a log on their own machine and never transmits it; the user's AI agent provider handles
-  their conversation under its own terms. The notice says it is not legal advice and gives a dated version. Any change
+  their conversation under its own terms. When RS94 (optional Google sign-in for Pro) ships, its stored-data list
+  replaces the "no account" fact here. The notice says it is not legal advice and gives a dated version. Any change
   that adds a data flow must update the notice in the same commit.
 
 - **RS34** Web relevance gate (LLM, server-side). After the fit ranking (RS5), the web page sends the user's
@@ -545,6 +548,12 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   did, so fewer checks fit in a day; the example cache (RS34b, bumped to v2 for the new model) and max 120 output
   tokens offset part of it. When the allocation runs out the check is skipped silently (RS34).
 
+  Groq fallback model (2026-10-24): Groq retired `llama-3.1-8b-instant` and `llama-3.3-70b-versatile` on 2026-08-16
+  (console.groq.com/docs/deprecations), so the old default had been failing every fallback call. The default `LLM_MODEL`
+  becomes `openai/gpt-oss-20b`, Groq's named replacement. gpt-oss reasons before it answers and the reasoning shares the
+  completion budget, so gpt-oss models get `reasoning_effort: "low"`, `max_tokens` 600 instead of 120, and, on Groq only,
+  `include_reasoning: false` so the reply carries just the JSON. Other models keep 120 tokens and no reasoning fields.
+  Status: unit-tested; not yet scored by the live eval, which must pass before this counts as verified.
 - **RS37** Copy discipline (web, owner request; audited against the open-source "taste-skill" redesign checklist).
   Visible text earns its place: no eyebrow label repeating the heading, one plain tagline, plain nav labels, no
   lead line explaining the demo, card "why" lines only when the search words actually match (no generic "Related to
@@ -1311,6 +1320,244 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   now moves the CSS `translate` property through a springy transition, so it never fights the hover styles that own
   `transform`. Reduced motion still turns everything off (RS47). `web/vendor/` no longer exists, and the test checks
   that no GSAP file or reference remains.
+- **RS92** Stitch look, site-wide (owner 2026-10-24: "I want this to be our UI", a Google Stitch export). This replaces
+  the look of RS65 and RS67 on every screen: home, results, Details panel, every window, `/pro`, `/evals` and the 404 page.
+  It is dark first: obsidian base `#090D16`, surfaces `#0a0e17` / `#181b25` / `#1c1f29` / `#262a34` / `#31353f`, text
+  `#dfe2ef` / `#b9cacb`, headings `#dbfcff`, outline `#3b494b`, neon cyan `#00F0FF` as the accent, with mint `#4edea3`,
+  violet `#8B5CF6`, emerald `#10B981`, amber `#F59E0B` and red `#EF4444`. There is a matching light theme, and the theme
+  toggle stays. The type is Plus Jakarta Sans for headings and UI, and JetBrains Mono for labels, chips and numbers, both
+  self-hosted (OFL). The parts: a frosted sticky header, a 36 px cyber grid behind the hero, a status bar, Leo beside a
+  framed search console, and Trending as the card shuffle deck (pause, Previous, Next, Shuffle, dots, counter). The owner
+  asked for this design, so its soft cyan glows and the cyan-to-violet title gradient are allowed (they lift the RS65
+  "no glows/gradients" note). The truth rules still hold. Every number on screen comes from the live data, or it is
+  not shown: no invented star counts, latencies, index sizes, scores, velocities or sparklines (RS7, RS67). There is no
+  avatar, because Replore has no accounts. The status bar shows the real search stages (Ready, Searching GitHub,
+  Ranking by fit). The export's emoji become RS55 line icons; Material Symbols, the Tailwind CDN and the hotlinked
+  images are not used (CSP, RS49). Leo stays our own art. Behaviour, ids and data flow are unchanged, and the
+  rules on motion (RS47, RS69, RS91: Web Animations API, reduced motion respected) and on em dashes (RS66) still apply.
+  Leo is redrawn as Stitch's Leo (white body, glowing cyan smiling visor, LEO on the chest, a holographic radar ring).
+  The hero plays two Google Flow (Veo 3.1 Lite) clips, keyed from green and cropped: `web/leo-intro.webm` once, then
+  `web/leo-idle.webm` on a loop, with `web/leo-hero.webp` as the poster. Safari, which can't play VP9 with alpha, and
+  reduced motion keep the still. The crop drops Flow's visible Veo mark, so the footer says "Leo animated with Google
+  Veo" and NOTICE.md records the provenance; Google's SynthID mark stays in the files.
+  The ASCII globe is gone (owner 2026-10-24, "no ASCII globe"): Leo alone is the left column's hero, about 440 to 520 px
+  wide on laptops and 260 px on phones, and only one Leo ever shows. The idle clip keeps playing during a search, while
+  the LEO stage pill shows the real stage; the old Leo art (wave and search sprites, the peek clip) is retired from the hero.
+- **RS93** Google Preferred Sources link (owner 2026-10-24). The home page footer has a plain link, "Add Replore on
+  Google", to Google's source preferences tool: `https://www.google.com/preferences/source?q=replore.cardzo.co.in`
+  (Google's deeplink option; the domain is a subdomain, which Google accepts). It opens in a new tab with
+  `rel="noopener noreferrer"`. Google's JavaScript button (`news.google.com/swg/js/v1/publisher.js`) is not used: it
+  would load a third-party script on every visit and widen the CSP (RS49), so nothing is sent to Google until a reader
+  clicks. It only helps readers who pick Replore, mainly in Top Stories; it is not a ranking fix.
+- **RS94** Optional Google sign-in with Firebase Authentication (owner 2026-10-24; status: implemented, see Build below).
+  **Scope.** One sign-in method: Google, through Firebase Authentication (modular web SDK, vendored on the site at a
+  pinned version with its licence, no CDN). Sign-in is optional: search, results, Details, plans, the plugin and the
+  MCP server work signed out exactly as before, and nothing free is ever moved behind sign-in. Login is for Pro users
+  (owner 2026-10-24: "login is for pro users for easy access to pro features"): a Pro subscriber signs in with Google
+  on any device and gets their Pro features on the web at once (RS87, RS90), without finding, pasting or storing a
+  key. The sign-in button sits on /pro and next to the Pro features, not as a site-wide account wall. Signing in
+  without Pro shows the /pro offer and stores only the login identity below. The plugin and MCP server keep using the
+  Pro key; they never sign in.
+  **What we store about a user, the complete list** (anything not on this list must not be stored; adding a field
+  needs this rule amended first):
+  1. *Login identity*, held by Firebase Authentication in the owner's Firebase project (Google's servers, under
+     Google's terms): the Firebase user id, the Google account's email address, display name and profile photo URL,
+     the sign-in provider (google.com), and the account's created and last-sign-in times. Kept until the user deletes
+     their account (below).
+  2. *Pro link*, stored as Firebase custom claims on that same user, set only by our server function: whether Pro is
+     active, the Stripe subscription id, and when the status was last checked. Nothing else about the payment.
+  3. *Session*, in the user's own browser: the Firebase SDK keeps the sign-in token in IndexedDB until sign-out.
+  4. *Daily AI check count* (RS96, added when the router and sign-in were merged): the router counts a signed-in user's
+     AI checks under a salted one-way hash of the uid (never the uid itself), a number only, wiped at 00:00 UTC.
+  **Payment information is never stored by Replore.** Card number, expiry, CVC, billing name and address, bank and
+  UPI details stay with Stripe (the seller-of-record flow in RS87); Replore's code never receives them, never logs
+  them and never asks Stripe for them. The Pro link above is the only payment-related data, and it exists only so a
+  signed-in user's Pro status follows their login.
+  **Never stored**, signed in or not: searches, results, uploaded plans, feedback text, trust checks, or any browsing
+  inside Replore. There is still no database: no Firestore, Realtime Database or Cloud Storage; adding one needs a new
+  rule. Firebase Analytics, Performance Monitoring and Remote Config are not loaded.
+  **Linking Pro.** After a paid checkout (RS90), a signed-in user can link the subscription; the server checks it with
+  Stripe exactly as RS87 does (Pro price or product match) and only then sets the claims. The claims are rechecked
+  against Stripe at most once a day per user and on each new sign-in, so a cancelled subscription stops showing Pro.
+  One subscription links to one account.
+  **Delete.** The account menu has "Delete my account": it deletes the Firebase user and its claims at once and signs
+  out. It does not cancel a Stripe subscription; the page says so and links Stripe's customer portal.
+  **Secrets.** The Firebase web config (apiKey, projectId) and the Google OAuth Web client id are public identifiers, not secrets; the API
+  key is restricted by HTTP referrer to replore.cardzo.co.in and replore.pages.dev. The service-account credential the
+  server needs to set claims is a Cloudflare Pages secret, never committed, printed or logged (as RS8). Authorized
+  domains in Firebase: only those two hosts.
+  **CSP and privacy (RS33, RS49).** Only the Google sign-in sources sign-in needs are added to the CSP, path-scoped
+  where Google allows it (amended 2026-10-24 after a security review: `apis.google.com` has JSONP endpoints that defeat a
+  CSP, and a `*.firebaseapp.com` wildcard matches every Firebase project, so neither is ever allowed; see Build). In the same change that ships sign-in, `PRIVACY.md`, the web notice and README replace every
+  "no account" claim with "optional Google sign-in", and `PRIVACY.md` gains a "What we store about you" table listing
+  each item above with where it lives, why, how long, and how to delete it, plus the sentence that payment details
+  are held only by Stripe. Tests check that every stored field the code sets is named in that table, that no "no
+  account" claim survives, and that no Firestore, Storage or Analytics module is imported.
+  **Owner steps:** create the Firebase project, enable the Google provider, set the authorized domains and the
+  referrer restriction, and add the service-account secret in Cloudflare. Until those are done the sign-in button does
+  not render.
+  **Build (amended 2026-10-24, status: implemented and unit-tested, not verified live).** *SDK:* Firebase JS SDK
+  12.19.0, only its `firebase-app.js` and `firebase-auth.js` browser builds, vendored at
+  `web/vendor/firebase-12.19.0/` with its licence (the build's one CDN import rewritten to `./firebase-app.js`); no
+  other Firebase module is shipped or imported. *Dormant switch:* `GET /api/auth/config` (`functions/api/auth/config.js`,
+  the same pattern as the Turnstile site key in RS34c) answers `{"on": true, apiKey, projectId, clientId}` only when
+  the plain variables `FIREBASE_API_KEY`, `FIREBASE_PROJECT_ID` and `FIREBASE_GOOGLE_CLIENT_ID`, the secret `FIREBASE_SERVICE_ACCOUNT` (the service-account JSON) and the RS87 Pro switches are
+  all set; otherwise `{"on": false}`, and the page renders no sign-in UI and loads no Firebase file. *Page:*
+  `web/auth.js` (a classic script on `/` and `/pro`, no inline code) asks for the config only on `/pro`, when the Pro
+  window opens, or when this browser signed in before; it then loads the vendored SDK with `initializeAuth` and
+  IndexedDB persistence (no popup or redirect resolver, so the SDK never loads `apis.google.com` or frames a
+  `firebaseapp.com` page). *Sign-in (amended 2026-10-24, security review):* never `signInWithPopup` or
+  `signInWithRedirect`. Only when the visitor presses "Sign in with Google" does the page load **Google Identity
+  Services** (`https://accounts.google.com/gsi/client`), which shows Google's own button and prompt; its callback's
+  Google ID token goes to Firebase as `signInWithCredential(auth, GoogleAuthProvider.credential(idToken))`. Delete's
+  recent-sign-in step is `reauthenticateWithCredential` with a fresh GIS token. GIS needs the OAuth Web client id, the
+  plain variable `FIREBASE_GOOGLE_CLIENT_ID` (`<digits>-<id>.apps.googleusercontent.com`, the Web client Firebase
+  creates in Google Cloud); without it sign-in stays dormant. No auth domain is used, so `FIREBASE_AUTH_DOMAIN` is not
+  needed.
+  It also keeps one hint in localStorage, `replore.auth` = `1`, set on sign-in and removed on sign-out or delete, so
+  later visits know to load the SDK (item 3 above; it holds nothing about the user). On the web a signed-in Pro user's
+  relevance checks carry `Authorization: Bearer <Firebase ID token>`, which `/api/relevance` treats like a granted Pro
+  key for skipping the per-IP limit (RS87), nothing more. *Server* (Pages Functions, WebCrypto only, no firebase-admin):
+  `functions/api/auth/session.js` verifies ID tokens: RS256 only, signature against Google's securetoken public keys
+  (`https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com`, cached for the reply's
+  `Cache-Control` max-age, 60 s to 24 h, refetched at most once a minute for an unknown key id), `iss` =
+  `https://securetoken.google.com/<project>`, `aud` = the project, `exp` in the future, `iat` and `auth_time` not in
+  the future (60 s skew), `sub` 1 to 128 characters, provider `google.com`. Its `signedInUser(request, env)` returns
+  `{uid, pro}` or `null` and never throws; `pro` is true only when the token's claims say `pro: true` with a
+  `sub_id` and a `checked_at` under 26 hours old. Claims are written only through the Identity Toolkit REST API
+  (`identitytoolkit.googleapis.com`, `accounts:update`), with an OAuth access token from a service-account JWT
+  (RS256, scope `identitytoolkit`) exchanged at `oauth2.googleapis.com`, cached in memory until shortly before it
+  expires; the service-account JSON and the access token are never logged or returned. `POST /api/auth/link` (body
+  `{"key": "rp...."}`, the RS90 key): the key's signature first (no Stripe call when it is wrong), then the RS87
+  subscription check (`validateProKey`); only on "granted" does it scan the project's users (`accounts:batchGet`,
+  fail closed above 50 pages) and refuse with 409 `already_linked` when another account holds the same `sub_id`, then
+  set `{pro: true, sub_id, checked_at}` (seconds). `POST /api/auth/refresh` rechecks with Stripe only when
+  `checked_at` is over 24 hours old or the token's `auth_time` is newer (a new sign-in); granted keeps Pro, denied sets
+  `pro: false` and keeps the link; a Stripe error changes nothing and answers 503 (fail closed). `POST /api/auth/delete`
+  needs a sign-in in the last 5 minutes (else 401 `reauth`, and the page asks Google again), then `accounts:delete`.
+  All four routes: same-origin only, JSON only, at most 1 KB, a best-effort per-IP limit in memory, `Cache-Control:
+  no-store`, codes only in replies and logs (never the token, uid, email, key or a secret). *CSP* (amended 2026-10-24,
+  security review; as Google's GIS CSP guidance says): `script-src` adds `https://accounts.google.com/gsi/client`,
+  `frame-src` and `connect-src` add `https://accounts.google.com/gsi/`, `style-src` adds
+  `https://accounts.google.com/gsi/style`, `default-src` adds `https://accounts.google.com/gsi/` (Google's recommended
+  fallback), and `connect-src` also adds `https://identitytoolkit.googleapis.com` and
+  `https://securetoken.googleapis.com` (the SDK's sign-in and token calls). `apis.google.com`, any `firebaseapp.com`
+  host and `www.googleapis.com` are never in the CSP (the token-key fetch is server-side). No
+  Cross-Origin-Opener-Policy is set (GIS needs none with FedCM, and none is the browser default). GIS may read or set
+  Google's own cookies on `accounts.google.com`; `PRIVACY.md` says so. *Delete* links Stripe's customer portal through `PRO_PORTAL_URL` in `web/pro-core.js` (a
+  `https://billing.stripe.com/p/login/...` link, owner-set; while empty the page says to write to hello@cardzo.co.in).
+- **RS95** Quota-aware LLM router, "Kubernetes for LLMs" (owner decision 2026-10-24, from the report "LLM router open
+  source options"; builds on RS34, RS34a-RS34h, RS41, RS43, RS87). The relevance check (RS34) keeps its prompt, parse
+  rules, 4.5 s budget, bot check, cache and error shapes; what changes is how the provider for each check is picked.
+  **Where it lives.** One SQLite-backed Cloudflare Durable Object, class `RouterDO`, in a separate small Worker
+  `replore-router` (`router/`, its own `wrangler.toml`), because a Pages project cannot define a Durable Object. The
+  Pages project binds it as `ROUTER` (`[[durable_objects.bindings]]` with `script_name = "replore-router"`). The DO is
+  the scheduler; each provider-model is a node; free-tier limits are resource quotas; cooldowns and breakers are health
+  probes; the daily dollar cap is the admission controller. The DO never calls a provider and never sees a key: the
+  Pages Function sends it the provider list (ids, models, limits, prices, budgets, credit caps and an 8-hex SHA-256 tag
+  per key so a changed key is noticed), makes the provider call itself, and reports the outcome.
+  **Without the binding** the function runs exactly the RS34a chain of today (Workers AI, then `LLM_API_KEY`).
+  **Tiers, fixed order.** Free pool first, in this order: (1) Cloudflare Workers AI (the `AI` binding and `WAI_MODELS`,
+  one account-wide daily bucket of 10,000 neurons); (2) Groq free with the one key `LLM_API_KEY`, models
+  `GROQ_FREE_MODELS` (default `openai/gpt-oss-20b`, `qwen/qwen3.8-27b`, `openai/gpt-oss-120b`), each its own bucket of
+  30 RPM, 1,000 RPD, 8,000 TPM, 200,000 TPD; (3) Mistral free, only when `MISTRAL_API_KEY` is set, model
+  `MISTRAL_MODEL` (default `mistral-small-latest`; a name containing `labs`, `preview`, `beta` or `experimental` is
+  refused, standard models only), limits `MISTRAL_LIMITS` (default `rpm=2,rpd=2000,tpm=50000,tpd=1000000`, unverified
+  placeholders that can only be learned lower); the owner must switch off training in Mistral's Admin Console before
+  setting the key. Then the paid overflow: Groq paid `openai/gpt-oss-20b` (`PAID_LLM_API_KEY`, optional `PAID_LLM_MODEL`,
+  `PAID_LLM_BASE_URL`), admitted only inside the daily budget `ROUTER_DAILY_BUDGET_USD` (default **0 = paid overflow
+  off**). Then keyword results with a note (RS96, RS7 fail open). One key per provider account, no key rotation or
+  pooling, no Gemini, OpenRouter or other providers. **Pro** (an RS87 key that `proKeyOk` grants, or an RS94 signed-in
+  user marked Pro) starts on the Pro model, `PRO_LLM_MODEL` (default Groq `openai/gpt-oss-120b`, key `PRO_LLM_API_KEY`,
+  else the paid key, base `PRO_LLM_BASE_URL`), with its own budget `PRO_LLM_DAILY_BUDGET_USD` (default 0 = off), then the
+  free pool, then the paid overflow. Prices (USD per million tokens, input / output): gpt-oss-20b 0.075 / 0.30,
+  gpt-oss-120b 0.15 / 0.60; reasoning tokens count as output (a separately reported reasoning count is added, so spend
+  can be overstated, never understated); a paid model with no known price (or `*_PRICE_IN` / `*_PRICE_OUT`) is never
+  called. Within a tier the order of groups is fixed (Workers AI, Groq, Mistral); inside a group the provider with the
+  highest `headroom x 429-penalty factor x success EWMA` wins.
+  **Algorithms (ported, credited in `NOTICE.md`).** freellmapi (MIT): headroom ramp (factor 1 while 20% or more of
+  every limit is left, then linear to 0.1 at 0%); 429 penalty (+3 per 429, +1 per 5xx or timeout, cap 10, decays 1 point
+  per 2 minutes, -1 per success; factor `1 - penalty/10 x 0.6`); cooldown ladder (a transient 429 cools 90 s, Workers AI
+  capacity 20 s; two or more 429s in the last hour climb 2 min, 10 min, 1 h, 24 h; a success clears it); `Retry-After` is
+  a floor, capped at 24 h; daily quota used up (Workers AI 3036, Groq per-day limits) cools until the reset, no probing;
+  limits are learned from Groq's `x-ratelimit-*` headers (the request headers are per day, the token headers per minute;
+  remaining counts can only raise the local count) and from error text such as "tokens per minute (TPM): Limit 8000",
+  and learned limits can only be lowered, never raised. LiteLLM (MIT): only 429, 401, 402, 404, 408 and 5xx (and
+  timeouts) cool a provider; other 4xx do not; pre-increment admission (a call is reserved at its worst case, prompt
+  estimate plus `max_tokens`, before it is made, and corrected by the reply's `usage`). Portkey 1.x (MIT): when nothing
+  is free now but a provider frees up within the time left (minus 1.5 s to run), the check waits for it, otherwise it
+  moves on. one-api (MIT): 401, 403, `invalid_api_key`, `account_deactivated` or "organization has been restricted"
+  turn the provider off until its key or model changes. Circuit breaker for 5xx and timeouts: open after 3 in a row or 5
+  of the last 20 calls, for `min(300 s, 15 s x 2^trips)` plus up to 20% jitter; the first call after it is the probe.
+  Health skip: an EWMA (alpha 0.25) of latency above 2.7 s or success below 0.7 skips a provider, with a probe allowed
+  after 60 s. Safety reserves: 10% of per-minute limits, 2% of daily limits. At most 3 attempts per check inside the
+  4.5 s budget, never the same provider twice, at most one retry per provider error.
+  **Budget.** Each paid pool has a hard daily cap B and a linear pacer: a call is admitted only if
+  `spent + estimate <= B x (time since 00:00 UTC / 24 h) + 10% of B` and `spent + estimate <= B`. The dollar ledger is
+  written to SQLite on every paid reservation (and on any upward correction), before the call is made.
+  **State and the free Durable Object plan** (100,000 requests and 100,000 rows written per day, 13,000 GB-s). Counters
+  live in memory; one state row is written at most every 15 s while something changed (an alarm), the credit table
+  (RS96) at most every 30 s, the ledger on each paid call; the daily reset is lazy (UTC date compared on each call). One
+  `acquire` call per attempt reserves the provider and carries the previous outcomes of that isolate (piggy-backed);
+  a check that failed entirely reports at once in the background. At 25,000 checks a day the plan is about 25,000
+  acquires plus retries plus at most 5,760 alarms (under 40,000 requests) and at most 5,760 state rows + 2,880 credit
+  rows + 5,760 alarm rows + one ledger row per paid call (under 40,000 rows with a $4 budget); the offline simulation
+  (`tests/sim_router.mjs`, 25,000 checks with bursts, run in CI) asserts both stay under the plan, that no provider limit
+  is exceeded, that spend never passes the cap and that paid is used only when every free provider is blocked. A DO
+  that is active all day uses about 10,800 GB-s (86,400 s x 128 MB), inside the 13,000. Going past these is the first
+  reason to move to Workers Paid.
+  **Fail-safe.** Each DO call has a 250 ms deadline; 3 failures in a row skip the DO for 30 s plus jitter. When the DO
+  is unreachable no paid call is made; the check runs the RS34a free chain in the isolate, credits are not enforced,
+  and the RS34g per-IP burst limit stays. Missed reports are kept in memory (at most 50) and replayed.
+  **Cache (RS43).** Only answers from Workers AI or the Pro model are cached (a per-provider `cacheable` setting
+  replaces the old "first provider" flag; without the router the old rule holds). **Diagnostics (RS34d, RS34e)** stay
+  codes, models and timings only. Keys never leave the server, never reach the DO in clear and never appear in a log,
+  a diagnostic or a response (RS8).
+  **Owner status.** `GET /api/relevance?router=status` with a valid `X-Replore-Eval-Key` returns the DO's snapshot
+  (per provider: state, today's and this minute's use against limits, cooldown, latency; budgets spent, paced and
+  capped; credit totals; keyword fallbacks; errors in the last hour; DO requests and rows today) as JSON plus an ASCII
+  dashboard. Without the key the GET is unchanged. It never contains a key, a key tag, a salt or an IP hash.
+  Status: implemented and unit-tested with fakes; not deployed, not verified live.
+- **RS96** Daily AI search credits (owner decision 2026-10-24: "free limits given as credits for search"; builds on
+  RS95, RS34, RS33). The free pool is shared out as daily credits, one credit per AI check that actually runs. An
+  anonymous visitor gets `ROUTER_CREDITS_ANON` (default **5**) per IP address per day (an IPv4 address in full, an IPv6
+  address by its /64 prefix, since one household or phone holds a whole /64); a signed-in user gets
+  `ROUTER_CREDITS_SIGNED_IN` (default **20**) per account, keyed by the RS94 uid, never the IP; Pro users and callers
+  holding `EVAL_KEY` have no credit cap (Pro stays inside the Pro budget). The signed-in tier comes from RS94:
+  `relevance.js` uses RS94's `signedInUser(request, env)` (`functions/api/auth/session.js`, returning `{uid, pro}` or
+  `null`) as the default hook, so a valid Firebase ID token in `Authorization: Bearer` counts by uid; a missing or
+  invalid token counts as anonymous, by IP. Tests can replace the hook with `setSignedInHook`. Free: only a cache hit (RS43), which never reaches the
+  router. The built-in example searches (RS34b) are usually cache hits; an example text sent with any other repo list
+  needs a live call and spends a credit like any search (security review 2026-10-24: the text alone must not waive the
+  cap). **Refunds** (same review): the credit is handed back only when no provider call ran at all, meaning every
+  attempt was a router denial, a cooldown skip, an unreachable provider or a provider's rate-limit reply carrying no
+  usage; never for an unparseable or soft reply, a timeout after the request was sent, or any attempt that returned
+  usage; and at most 2 refunds per id per day (counted in memory only). Credits reset at 00:00 UTC.
+  **Why 5 and 20.** With the default budget of 0 the whole site has the free pool only: about 165 Workers AI checks
+  (10,000 neurons at about 60 a check) plus about 107 per Groq model (200,000 tokens a day at about 1,860 a check) x 3,
+  so about 490 AI checks a day (Mistral not counted, its free limits are unpublished). A visitor runs about 2.5 searches
+  a day (25,000 checks from 10,000 visitors), so 5 covers a normal session twice over while no one visitor can take
+  more than about 1% of the day's pool; 20 is 4 times that as the reason to sign in, still about 4% of the pool. When the
+  owner sets a budget B, a paid check costs about $0.000195 (1,800 tokens in, about 200 out with reasoning, on
+  gpt-oss-20b) and is reserved at most $0.000315, so B = $4 admits 12,700 to 20,500 more checks; credits cap the worst
+  case at 5 checks per address, so total demand stays bounded and the pacer spreads what the budget allows across the
+  day. All four numbers are environment settings.
+  **Storage.** The DO keeps, per day, only a salted one-way hash (SHA-256 of a random salt made fresh each UTC day, the
+  kind and the IP or uid, first 16 hex characters) and a count. The IP itself is never written; the salt and the table are
+  replaced at 00:00 UTC, so hashes cannot be linked across days. The table holds 50,000 ids; when it is full the
+  router evicts up to 10% (ids that used one credit first, then the oldest), so a new visitor is not refused for lack of
+  room (an evicted id simply starts again at its full allowance). An id whose count has reached the anonymous cap is
+  never evicted (security review: otherwise flooding the table with new addresses would hand exhausted ids a fresh
+  allowance). When too few ids can be evicted the table grows, to a hard limit of 75,000 ids (the credits row stays
+  under the Durable Object's 2 MB row limit); at that limit a new id gets the keyword results (`credits_full`, shown as
+  used up until 00:00 UTC) while every id already in the table keeps its count. `PRIVACY.md` says so (RS33).
+  **API and page.** The JSON reply carries `credits: {left, cap}` whenever a credit was counted (never anything
+  private); an exhausted visitor gets 429 `credits_used_up` with `resetsInSec` and `credits`. The page shows one quiet
+  line above the results, "AI ranking: 4 of 5 searches left today", and at 0 "AI ranking is used up for today, resets
+  at 00:00 UTC. Showing keyword results."; when the whole site's AI is used up or busy (RS95) it says so in one line too
+  (this replaces RS34's "no note" for limits only; other failures stay silent). At 0 the page stores only the reset time
+  (the RS41 key) and skips the check until then. Plain JS in `web/app.js`, no framework, no em dash (RS66), CSP
+  unchanged (RS49: same origin only). Status: implemented and unit-tested; not verified live.
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
 - **RX3** Ranking by forks, trending or download counts. (Relevance, stars and license-freedom are the only
