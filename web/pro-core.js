@@ -70,6 +70,8 @@ function proMount(p, host){ var $=function(id){ return document.getElementById(p
   if(buy){ if(b.month){ buy.href=b.month.href; proBuyLabel(buy,b.month); } buy.hidden=!b.month; }
   if(yr){ if(b.year){ yr.href=b.year.href; proBuyLabel(yr,b.year); } yr.hidden=!b.year; }
   if(off){ off.textContent=b.offer; off.hidden=!b.offer; }
+  var c=proConfig(), pm=$("PlanM"), py=$("PlanY"), pw=$("PlanYWas");   // RS99: the plan cards show the same prices as the buttons
+  if(pm) pm.textContent=c.price; if(py) py.textContent=c.priceYear; if(pw) pw.textContent=c.wasYear?"Then "+c.wasYear+" a year. Cancel any time.":"Cancel any time.";
   if(buy) buy.addEventListener("click",proCheckoutMark);
   if(yr) yr.addEventListener("click",proCheckoutMark);
   var have=$("Have"), form=$("Form"), rm=$("Remove"), cp=$("Copy"), ecp=$("EnvCopy");

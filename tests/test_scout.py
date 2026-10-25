@@ -1234,13 +1234,13 @@ def test_pro_window_markup_copy_and_switch():
     html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
     js = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
     nav = re.search(r'<button id="proBtn"[^>]*>Pro</button>', html).group(0)
-    assert 'class="nav-btn pro-el"' in nav and " hidden" in nav and 'title="Rank by meaning too, with a Pro key"' in nav
+    assert 'class="nav-btn pro-el"' in nav and " hidden" in nav and 'title="Replore Pro: get your project live faster"' in nav
     assert html.index('id="pluginBtn"') < html.index('id="proBtn"') < html.index('id="starBtn"')   # after Plugin
     start = html.index('<div class="modal pro-el" id="proModal" hidden>')
     win = html[start:html.index("<div class=\"modal\" id=\"pluginModal\"", start)]
     for s in ("<h2>Leo, <em>Pro</em></h2>", 'aria-label="Close"', 'src="leo-hero.webp?v=1ca927d5e6" alt="Leo, the Replore scout" width="150"',   # RS92 2026-10-25: the current Leo
-              "Want me to read for meaning too? Today I match your words. With Pro I also match what a repo\n      does, so the ones that say it differently still turn up.",
-              "<i>Meaning ranking</i><i>No queue on the AI check</i><i>Web and every agent</i>",
+              "Search stays free for everyone. Pro is for getting your project live faster",   # RS99: the six benefits and plans
+              "<b>Skip the queue</b>", "<b>Help from a person</b>", 'id="proPlanM"', 'id="proPlanY"', "Sold by Stripe. Cancel any time.",
               'id="proBuy" class="go-btn" href="#" target="_blank" rel="noopener noreferrer"', ">I have a key</button>",
               '<label for="proKey">Your key</label>', 'placeholder="Paste it here" autocomplete="off" spellcheck="false"',
               ">Save</button>", "Pro is on for this browser", ">Remove key</button>",
@@ -1262,7 +1262,7 @@ def test_pro_window_markup_copy_and_switch():
     for sel in (".pro-head .x{", ".pro-have{", ".pro-in input{", ".pro-save{", ".pro-on .link-btn{", ".pro-acts .go-btn{", ".pro-copy{"):
         rule = css[css.index(sel):css.index("}", css.index(sel))]
         assert "min-height:44px" in rule, sel
-    assert "max-width:580px" in css and "@media (max-width:560px)" in css and "grid-template-columns:1fr" in css
+    assert "max-width:860px" in css and "@media (max-width:560px)" in css and "grid-template-columns:1fr" in css
     # the in-page privacy window names the key and Stripe
     priv = html[html.index('id="privacyModal"'):html.index('id="aboutModal"')]
     assert "A Replore Pro key" in priv and "Stripe" in priv

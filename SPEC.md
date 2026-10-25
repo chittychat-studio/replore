@@ -1601,6 +1601,19 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   **Owner steps:** create a KV namespace, bind it to the Pages project as `PLAYBOOKS` (Production and Preview), run
   `python ops/playbooks.py` and the printed commands, redeploy. Status: implemented and unit-tested (`tests/test_playbook_fn.mjs`,
   `tests/test_playbooks_web.js`, `tests/test_playbooks_ops.py`); not verified live (needs the KV namespace).
+- **RS99** The Pro window and `/pro` list every Pro benefit (owner 2026-10-25: "pro screen should give all benefits we
+  offer in pro", "its outdated now"; layout from the Stitch screen "Replore - Leo, Pro Modal Redesign" in the owner's
+  project "Replore 3D Website Redesign"). Pro sells getting a project live, not AI ranking (it no longer says "meaning").
+  One line under the title ("Search stays free for everyone. Pro is for getting your project live faster: no waiting,
+  no daily cap, guided setup and a person to ask."), then six tiles, each a mono number, a title and one line: Skip the
+  queue (RS87 per-IP limit skip); No daily limit (RS96: 5 a day anonymous, 20 signed in, Pro uncapped); Step-by-step
+  playbooks (RS97); Everywhere you build (web, Claude Code plugin, MCP agents, RS87); Sign in with Google (RS94); Help
+  from a person (owner commitment 2026-10-25: hands-on help by email at hello@cardzo.co.in). Then two plan cards,
+  Monthly and Yearly (the yearly one highlighted with a "Launch offer" tag), whose prices `pro-core.js` fills from the
+  same `PRO_PRICE` / `PRO_PRICE_YEAR` / `PRO_PRICE_YEAR_WAS` the buy buttons use, so they never disagree; then the
+  buttons and "Sold by Stripe. Cancel any time." The copy Stitch invented (telemetry claims, "instant activation",
+  "millions of repositories") is not used: every claim must be true today (RS7). No icon tiles (the slop rules), no em
+  dash (RS66). Tiles lift 2 px on hover (transform only, none under reduced motion).
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
 - **RX3** Ranking by forks, trending or download counts. (Relevance, stars and license-freedom are the only
