@@ -731,8 +731,8 @@ def test_web_page_is_safe_static(monkeypatch):
     assert 'id="resClear"' in html and "Clear filter" in html
     # search-bar ✕ resets everything (text, similar repo, filters, picks, results) — shared with the logo
     assert 'id="clearQ"' in html and "function resetAll" in html and 'addEventListener("click",resetAll)' in html
-    # light/dark toggle (RS24)
-    assert 'id="theme"' in html and "data-theme" in html and "findrepo_theme" in html
+    # RS24: dark only (owner 2026-10-25): no toggle, nothing stored, data-theme="dark" set before paint
+    assert 'id="theme"' not in html and "findrepo_theme" not in html and 'setAttribute("data-theme","dark")' in html
     # RS24 Tour: a current screenshot of the live page is committed and embedded (replaces the stale gif)
     assert 'id="tourVideo"' in html and re.search(r'src="tour\.mp4\?v=[0-9a-f]{10}"', html) and (ROOT / "web" / "tour.mp4").exists()   # RS72: the explainer video
     assert (ROOT / "web" / "tour-poster.jpg").exists() and (ROOT / "web" / "tour.mp4").stat().st_size < 4_000_000

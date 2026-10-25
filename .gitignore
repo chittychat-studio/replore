@@ -5,3 +5,6 @@ __pycache__/
 # local screenshot/recording scratch scripts
 *.cjs
 references/
+
+# RS97: Pro playbook sources and their JSON stay out of this public repo
+playbooks/

@@ -329,6 +329,15 @@ does not cancel Stripe.
 Planned, not built yet: searches on your own GitHub token, PRD batches over 20 repos, saved shortlists and a
 licence-policy mode.
 
+### Pro playbooks (SPEC RS97)
+
+Step-by-step setup guides shown as cards on `/pro`, to Pro users only. Their text never goes in this repo:
+1. Cloudflare dashboard, Workers and Pages, KV: create a namespace `replore-playbooks`; copy its id.
+2. Pages project, Settings, Bindings: add a KV namespace binding named `PLAYBOOKS` to it (Production and Preview); redeploy once.
+3. Keep each playbook as `playbooks/<id>.md` (git-ignored): a `# Title` line, then `## 1. Step title` sections.
+4. Run `python ops/playbooks.py <namespace id>` and then the `npx wrangler kv key put ...` commands it prints.
+   Edits go live as soon as the commands run; no redeploy.
+
 ## Hybrid search (RAG): built, switched off
 
 Replore can rank repos by meaning as well as by your words, and pull in repos from its own index that GitHub's

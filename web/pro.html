@@ -9,10 +9,11 @@
 <!-- SPEC RS90: the Leo, Pro window (RS89) as a page, plus the claim state after a Stripe checkout. Switches and key rules
      are in pro-core.js (shared with the window); the page logic is pro.js. No inline script (RS49), no emoji (RS55),
      no em dash (RS66), 44px targets. -->
-<script src="/theme.js?v=9f42b68e11"></script>
+<script src="/theme.js?v=6d53c2f925"></script>
 <script src="/pro-core.js?v=3cb6e96e76" defer></script>
 <script src="/pro.js?v=bc69301b2f" defer></script>
 <script src="/auth.js?v=f43383d4f7" defer></script>
+<script src="/playbooks.js?v=20733dd90a" defer></script>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/fonts.css">
 <link rel="stylesheet" href="/page.css">
@@ -70,6 +71,11 @@
   </section>
   <noscript><p class="sp-lead">This page needs JavaScript to save or show a key.</p></noscript>
   <p class="sp-acts"><a class="sp-btn" href="/">Find repos for your idea</a></p>
+  <section id="ppBooks" class="pp-card pb" aria-labelledby="pbH" hidden>   <!-- RS97: Pro playbooks, shown only when /api/pro/playbook answers 200 -->
+    <p class="sp-kicker">Pro playbooks</p><h2 id="pbH" class="pb-h">Step by step, with you</h2>
+    <div class="pb-list" role="group" aria-label="Playbooks"></div>
+    <div class="pb-view" tabindex="-1"></div>
+  </section>
 </main>
 <footer class="sp-foot">A <a href="https://cardzo.co.in" rel="noopener noreferrer">Cardzo</a> product ·
   <a href="/evals">How ranking is tested</a> ·

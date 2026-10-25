@@ -2076,21 +2076,7 @@ function startHeroFx(canvas){
 
 // typewriter headline (desktop + mobile); full text stays for no-JS / reduced motion
 
-// ---- light / dark theme toggle (per-viewer convenience; dark until the visitor picks, RS24) ----
-(function(){
-  var btn=document.getElementById("theme"), root=document.documentElement, KEY="findrepo_theme";
-  function current(){ return root.getAttribute("data-theme")==="light"?"light":"dark"; }
-  function paint(){ btn.innerHTML = ico(current()==="dark" ? "sun" : "moon"); }   // RS44a, RS55: line icons, never a colour emoji
-  var saved; try{ saved=localStorage.getItem(KEY); }catch(e){}
-  if(saved==="dark"||saved==="light") root.setAttribute("data-theme",saved);
-  paint();
-  btn.addEventListener("click",function(){
-    var next=current()==="dark"?"light":"dark";
-    root.setAttribute("data-theme",next);
-    try{ localStorage.setItem(KEY,next); }catch(e){}
-    paint();
-  });
-}());
+// RS24: dark only, so there is no theme toggle (web/theme.js sets data-theme="dark").
 
 
 // RS47 motion kit (owner request 2026-10-15): hero lines rise out of masks, magnetic buttons with rolling labels.

@@ -14,7 +14,7 @@ ASSETS = ("theme.js", "pro-core.js", "auth.js", "app.js")  # RS94: auth.js is th
 MEDIA_IN_JS = ("leo-intro.webm", "leo-idle.webm", "leo-hero.webp")  # RS92: the old peek clip is retired                    # referenced as "leo-peek.webm" in app.js
 MEDIA_IN_HTML = ("tour.mp4", "tour-poster.jpg")       # src="..." / poster="..." in index.html
 SECONDARY = {"evals.html": ("theme.js", "evals.js"), "404.html": ("theme.js",),
-             "pro.html": ("theme.js", "pro-core.js", "pro.js", "auth.js")}  # RS90  # RS84: secondary pages load scripts by absolute path (/name?v=...)
+             "pro.html": ("theme.js", "pro-core.js", "pro.js", "auth.js", "playbooks.js")}  # RS97  # RS90  # RS84: secondary pages load scripts by absolute path (/name?v=...)
 
 
 def asset_hash(name):
