@@ -110,7 +110,7 @@ code{font-family:var(--f-mono);font-size:.88em;padding:1px 6px;border-radius:6px
 
 /* SPEC RS90: /pro, the Leo, Pro window (RS89) as a page. 44px targets, one column on phones. */
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-.pp-main{max-width:840px}
+.pp-main{max-width:1120px}
 .pp-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:26px;margin:0 0 20px;
   -webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);box-shadow:0 0 40px rgba(0,240,255,.06)}
 .pp-card h2{margin:0 0 10px}
@@ -228,3 +228,23 @@ code{font-family:var(--f-mono);font-size:.88em;padding:1px 6px;border-radius:6px
 @media (max-width:720px){ .pro-bens{grid-template-columns:repeat(2,minmax(0,1fr))} }
 @media (max-width:440px){ .pro-bens{grid-template-columns:1fr} .pro-plans{grid-template-columns:1fr} }
 @media (prefers-reduced-motion:reduce){ .pro-bens li{transition:none} .pro-bens li:hover{transform:none} }
+/* RS99 (owner 2026-10-25: "compact and use space proper to avoid scroll"): on wide screens the benefits sit left and the
+   plans, buttons and key form right, tightened so a laptop shows it all without scrolling; phones keep one column */
+@media (min-width:960px){
+  .pro-split{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:26px;align-items:start}
+  .pro-split .pro-head h1{margin:0 0 6px;font-size:40px}
+  .pro-split .pro-hero{grid-template-columns:88px minmax(0,1fr);gap:14px}
+  .pro-split .pro-hero img{width:88px}
+  .pro-split .pro-say{font-size:15px;line-height:1.45}
+  .pro-split .pro-sub{margin:12px 0 8px}
+  .pro-split .pro-bens{gap:8px;margin:0}
+  .pro-split .pro-bens li{padding:10px 12px 11px;gap:2px}
+  .pro-split .pro-bens b{font-size:14px}
+  .pro-split .pro-bens span:last-child{font-size:12.5px;line-height:1.4}
+  .pro-r{padding-top:6px}
+  .pro-r .pro-plans{grid-template-columns:1fr 1fr;gap:10px;margin:0 0 12px}
+  .pro-r .pro-plan{padding:13px 14px}
+  .pro-r .pro-plan-p{font-size:18px}
+  .pro-r .pro-form{margin-top:12px;padding-top:12px}
+}
+@media (min-width:960px){ .pp-main{padding-top:20px;padding-bottom:40px} .pp-main .pp-card{padding:22px 26px} }

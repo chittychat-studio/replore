@@ -1194,7 +1194,7 @@
   :root[data-theme="dark"]{--ln-host:#7db7ea;--ln-data:#7fd19c;--ln-auth:#f0bd6a;--ln-pay:#b9a2f2;--ln-store:#f29a83;--ln-cost:#6fd3d8;--ln-game:#f08cc4;--ln-live:#9cc0d8;
     --lt-host:#17324a;--lt-data:#173826;--lt-auth:#3a2c14;--lt-pay:#2a2346;--lt-store:#40231c;--lt-cost:#123a3c;--lt-game:#3d1d31;--lt-live:#1d3142}
   /* RS89: Leo, Pro window (owner pick 2026-10-23); 44px targets, one column on phones */
-  #proModal .pro-sheet{max-width:860px}
+  #proModal .pro-sheet{max-width:1080px}
   .pro-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 14px}
   .pro-head h2{margin:0}
   .pro-head h2 em{font-family:"Instrument Serif",Georgia,"Times New Roman",serif;font-weight:400;font-style:normal;letter-spacing:-.01em;
@@ -1772,6 +1772,25 @@ body:not(.has-results) .hero > .hero-fx{display:none}
   @media (max-width:720px){ .pro-bens{grid-template-columns:repeat(2,minmax(0,1fr))} }
   @media (max-width:440px){ .pro-bens{grid-template-columns:1fr} .pro-plans{grid-template-columns:1fr} }
   @media (prefers-reduced-motion:reduce){ .pro-bens li{transition:none} .pro-bens li:hover{transform:none} }
+  /* RS99 (owner 2026-10-25: "compact and use space proper to avoid scroll"): on wide screens the benefits sit left and the
+     plans, buttons and key form right, tightened so a laptop shows it all without scrolling; phones keep one column */
+  @media (min-width:960px){
+    .pro-split{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:26px;align-items:start}
+    .pro-split .pro-head h1{margin:0 0 6px;font-size:40px}
+    .pro-split .pro-hero{grid-template-columns:88px minmax(0,1fr);gap:14px}
+    .pro-split .pro-hero img{width:88px}
+    .pro-split .pro-say{font-size:15px;line-height:1.45}
+    .pro-split .pro-sub{margin:12px 0 8px}
+    .pro-split .pro-bens{gap:8px;margin:0}
+    .pro-split .pro-bens li{padding:10px 12px 11px;gap:2px}
+    .pro-split .pro-bens b{font-size:14px}
+    .pro-split .pro-bens span:last-child{font-size:12.5px;line-height:1.4}
+    .pro-r{padding-top:6px}
+    .pro-r .pro-plans{grid-template-columns:1fr 1fr;gap:10px;margin:0 0 12px}
+    .pro-r .pro-plan{padding:13px 14px}
+    .pro-r .pro-plan-p{font-size:18px}
+    .pro-r .pro-form{margin-top:12px;padding-top:12px}
+  }
 </style>
 </head>
 <body>
@@ -1988,11 +2007,11 @@ body:not(.has-results) .hero > .hero-fx{display:none}
 <div class="modal pro-el" id="proModal" hidden><div class="sheet pro-sheet">   <!-- RS89: Leo, Pro (owner pick 2026-10-23); hidden until PRO_URL is set -->
   <div class="pro-head"><div><p class="kicker">Replore Pro</p><h2>Leo, <em>Pro</em></h2></div>
     <button type="button" class="x" data-close aria-label="Close"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>
-  <div class="pro-row pro-hero"><img src="leo-hero.webp?v=1ca927d5e6" alt="Leo, the Replore scout" width="150" height="142" decoding="async">
+  <div class="pro-split"><div class="pro-l"><div class="pro-row pro-hero"><img src="leo-hero.webp?v=1ca927d5e6" alt="Leo, the Replore scout" width="150" height="142" decoding="async">
       <p class="pro-say">Search stays free for everyone. Pro is for getting your project live faster: no waiting, no daily cap, guided setup and a person to ask.</p></div>
     <p class="pro-sub">What Pro adds</p>
     <ul class="pro-bens"><li><span class="pb-n">01</span><b>Skip the queue</b><span>AI ranking never makes you wait.</span></li><li><span class="pb-n">02</span><b>No daily limit</b><span>Free use gets 5 AI searches a day (20 signed in). Pro has no cap.</span></li><li><span class="pb-n">03</span><b>Step-by-step playbooks</b><span>Guided setup cards you tick off, starting with Google sign-in for your app.</span></li><li><span class="pb-n">04</span><b>Everywhere you build</b><span>The web app, the Claude Code plugin and any MCP agent.</span></li><li><span class="pb-n">05</span><b>Sign in with Google</b><span>Pro on every device, no key to paste.</span></li><li><span class="pb-n">06</span><b>Help from a person</b><span>Write to <a href="mailto:hello@cardzo.co.in">hello@cardzo.co.in</a> and get hands-on help with your setup.</span></li></ul>   <!-- RS99: the six Pro benefits (owner 2026-10-25, Stitch "Leo, Pro Modal Redesign") -->
-    <div class="pro-plans"><div class="pro-plan"><p class="pro-plan-k">Monthly</p><p class="pro-plan-p" id="proPlanM"></p><p class="pro-plan-s">Billed monthly, cancel any time</p></div>
+    </div><div class="pro-r"><div class="pro-plans"><div class="pro-plan"><p class="pro-plan-k">Monthly</p><p class="pro-plan-p" id="proPlanM"></p><p class="pro-plan-s">Billed monthly, cancel any time</p></div>
       <div class="pro-plan pro-plan-on"><span class="pro-plan-tag">Launch offer</span><p class="pro-plan-k">Yearly</p><p class="pro-plan-p" id="proPlanY"></p><p class="pro-plan-s" id="proPlanYWas"></p></div></div>
   <p id="proOffer" class="pro-offer" hidden></p>
   <div class="pro-acts"><a id="proBuy" class="go-btn" href="#" target="_blank" rel="noopener noreferrer">Get a key</a>
@@ -2011,7 +2030,7 @@ body:not(.has-results) .hero > .hero-fx{display:none}
         <button type="button" id="proEnvCopy" class="pro-copy">Copy</button></div>
       <p class="pro-hint">For the plugin: in Claude Code, set it in your shell before you start <code>claude</code>; in an MCP config, add it as an <code>env</code> entry.</p></div>
     <p class="pro-note">Stays in this browser. I check it with Stripe, who sold it to you, and never keep it.</p>
-  </form>
+  </form></div></div>
 </div></div>
 <div class="modal" id="pluginModal"><div class="sheet ag-sheet">
   <button class="x" data-close aria-label="Close"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
