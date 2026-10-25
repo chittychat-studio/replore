@@ -160,10 +160,10 @@ def test_pro_page_is_static_csp_safe_and_linked():
     assert 'href="/pro">' in (WEB / "index.html").read_text(encoding="utf-8")
     assert re.search(r'<script src="/pro-core\.js\?v=[0-9a-f]{10}" defer></script>\s*<script src="/pro\.js\?v=[0-9a-f]{10}" defer></script>', html)
     for s in ("Leo, <em>Pro</em>", "Search stays free for everyone. Pro is for getting your project live faster",   # RS99
-              "<b>No daily limit</b>", 'id="ppPlanY"', "Sold by Stripe. Cancel any time.", ">I have a key</button>",
-              'placeholder="Paste it here"', "Pro is on for this browser", ">Remove key</button>", "Keys are not on sale yet.",
+              "<b>No daily limit</b>", 'id="ppPlanY"', "Sold by Stripe. Cancel any time.", 'id="ppCardY"', ">Get Pro yearly<", 'id="ppKeyBox"',
+              'placeholder="Paste it here"', "Pro is on for this browser", ">Remove key</button>", "Pro is not on sale yet.",
               "Stays in this browser. I check it with Stripe, who sold it to you, and never keep it.",
-              'id="ppClaim"', 'id="ppClaimKey" type="text" readonly', 'id="ppClaimCopy"', 'id="ppRetry"', 'id="ppOffer"', 'id="ppYear"',
+              'id="ppClaim"', 'id="ppClaimKey" type="text" readonly', 'id="ppClaimCopy"', 'id="ppRetry"', 'id="ppOffer"', 'id="ppCardM"',
               '>Use this key in this browser</button>', '>Keep my current key</button>'):
         assert s in html, s
     # the only network call is to its own claim function; text only through textContent / value

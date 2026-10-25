@@ -93,6 +93,8 @@ flares (they cannot be keyed). Camera locked off, Leo and the ring fully in fram
 Make the intro (fly-in, as clip 0 above) with the same lighting line. On the page Leo gets the theme halo (a dark edge
 in light, a pale rim in dark), so one take serves both themes.
 
+**Use the front view only** (owner 2026-10-25): start every clip from Leo's front view, never from the four-view character sheet. The old fly-in was made from the sheet and turned Leo through his side and back views, so he looked like he was turning away from the viewer. No spins: he faces the camera the whole clip.
+
 ### After v3
 Hand me the files: I key Leo (spill removal, soft matte, feather on every side), cut the plates to WebP (and the loops to
 WebM with a poster), stamp them, and record each file's provenance in NOTICE.md.
