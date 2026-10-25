@@ -644,17 +644,10 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   bar is 32px tall; buttons and links share one display style; icons are single-colour (★, a line cup icon for Tip,
   ☾/☼ for the theme), never colour emoji next to plain glyphs.
 
-- **RS44** Tips and GitHub credit (owner request 2026-10-14). **Tip jar:** a Stripe Payment Link (a public
-  `https://buy.stripe.com/...` URL; no Stripe key of any kind is in the page or the repo), set in one constant `TIP_URL`
-  in `web/index.html`. Empty = every tip element stays hidden. Shown in two places only, never as a pop-up: a "Tip" (cup icon)
-  button next to ★ Star in the top bar (owner 2026-10-14: "not footer, beside the star button"), and one polite line in the plan window after the user has their plan ("Got a useful plan? Leave a
-  tip ☕ It helps us keep Replore free and fund more open-source projects."). Tipping is optional and unlocks nothing.
-  The link only accepts Stripe's own `https://buy.stripe.com/` address (anything else keeps it hidden). A Stripe
-  test-mode link (`/test_...`, takes no real money) is hidden on the live domains (replore.cardzo.co.in,
-  replore.pages.dev) and shows only on previews, so a test link can never reach visitors. The plan-window line also
-  shows Stripe's QR code for the same link (`web/tip-qr.png`, owner 2026-10-14), on screens wider than 700px only (a
-  phone can't scan itself). The QR must encode exactly `TIP_URL`: replace the image whenever the link changes
-  (checked by decoding it before commit; CI checks the file exists).
+- **RS44** GitHub credit; the tip jar is retired (owner 2026-10-25: "remove tip option altogether as we have a paid
+  tier going forward"). Replore is paid through Replore Pro (RS87 to RS90) and the templates, so the "Tip" button, the
+  plan-window tip line and its QR code (`web/tip-qr.png`), `TIP_URL` and its checks are removed, and the privacy page,
+  README and footer no longer mention tips. (Was, 2026-10-14: an optional Stripe Payment Link tip jar beside Star.)
   **GitHub credit:** the footer, README and privacy page say "Repository data from the GitHub API. Replore is not
   affiliated with or endorsed by GitHub. GitHub® is a trademark of GitHub, Inc." The GitHub logo and Octocat are never
   used (GitHub brand rules); every card links back to the repo on GitHub.
