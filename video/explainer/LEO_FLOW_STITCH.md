@@ -95,6 +95,14 @@ in light, a pale rim in dark), so one take serves both themes.
 
 **Use the front view only** (owner 2026-10-25): start every clip from Leo's front view, never from the four-view character sheet. The old fly-in was made from the sheet and turned Leo through his side and back views, so he looked like he was turning away from the viewer. No spins: he faces the camera the whole clip.
 
+### P5. Phone hero loop (owner 2026-10-25: the current clip looks unprofessional on phones)
+Image-to-video in Veo from Leo's **front view** (not the four-view sheet). Square 1:1, 8 seconds, loops seamlessly.
+"Leo hovers in the centre of the frame, facing the camera the whole time, filling about 70% of the frame height with
+a small margin on every side. He bobs gently, blinks and smiles; his right hand rests near a small holographic cyan
+radar ring beside his shoulder, which turns slowly. No spin, no turning away, no flying in or out, no camera move. The
+first and last frames are identical." Then paste the P4 lighting and green-screen line. On the page this replaces the
+clip on screens under 1000 px wide; desktop keeps the wide idle loop.
+
 ### After v3
 Hand me the files: I key Leo (spill removal, soft matte, feather on every side), cut the plates to WebP (and the loops to
 WebM with a poster), stamp them, and record each file's provenance in NOTICE.md.

@@ -353,7 +353,7 @@ function cardHtml(r,i,qtokens){
         '" data-desc="'+esc(r.desc||"")+'" data-spdx="'+esc(r.spdx||"")+'"><span class="pk-add">'+ico("bookmark")+'<span class="sr-only">Add '+esc(r.name)+' to plan</span></span>'+
         '<span class="pk-in">'+ico("bookmarked")+'<span class="sr-only">In plan</span></span></label></div>'+
       '<div class="rc-nmrow"><h3 class="name"><a href="'+esc(r.url)+'" target="_blank" rel="noopener" title="'+esc(r.name)+'">'+esc(repo)+'</a></h3>'+
-        (i!=null?'<span class="rank">#'+(i+1)+'</span>':'')+'</div>'+
+        (r.pinned?'<span class="rc-pin">The repo you entered</span>':(i!=null?'<span class="rank">#'+(i+1)+'</span>':''))+'</div>'+   // RS27b
       '<p class="desc">'+descHtml(r)+'</p>'+
       '<div class="rc-tags"><span class="tag '+v.c+'" title="License: '+esc(r.spdx)+' · '+esc(paid)+' · Completely free? '+esc(free)+'">'+esc(v.t)+'</span>'+
         (r.starter?'<span class="tag t-star" title="A ready-made template to start your project from">Starter</span>':'')+
@@ -558,6 +558,19 @@ function fillTrustPanel(card, v){   // RS53: the usual trust lines, ready in Det
   body.innerHTML=trustHtml(v[0],v[1],d.getAttribute("data-spdx")||"",repo);
   if(v[1]&&!v[0].limited) body.setAttribute("data-done","1"); }
 
+// "How we searched" in plain words (owner 2026-10-25: no "inactive", "forks/archived" or search syntax): the phrases Leo
+// searched, without GitHub qualifiers, and only the reasons that actually left repos out
+function howSearched(queries, ex){ ex=ex||{};
+  var phr=(queries||[]).map(function(q){ return String(q).split(/\s+/).filter(function(w){ return w && w.indexOf(":")<0 && w.charAt(0)!=="-"; }).join(" "); })
+    .filter(Boolean).filter(function(q,i,a){ return a.indexOf(q)===i; });
+  var why=[], n=function(k){ return +ex[k]||0; };
+  if(n("license")) why.push(n("license")+" without an open-source licence");
+  if(n("stale")) why.push(n("stale")+" not updated in the last "+Math.round(MAX_AGE_MONTHS/12)+" years");
+  if(n("low")) why.push(n("low")+" below your star filter");
+  if(n("fork")) why.push(n("fork")+" copies or archived projects");
+  if(n("harm")) why.push(n("harm")+" that looked unsafe");
+  return (phr.length?"Leo searched GitHub for "+phr.map(function(q){ return "“"+esc(q)+"”"; }).join(", ")+". ":"")+
+    (why.length?"Left out: "+why.join(", ")+".":"Nothing was left out."); }
 function render(top, queries, excluded, totalMatches, qtokens, heading, note, gate){
   if(!top.length){ return '<div class="panel"><p class="err">No repository matched.</p>'+
     '<p class="mut">Searches: '+esc(queries.join("; "))+'. Try fewer or broader words, or lower the minimum stars.</p></div>'; }
@@ -575,9 +588,7 @@ function render(top, queries, excluded, totalMatches, qtokens, heading, note, ga
     '<div id="resEmpty" class="res-empty" hidden>No results match these filters. <button type="button" class="link-btn" id="resClear">Clear filters</button></div>'+
     '<div id="resMore" class="res-more-hint" aria-live="polite" hidden></div>'+   /* scroll sentinel: auto-reveals more (RS29) */
     '</div></div>'+
-    '<details class="excl"><summary>How we searched</summary>Searches: '+esc(queries.join("; "))+'. Left out, not open-source: '+excluded.license+
-    ', inactive: '+excluded.stale+', too few stars: '+excluded.low+', forks/archived: '+excluded.fork+
-    ', harmful: '+excluded.harm+'.</details>';
+    '<details class="excl"><summary>How we searched</summary>'+howSearched(queries,excluded)+'</details>';
   if(more>0) h+=PLUGIN_CTA.replace("MORE_LINE",
     more+" more passed the filters. ");
   else h+=PLUGIN_CTA.replace("MORE_LINE","");
@@ -853,10 +864,7 @@ function renderGrouped(groups, excluded, note){
     if(!g.repos.length){ h+='<p class="mut" style="margin:0 4px">No match.</p>'; return; }
     h+='<div class="grid">'+g.repos.map(function(r){return cardHtml(r,null,gtokens);}).join("")+'</div>';
   });
-  h+='<details class="excl"><summary>How we searched</summary>'+total+' open-source repos across '+groups.length+' needs. Left out, not open-source: '+
-    excluded.license+', inactive: '+excluded.stale+', too few stars: '+excluded.low+', forks/archived: '+excluded.fork+
-    ', harmful: '+excluded.harm+
-    '. Every suitable match that passed the filters, grouped by the first search that found it, not every repo on GitHub.</details>'+
+  h+='<details class="excl"><summary>How we searched</summary>'+total+' open-source repos for '+groups.length+' needs, each listed under the first search that found it. '+howSearched(null,excluded)+'</details>'+
     PLUGIN_CTA;
   return h;
 }
@@ -882,10 +890,20 @@ async function runFeatures(features, minStars, platform, preferStarters, out, st
 // "Find similar ones": accept owner/repo or a GitHub URL, look up its topics/language, search those (RS27)
 function parseRepo(s){ s=(s||"").trim(); if(!s) return null;
   var m=s.match(/github\.com\/([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)/i); if(m) return m[1].replace(/\.git$/,"");
-  m=s.match(/^([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)$/); return m?m[1].replace(/\.git$/,""):null; }
+  m=s.match(/(?:^|\s)([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)(?=\s|$)/);   // owner/repo anywhere in the text (RS27b)
+  return m&&!/^https?:/i.test(m[1])?m[1].replace(/\.git$/,""):null; }
+// RS27b (owner 2026-10-25: "instead we find closest match for repo name entered"): anything typed works. A GitHub link or
+// owner/repo is used as is; otherwise (or when that repo does not exist) GitHub is searched by name and the exact name
+// wins, else GitHub's best match. Returns "owner/repo" or null; never sends anyone to GitHub to look it up themselves.
+function repoNameQuery(s){ return String(s||"").replace(/https?:\/\/\S+/g," ").replace(/[^A-Za-z0-9_.\- ]+/g," ").trim().split(/\s+/).slice(0,4).join(" "); }
+async function closestRepo(s){ var q=repoNameQuery(s); if(!q) return null;
+  var items=await search(q+" in:name", null), key=function(x){ return String(x||"").toLowerCase().replace(/[-_.\s]/g,""); }, want=key(q);
+  var exact=items.filter(function(it){ return key(it.name)===want; })[0];
+  var pick=exact||items[0]; return pick&&pick.full_name?pick.full_name:null; }
+async function resolveRepo(like){ var t=parseRepo(like); if(t) return t; return await closestRepo(like); }
 async function repoMeta(full){
   var r=await fetch("https://api.github.com/repos/"+full,{headers:{"Accept":"application/vnd.github+json"}});
-  if(r.status===404) throw new Error("Couldn't find “"+full+"” on GitHub. Use owner/repo, e.g. vercel/next.js.");
+  if(r.status===404) throw new Error("Couldn't find “"+full+"” on GitHub. Try a few words from its name.");
   if(r.status===403||r.status===429) throw new Error("GitHub rate limit reached (10/min without a token). Wait a minute.");
   if(!r.ok) throw new Error("GitHub lookup failed (HTTP "+r.status+").");
   return await r.json(); }
@@ -941,18 +959,27 @@ async function run(){
   try{
     var queries, heading=null, seen={}, qtok;
     if(like){
-      var target=parseRepo(like);
-      if(!target) throw new Error("Enter a repo as owner/repo or a GitHub link, e.g. vercel/next.js.");
-      think(st,"Looking up "+target);
-      var meta=await repoMeta(target);
+      think(st,"Finding the repo");
+      var target=await resolveRepo(like);
       if(gen!==window.__runGen) return;
+      if(!target) throw new Error("Couldn\u2019t find a repo called \u201c"+like.slice(0,60)+"\u201d on GitHub. Try a few words from its name.");
+      think(st,"Looking up "+target);
+      var meta;
+      try{ meta=await repoMeta(target); }
+      catch(e){ var alt=/Couldn/.test(e.message)?await closestRepo(target.split("/").pop()):null;   // typed owner/repo does not exist: closest by name
+        if(!alt) throw e; target=alt; meta=await repoMeta(target); }
+      if(gen!==window.__runGen) return;
+      var pinned={name:clean(meta.full_name||target),stars:meta.stargazers_count||0,spdx:meta.license&&meta.license.spdx_id,pushed:(meta.pushed_at||"").slice(0,10),
+        url:meta.html_url||("https://github.com/"+target),desc:clean(meta.description),starter:!!meta.is_template,rel:0,
+        topics:(meta.topics||[]).map(function(t){ return String(t).toLowerCase(); }).slice(0,8),forks:meta.forks_count||0,
+        lang:typeof meta.language==="string"?meta.language:"",whyText:"The repo you entered",pinned:true};   // RS27b: shown first, then the similar ones
       queries=altQueries(meta,platform);
       if(!queries.length) throw new Error("That repo has no topics or description to search from.");
       if(!(meta.topics||[]).length && !text)   // no topics AND no typed words → note explains we matched on description; with text, the words drive the search so the note is moot (RS27a)
         window.__likeNote="“"+esc(clean(meta.full_name||target))+"” has no GitHub topics, so we matched on its description. "+
           "For matches based on what the repo actually does, the plugin reads the repo itself. "+
           "<button type=\"button\" class=\"link-btn\" data-open=\"pluginModal\">Use the plugin</button>";
-      seen[clean(meta.full_name||target)]=null;  // exclude the original repo from the results (RS27)
+      seen[clean(meta.full_name||target)]=null;  // the original is not repeated among the similar ones; it is pinned first instead (RS27b)
       heading="Repos like "+(meta.full_name||target);
       if(text){  // combine: narrow the similar-repo search by the typed words (RS27a)
         queries=queries.map(function(q){return (q+" "+text).trim();});
@@ -1012,6 +1039,7 @@ async function run(){
         top=keptRows.concat(leftRows.map(function(r){ r.left=1; return r; }));
         gate={ok:true,hidden:drops.length,credits:drops.credits}; } }
     smoothSwap(function(){ if(gen!==window.__runGen) return;   // RS69: the results dissolve in
+    if(like&&typeof pinned!=="undefined"&&pinned) top=[pinned].concat(top.filter(function(r){ return r.name!==pinned.name; }));   // RS27b
     closeDrawer(true); out.innerHTML=render(top,queries,excluded,ranked.length,qtok,heading,(window.__likeNote||"")+relaxNote,gate);
     // RS34: no on-screen note about the AI check; its outcome is kept as an attribute for diagnosis only
     out.setAttribute("data-gate", !gate?"off":gate.ok?"ok:"+gate.hidden:String(gate.error||"fail").replace(/[^a-z0-9_]/gi,"").slice(0,40));

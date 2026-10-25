@@ -264,6 +264,16 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   A plugin CLI flag (`--like`) is a planned follow-up. When the target repo has **no GitHub topics**, the queries
   are derived from its description instead; the web page states this in a one-line note above the results (stated
   as the method used, not as a low-confidence "guess") and links to the plugin, which reads the repo itself.
+- **RS27b** Find similar accepts anything and shows the repo you meant (owner 2026-10-25: "if they enter repo we are asking
+  for full repo name or owner which means they go to GitHub direct and we lose them; instead we find closest match",
+  "I entered full github link with text but even then that repo didn't show up"). A GitHub link anywhere in the text, or
+  owner/repo anywhere in it, is used as is; otherwise, or when that owner/repo does not exist, GitHub is searched by name
+  (up to 4 words, `in:name`) and an exact name match wins, else GitHub's best match. The repo found is shown first, marked
+  "The repo you entered" (even if it would fail the licence or age filters, which its card states), then the similar
+  repos, which never repeat it. No message asks for owner/repo.
+  **How we searched** reads in plain words (same day: "technical slop like active, inactive, search"): the phrases Leo
+  searched without GitHub qualifiers, then only the reasons that actually left repos out ("without an open-source licence",
+  "not updated in the last 2 years", "below your star filter", "copies or archived projects", "that looked unsafe"); no zero counts.
 - **RS27a** Similar-repo requires text, and is narrowed by it (RS22 web page). The "find similar repo" field is
   **not used alone**: a few typed words are **required** alongside it. A repo paste with an empty search box does
   not search — the page asks for words ("Add a few words too — what kind of repos like this?") and focuses the
@@ -1341,8 +1351,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   The hero plays a Google Flow (Veo 3.1 Lite) clip, keyed from green and cropped (owner 2026-10-25: the fly-in intro is no longer played, since it showed Leo far off with a trail and then turned away; he starts on the idle loop, facing you; `web/leo-intro.webm` stays in the repo unused). Before that it played `web/leo-intro.webm` once, then
   `web/leo-idle.webm` on a loop, with `web/leo-hero.webp` as the poster. Safari and every iOS browser (all WebKit, which can't play VP9
   with alpha; an iPad reporting as a Mac with touch counts too; amended 2026-10-25 after a green box on iPhone Chrome) and
-  reduced motion keep the still. The crop drops Flow's visible Veo mark, so the footer says "Leo animated with Google
-  Veo" and NOTICE.md records the provenance; Google's SynthID mark stays in the files.
+  reduced motion keep the still. The crop drops Flow's visible Veo mark; NOTICE.md records the provenance (the footer credit was removed, owner 2026-10-25) and NOTICE.md records the provenance; Google's SynthID mark stays in the files.
   The ASCII globe is gone (owner 2026-10-24, "no ASCII globe"): Leo alone is the left column's hero, about 440 to 520 px
   wide on laptops and 260 px on phones, and only one Leo ever shows. The idle clip keeps playing during a search, while
   the LEO stage pill shows the real stage; the old Leo art (wave and search sprites, the peek clip) is retired from the hero, and (owner 2026-10-25: "pro still has old leo") the Launch window, the Pro window, `/pro` and the feedback chat show `web/leo-hero.webp` instead of the old `scout-hero.webp`.
