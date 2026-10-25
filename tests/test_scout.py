@@ -665,11 +665,11 @@ def test_web_page_is_safe_static(monkeypatch):
     assert not _re.search(r"github_pat_[A-Za-z0-9_]{20,}", html)
     assert 'id="token"' not in html and "findrepo_gh_token" not in html
     assert "models.github" not in html and "Authorization" not in html
-    # RS33: no third-party asset requests; the fonts are self-hosted. RS91: no animation library at all
+    # RS33: no third-party asset requests; the fonts are self-hosted. RS101: only Lenis and Motion, vendored and pinned
     index = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
     srcs = _re.findall(r'<script[^>]+src="([^"]+)"', index)
     srcs = [s.split("?v=")[0] for s in srcs]   # RS52: app.js / theme.js carry a ?v=<hash> stamp
-    assert srcs == ["theme.js", "pro-core.js", "auth.js", "app.js"], srcs   # RS49: no inline script; app.js after pro-core.js (RS89); auth.js: optional sign-in (RS94)
+    assert srcs == ["theme.js", "pro-core.js", "auth.js", "vendor/lenis-1.3.26/lenis.min.js", "vendor/motion-14.1.0/motion.js", "app.js"], srcs   # RS101: pinned, vendored   # RS49: no inline script; app.js after pro-core.js (RS89); auth.js: optional sign-in (RS94)
     assert _re.search(r'<script src="app\.js\?v=[0-9a-f]{10}" defer>', index)
     assert not _re.search(r"<script(?![^>]*src=)[^>]*>", index) and not _re.search(r"\son[a-z]+\s*=", index)
     assert "<html lang=\"en\">" in index   # RS24: no forced light theme; the system setting applies until the visitor picks one
@@ -1366,3 +1366,17 @@ def test_rs94_google_signin_is_optional_dormant_and_disclosed():
               "Authorized JavaScript origins",
               "`replore.cardzo.co.in` and `replore.pages.dev`", "Firebase Authentication\n   Admin", "enable **Google** only"):
         assert s in readme, s
+
+
+def test_vendored_motion_libraries_are_pinned_licensed_and_hashed():
+    """RS101: Lenis and Motion are vendored unchanged at pinned versions, with their licences and SHA-256 in NOTICE.md."""
+    import hashlib
+    notice = (ROOT / "NOTICE.md").read_text(encoding="utf-8")
+    for path, lic in (("web/vendor/motion-14.1.0/motion.js", "web/vendor/motion-14.1.0/LICENSE.md"),
+                      ("web/vendor/lenis-1.3.26/lenis.min.js", "web/vendor/lenis-1.3.26/LICENSE")):
+        data = (ROOT / path).read_bytes()
+        assert hashlib.sha256(data).hexdigest() in notice, path
+        assert "MIT License" in (ROOT / lic).read_text(encoding="utf-8")
+        assert b"eval(" not in data and b"new Function" not in data
+    app = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
+    assert "prefers-reduced-motion:reduce" in app and "new Lenis(" in app and "window.__lenis.stop()" in app and "M.inView(" in app

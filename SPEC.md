@@ -1311,7 +1311,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   be one of follow or manual"), so every claim failed in 0 ms whatever the key. Every outbound call in `functions/`
   (Stripe, Google keys and Identity Toolkit, RS94) uses `redirect: "manual"`, and every caller accepts only a 200, so a
   redirect still fails closed.
-- **RS91** No animation library on the web page (owner 2026-10-24, from the frontend-stack review). GSAP 3.12.5 is
+- **RS91** (amended by RS101 on 2026-10-25: Lenis and Motion are now vendored for smooth scrolling and spring reveals) No animation library on the web page (owner 2026-10-24, from the frontend-stack review). GSAP 3.12.5 is
   removed: it ships under GreenSock's own "Standard" licence, not MIT, inside this MIT repo (RS12), with no NOTICE,
   and the owner's stack bans it. Every effect it ran is ported, with the same timings and easings, to the browser's Web
   Animations API (`Element.animate`), which is what the Motion library uses underneath. Motion itself was not vendored:
@@ -1641,6 +1641,17 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   revealed (it used to reset to 10, so the page shrank, the browser jumped up, the scroll-for-more marker came into view
   and added cards back: an up-and-down bounce). If the list still gets shorter while you are below its top, the page
   scrolls to the list's top once, below the sticky header (`scroll-margin-top`). Cards a filter brings back appear at once, without the slide-up entrance (many sliding together read as the page moving); scrolling down still reveals new cards with it. A new search still starts at 10.
+- **RS101** Smooth scrolling and spring reveals with Lenis and Motion (owner 2026-10-25: "butter smooth motion", "where is
+  our butter smooth motion?"; this amends RS91, which had kept the page library-free). Two MIT libraries, vendored at pinned
+  versions (each the newest release at least two weeks old), no CDN, licences beside them and in `NOTICE.md`:
+  `web/vendor/lenis-1.3.26/lenis.min.js` (about 5 KB gzipped) and `web/vendor/motion-14.1.0/motion.js` (Motion's
+  single-file browser build, about 48 KB gzipped), loaded deferred before `app.js`. **Lenis** smooths wheel and
+  trackpad scrolling of the page (lerp 0.09); touch keeps the phone's own scroll; windows, the Details drawer, the build
+  bar and anything marked `data-lenis-prevent` scroll natively (`allowNestedScroll`), and Lenis stops while a window is
+  open and starts again when it closes. **Motion** gives the Trending section a spring rise (opacity and transform,
+  bounce 0.12, about 0.55 s) the first time it scrolls into view, only if it starts off screen. Everything else keeps
+  the Web Animations API (RS91's ports stay). Under `prefers-reduced-motion` neither runs; if either file fails to load
+  the page behaves as before. Status: implemented and checked in Chrome; not verified on Safari.
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
 - **RX3** Ranking by forks, trending or download counts. (Relevance, stars and license-freedom are the only
