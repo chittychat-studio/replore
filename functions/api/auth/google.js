@@ -1,6 +1,6 @@
 // SPEC RS94: server-side calls to Firebase Authentication through the Identity Toolkit REST API (no firebase-admin).
 // Not a route. The service-account JSON comes from the Pages secret FIREBASE_SERVICE_ACCOUNT; it, the signed JWT and the
-// access token are never logged, returned or put in an error (RS8). Every call: a deadline, redirect: "error", and a
+// access token are never logged, returned or put in an error (RS8). Every call: a deadline, redirect: "manual" (a 3xx is a failure), and a
 // plain result object; nothing here throws to the caller.
 
 import { projectOk } from "./session.js";
@@ -48,7 +48,7 @@ export async function serviceJwt(sa, now) {
 async function call(url, init) {   // -> {status, json} | {status: 0}
   const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), GOOGLE_TIMEOUT_MS);
   try {
-    const res = await FETCH(url, { redirect: "error", signal: ctl.signal, ...init });
+    const res = await FETCH(url, { redirect: "manual", signal: ctl.signal, ...init });
     let json = null; try { json = await res.json(); } catch { json = null; }
     return { status: res.status, json };
   } catch { return { status: 0, json: null }; } finally { clearTimeout(timer); }

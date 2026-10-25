@@ -272,9 +272,6 @@
   .nav-star:hover{color:#fff;box-shadow:0 6px 16px -6px rgba(var(--accent-rgb),.7)}
   .nav-btn[hidden]{display:none}
   .no-desc{font-style:italic;opacity:.75}
-  .tip-qr{margin:8px auto 0;text-align:center} .tip-qr img{display:block;margin:0 auto 4px;border-radius:8px}
-  .tip-qr figcaption{font-size:12px}
-  @media (max-width:700px){ .tip-qr{display:none} }   /* RS44: a phone can't scan its own screen */   /* RS44: the tip button stays hidden until TIP_URL is set */
   .nav{margin-left:auto;display:flex;gap:8px;align-items:center}
   .brand{width:100%;flex-wrap:wrap;align-items:center}
   .sub{color:var(--muted);margin:2px 0 0;font-size:14.5px}
@@ -1815,8 +1812,6 @@ body:not(.has-results) .hero > .hero-fx{display:none}
     <button id="pluginBtn" class="nav-btn" title="Use the plugin in Claude Code, Codex, Cursor or any AI agent">Plugin</button>
     <button id="proBtn" class="nav-btn pro-el" title="Replore Pro: get your project live faster" hidden>Pro</button>   <!-- RS89: shows only when PRO_URL is set -->
     <a id="starBtn" class="nav-btn nav-star" href="https://github.com/chittychat-studio/replore" target="_blank" rel="noopener" title="If Replore helped, a star on GitHub means a lot. Thank you!"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.9l1.8 3.8 4.1.5-3 2.9.8 4.1L8 11.2l-3.7 2 .8-4.1-3-2.9 4.1-.5z"/></svg>Star</a>
-    <a class="nav-btn nav-tip tip-el tip-link" href="#" target="_blank" rel="noopener noreferrer" hidden
-      title="Optional tip. It helps us keep Replore free and fund more open-source projects."><svg class="nav-ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6h9v4.5a3.5 3.5 0 0 1-3.5 3.5h-2a3.5 3.5 0 0 1-3.5-3.5z"/><path d="M11.5 7.5h1a2 2 0 0 1 0 4h-1.2"/><path d="M5.5 1.8v2M8 1.8v2"/></svg>Tip</a>
   </nav>
   <div class="topbar-right">
     <button id="navToggle" class="nav-toggle" aria-label="Menu" aria-controls="nav" aria-expanded="false"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/></svg></button>
@@ -1943,10 +1938,6 @@ body:not(.has-results) .hero > .hero-fx{display:none}
   <p id="prdGemNote" class="mut" style="margin-top:8px;text-align:center" hidden>Prompt copied. Paste it into Gemini (it has no pre-fill link).</p>
   <p id="prdLong" class="mut" style="margin-top:10px" hidden><b>Long plan:</b> each button copies the prompt first, then opens
     the assistant. Paste it there.</p>
-  <p class="mut tip-el" style="margin-top:10px;text-align:center" hidden>Got a useful plan? <a class="tip-link" href="#" target="_blank"
-    rel="noopener noreferrer">Leave a tip</a> It helps us keep Replore free and fund more open-source projects.</p>
-  <figure class="tip-el tip-qr" hidden><img src="tip-qr.png" width="96" height="114" loading="lazy"
-    alt="QR code for the Replore tip page on Stripe"><figcaption class="mut">Or scan to tip from your phone</figcaption></figure>
   <p id="prdMany" class="mut" style="margin-top:10px" hidden><b>Plans work best with 10 or fewer repos.</b> You picked
     <span id="prdManyN"></span>. Untick the weakest few for a sharper plan.</p>
   <p class="mut" style="margin-top:10px"><b>Open in Claude</b> opens a new chat on your own claude.ai account
@@ -2132,8 +2123,7 @@ body:not(.has-results) .hero > .hero-fx{display:none}
     <li><b>Meaning-based search</b> (only when switched on): the same check asks an AI model what your words mean and looks
       them up in an index of public repo names and descriptions (Cloudflare Vectorize). Every repo found that way is checked
       live on GitHub before you see it.</li>
-    <li><b>Where repo data comes from:</b> the GitHub API. Replore is not affiliated with or endorsed by GitHub. GitHub® is a trademark of GitHub, Inc.
-      GitHub® is a trademark of GitHub, Inc. Tips (if you leave one) go through Stripe; we never see your card details.</li>
+    <li><b>Where repo data comes from:</b> the GitHub API. Replore is not affiliated with or endorsed by GitHub. GitHub® is a trademark of GitHub, Inc.</li>
     <li><b>Saved for an hour:</b> your browser keeps your last 10 searches and their results on this device for one hour,
       so repeating one is instant. They never leave your device; the next search after an hour runs fresh. For identical
       searches, our relevance check also reuses the AI's answer for an hour; it keeps only a fingerprint of the search and which
@@ -2209,6 +2199,6 @@ body:not(.has-results) .hero > .hero-fx{display:none}
 <script src="auth.js?v=f43383d4f7" defer></script>
 <script src="vendor/lenis-1.3.26/lenis.min.js" defer></script>   <!-- RS101: smooth wheel scrolling (MIT) -->
 <script src="vendor/motion-14.1.0/motion.js" defer></script>   <!-- RS101: spring reveals (MIT) -->
-<script src="app.js?v=617f7b53fc" defer></script>
+<script src="app.js?v=c1ad9bf149" defer></script>
 </body>
 </html>

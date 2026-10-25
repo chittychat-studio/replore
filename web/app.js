@@ -1948,16 +1948,6 @@ function buildLiveDemo(host){
   host.__playDemo=function(){ if(paused){ paused=false; run(); } };
 }
 // remember the last results so a page refresh brings them back (cached locally, no new API call)
-// RS44: the owner's Stripe Payment Link (public URL, no key). Empty = all tip elements stay hidden.
-var TIP_URL="https://buy.stripe.com/eVq00meemaDj78k4zigrS00";
-// RS44: a Stripe test-mode link (test_...) takes no real money, so it never shows on the live site; previews only.
-var TIP_LIVE_HOSTS=["replore.cardzo.co.in","replore.pages.dev"];
-function tipUrlOk(u, host){ u=String(u||"");
-  if(!/^https:\/\/buy\.stripe\.com\/[A-Za-z0-9_\-]+$/.test(u)) return false;
-  return !(/^https:\/\/buy\.stripe\.com\/test_/.test(u) && TIP_LIVE_HOSTS.indexOf(String(host||""))>=0); }
-(function(){ if(typeof location==="undefined" || !tipUrlOk(TIP_URL, location.hostname)) return;
-  document.querySelectorAll(".tip-link").forEach(function(a){ a.href=TIP_URL; });
-  document.querySelectorAll(".tip-el").forEach(function(el){ el.hidden=false; }); })();
 // RS89: Leo, Pro window. Hidden (button and window) until the owner sets PRO_URL (a Stripe Payment Link) in pro-core.js.
 (function(){ if(typeof location==="undefined" || typeof proMount!=="function" || !proUrlOk(PRO_URL, location.hostname)) return;
   document.querySelectorAll(".pro-el").forEach(function(el){ el.hidden=false; });

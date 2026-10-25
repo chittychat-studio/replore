@@ -644,17 +644,10 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   bar is 32px tall; buttons and links share one display style; icons are single-colour (★, a line cup icon for Tip,
   ☾/☼ for the theme), never colour emoji next to plain glyphs.
 
-- **RS44** Tips and GitHub credit (owner request 2026-10-14). **Tip jar:** a Stripe Payment Link (a public
-  `https://buy.stripe.com/...` URL; no Stripe key of any kind is in the page or the repo), set in one constant `TIP_URL`
-  in `web/index.html`. Empty = every tip element stays hidden. Shown in two places only, never as a pop-up: a "Tip" (cup icon)
-  button next to ★ Star in the top bar (owner 2026-10-14: "not footer, beside the star button"), and one polite line in the plan window after the user has their plan ("Got a useful plan? Leave a
-  tip ☕ It helps us keep Replore free and fund more open-source projects."). Tipping is optional and unlocks nothing.
-  The link only accepts Stripe's own `https://buy.stripe.com/` address (anything else keeps it hidden). A Stripe
-  test-mode link (`/test_...`, takes no real money) is hidden on the live domains (replore.cardzo.co.in,
-  replore.pages.dev) and shows only on previews, so a test link can never reach visitors. The plan-window line also
-  shows Stripe's QR code for the same link (`web/tip-qr.png`, owner 2026-10-14), on screens wider than 700px only (a
-  phone can't scan itself). The QR must encode exactly `TIP_URL`: replace the image whenever the link changes
-  (checked by decoding it before commit; CI checks the file exists).
+- **RS44** GitHub credit; the tip jar is retired (owner 2026-10-25: "remove tip option altogether as we have a paid
+  tier going forward"). Replore is paid through Replore Pro (RS87 to RS90) and the templates, so the "Tip" button, the
+  plan-window tip line and its QR code (`web/tip-qr.png`), `TIP_URL` and its checks are removed, and the privacy page,
+  README and footer no longer mention tips. (Was, 2026-10-14: an optional Stripe Payment Link tip jar beside Star.)
   **GitHub credit:** the footer, README and privacy page say "Repository data from the GitHub API. Replore is not
   affiliated with or endorsed by GitHub. GitHub® is a trademark of GitHub, Inc." The GitHub logo and Octocat are never
   used (GitHub brand rules); every card links back to the repo on GitHub.
@@ -1211,7 +1204,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   (and `X-Replore-Eval-Key` against `EVAL_KEY`) exactly as before (RS34g, unchanged). Only if that fails and the value
   has the Pro shape, the function recomputes the signature and compares it in constant time; a bad signature is refused
   with no Stripe call (so the endpoint cannot be used to probe Stripe). A good signature leads to
-  `GET https://api.stripe.com/v1/subscriptions/{id}` with the restricted key, a 3 s deadline and `redirect: "error"`.
+  `GET https://api.stripe.com/v1/subscriptions/{id}` with the restricted key, a 3 s deadline and `redirect: "manual"` (any 3xx is a failure).
   Granted means HTTP 200 with `status` `active` or `trialing` and a Pro price among `items.data[].price` (above); 200
   with any other status or no Pro item (`canceled`, `past_due`,
   `unpaid`, `incomplete` and so on) or 404 is a denial. A network error, timeout, redirect, other status or unreadable
@@ -1282,7 +1275,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   `^cs_(live|test)_[A-Za-z0-9]{10,200}$` or the answer is 400 `bad_session` before any network call. Off (503
   `pro_off`) unless both RS87 secrets and the Pro price list (or product) are set. The function asks Stripe
   `GET https://api.stripe.com/v1/checkout/sessions/{id}?expand[]=subscription` with the restricted key, a 5 s deadline
-  and `redirect: "error"`, and issues a key only when `payment_status` is `paid` and the expanded subscription's
+  and `redirect: "manual"` (any 3xx is a failure), and issues a key only when `payment_status` is `paid` and the expanded subscription's
   `status` is `active` or `trialing`; otherwise 403 `not_paid`; a paid, active subscription with no Pro price among its
   items (another product) gets 403 `not_pro`; Stripe 404 gives 404 `unknown_session`, and anything
   else (network, timeout, redirect, other status, unreadable body, subscription not expanded) gives 503
@@ -1310,6 +1303,14 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   `https://replore.cardzo.co.in/pro?session_id={CHECKOUT_SESSION_ID}`. Linked from the page footer and listed in the
   sitemap; no inline script (RS49), no emoji (RS55), no em dash (RS66), 44px targets, CSP unchanged (the page calls only
   its own site); the script is hash-stamped by `ops/stamp_assets.py` (RS52).
+  **Stripe key hygiene (found live 2026-10-25).** Every Stripe call (claim, Pro key check, RS94 link and refresh) uses
+  `STRIPE_SECRET_KEY` trimmed of spaces and line breaks; a stray line break made the Authorization header invalid and
+  every claim failed before reaching Stripe (logged upstream 0, 0 ms). A value that is still not an `rk_`/`sk_`
+  `live`/`test` key fails closed with no call and logs `upstream: -1` (key format).
+  **No `redirect: "error"` (found live 2026-10-25).** The Workers runtime rejects that option before sending ("must
+  be one of follow or manual"), so every claim failed in 0 ms whatever the key. Every outbound call in `functions/`
+  (Stripe, Google keys and Identity Toolkit, RS94) uses `redirect: "manual"`, and every caller accepts only a 200, so a
+  redirect still fails closed.
 - **RS91** (amended by RS101 on 2026-10-25: Lenis and Motion are now vendored for smooth scrolling and spring reveals) No animation library on the web page (owner 2026-10-24, from the frontend-stack review). GSAP 3.12.5 is
   removed: it ships under GreenSock's own "Standard" licence, not MIT, inside this MIT repo (RS12), with no NOTICE,
   and the owner's stack bans it. Every effect it ran is ported, with the same timings and easings, to the browser's Web
