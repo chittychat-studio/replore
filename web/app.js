@@ -1362,7 +1362,7 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
 (function(){
   var qs=document.getElementById("lnQs"), plan=document.getElementById("lnPlan"); if(!qs||!plan) return;
   var C={host:"host",data:"data",auth:"auth",pay:"pay",store:"store",cost:"cost",game:"game",live:"live"};
-  var Q=[["kind","What did you build?","host",[["static","Website (no server)"],["next","Next.js / React web app"],["api","Web app with server + database"],["ai","AI app (calls a model)"],["ios","iPhone app"],["android","Android app"],["game","A game"]]],
+  var Q=[["kind","What do you want to build?","host",[["static","Website (no server)"],["next","Next.js / React web app"],["api","Web app with server + database"],["ai","AI app (calls a model)"],["ios","iPhone app"],["android","Android app"],["game","A game"]]],
     ["gplat","Where does the game run?","game",[["web","In the browser"],["mobile","Phones (app stores)"],["desktop","PC (Steam / itch.io)"]]],
     ["multi","Players together online?","game",[["no","Single player"],["yes","Multiplayer"]]],
     ["who","Who will use it?","auth",[["me","Just me"],["test","Friends and testers"],["public","The public"]]],
@@ -1371,7 +1371,7 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
     ["budget","Monthly budget for hosting","cost",[["free","Free tiers only"],["small","A little"],["any","Whatever it needs"]]]];
   var A={kind:"next",gplat:"web",multi:"no",who:"public",data:"accounts",paid:"free",budget:"free"}, tab="before", view="stack", step=0, ticked={};
   var VIEWS={stack:["Launch stack",'Launch it <em>with Leo</em>',"Answer a few taps and I’ll plan where it lives: host, domain, database, sign-in, payments and cost."],
-    before:["Pre-launch",'Pre-launch <em>checklist</em>',"What to check before you launch, for what you built. Change a filter and the list follows."],
+    before:["Pre-launch",'Pre-launch <em>checklist</em>',"What to check before you launch, for what you want to build. Change a filter and the list follows."],
     after:["Post go-live",'Post go-live <em>checklist</em>',"What to do once it’s live: HTTPS, headers, bots, search engines, email and monitoring."]};
   // RS79 cards (owner 2026-10-25, from the Stitch screen "Replore - Launch it with Leo Modal"): one question at a time as
   // option cards with a one-line description; the plan on the right updates live
@@ -1504,7 +1504,7 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
     var o=q[3].filter(function(x){ return x[0]===A[q[0]]; })[0]; return q[1]+" "+(o?o[1]:""); }).join("\n"); }
   function plainList(arr){ return arr.map(function(it){ return "- ["+it[0]+"] "+it[1]+(it[2]?" ("+it[2]+")":""); }).join("\n"); }
   function prompt(){ var L=lists(), q=((document.getElementById("q")||{}).value||"").trim(), picks=window.__getPicks?window.__getPicks():[];
-    return "You are a senior DevOps and launch engineer. Help me launch my app safely.\n\n"+(q?"I built: "+q+"\n":"")+
+    return "You are a senior DevOps and launch engineer. Help me launch my app safely.\n\n"+(q?"I want to build: "+q+"\n":"")+
       "My answers:\n"+answers()+"\n\n"+(picks.length?"It is built on these open-source repos. "+DATA_GUARD+"\n"+picks.map(function(r,i){ return (i+1)+". "+r.name+": "+r.url; }).join("\n")+"\n\n":"")+
       "Starting checklist (from Replore):\nBefore launch:\n"+plainList(L.before)+"\nAfter go-live:\n"+plainList(L.after)+"\n\n"+
       "First ask me up to 5 short questions that would most change the plan, all in one numbered message, then wait for my answers. "+
