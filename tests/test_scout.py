@@ -740,11 +740,9 @@ def test_web_page_is_safe_static(monkeypatch):
     assert 'class="pick-cb"' in html and 'id="prdModal"' in html and 'id="prdPrompt"' in html
     assert "claude.ai/new?q=" in html and "Copy prompt" in html
     assert "chatgpt.com/?q=" in html and "gemini.google.com/app" in html   # RS28b
-    # RS44: tip jar is a Stripe Payment Link only (no key), hidden while empty; GitHub credit + no GitHub logo
-    assert 'var TIP_URL="";' in html or re.search(r'var TIP_URL="https://buy\.stripe\.com/[A-Za-z0-9_\-]+";', html)
+    # RS44: the tip jar is retired (owner 2026-10-25: paid tier instead); GitHub credit + no GitHub logo
+    assert "TIP_URL" not in html and "tip-el" not in html and "tip-qr" not in html and not (ROOT / "web" / "tip-qr.png").exists()
     assert not re.search(r"(sk|pk|rk)_(live|test)_[A-Za-z0-9]", html), "no Stripe key may ever be in the page"
-    assert html.count('class="mut tip-el"') == 1 and "fund more open-source projects" in html
-    assert 'class="tip-el tip-qr" hidden' in html and (ROOT / "web" / "tip-qr.png").exists()   # RS44 QR, hidden with the tip
     assert "Replore is not affiliated with or endorsed by GitHub" in html and "GitHub® is a trademark of GitHub, Inc." in html
     assert not re.search(r"octocat|mark-github", html, re.I)
     assert '"You are the principal architect for my vibe coding app, with 15+ years of experience building similar apps.' in html   # RS28e
@@ -936,7 +934,7 @@ def test_privacy_notice_matches_what_the_code_does():
     # only these hosts are contacted; PRIVACY.md names each of them
     hosts = set(re.findall(r"https://([a-z0-9.-]+)", html))
     allowed = {"api.github.com", "github.com", "claude.ai", "claude.com", "replore.pages.dev", "cardzo.co.in", "chatgpt.com", "gemini.google.com", "api.web3forms.com", "groq.com", "www.cloudflare.com", "challenges.cloudflare.com", "buy.stripe.com", "replore.cardzo.co.in", "gitdiagram.com", "gitingest.com", "deepwiki.com", "github1s.com", "github.dev",
-               "scorecard.dev", "osv.dev", "www.google.com"}  # RS93 preferred-source link; RS53 trust links (navigations); RS34/RS34a provider terms, RS34c Turnstile, RS44 tips, RS51 Explore links
+               "scorecard.dev", "osv.dev", "www.google.com"}  # RS93 preferred-source link; RS53 trust links (navigations); RS34/RS34a provider terms, RS34c Turnstile, RS89 Pro Payment Links, RS51 Explore links
     assert hosts <= allowed, hosts - allowed
     for named in ("api.github.com", "Cloudflare", "claude.ai", "security.log", "200 characters", "off by default",
                   "Groq", "Cloudflare Workers AI", "Turnstile", "relevance check", "stores nothing", "Feedback", "chatgpt.com", "gemini.google.com", "Web3Forms", "Stripe",
@@ -1234,13 +1232,13 @@ def test_pro_window_markup_copy_and_switch():
     html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
     js = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
     nav = re.search(r'<button id="proBtn"[^>]*>Pro</button>', html).group(0)
-    assert 'class="nav-btn pro-el"' in nav and " hidden" in nav and 'title="Rank by meaning too, with a Pro key"' in nav
+    assert 'class="nav-btn pro-el"' in nav and " hidden" in nav and 'title="Replore Pro: get your project live faster"' in nav
     assert html.index('id="pluginBtn"') < html.index('id="proBtn"') < html.index('id="starBtn"')   # after Plugin
     start = html.index('<div class="modal pro-el" id="proModal" hidden>')
     win = html[start:html.index("<div class=\"modal\" id=\"pluginModal\"", start)]
     for s in ("<h2>Leo, <em>Pro</em></h2>", 'aria-label="Close"', 'src="leo-hero.webp?v=1ca927d5e6" alt="Leo, the Replore scout" width="150"',   # RS92 2026-10-25: the current Leo
-              "Want me to read for meaning too? Today I match your words. With Pro I also match what a repo\n      does, so the ones that say it differently still turn up.",
-              "<i>Meaning ranking</i><i>No queue on the AI check</i><i>Web and every agent</i>",
+              "Search stays free for everyone. Pro is for getting your project live faster",   # RS99: the six benefits and plans
+              "<b>Skip the queue</b>", "<b>Help from a person</b>", 'id="proPlanM"', 'id="proPlanY"', "Sold by Stripe. Cancel any time.",
               'id="proBuy" class="go-btn" href="#" target="_blank" rel="noopener noreferrer"', ">I have a key</button>",
               '<label for="proKey">Your key</label>', 'placeholder="Paste it here" autocomplete="off" spellcheck="false"',
               ">Save</button>", "Pro is on for this browser", ">Remove key</button>",
@@ -1262,7 +1260,7 @@ def test_pro_window_markup_copy_and_switch():
     for sel in (".pro-head .x{", ".pro-have{", ".pro-in input{", ".pro-save{", ".pro-on .link-btn{", ".pro-acts .go-btn{", ".pro-copy{"):
         rule = css[css.index(sel):css.index("}", css.index(sel))]
         assert "min-height:44px" in rule, sel
-    assert "max-width:580px" in css and "@media (max-width:560px)" in css and "grid-template-columns:1fr" in css
+    assert "max-width:1080px" in css and "@media (max-width:560px)" in css and "grid-template-columns:1fr" in css
     # the in-page privacy window names the key and Stripe
     priv = html[html.index('id="privacyModal"'):html.index('id="aboutModal"')]
     assert "A Replore Pro key" in priv and "Stripe" in priv

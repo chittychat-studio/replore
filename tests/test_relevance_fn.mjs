@@ -655,7 +655,7 @@ console.log("labelled verdicts accepted ok");
     let f = stripe(200, sub()), r = await call({ ...sem, ...ON }, f);
     assert.strictEqual(r.status, 200); assert.ok(Array.isArray((await r.json()).sim));
     assert.strictEqual(f.calls.length, 1); assert.strictEqual(f.calls[0].url, "https://api.stripe.com/v1/subscriptions/" + SUB);
-    assert.strictEqual(f.calls[0].init.method, "GET"); assert.strictEqual(f.calls[0].init.redirect, "error"); assert.ok(f.calls[0].init.signal);
+    assert.strictEqual(f.calls[0].init.method, "GET"); assert.strictEqual(f.calls[0].init.redirect, "manual"); assert.ok(f.calls[0].init.signal);
     assert.strictEqual(f.calls[0].init.headers.Authorization, "Bearer " + STRIPE); assert.strictEqual(f.calls[0].init.body, undefined);
     // cache hit: two calls, one Stripe lookup
     r = await call({ ...sem, ...ON }, f); assert.strictEqual(r.status, 200); assert.strictEqual(f.calls.length, 1, "cached for 10 minutes");
@@ -683,7 +683,7 @@ console.log("labelled verdicts accepted ok");
     }
     // Stripe down, 500, 401, unreadable body, redirect refused -> fail closed (and not cached: the next call asks again)
     for (const f2 of [stripe("down"), stripe(500, {}), stripe(401, {}), stripe(200, "not json"),
-        (() => { const g = async (u, init) => { assert.strictEqual(init.redirect, "error"); throw new TypeError("redirect"); }; return g; })()]) {
+        (() => { const g = async (u, init) => { assert.strictEqual(init.redirect, "manual"); throw new TypeError("redirect"); }; return g; })()]) {
       fn.resetPro(); r = await call({ ...sem, ...ON }, f2); assert.strictEqual(r.status, 403);
     }
     fn.resetPro(); f = stripe("down"); await call({ ...sem, ...ON }, f); await call({ ...sem, ...ON }, f);

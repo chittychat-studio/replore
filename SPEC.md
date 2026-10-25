@@ -644,17 +644,10 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   bar is 32px tall; buttons and links share one display style; icons are single-colour (★, a line cup icon for Tip,
   ☾/☼ for the theme), never colour emoji next to plain glyphs.
 
-- **RS44** Tips and GitHub credit (owner request 2026-10-14). **Tip jar:** a Stripe Payment Link (a public
-  `https://buy.stripe.com/...` URL; no Stripe key of any kind is in the page or the repo), set in one constant `TIP_URL`
-  in `web/index.html`. Empty = every tip element stays hidden. Shown in two places only, never as a pop-up: a "Tip" (cup icon)
-  button next to ★ Star in the top bar (owner 2026-10-14: "not footer, beside the star button"), and one polite line in the plan window after the user has their plan ("Got a useful plan? Leave a
-  tip ☕ It helps us keep Replore free and fund more open-source projects."). Tipping is optional and unlocks nothing.
-  The link only accepts Stripe's own `https://buy.stripe.com/` address (anything else keeps it hidden). A Stripe
-  test-mode link (`/test_...`, takes no real money) is hidden on the live domains (replore.cardzo.co.in,
-  replore.pages.dev) and shows only on previews, so a test link can never reach visitors. The plan-window line also
-  shows Stripe's QR code for the same link (`web/tip-qr.png`, owner 2026-10-14), on screens wider than 700px only (a
-  phone can't scan itself). The QR must encode exactly `TIP_URL`: replace the image whenever the link changes
-  (checked by decoding it before commit; CI checks the file exists).
+- **RS44** GitHub credit; the tip jar is retired (owner 2026-10-25: "remove tip option altogether as we have a paid
+  tier going forward"). Replore is paid through Replore Pro (RS87 to RS90) and the templates, so the "Tip" button, the
+  plan-window tip line and its QR code (`web/tip-qr.png`), `TIP_URL` and its checks are removed, and the privacy page,
+  README and footer no longer mention tips. (Was, 2026-10-14: an optional Stripe Payment Link tip jar beside Star.)
   **GitHub credit:** the footer, README and privacy page say "Repository data from the GitHub API. Replore is not
   affiliated with or endorsed by GitHub. GitHub® is a trademark of GitHub, Inc." The GitHub logo and Octocat are never
   used (GitHub brand rules); every card links back to the repo on GitHub.
@@ -1085,7 +1078,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   broader words; the skill says the note in one line. Shared cases: `tests/fixtures/relaxed_cases.json`, run by
   `tests/test_scout.py` and `tests/test_web_logic.js`. The web behaviour is unchanged.
 - **RS79** Launch it with Leo (owner 2026-10-23, from a mock-up). A Launch button in the top menu opens a window: a few
-  tap answers (what you built, including iPhone, Android and games; who uses it; data; how people pay; budget) build a
+  tap answers (what you built, including iPhone, Android and games; who uses it; data; how people pay; budget; owner 2026-10-25, from the Stitch screen "Replore - Launch it with Leo Modal": one question at a time as option cards with a one-line description, step tabs to jump back, Back and Next, the chosen card gets a cyan rim and a tick and the next question slides in, cards lean slightly toward the pointer, changed plan rows fade in, checklist ticks survive answer changes with an "x of y done" count; transform and opacity only, none under reduced motion) build a
   colour-coded plan (host or store; a simple website lists Netlify, GitHub Pages, Cloudflare Pages and GoDaddy, with Vercel, Render or Cloudflare Workers for when a server is needed, owner 2026-10-25; store accounts, multiplayer, database, sign-in, payments with store billing rules on
   mobile, cost) and a checklist in two tabs: Before launch (Governor first, secrets, staging, backups, payment tests,
   legal pages) and After you go live, from Cardzo's go-live playbook (HTTPS and Cloudflare Full Strict, security
@@ -1211,7 +1204,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   (and `X-Replore-Eval-Key` against `EVAL_KEY`) exactly as before (RS34g, unchanged). Only if that fails and the value
   has the Pro shape, the function recomputes the signature and compares it in constant time; a bad signature is refused
   with no Stripe call (so the endpoint cannot be used to probe Stripe). A good signature leads to
-  `GET https://api.stripe.com/v1/subscriptions/{id}` with the restricted key, a 3 s deadline and `redirect: "error"`.
+  `GET https://api.stripe.com/v1/subscriptions/{id}` with the restricted key, a 3 s deadline and `redirect: "manual"` (any 3xx is a failure).
   Granted means HTTP 200 with `status` `active` or `trialing` and a Pro price among `items.data[].price` (above); 200
   with any other status or no Pro item (`canceled`, `past_due`,
   `unpaid`, `incomplete` and so on) or 404 is a denial. A network error, timeout, redirect, other status or unreadable
@@ -1282,7 +1275,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   `^cs_(live|test)_[A-Za-z0-9]{10,200}$` or the answer is 400 `bad_session` before any network call. Off (503
   `pro_off`) unless both RS87 secrets and the Pro price list (or product) are set. The function asks Stripe
   `GET https://api.stripe.com/v1/checkout/sessions/{id}?expand[]=subscription` with the restricted key, a 5 s deadline
-  and `redirect: "error"`, and issues a key only when `payment_status` is `paid` and the expanded subscription's
+  and `redirect: "manual"` (any 3xx is a failure), and issues a key only when `payment_status` is `paid` and the expanded subscription's
   `status` is `active` or `trialing`; otherwise 403 `not_paid`; a paid, active subscription with no Pro price among its
   items (another product) gets 403 `not_pro`; Stripe 404 gives 404 `unknown_session`, and anything
   else (network, timeout, redirect, other status, unreadable body, subscription not expanded) gives 503
@@ -1310,6 +1303,14 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   `https://replore.cardzo.co.in/pro?session_id={CHECKOUT_SESSION_ID}`. Linked from the page footer and listed in the
   sitemap; no inline script (RS49), no emoji (RS55), no em dash (RS66), 44px targets, CSP unchanged (the page calls only
   its own site); the script is hash-stamped by `ops/stamp_assets.py` (RS52).
+  **Stripe key hygiene (found live 2026-10-25).** Every Stripe call (claim, Pro key check, RS94 link and refresh) uses
+  `STRIPE_SECRET_KEY` trimmed of spaces and line breaks; a stray line break made the Authorization header invalid and
+  every claim failed before reaching Stripe (logged upstream 0, 0 ms). A value that is still not an `rk_`/`sk_`
+  `live`/`test` key fails closed with no call and logs `upstream: -1` (key format).
+  **No `redirect: "error"` (found live 2026-10-25).** The Workers runtime rejects that option before sending ("must
+  be one of follow or manual"), so every claim failed in 0 ms whatever the key. Every outbound call in `functions/`
+  (Stripe, Google keys and Identity Toolkit, RS94) uses `redirect: "manual"`, and every caller accepts only a 200, so a
+  redirect still fails closed.
 - **RS91** No animation library on the web page (owner 2026-10-24, from the frontend-stack review). GSAP 3.12.5 is
   removed: it ships under GreenSock's own "Standard" licence, not MIT, inside this MIT repo (RS12), with no NOTICE,
   and the owner's stack bans it. Every effect it ran is ported, with the same timings and easings, to the browser's Web
@@ -1613,14 +1614,33 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   timed-out upstream (10 s) = 502, never a page from anywhere else (RS7). Only the path and query under `/templates`
   are forwarded, with the same path; no cookies, `Authorization`, or Replore keys or headers are sent upstream, and the
   upstream's `Set-Cookie` is dropped. Methods other than `GET` and `HEAD` = 405 (the store sells through Stripe
-  Payment Links, which never post here). Responses keep the storefront's own headers (its `_headers` CSP); `/demo/`
-  pages stay `noindex`. Redirects from the upstream are rewritten only when they point back into its own origin.
+  Payment Links, which never post here). Responses keep the storefront's own headers (its `_headers`). The store serves
+  no template code at all: no live demos, only screenshots and short muted preview videos (owner: "ensure nothing is
+  leaked for free users"). Redirects from the upstream are rewritten only when they point back into its own origin.
   **Showroom first.** Every template shows with its Draft tag and a "Coming soon" Buy button until the owner finishes
   the storefront's Stripe and licence go-live checklist; nothing is sold through Replore itself. A "Templates" link in
   the footer, beside Replore Pro. No em dash in the copy (RS66).
   **Owner steps:** `npx wrangler login`; create the Pages project; deploy the storefront; set `TEMPLATES_ORIGIN` on
   the Replore Pages project (Production and Preview); redeploy. Status: implemented and unit-tested
   (`tests/test_templates_fn.mjs`); not verified live.
+- **RS99** The Pro window and `/pro` list every Pro benefit (owner 2026-10-25: "pro screen should give all benefits we
+  offer in pro", "its outdated now"; layout from the Stitch screen "Replore - Leo, Pro Modal Redesign" in the owner's
+  project "Replore 3D Website Redesign"). Pro sells getting a project live, not AI ranking (it no longer says "meaning").
+  One line under the title ("Search stays free for everyone. Pro is for getting your project live faster: no waiting,
+  no daily cap, guided setup and a person to ask."), then six tiles, each a mono number, a title and one line: Skip the
+  queue (RS87 per-IP limit skip); No daily limit (RS96: 5 a day anonymous, 20 signed in, Pro uncapped); Step-by-step
+  playbooks (RS97); Everywhere you build (web, Claude Code plugin, MCP agents, RS87); Sign in with Google (RS94); Help
+  from a person (owner commitment 2026-10-25: hands-on help by email at hello@cardzo.co.in). Then two plan cards,
+  Monthly and Yearly (the yearly one highlighted with a "Launch offer" tag), whose prices `pro-core.js` fills from the
+  same `PRO_PRICE` / `PRO_PRICE_YEAR` / `PRO_PRICE_YEAR_WAS` the buy buttons use, so they never disagree; then the
+  buttons and "Sold by Stripe. Cancel any time." The copy Stitch invented (telemetry claims, "instant activation",
+  "millions of repositories") is not used: every claim must be true today (RS7). No icon tiles (the slop rules), no em
+  dash (RS66). Tiles lift 2 px on hover (transform only, none under reduced motion). On screens 960 px and wider the benefits sit left and the plans, buttons and key form right, tightened so a laptop (about 1175 by 716) shows it all without scrolling (owner 2026-10-25); phones keep one column.
+- **RS100** Filters and sort never make the page jump (owner 2026-10-25: "why is the screen flickering going up and down
+  when I click on filter?"). A filter, star or update switch, Clear, or a new sort order keeps the number of cards already
+  revealed (it used to reset to 10, so the page shrank, the browser jumped up, the scroll-for-more marker came into view
+  and added cards back: an up-and-down bounce). If the list still gets shorter while you are below its top, the page
+  scrolls to the list's top once, below the sticky header (`scroll-margin-top`). Cards a filter brings back appear at once, without the slide-up entrance (many sliding together read as the page moving); scrolling down still reveals new cards with it. A new search still starts at 10.
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
 - **RX3** Ranking by forks, trending or download counts. (Relevance, stars and license-freedom are the only

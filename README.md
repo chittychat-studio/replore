@@ -172,7 +172,7 @@ the **secret** `PRO_SIGNING_SECRET`, 32 or more random characters (for example `
 print(secrets.token_urlsafe(32))"`), which signs every key, so changing it invalidates every key already issued; and the
 plain variable `PRO_PRICE_IDS`, the monthly and yearly Pro price ids comma-separated (copy them from the Replore Pro
 product page in Stripe; `PRO_PRODUCT_ID`, the product id, works instead). The price list matters because the same Stripe
-account sells other things (tips): only a subscription carrying a Pro price gets or keeps a key. Without all three the
+account sells other things (templates): only a subscription carrying a Pro price gets or keeps a key. Without all three the
 Pro route answers `pro_off`. Set each Payment Link's success URL (After payment, "Don't show confirmation page",
 redirect) to exactly `https://replore.cardzo.co.in/pro?session_id={CHECKOUT_SESSION_ID}`, switch on **Stripe Tax** on
 the links (you are the seller of record), then paste the links into `PRO_URL` and `PRO_URL_YEAR` in
@@ -429,7 +429,6 @@ off-by-default local safety log — are in [`PRIVACY.md`](PRIVACY.md).
 Repository data from the GitHub API. Security scores from [OpenSSF Scorecard](https://scorecard.dev); package and
 vulnerability data from [deps.dev](https://deps.dev) and [OSV.dev](https://osv.dev). Replore is not affiliated with or endorsed by GitHub. GitHub® is a trademark of GitHub, Inc.
 
-Find Replore useful? The web page has a Tip button next to Star, and a QR code in the plan window (both Stripe). Tips are optional, unlock nothing, and help us keep Replore free and fund more open-source projects.
 
 ## License
 
