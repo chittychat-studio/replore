@@ -1608,7 +1608,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   are rendered from a safe subset: paragraphs, `-` bullets, `1.` numbered steps, `**bold**`, `` `code` `` and https links (new tab,
   `rel="noopener noreferrer"`), built with text nodes, never `innerHTML` of the stored text, so a playbook is data, not
   code (RS9, RS25). No em dash in the copy (RS66). `PRIVACY.md` lists the key (RS33).
-  **Owner steps:** create a KV namespace, bind it to the Pages project as `PLAYBOOKS` (Production and Preview), run
+  **Owner steps:** create a KV namespace, bind it as `PLAYBOOKS` in `wrangler.toml` (the project's bindings are managed there; done 2026-10-25, namespace `replore-playbooks` holding `pb:index` and `pb:firebase-google-signin`), run
   `python ops/playbooks.py` and the printed commands, redeploy. Status: implemented and unit-tested (`tests/test_playbook_fn.mjs`,
   `tests/test_playbooks_web.js`, `tests/test_playbooks_ops.py`); not verified live (needs the KV namespace).
 - **RS98** Replore Templates showroom at `/templates/` (owner 2026-10-25: "publish everything into our site", picked a

@@ -45,3 +45,9 @@ binding = "AI"
 # name = "ROUTER"
 # class_name = "RouterDO"
 # script_name = "replore-router"
+
+# RS97 Pro playbooks: the text lives in this KV namespace (created 2026-10-25 as "replore-playbooks"), never in the repo.
+# Load or update entries with: python ops/playbooks.py 61c90b3b133e4f8196aba7c995ae7412 (then run the printed commands).
+[[kv_namespaces]]
+binding = "PLAYBOOKS"
+id = "61c90b3b133e4f8196aba7c995ae7412"
