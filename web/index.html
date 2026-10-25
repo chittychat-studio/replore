@@ -1792,6 +1792,11 @@ body:not(.has-results) .hero > .hero-fx{display:none}
     .pro-r .pro-form{margin-top:12px;padding-top:12px}
   }
   #out{scroll-margin-top:84px}   /* filterChanged() scrolls the list top into view below the sticky header */
+  /* RS101: Lenis's own recommended rules (smooth wheel scrolling; windows and inner panels scroll natively) */
+  html.lenis,html.lenis body{height:auto}
+  .lenis.lenis-smooth{scroll-behavior:auto !important}
+  .lenis.lenis-smooth [data-lenis-prevent]{overscroll-behavior:contain}
+  .lenis.lenis-stopped{overflow:hidden}
 </style>
 </head>
 <body>
@@ -2202,6 +2207,8 @@ body:not(.has-results) .hero > .hero-fx{display:none}
 
 <script src="pro-core.js?v=31e38fed4a" defer></script>
 <script src="auth.js?v=f43383d4f7" defer></script>
-<script src="app.js?v=1f56f9d4a0" defer></script>
+<script src="vendor/lenis-1.3.26/lenis.min.js" defer></script>   <!-- RS101: smooth wheel scrolling (MIT) -->
+<script src="vendor/motion-14.1.0/motion.js" defer></script>   <!-- RS101: spring reveals (MIT) -->
+<script src="app.js?v=617f7b53fc" defer></script>
 </body>
 </html>

@@ -55,3 +55,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
 COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+## Motion and Lenis (MIT), SPEC RS101
+- web/vendor/motion-14.1.0/motion.js: the browser build `dist/motion.js` of the `motion` npm package 14.1.0, unchanged.
+  Copyright (c) 2024 Motion B.V. MIT License, full text in web/vendor/motion-14.1.0/LICENSE.md.
+  sha256 1efa29adbb0d9a4452592adf84eb819ef05616e25a830c85ab8965bcbba79efa.
+- web/vendor/lenis-1.3.26/lenis.min.js: `dist/lenis.min.js` of the `lenis` npm package 1.3.26, unchanged.
+  Copyright (c) 2024 darkroom.engineering. MIT License, full text in web/vendor/lenis-1.3.26/LICENSE.
+  sha256 53195c9797e7ce7bf9d7fa9242b08209e57f46de4c9dac126a6494fa780e3346.

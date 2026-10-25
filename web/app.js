@@ -1065,7 +1065,7 @@ function openModal(id){ var m=document.getElementById(id); if(!m) return;
   var already=document.querySelector(".modal.open");         // never stack modals: close any open one first
   if(already && already!==m){ already.classList.remove("open"); stopDemo("howDemo"); }
   else if(!already){ __lastFocus=document.activeElement; }   // remember opener (keep the original when switching modals)
-  m.classList.add("open");
+  m.classList.add("open"); if(window.__lenis) window.__lenis.stop();   // RS101: the page behind a window stays still
   if(id==="howModal"){ var tv=document.getElementById("tourVideo");   // RS72: the Tour is the explainer video; it starts muted (browsers allow that), sound is one tap away
     if(tv&&tv.play&&!(window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches)){ try{ tv.currentTime=0; }catch(_){} var pp=tv.play(); if(pp&&pp.catch) pp.catch(function(){}); } }
   var focusId = id==="filtersModal" ? "stackInput" : (id==="likeModal" ? "like" : (id==="fbModal" ? "fbTitle" : null)), sheet=m.querySelector(".sheet");
@@ -1076,6 +1076,7 @@ function closeModals(){ var any=false, m=document.querySelectorAll(".modal");
   for(var i=0;i<m.length;i++){ if(m[i].classList.contains("open")) any=true; m[i].classList.remove("open"); }
   stopDemo("howDemo"); var tv=document.getElementById("tourVideo"); if(tv&&tv.pause) tv.pause();   // RS72: the Tour video stops when the window closes
   if(any && __lastFocus && __lastFocus.focus){ __lastFocus.focus(); __lastFocus=null; }
+  if(window.__lenis) window.__lenis.start();
 }
 // modal a11y: mark sheets as dialogs, label the × buttons, and trap Tab within the open modal
 (function(){
@@ -2153,6 +2154,23 @@ function startHeroFx(canvas){
       el.style.translate=((e.clientX-(b.left+b.width/2))*.35).toFixed(1)+"px "+((e.clientY-(b.top+b.height/2))*.35).toFixed(1)+"px"; });
     el.addEventListener("pointerleave",function(){ el.style.translate="0px 0px"; }); });
 }());
+
+// RS101 (owner 2026-10-25: "butter smooth motion", "where is our butter smooth motion?"): Lenis gives wheel and
+// trackpad scrolling the weighted glide (touch keeps the phone's own scroll); windows, drawers and inner panels scroll
+// natively. Motion's inView gives each home section a spring rise the first time it scrolls in (transform and opacity).
+// Nothing runs under reduced motion; if a library file is missing the page behaves exactly as before.
+(function(){
+  if(window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches) return;
+  if(window.Lenis){ try{ window.__lenis=new Lenis({autoRaf:true,lerp:0.09,wheelMultiplier:1,smoothWheel:true,allowNestedScroll:true,
+      prevent:function(n){ return !!(n&&n.closest&&n.closest(".modal,.rc-drawer,.prd-bar,[data-lenis-prevent]")); }}); }catch(_){ window.__lenis=null; } }
+  var M=window.Motion; if(!M||!M.inView||!M.animate) return;
+  ["#trendCar"].forEach(function(sel){ var el=document.querySelector(sel); if(!el) return;
+    var r=el.getBoundingClientRect(); if(r.top<(window.innerHeight||800)&&!el.hidden) return;   // already on screen: leave it
+    el.style.opacity="0"; el.style.transform="translateY(28px)";
+    M.inView(el,function(){ M.animate(el,{opacity:[0,1],transform:["translateY(28px)","translateY(0px)"]},{type:"spring",bounce:0.12,visualDuration:0.55})
+      .then(function(){ el.style.transform=""; },function(){ el.style.opacity=""; el.style.transform=""; }); },{amount:0.15});   // once
+  });
+})();
 
 // hero entrance
 (function(){
