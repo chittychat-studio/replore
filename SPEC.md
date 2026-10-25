@@ -1608,6 +1608,13 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   are rendered from a safe subset: paragraphs, `-` bullets, `1.` numbered steps, `**bold**`, `` `code` `` and https links (new tab,
   `rel="noopener noreferrer"`), built with text nodes, never `innerHTML` of the stored text, so a playbook is data, not
   code (RS9, RS25). No em dash in the copy (RS66). `PRIVACY.md` lists the key (RS33).
+  On phones (520px and narrower) the playbook picker is one row that swipes sideways (scroll snap), so the open step
+  starts near the top instead of below a screen of stacked buttons (owner 2026-10-25). Five playbooks live in KV since
+  2026-10-25: custom domain and HTTPS, Stripe payments, email deliverability, Firebase Google sign-in, launch admin; the
+  RS99 tile names them.
+  Motion (RS100): opening a playbook eases it in (opacity and a small rise, about 260 ms); picks, buttons, Mark complete
+  and dots ease their colour and press scale; on phones the picked playbook glides into view. All of it is off under
+  reduced motion.
   **Owner steps:** create a KV namespace, bind it as `PLAYBOOKS` in `wrangler.toml` (the project's bindings are managed there; done 2026-10-25, namespace `replore-playbooks` holding `pb:index` and `pb:firebase-google-signin`), run
   `python ops/playbooks.py` and the printed commands, redeploy. Status: implemented and unit-tested (`tests/test_playbook_fn.mjs`,
   `tests/test_playbooks_web.js`, `tests/test_playbooks_ops.py`); not verified live (needs the KV namespace).

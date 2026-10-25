@@ -204,7 +204,15 @@ code{font-family:var(--f-mono);font-size:.88em;padding:1px 6px;border-radius:6px
 .pb-dot{width:12px;height:12px;padding:0;border-radius:50%;border:1px solid var(--muted);background:transparent;cursor:pointer;transition:transform .2s ease}
 .pb-dot.done{background:var(--accent);border-color:var(--accent)}.pb-dot.cur{transform:scale(1.35);border-color:var(--accent)}
 .pb-btn:focus-visible,.pb-dot:focus-visible,.pb-mark:focus-visible,.pb-pick:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-@media (max-width:520px){ .pb-card{padding:16px} .pb-btn{min-width:64px} }
+/* RS97, RS100: colour and press changes ease instead of snapping */
+@media (prefers-reduced-motion:no-preference){ .pb-list{scroll-behavior:smooth} }
+.pb-pick,.pb-btn,.pb-mark{transition:border-color .2s ease,background-color .2s ease,color .2s ease,transform .15s ease}
+.pb-pick:active,.pb-btn:not(:disabled):active,.pb-mark:active{transform:scale(.97)}
+.pb-dot{transition:transform .25s cubic-bezier(.22,1,.36,1),background-color .2s ease,border-color .2s ease}
+@media (prefers-reduced-motion:reduce){ .pb-pick,.pb-btn,.pb-mark,.pb-dot,.pb-bar i{transition:none} .pb-pick:active,.pb-btn:active,.pb-mark:active{transform:none} .pb-list{scroll-behavior:auto} }
+@media (max-width:520px){ .pb-card{padding:16px} .pb-btn{min-width:64px}
+  .pb-list{flex-wrap:nowrap;overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none;margin-right:-20px;padding-right:20px}   /* RS97: one swipeable row on phones */
+  .pb-list::-webkit-scrollbar{display:none} .pb-pick{flex:0 0 auto;max-width:72%;scroll-snap-align:start} }
 /* RS99 (owner 2026-10-25, ported from the Stitch "Leo, Pro Modal Redesign"): six benefit tiles and two plan cards */
 .pro-hero{align-items:center}
 .pro-sub{margin:18px 0 10px;font:600 11px var(--f-mono,monospace);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
