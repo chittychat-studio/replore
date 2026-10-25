@@ -1371,7 +1371,7 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
     ["budget","Monthly budget for hosting","cost",[["free","Free tiers only"],["small","A little"],["any","Whatever it needs"]]]];
   var A={kind:"next",gplat:"web",multi:"no",who:"public",data:"accounts",paid:"free",budget:"free"}, tab="before", view="stack", step=0, ticked={};
   var VIEWS={stack:["Launch stack",'Launch it <em>with Leo</em>',"Answer a few taps and I’ll plan where it lives: host, domain, database, sign-in, payments and cost."],
-    before:["Pre-launch",'Pre-launch <em>checklist</em>',"What to check before you launch, for what you built. Change an answer on the left and the list follows."],
+    before:["Pre-launch",'Pre-launch <em>checklist</em>',"What to check before you launch, for what you built. Change a filter and the list follows."],
     after:["Post go-live",'Post go-live <em>checklist</em>',"What to do once it’s live: HTTPS, headers, bots, search engines, email and monitoring."]};
   // RS79 cards (owner 2026-10-25, from the Stitch screen "Replore - Launch it with Leo Modal"): one question at a time as
   // option cards with a one-line description; the plan on the right updates live
@@ -1469,7 +1469,14 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
     return groups.map(function(g){ return '<div class="ln-group" style="--gc:var(--ln-'+GC[g]+')"><b>'+g+'</b><ul class="ln-check">'+by[g].map(function(it){
       return '<li><input type="checkbox" aria-label="'+esc(it[1])+'"><span>'+esc(it[1])+(it[2]?'<small>'+esc(it[2])+'</small>':'')+'</span></li>'; }).join("")+'</ul></div>'; }).join(""); }
   function shownQ(){ return Q.filter(function(q){ return (q[0]!=="gplat"&&q[0]!=="multi")||A.kind==="game"; }); }
+  // RS102: the checklist windows filter by only the answers that change their list (no Budget or Players; Audience only before launch, not for store apps)
+  function relQ(){ return shownQ().filter(function(q){ var k=q[0]; return k!=="budget"&&k!=="multi"&&(k!=="who"||(view==="before"&&!isMobile())); }); }
+  function filters(){ return '<div class="ln-filt" role="group" aria-label="Tailor the checklist"><p class="ln-filt-h">Tailored to</p>'+relQ().map(function(q){
+    return '<label class="ln-f" style="--qc:var(--ln-'+q[2]+')"><span>'+SL[q[0]]+'</span><select data-k="'+q[0]+'" aria-label="'+SL[q[0]]+': '+q[1]+'">'+q[3].map(function(o){
+      return '<option value="'+o[0]+'"'+(A[q[0]]===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join("")+'</select></label>'; }).join("")+'</div>'; }
   function render(dir){
+    var cols=qs.parentNode; if(cols&&cols.classList) cols.classList.toggle("ln-one",view!=="stack");
+    if(view!=="stack") qs.innerHTML=filters(); else {
     var shown=shownQ(); step=Math.min(step,shown.length-1); var q=shown[step], nx=shown[step+1];
     qs.innerHTML='<ol class="ln-steps">'+shown.map(function(x,n){ return '<li><button type="button" class="ln-step'+(n===step?" on":"")+(n<step?" done":"")+'" data-s="'+n+'"'+(n===step?' aria-current="step"':'')+'><i>'+(n+1)+'</i>'+SL[x[0]]+'</button></li>'; }).join("")+'</ol>'+
       '<div class="ln-qcard" style="--qc:var(--ln-'+q[2]+')"><p class="ln-qn">Step '+(step+1)+' of '+shown.length+'</p><h3 class="ln-qt">'+q[1]+'</h3>'+
@@ -1477,7 +1484,7 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
         return '<button type="button" class="ln-opt'+(on?" on":"")+'" role="radio" aria-checked="'+on+'" data-k="'+q[0]+'" data-v="'+o[0]+'"><b>'+o[1]+'</b>'+(d?'<small>'+d+'</small>':'')+'<span class="ln-tick" aria-hidden="true"></span></button>'; }).join("")+'</div>'+
       '<div class="ln-nav"><button type="button" class="ln-btn" id="lnBack"'+(step?'':' disabled')+'>Back</button>'+
       (nx?'<button type="button" class="ln-btn main" id="lnNext">Next: '+SL[nx[0]]+'</button>':'<span class="ln-done">All set: your plan is on the right</span>')+'</div></div>';
-    if(dir&&!reduceLn&&canAnimate()){ var c=qs.querySelector(".ln-qcard"); if(c) c.animate([{opacity:0,transform:"translateX("+(dir*28)+"px)"},{opacity:1,transform:"none"}],{duration:220,easing:"cubic-bezier(.22,1,.36,1)"}); }
+    if(dir&&!reduceLn&&canAnimate()){ var c=qs.querySelector(".ln-qcard"); if(c) c.animate([{opacity:0,transform:"translateX("+(dir*28)+"px)"},{opacity:1,transform:"none"}],{duration:220,easing:"cubic-bezier(.22,1,.36,1)"}); } }
     var L=lists(), risk=A.data==="sensitive"||(A.paid!=="free"&&A.who==="public")?'<span class="ln-tag w">Extra care</span>':'<span class="ln-tag ok">Standard</span>';
     var before={}; [].forEach.call(plan.querySelectorAll(".ln-row"),function(r,i){ before[i]=r.textContent; });
     var head=VIEWS[view];   // RS102: three windows (owner 2026-10-25: "3 separate windows for launch, before launch and after launch")
@@ -1514,6 +1521,9 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
     if(t.closest&&t.closest("#lnNext")){ step++; render(1); } });
   qs.addEventListener("keydown",function(e){ var c=e.target.closest&&e.target.closest(".ln-opt"); if(!c||(e.key!=="ArrowRight"&&e.key!=="ArrowDown"&&e.key!=="ArrowLeft"&&e.key!=="ArrowUp")) return;
     var all=[].slice.call(qs.querySelectorAll(".ln-opt")), i=all.indexOf(c); e.preventDefault(); all[(i+(e.key==="ArrowRight"||e.key==="ArrowDown"?1:all.length-1))%all.length].focus(); });
+  qs.addEventListener("change",function(e){ var s=e.target; if(!s||s.tagName!=="SELECT") return; A[s.getAttribute("data-k")]=s.value; touched=true; render();   // RS102 filters
+    var f=qs.querySelector('select[data-k="'+s.getAttribute("data-k")+'"]'); if(f) f.focus();
+    if(!reduceLn&&canAnimate()) [].forEach.call(plan.querySelectorAll(".ln-group"),function(x,i){ x.animate([{opacity:0,transform:"translateY(6px)"},{opacity:1,transform:"none"}],{duration:240,delay:i*35,easing:"cubic-bezier(.22,1,.36,1)",fill:"backwards"}); }); });
   plan.addEventListener("change",function(e){ var b=e.target; if(b&&b.type==="checkbox"){ ticked[b.getAttribute("aria-label")]=b.checked; tickCount(); } });
   if(fineLn&&!reduceLn){   // the option cards lean a little toward the pointer (transform only)
     qs.addEventListener("pointermove",function(e){ var c=e.target.closest&&e.target.closest(".ln-opt"); if(!c) return; var r=c.getBoundingClientRect();
