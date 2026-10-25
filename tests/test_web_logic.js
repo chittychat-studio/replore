@@ -441,9 +441,8 @@ const GOOD = "rp.sub_1QabcDEF234ghiJKL.0123456789abcdef";
   console.log("pro key plumbing ok"); }
 
 // RS89: Leo, Pro window logic. Two Stripe Payment Links, offer line, key save / reveal / remove; hidden until PRO_URL
-{ assert.strictEqual(s.PRO_URL, "", "the Pro window ships switched off until the owner pastes the Stripe link");
-  assert.strictEqual(s.PRO_URL_YEAR, "");
-  assert.ok(!s.proUrlOk(s.PRO_URL));
+{ assert.ok(s.proUrlOk(s.PRO_URL, "replore.cardzo.co.in"), "owner's monthly Stripe link (2026-10-25) passes the live-host check");
+  assert.ok(s.proUrlOk(s.PRO_URL_YEAR, "replore.cardzo.co.in") && /prefilled_promo_code=YEAR50$/.test(s.PRO_URL_YEAR), "yearly link carries the launch code");
   // Stripe Payment Links only, with at most a prefilled promotion code
   ["https://buy.stripe.com/aEU5kE0Ab1cd", "https://buy.stripe.com/aEU5kE0Ab1cd?prefilled_promo_code=FIRST399",
    "https://buy.stripe.com/test_aEU5kE0Ab1cd", "https://buy.stripe.com/x?prefilled_promo_code=LAUNCH_50-A"].forEach(u => assert.ok(s.proUrlOk(u), u));
@@ -461,7 +460,9 @@ const GOOD = "rp.sub_1QabcDEF234ghiJKL.0123456789abcdef";
   [s.PRO_PRICE, s.PRO_PRICE_WAS, s.PRO_PRICE_YEAR, s.PRO_PRICE_YEAR_WAS, s.PRO_OFFER].forEach(x => assert.ok(!/—/.test(x) && !/[\u{1F000}-\u{1FAFF}☀-➿]/u.test(x), x));
   // buttons: nothing while PRO_URL is empty; monthly only; both
   const M = "https://buy.stripe.com/mon01", Y = "https://buy.stripe.com/year01?prefilled_promo_code=YEAR50";
-  assert.deepStrictEqual(s.proButtons(s.proConfig()), { on: false, month: null, year: null, offer: "" });
+  { const live = s.proButtons(s.proConfig());   // owner's links 2026-10-25: both buttons on, the yearly one with the launch price
+    assert.ok(live.on && live.month.href === s.PRO_URL && live.month.price === "8 USD a month");
+    assert.ok(live.year.href === s.PRO_URL_YEAR && live.year.price === "36 USD for your first year" && live.year.was === "72 USD" && /half price/.test(live.offer)); }
   let b = s.proButtons({ url: M, price: "3.99 USD for your first month", priceYear: "72 USD a year", was: "8 USD", offer: "" });
   assert.ok(b.on && b.month.href === M && b.month.label === "Get a key, " && b.month.price === "3.99 USD for your first month" && b.month.was === "8 USD");
   assert.strictEqual(b.year, null, "yearly button hidden without PRO_URL_YEAR"); assert.strictEqual(b.offer, "", "offer line hidden when empty");

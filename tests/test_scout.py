@@ -1250,8 +1250,8 @@ def test_pro_window_markup_copy_and_switch():
     assert "—" not in visible and not re.search("[\U0001F000-\U0001FAFF☀-➿✕×]", win)
     # the switch: empty PRO_URL keeps the button and the window hidden; constants as the owner set them
     core = (ROOT / "web" / "pro-core.js").read_text(encoding="utf-8")
-    assert 'var PRO_URL="", PRO_URL_YEAR="";' in core
-    assert 'PRO_PRICE="8 USD a month", PRO_PRICE_WAS="", PRO_PRICE_YEAR="36 USD for your first year", PRO_PRICE_YEAR_WAS="72 USD"' in core
+    assert 'var PRO_URL="https://buy.stripe.com/cNifZk7PYeTzeAMd5OgrS02", PRO_URL_YEAR="https://buy.stripe.com/3cI7sO2vEdPv78kd5OgrS03?prefilled_promo_code=YEAR50";' in core   # owner's links 2026-10-25
+    assert 'PRO_PRICE="8 USD a month", PRO_PRICE_WAS="", PRO_PRICE_YEAR="36 USD for your first year", PRO_PRICE_YEAR_WAS="72 USD"' in core and "YEAR50" in core   # the offer matches Stripe (checked 2026-10-25)
     assert '!proUrlOk(PRO_URL, location.hostname)) return;' in js and 'querySelectorAll(".pro-el").forEach(function(el){ el.hidden=false; })' in js
     assert 'label:"Get a key, "' in core and 'label:"Yearly, "' in core and 'sr.textContent="was "' in core
     assert "—" not in core and not re.search("[🀀-🫿☀-➿✕×]", core)
