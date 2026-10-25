@@ -1536,7 +1536,7 @@ body:not(.has-results) .hero > .hero-fx{display:none}
   .tdeck.td-in{animation:fadeIn .45s ease both}
   .td-card{position:absolute;inset:0;display:flex;flex-direction:column;gap:14px;padding:24px;border-radius:24px;overflow:hidden;
     background:color-mix(in srgb,var(--card) 95%,transparent);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);
-    border:1px solid var(--o30);box-shadow:0 30px 60px -34px rgba(var(--shadow),.55);transform-origin:50% 100%;will-change:transform;
+    border:1px solid var(--o30);box-shadow:0 30px 60px -34px rgba(var(--shadow),.55);transform-origin:50% 120%;will-change:transform;
     transition:transform .65s cubic-bezier(.34,1.56,.64,1),opacity .65s ease}
   .td-card,.tdeck.td-measure .td-card{bottom:auto;height:auto}   /* each card is its own natural height (no empty band); app.js fit() sizes the deck to the tallest */
   .td-card[data-pos="0"]{transform:translateY(0px) translateZ(0px) scale(1);opacity:1;border-color:var(--a30);box-shadow:0 30px 60px -34px rgba(var(--shadow),.55),0 0 40px var(--glow-soft)}
@@ -1836,6 +1836,13 @@ body:not(.has-results) .hero > .hero-fx{display:none}
   .prd-incl label{display:inline-flex;align-items:center;gap:6px;font-size:14px;cursor:pointer}
   .prd-incl-hint{width:100%;font-size:12.5px;color:var(--muted)}
   .vc-amber{--vc:var(--ln-pay,#f0bd6a)}
+  @media (max-width:699px){   /* owner 2026-10-25: "Find repos" was cropped next to four buttons; it gets its own full-width row */
+    .vb-acts{flex-wrap:wrap;row-gap:10px}
+    .vb-acts .go-btn{flex:1 0 100%;width:100%;justify-content:center} }
+  .qp-more{display:none;color:var(--accent-ink);letter-spacing:.08em}
+  @media (max-width:999px){   /* phones: the quick prompts scroll sideways, so say so and fade the edge */
+    body:not(.has-results) .qp-more{display:inline}
+    body:not(.has-results) #quickpicks{-webkit-mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 56px),transparent);mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 56px),transparent)} }
 </style>
 </head>
 <body>
@@ -1891,7 +1898,7 @@ body:not(.has-results) .hero > .hero-fx{display:none}
       <!-- RS24: "similar repos" and "match a plan" live in Filters only (owner: the line under the bar duplicated it) -->
       <input id="prd" type="file" accept=".md,.markdown,.txt,.text,text/plain,text/markdown" hidden>
 
-      <p class="qp-label" aria-hidden="true">Quick prompts</p>
+      <p class="qp-label" aria-hidden="true">Quick prompts<span class="qp-more"> · swipe for more →</span></p>   <!-- owner 2026-10-25: say there are more to the side -->
       <div id="quickpicks" class="quickpicks" aria-label="Quick examples to try"></div>
 
       <div id="status" class="status" role="status" aria-live="polite"></div>
@@ -1952,9 +1959,8 @@ body:not(.has-results) .hero > .hero-fx{display:none}
 <div class="modal" id="launchModal"><div class="sheet ln-sheet">   <!-- RS79: Launch it with Leo -->
   <button class="x" data-close aria-label="Close"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   <div class="ln-head"><img src="leo-hero.webp?v=1ca927d5e6" alt="" width="56" height="53" decoding="async">
-    <div><p class="kicker">Launch plan</p><h2>Launch it <em>with Leo</em></h2>
-    <p class="mut">Built your app? Answer a few quick questions and I'll plan where it lives, how people pay, and what
-      to check before and after you go live.</p></div></div>
+    <div><p class="kicker" id="lnKicker">Launch stack</p><h2 id="lnTitle">Launch it <em>with Leo</em></h2>
+    <p class="mut" id="lnSay">Answer a few taps and I’ll plan where it lives: host, domain, database, sign-in, payments and cost.</p></div></div>
   <div class="ln-cols"><div id="lnQs"></div><aside class="ln-plan" id="lnPlan" aria-live="polite"></aside></div>
 </div></div>
 <div id="prdBar" class="prd-bar" hidden>
@@ -2042,8 +2048,8 @@ body:not(.has-results) .hero > .hero-fx{display:none}
 <div class="modal pro-el" id="proModal" hidden><div class="sheet pro-sheet">   <!-- RS89: Leo, Pro (owner pick 2026-10-23); hidden until PRO_URL is set -->
   <div class="pro-head"><div><p class="kicker">Replore Pro</p><h2>Leo, <em>Pro</em></h2></div>
     <button type="button" class="x" data-close aria-label="Close"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>
-  <div class="pro-split"><div class="pro-l"><p class="pro-say">Search stays free for everyone. Pro is for getting your project live faster: no waiting, no daily cap, guided setup and a person to ask.</p>   <!-- owner 2026-10-25: no Leo in the Pro window -->
-    <p class="pro-sub">What Pro adds</p>
+  <div class="pro-split"><div class="pro-l">    <p class="pro-say">Get your idea live faster: the boring setup and admin, packaged for you.</p>   <!-- owner 2026-10-25 -->
+  <div class="pro-split"><div class="pro-l">    <p class="pro-sub">What Pro adds</p>
     <ul class="pro-bens"><li><span class="pb-n">01</span><b>Skip the queue</b><span>AI ranking never makes you wait.</span></li><li><span class="pb-n">02</span><b>No daily limit</b><span>Free use gets 5 AI searches a day (20 signed in). Pro has no cap.</span></li><li><span class="pb-n">03</span><b>Step-by-step playbooks</b><span>Guided setup cards you tick off, starting with Google sign-in for your app.</span></li><li><span class="pb-n">04</span><b>Everywhere you build</b><span>The web app, the Claude Code plugin and any MCP agent.</span></li><li><span class="pb-n">05</span><b>Sign in with Google</b><span>Pro on every device, no key to paste.</span></li><li><span class="pb-n">06</span><b>Help from a person</b><span>Write to <a href="mailto:hello@cardzo.co.in">hello@cardzo.co.in</a> and get hands-on help with your setup.</span></li></ul>   <!-- RS99: the six Pro benefits (owner 2026-10-25, Stitch "Leo, Pro Modal Redesign") -->
     </div><div class="pro-r"><div class="pro-plans"><a class="pro-plan" id="proCardM" href="#" target="_blank" rel="noopener noreferrer" hidden><p class="pro-plan-k">Monthly</p><p class="pro-plan-p" id="proPlanM"></p><p class="pro-plan-s">Billed monthly, cancel any time</p><span class="pro-plan-go">Get Pro monthly</span></a>
       <a class="pro-plan pro-plan-on" id="proCardY" href="#" target="_blank" rel="noopener noreferrer" hidden><span class="pro-plan-tag">Launch offer</span><p class="pro-plan-k">Yearly</p><p class="pro-plan-p" id="proPlanY"></p><p class="pro-plan-s" id="proPlanYWas"></p><span class="pro-plan-go">Get Pro yearly</span></a></div>
@@ -2235,6 +2241,6 @@ body:not(.has-results) .hero > .hero-fx{display:none}
 <script src="auth.js?v=f43383d4f7" defer></script>
 <script src="vendor/lenis-1.3.26/lenis.min.js" defer></script>   <!-- RS101: smooth wheel scrolling (MIT) -->
 <script src="vendor/motion-14.1.0/motion.js" defer></script>   <!-- RS101: spring reveals (MIT) -->
-<script src="app.js?v=b2719c118a" defer></script>
+<script src="app.js?v=26acdd375e" defer></script>
 </body>
 </html>

@@ -1265,7 +1265,7 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
     var card=t.closest&&t.closest(".rcard.rc2");   // RS71: tap a card to add it to the plan (links, buttons and the bookmark keep their own job)
     if(card && !(t.closest("a,button,label,input,select,summary,.rc-more")) && !(window.getSelection&&String(window.getSelection()).trim())){
       var pcb=card.querySelector(".pick-cb"); if(pcb){ pcb.click(); return; } }
-    if(t.closest&&t.closest(".trend-tab")){ showTrending(t.closest(".trend-tab").getAttribute("data-trend")); return; }
+    if(t.closest&&t.closest(".trend-tab")){ showTrending(t.closest(".trend-tab").getAttribute("data-trend"), true); return; }
     if(t.closest&&(t.closest("#resClear")||t.closest(".rf-clear"))){ rfReset(); filterChanged(); return; }
     if(t.closest&&t.closest("#resSelAll")){ var bx=shownPickBoxes(), all=bx.every(function(x){ return x.checked; });
       bx.forEach(function(x){ if(x.checked===all){ x.checked=!all; x.dispatchEvent(new Event("change",{bubbles:true})); } });
@@ -1369,7 +1369,10 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
     ["data","What data does it keep?","data",[["none","None"],["accounts","User accounts"],["sensitive","Health or other sensitive data"]]],
     ["paid","How will people pay?","pay",[["free","It's free"],["once","One-time purchase"],["sub","Subscription"],["iap","In-app purchases"]]],
     ["budget","Monthly budget for hosting","cost",[["free","Free tiers only"],["small","A little"],["any","Whatever it needs"]]]];
-  var A={kind:"next",gplat:"web",multi:"no",who:"public",data:"accounts",paid:"free",budget:"free"}, tab="before", step=0, ticked={};
+  var A={kind:"next",gplat:"web",multi:"no",who:"public",data:"accounts",paid:"free",budget:"free"}, tab="before", view="stack", step=0, ticked={};
+  var VIEWS={stack:["Launch stack",'Launch it <em>with Leo</em>',"Answer a few taps and I’ll plan where it lives: host, domain, database, sign-in, payments and cost."],
+    before:["Pre-launch",'Pre-launch <em>checklist</em>',"What to check before you launch, for what you built. Change an answer on the left and the list follows."],
+    after:["Post go-live",'Post go-live <em>checklist</em>',"What to do once it’s live: HTTPS, headers, bots, search engines, email and monitoring."]};
   // RS79 cards (owner 2026-10-25, from the Stitch screen "Replore - Launch it with Leo Modal"): one question at a time as
   // option cards with a one-line description; the plan on the right updates live
   var SL={kind:"Stack",gplat:"Platform",multi:"Players",who:"Audience",data:"Data",paid:"Payments",budget:"Budget"};
@@ -1477,19 +1480,19 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
     if(dir&&!reduceLn&&canAnimate()){ var c=qs.querySelector(".ln-qcard"); if(c) c.animate([{opacity:0,transform:"translateX("+(dir*28)+"px)"},{opacity:1,transform:"none"}],{duration:220,easing:"cubic-bezier(.22,1,.36,1)"}); }
     var L=lists(), risk=A.data==="sensitive"||(A.paid!=="free"&&A.who==="public")?'<span class="ln-tag w">Extra care</span>':'<span class="ln-tag ok">Standard</span>';
     var before={}; [].forEach.call(plan.querySelectorAll(".ln-row"),function(r,i){ before[i]=r.textContent; });
-    plan.innerHTML='<h3>Leo’s launch plan</h3><p class="ln-say">Here’s where I’d put it, and what to check. '+risk+'</p>'+rows().join("")+
-      '<div class="ln-tabs" role="tablist"><button type="button" role="tab" class="ln-tab" data-t="before" aria-selected="'+(tab==="before")+'">Before launch</button>'+
-      '<button type="button" role="tab" class="ln-tab" data-t="after" aria-selected="'+(tab==="after")+'">After you go live</button></div>'+
-      checklist(L[tab])+
-      '<div class="ln-acts"><button type="button" class="ln-btn main" id="lnAsk">Get the full plan from your AI</button><button type="button" class="ln-btn" id="lnCopy">Copy checklist</button></div>'+
+    var head=VIEWS[view];   // RS102: three windows (owner 2026-10-25: "3 separate windows for launch, before launch and after launch")
+    var hk=document.getElementById("lnKicker"), ht=document.getElementById("lnTitle"), hs=document.getElementById("lnSay"); if(hk) hk.textContent=head[0]; if(ht) ht.innerHTML=head[1]; if(hs) hs.textContent=head[2];
+    plan.innerHTML=(view==="stack"
+      ?'<h3>Leo’s launch stack</h3><p class="ln-say">Here’s where I’d put it. '+risk+'</p>'+rows().join("")
+      :'<h3>'+(view==="before"?"Before you launch":"After you go live")+'</h3><p class="ln-count"></p>'+checklist(L[view]))+
+      '<div class="ln-acts"><button type="button" class="ln-btn main" id="lnAsk">Get the full plan from your AI</button><button type="button" class="ln-btn" id="lnCopy">'+(view==="stack"?"Copy plan":"Copy checklist")+'</button></div>'+
       '<p class="ln-fine">Suggestions, not endorsements. Check each provider’s current pricing and store rules.</p>';
     [].forEach.call(plan.querySelectorAll(".ln-check input"),function(b){ if(ticked[b.getAttribute("aria-label")]) b.checked=true; });
     tickCount();
     if(!reduceLn&&canAnimate()) [].forEach.call(plan.querySelectorAll(".ln-row"),function(r,i){ if(before[i]!==undefined&&before[i]!==r.textContent)   // only rows whose answer changed
       r.animate([{opacity:.25,transform:"translateY(6px)"},{opacity:1,transform:"none"}],{duration:260,easing:"cubic-bezier(.22,1,.36,1)"}); }); }
   function tickCount(){ var all=plan.querySelectorAll(".ln-check input"), n=0; [].forEach.call(all,function(b){ if(b.checked) n++; });
-    var t=plan.querySelector(".ln-count"); if(!t){ t=document.createElement("p"); t.className="ln-count"; var tabs=plan.querySelector(".ln-tabs"); if(tabs) tabs.parentNode.insertBefore(t,tabs.nextSibling); }
-    t.textContent=n+" of "+all.length+" done"; }
+    var t=plan.querySelector(".ln-count"); if(t) t.textContent=n+" of "+all.length+" done"; }
   function answers(){ return Q.filter(function(q){ return (q[0]!=="gplat"&&q[0]!=="multi")||A.kind==="game"; }).map(function(q){
     var o=q[3].filter(function(x){ return x[0]===A[q[0]]; })[0]; return q[1]+" "+(o?o[1]:""); }).join("\n"); }
   function plainList(arr){ return arr.map(function(it){ return "- ["+it[0]+"] "+it[1]+(it[2]?" ("+it[2]+")":""); }).join("\n"); }
@@ -1521,17 +1524,17 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
       var g=plan.querySelectorAll(".ln-group"); if(!reduceLn&&canAnimate()) [].forEach.call(g,function(x,i){ x.animate([{opacity:0,transform:"translateY(8px)"},{opacity:1,transform:"none"}],{duration:240,delay:i*40,easing:"cubic-bezier(.22,1,.36,1)",fill:"backwards"}); }); return; }
     if(t.closest&&t.closest("#lnAsk")&&window.__handoff){ var pi=document.getElementById("prdIncl"); if(pi) pi.hidden=true; window.__handoff(prompt(),"Your launch plan, by your own AI",
       "Replore doesn't write it: your <b>own</b> AI does, free and private. The prompt has your answers, the checklist and the repos you picked. Copy it into any AI agent, or open it in Claude, ChatGPT or Gemini."); return; }
-    if(t.closest&&t.closest("#lnCopy")){ var L=lists(), txt="Before launch:\n"+plainList(L.before)+"\n\nAfter you go live:\n"+plainList(L.after), b=t.closest("#lnCopy");
-      var ok=function(){ b.textContent="Copied"; setTimeout(function(){ b.textContent="Copy checklist"; },1400); };
+    if(t.closest&&t.closest("#lnCopy")){ var L=lists(), b=t.closest("#lnCopy"), lbl=b.textContent,
+        txt=view==="stack"?"My answers:\n"+answers()+"\n\nLaunch stack:\n"+planText():(view==="before"?"Pre-launch checklist:\n"+plainList(L.before):"Post go-live checklist:\n"+plainList(L.after));
+      var ok=function(){ b.textContent="Copied"; setTimeout(function(){ b.textContent=lbl; },1400); };
       try{ navigator.clipboard.writeText(txt).then(ok,function(){}); }catch(_){} } });
-  var lb=document.getElementById("launchBtn"); if(lb) lb.addEventListener("click",function(){ openModal("launchModal"); });
+  var lb=document.getElementById("launchBtn"); if(lb) lb.addEventListener("click",function(){ if(window.__launch) window.__launch.open(null); else openModal("launchModal"); });
   // RS102: the console buttons open it on a part, and the build plan reads its answers, plan and checklists as text
   var touched=false;
   function planText(){ var d=document.createElement("div"); d.innerHTML=rows().join("");
     return [].map.call(d.querySelectorAll(".ln-row"),function(r){ var dt=r.querySelector("dt"), dd=r.querySelector("dd").cloneNode(true), sm=dd.querySelector("small"), extra="";
       if(sm){ extra=sm.textContent.trim(); sm.remove(); } return "- "+(dt?dt.textContent:"")+": "+dd.textContent.trim()+(extra?" ("+extra+")":""); }).join("\n"); }
-  window.__launch={ open:function(t){ touched=true; if(t){ tab=t; } render(); openModal("launchModal");
-      if(t){ var tb=plan.querySelector(".ln-tabs"); if(tb&&tb.scrollIntoView) setTimeout(function(){ try{ tb.scrollIntoView({block:"start"}); }catch(_){} },60); } },
+  window.__launch={ open:function(t){ touched=true; view=t==="before"||t==="after"?t:"stack"; if(view!=="stack") tab=view; render(); openModal("launchModal"); },
     touched:function(){ return touched; }, answers:answers, planText:planText,
     before:function(){ return plainList(lists().before); }, after:function(){ return plainList(lists().after); } };
   qs.addEventListener("click",function(){ touched=true; });
@@ -1681,16 +1684,17 @@ function trendRows(items, kind){
     : kind==="rising" ? "New this month"+(r.forks?" · "+kstars(r.forks)+" forks":"") : kstars(r.forks)+" forks"; });
   return {rows:rows, excluded:excluded};
 }
-async function showTrending(kind){
+async function showTrending(kind, fromTab){   // fromTab: switching lists on the Trending page (quiet swap, RS100)
   kind=TREND_TABS[kind]?kind:"rising";
   var gen=++window.__runGen; window.__busy=false; setGoBusy(false);
   if(window.__gateCtl) try{ window.__gateCtl.abort(); }catch(_){}   // RS41: a running AI check is no longer needed
   var out=document.getElementById("out"), st=document.getElementById("status");
-  stopDemo("heroDemo"); think(st,"Loading trending repos");
+  stopDemo("heroDemo"); if(!fromTab) think(st,"Loading trending repos");
+  var keepY=window.scrollY, keepF=fromTab?JSON.parse(JSON.stringify(resFlags())):null;
   try{
     var got=await fetchTrending(kind); if(gen!==window.__runGen) return;
     var t=trendRows(got.items, kind);
-    smoothSwap(function(){ if(gen!==window.__runGen) return;   // RS69
+    (fromTab?function(f){ f(); }:smoothSwap)(function(){ if(gen!==window.__runGen) return;   // RS69 (a list switch skips the page dissolve)
     out.innerHTML=render(t.rows,[got.q],t.excluded,t.rows.length,[],"Trending on GitHub","",null);
     var bar=out.querySelector(".res-main");   // RS67: the list switcher and its note open the cards column
     if(bar){ bar.insertAdjacentHTML("afterbegin",'<div class="trend-tabs" role="tablist" aria-label="Trending lists">'+
@@ -1698,7 +1702,14 @@ async function showTrending(kind){
         '" role="tab" aria-selected="'+(k===kind)+'">'+TREND_TABS[k]+'</button>'; }).join("")+'</div>'+
         '<p class="res-note mut trend-note">'+esc(TREND_NOTE[kind])+'</p>'); }
     out.setAttribute("data-gate","trending");
-    animateCards(out); initResultFilter(); st.textContent=""; saveResults(); syncClearQ(); });
+    if(fromTab){   // owner 2026-10-25: switching tabs flickered: keep the scroll and the filters, one short fade, no card entrance
+      attachTilt(out, window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches); initResultFilter();
+      var fl=resFlags(); Object.keys(keepF).forEach(function(k){ if(k!=="langs") fl[k]=keepF[k]; }); Object.keys(keepF.langs||{}).forEach(function(k){ fl.langs[k]=keepF.langs[k]; });
+      window.__rfQuiet=true; try{ applyResultFilter(); } finally { window.__rfQuiet=false; }
+      if(Math.abs(window.scrollY-keepY)>2) window.scrollTo(0,keepY);
+      var grid=out.querySelector(".grid"); if(grid&&canAnimate()&&!(window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches)) grid.animate([{opacity:.35},{opacity:1}],{duration:180,easing:"ease-out"});
+    } else { animateCards(out); initResultFilter(); }
+    st.textContent=""; saveResults(); syncClearQ(); });
   }catch(e){ if(gen!==window.__runGen) return; st.textContent=""; showErr(out,'<p class="err">'+esc(e.message)+'</p>'); }
 }
 // RS36 thinking orb: a small dotted sphere in a pill ("Solving…"-style), used under the home demo and while searching
@@ -1749,6 +1760,13 @@ function think(st, text){
 // Only the top card is exposed; the others are aria-hidden and inert. Each list is fetched only when its tab is first
 // opened (cached 30 min, RS35).
 var DECK_N=6, DECK_MS=4000, DECK_TINT=["cyan","violet","mint"];
+// RS92 card shuffle, full sequence (owner 2026-10-25, the frontend-stack pattern: "a deck fans out, closes, then the top
+// card slides off and tucks under the deck, again and again"): every 4th beat the top cards fan around a pivot below the
+// deck (700 ms), hold (900 ms) and close (550 ms); the other beats are the tuck. The rest poses mirror the CSS data-pos.
+var DECK_REST=["translateY(0px) translateZ(0px) scale(1) rotate(0deg)","translateY(22px) translateZ(-40px) scale(.955) rotate(.8deg)",
+  "translateY(42px) translateZ(-80px) scale(.91) rotate(-.8deg)","translateY(56px) translateZ(-120px) scale(.86) rotate(0deg)"], DECK_OP=[1,.9,.7,0];
+function deckFanPose(d,n){ var spread=Math.min(44,11*(n-1)), a=-spread/2+(spread/Math.max(1,n-1))*(n-1-d);
+  return "translateY("+(d*4)+"px) translateZ("+(-d*40)+"px) scale("+(1-d*.02).toFixed(3)+") rotate("+a.toFixed(1)+"deg)"; }
 var DECK_FRONT="translateY(0px) translateZ(0px) scale(1)";
 function deckCardHtml(r, k, n, kind){
   var p=String(r.name).split("/"), o=p[0], nm=p.slice(1).join("/"), v=licenseVerdict(r.spdx), xs=exploreLinks(r.name), lang=cleanLang(r.lang);
@@ -1793,6 +1811,13 @@ function buildTrendCarousel(){
       var b=nt.animate([{transform:"translate(-110%,-4%) rotate(-6deg)",opacity:0},{transform:DECK_FRONT,opacity:1}],{duration:520,easing:EASE_OUT});
       var done2=function(){ back2(); busy=false; }; b.finished.then(done2,done2); } }
   // a swiped card leaves from where the finger let go, in the swipe's direction, and tucks under like step(1)
+  function fanOut(){ if(busy||order.length<3||!(G&&!reduce)) return; busy=true;
+    var vis=order.slice(0,4), n=vis.length, E="cubic-bezier(.22,1,.36,1)";
+    var outs=vis.map(function(c,d){ return c.animate([{transform:DECK_REST[d],opacity:DECK_OP[d]},{transform:deckFanPose(d,n),opacity:1}],{duration:700,easing:E,fill:"forwards"}); });
+    var end=function(){ vis.forEach(function(c){ c.getAnimations().forEach(function(a){ a.cancel(); }); }); busy=false; };
+    Promise.all(outs.map(function(a){ return a.finished; })).then(function(){ return new Promise(function(r){ setTimeout(r,900); }); }).then(function(){
+      var backs=vis.map(function(c,d){ return c.animate([{transform:deckFanPose(d,n),opacity:1},{transform:DECK_REST[d],opacity:DECK_OP[d]}],{duration:550,easing:E,fill:"forwards"}); });
+      return Promise.all(backs.map(function(a){ return a.finished; })); }).then(end,end); }
   function fling(top,dir){ var from=top.style.transform; order.push(order.shift());
     if(!(G&&!reduce)){ top.style.transform=""; layout(); return; } busy=true;
     var a=top.animate([{transform:from,opacity:1},{transform:"translateX("+(dir*130)+"%) rotate("+(dir*14)+"deg)",opacity:0}],{duration:380,easing:EASE_OUT,fill:"forwards"});
@@ -1854,7 +1879,8 @@ function buildTrendCarousel(){
       layout(); fit(); void deck.offsetWidth;
       if(!reduce){ deck.classList.add("td-in"); if(G){ var n=deck.querySelector(".td-n"); if(n) odometer(n, n.textContent, G, .2); } }
       deck.setAttribute("aria-busy","false"); box.hidden=false;
-      if(!ticking&&!reduce) ticking=setInterval(function(){ if(canRun()&&Date.now()-lastStep>DECK_MS-200) step(1); }, DECK_MS);   // never right after a swipe
+      if(!ticking&&!reduce){ var beat=0; ticking=setInterval(function(){ if(!canRun()||Date.now()-lastStep<=DECK_MS-200) return;   // never right after a swipe
+        if(beat%4===0) fanOut(); else step(1); beat++; }, DECK_MS); }   // fan, then three tucks, again and again
     }).catch(function(){ if(my!==gen) return; deck.classList.remove("td-out"); deck.setAttribute("aria-busy","false");
       if(kind==="rising") return;   // GitHub unreachable or rate-limited on first load: no section, nothing else changes
       cur=""; show("rising"); });
@@ -2226,6 +2252,14 @@ function startHeroFx(canvas){
   });
 })();
 
+// owner 2026-10-25: on phones the quick prompts nudge once when they first come into view, so the sideways row reads as
+// scrollable (scrolls 48px and back; nothing under reduced motion or on wide screens)
+(function(){ var row=document.getElementById("quickpicks"); if(!row||!window.IntersectionObserver) return;
+  if(window.matchMedia&&(matchMedia("(prefers-reduced-motion:reduce)").matches||!matchMedia("(max-width:999px)").matches)) return;
+  var io=new IntersectionObserver(function(es){ if(!es[0].isIntersecting) return; io.disconnect();
+    if(row.scrollWidth<=row.clientWidth+8||row.scrollLeft>0) return;
+    setTimeout(function(){ try{ row.scrollTo({left:48,behavior:"smooth"}); setTimeout(function(){ row.scrollTo({left:0,behavior:"smooth"}); },650); }catch(_){} },500); },{threshold:.6});
+  io.observe(row); })();
 // hero entrance
 (function(){
   var G=canAnimate(), reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches;
