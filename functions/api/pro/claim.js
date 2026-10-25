@@ -18,6 +18,11 @@ export const proSubId = k => { const m = looksLikeProKey(k) ? KEY_SHAPE.exec(k) 
 // and with the Pro price list (or product): the Stripe account also sells other things (tips, later templates), so an
 // active subscription counts only while one of its items carries a Pro price (security review 2026-10-23)
 const list = s => String(s || "").split(",").map(x => x.trim()).filter(Boolean);
+// RS90: the Stripe key as pasted into the dashboard may carry a stray space or line break, which makes the
+// Authorization header invalid and every call fail before it leaves (found live 2026-10-25: upstream 0, 0 ms).
+// Trim it; a value that still is not a Stripe secret or restricted key is logged as upstream -1 (key format).
+export const stripeKey = env => String((env && env.STRIPE_SECRET_KEY) || "").trim();
+export const stripeKeyOk = k => /^(rk|sk)_(live|test)_[A-Za-z0-9]{10,}$/.test(k);
 export const proOn = env => !!(env && env.STRIPE_SECRET_KEY && String(env.PRO_SIGNING_SECRET || "").length >= 32
   && (list(env.PRO_PRICE_IDS).length || String(env.PRO_PRODUCT_ID || "").trim()));
 export function proItemOk(sub, env) {
@@ -84,10 +89,12 @@ export function renewsOn(sub) {
 export async function claim(sessionId, env, fetchImpl = fetch) {
   const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), CLAIM_TIMEOUT_MS);
   let res, s;
+  const key = stripeKey(env);
+  if (!stripeKeyOk(key)) { clearTimeout(timer); return { status: 503, error: "stripe_error", upstream: -1 }; }
   try {
     try {
       res = await fetchImpl(`${STRIPE_API}/checkout/sessions/${sessionId}?expand[]=subscription`, { method: "GET", redirect: "error",
-        signal: ctl.signal, headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`, Accept: "application/json" } });
+        signal: ctl.signal, headers: { Authorization: `Bearer ${key}`, Accept: "application/json" } });
     } catch { return { status: 503, error: "stripe_error", upstream: 0 }; }   // upstream: Stripe's HTTP status for the log (0 = no answer)
     if (res.status === 404) return { status: 404, error: "unknown_session" };
     if (res.status !== 200) return { status: 503, error: "stripe_error", upstream: res.status };

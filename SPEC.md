@@ -1310,6 +1310,10 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   `https://replore.cardzo.co.in/pro?session_id={CHECKOUT_SESSION_ID}`. Linked from the page footer and listed in the
   sitemap; no inline script (RS49), no emoji (RS55), no em dash (RS66), 44px targets, CSP unchanged (the page calls only
   its own site); the script is hash-stamped by `ops/stamp_assets.py` (RS52).
+  **Stripe key hygiene (found live 2026-10-25).** Every Stripe call (claim, Pro key check, RS94 link and refresh) uses
+  `STRIPE_SECRET_KEY` trimmed of spaces and line breaks; a stray line break made the Authorization header invalid and
+  every claim failed before reaching Stripe (logged upstream 0, 0 ms). A value that is still not an `rk_`/`sk_`
+  `live`/`test` key fails closed with no call and logs `upstream: -1` (key format).
 - **RS91** No animation library on the web page (owner 2026-10-24, from the frontend-stack review). GSAP 3.12.5 is
   removed: it ships under GreenSock's own "Standard" licence, not MIT, inside this MIT repo (RS12), with no NOTICE,
   and the owner's stack bans it. Every effect it ran is ported, with the same timings and easings, to the browser's Web

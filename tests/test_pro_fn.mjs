@@ -79,6 +79,17 @@ try {
     fn.resetClaim(); r = await post({ session_id: SID }, f2);
     assert.strictEqual(r.status, 503); assert.deepStrictEqual(await r.json(), { error: "stripe_error" });
   }
+  // RS90: a key pasted with a stray space or line break still works (found live 2026-10-25), and the header carries
+  // the trimmed key; a value that is not a Stripe key fails closed before any call, logged as upstream -1
+  for (const k of [STRIPE + "\n", " " + STRIPE + " ", STRIPE + "\r\n"]) {
+    fn.resetClaim(); const g = stripe(200, session()); r = await post({ session_id: SID }, g, { ...env, STRIPE_SECRET_KEY: k });
+    assert.strictEqual(r.status, 200, JSON.stringify(k)); assert.strictEqual(g.calls[0].init.headers.Authorization, "Bearer " + STRIPE);
+  }
+  for (const k of ['"' + STRIPE + '"', "pk_live_PUBLISHABLEkey123", "whsec_abcdefghijkl", "rk_test_short", "rk_live_abc def1234567"]) {
+    fn.resetClaim(); const g = stripe(200, session()); r = await post({ session_id: SID }, g, { ...env, STRIPE_SECRET_KEY: k });
+    assert.strictEqual(r.status, 503, k); assert.strictEqual(g.calls.length, 0, k);
+  }
+  assert.ok(fn.stripeKeyOk(STRIPE) && fn.stripeKeyOk("sk_live_abcdefghij12") && !fn.stripeKeyOk(""));
   // a stalled Stripe call ends at the deadline
   { const g = async (u, init) => new Promise((_, rej) => init.signal.addEventListener("abort", () => rej(Object.assign(new Error("a"), { name: "AbortError" }))));
     const t0 = Date.now(); const c = await fn.claim(SID, env, g); assert.strictEqual(c.error, "stripe_error");
@@ -127,6 +138,7 @@ assert.ok(lines.length > 20 && lines.every(l => { const o = JSON.parse(l); const
   return (k === "code,evt,ms,status" || (k === "code,evt,ms,status,upstream" && o.code === "stripe_error" && Number.isInteger(o.upstream))) && o.evt === "pro_claim"; }));
 assert.ok(lines.some(l => { const o = JSON.parse(l); return o.code === "stripe_error" && o.upstream === 401; }), "a 401 from Stripe is logged as upstream 401");
 assert.ok(lines.some(l => { const o = JSON.parse(l); return o.code === "stripe_error" && o.upstream === 0; }), "no answer from Stripe is logged as upstream 0");
+assert.ok(lines.some(l => { const o = JSON.parse(l); return o.code === "stripe_error" && o.upstream === -1; }), "a malformed Stripe key is logged as upstream -1");
 for (const c of ["claim_issued", "not_paid", "unknown_session", "stripe_error", "bad_session", "pro_off", "rate_limited", "not_pro"])
   assert.ok(all.includes(`"code":"${c}"`), c);
 console.log("pro claim ok");
