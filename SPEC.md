@@ -1086,7 +1086,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   `tests/test_scout.py` and `tests/test_web_logic.js`. The web behaviour is unchanged.
 - **RS79** Launch it with Leo (owner 2026-10-23, from a mock-up). A Launch button in the top menu opens a window: a few
   tap answers (what you built, including iPhone, Android and games; who uses it; data; how people pay; budget) build a
-  colour-coded plan (host or store, store accounts, multiplayer, database, sign-in, payments with store billing rules on
+  colour-coded plan (host or store; a simple website lists Netlify, GitHub Pages, Cloudflare Pages and GoDaddy, with Vercel, Render or Cloudflare Workers for when a server is needed, owner 2026-10-25; store accounts, multiplayer, database, sign-in, payments with store billing rules on
   mobile, cost) and a checklist in two tabs: Before launch (Governor first, secrets, staging, backups, payment tests,
   legal pages) and After you go live, from Cardzo's go-live playbook (HTTPS and Cloudflare Full Strict, security
   headers, form safety, Turnstile and rate limits, SEO basics, Search Console and Bing Webmaster Tools with the
