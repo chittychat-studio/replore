@@ -93,7 +93,7 @@ export async function claim(sessionId, env, fetchImpl = fetch) {
   if (!stripeKeyOk(key)) { clearTimeout(timer); return { status: 503, error: "stripe_error", upstream: -1 }; }
   try {
     try {
-      res = await fetchImpl(`${STRIPE_API}/checkout/sessions/${sessionId}?expand[]=subscription`, { method: "GET", redirect: "error",
+      res = await fetchImpl(`${STRIPE_API}/checkout/sessions/${sessionId}?expand[]=subscription`, { method: "GET", redirect: "manual",
         signal: ctl.signal, headers: { Authorization: `Bearer ${key}`, Accept: "application/json" } });
     } catch { return { status: 503, error: "stripe_error", upstream: 0 }; }   // upstream: Stripe's HTTP status for the log (0 = no answer)
     if (res.status === 404) return { status: 404, error: "unknown_session" };

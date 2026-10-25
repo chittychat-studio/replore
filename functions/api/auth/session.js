@@ -44,7 +44,7 @@ let KEYS = null;
 async function fetchKeys(now) {
   const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), KEYS_TIMEOUT_MS);
   try {
-    const res = await FETCH(JWKS_URL, { method: "GET", redirect: "error", signal: ctl.signal, headers: { Accept: "application/json" } });
+    const res = await FETCH(JWKS_URL, { method: "GET", redirect: "manual", signal: ctl.signal, headers: { Accept: "application/json" } });
     if (res.status !== 200) return null;
     const j = await res.json();
     if (!j || !Array.isArray(j.keys)) return null;

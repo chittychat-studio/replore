@@ -424,7 +424,7 @@ export function proGranted(status, j, env = {}) {
 export async function validateProKey(subId, env, fetchImpl = fetch) {
   const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), PRO_TIMEOUT_MS);
   try {
-    const res = await fetchImpl(STRIPE_SUBSCRIPTIONS + subId, { method: "GET", redirect: "error", signal: ctl.signal,
+    const res = await fetchImpl(STRIPE_SUBSCRIPTIONS + subId, { method: "GET", redirect: "manual", signal: ctl.signal,
       headers: { Authorization: `Bearer ${stripeKey(env)}`, Accept: "application/json" } });
     if (res.status === 404) return "denied";
     if (res.status !== 200) return "error";

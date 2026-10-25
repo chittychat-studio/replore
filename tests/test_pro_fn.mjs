@@ -38,7 +38,7 @@ try {
   assert.deepStrictEqual(j, { key: `rp.${SUB}.${want}`, renews: "2026-11-23" });
   assert.strictEqual(f.calls.length, 1);
   assert.strictEqual(f.calls[0].url, `https://api.stripe.com/v1/checkout/sessions/${SID}?expand[]=subscription`);
-  assert.strictEqual(f.calls[0].init.method, "GET"); assert.strictEqual(f.calls[0].init.redirect, "error"); assert.ok(f.calls[0].init.signal);
+  assert.strictEqual(f.calls[0].init.method, "GET"); assert.strictEqual(f.calls[0].init.redirect, "manual"); assert.ok(f.calls[0].init.signal);
   assert.strictEqual(f.calls[0].init.headers.Authorization, `Bearer ${STRIPE}`);
   r = await post({ session_id: SID }, stripe(200, session())); assert.strictEqual((await r.json()).key, keyIssued, "same session, same key");
   // trialing also issues; newer API versions keep current_period_end on the item
@@ -74,8 +74,8 @@ try {
   fn.resetClaim(); r = await post({ session_id: SID }, stripe(404, { error: { type: "invalid_request_error", message: "No such checkout.session" } }));
   assert.strictEqual(r.status, 404); assert.deepStrictEqual(await r.json(), { error: "unknown_session" });
   // Stripe down, 500, 401, unreadable body, subscription not expanded, redirect refused -> 503 stripe_error (fail closed)
-  for (const f2 of [stripe("down"), stripe(500, {}), stripe(401, {}), stripe(200, "not json"), stripe(200, session({ subscription: SUB })),
-      (() => { const g = async (u, init) => { assert.strictEqual(init.redirect, "error"); throw new TypeError("unexpected redirect"); }; return g; })()]) {
+  for (const f2 of [stripe("down"), stripe(500, {}), stripe(401, {}), stripe(302, {}), stripe(307, {}), stripe(200, "not json"), stripe(200, session({ subscription: SUB })),
+      (() => { const g = async (u, init) => { assert.strictEqual(init.redirect, "manual"); throw new TypeError("unexpected redirect"); }; return g; })()]) {
     fn.resetClaim(); r = await post({ session_id: SID }, f2);
     assert.strictEqual(r.status, 503); assert.deepStrictEqual(await r.json(), { error: "stripe_error" });
   }
