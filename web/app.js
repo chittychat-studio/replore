@@ -895,6 +895,16 @@ function parseRepo(s){ s=(s||"").trim(); if(!s) return null;
 // RS27b (owner 2026-10-25: "instead we find closest match for repo name entered"): anything typed works. A GitHub link or
 // owner/repo is used as is; otherwise (or when that repo does not exist) GitHub is searched by name and the exact name
 // wins, else GitHub's best match. Returns "owner/repo" or null; never sends anyone to GitHub to look it up themselves.
+// RS27b: a repo pasted into the search bar: a GitHub link or owner/repo anywhere, or "similar to X" / "alternatives to X" /
+// "repos like X". Returns {like, rest, soft}; soft = a bare owner/repo that may just be words like "client/server"
+function repoInText(t){ t=String(t||"");
+  var m=t.match(/https?:\/\/(?:www\.)?github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\S*/i);
+  if(m) return {like:m[0], rest:t.replace(m[0]," ").replace(/\s+/g," ").trim(), soft:false};
+  m=t.match(/(?:^|\s)([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)(?=\s|$)/);
+  if(m) return {like:m[1], rest:t.replace(m[1]," ").replace(/\s+/g," ").trim(), soft:true};
+  m=t.match(/\b(?:similar to|alternatives? to|repos? like)\s+([A-Za-z0-9_.-]{2,60})/i);
+  if(m) return {like:m[1], rest:t.replace(m[0]," ").replace(/\s+/g," ").trim(), soft:false};
+  return null; }
 function repoNameQuery(s){ return String(s||"").replace(/https?:\/\/\S+/g," ").replace(/[^A-Za-z0-9_.\- ]+/g," ").trim().split(/\s+/).slice(0,4).join(" "); }
 async function closestRepo(s){ var q=repoNameQuery(s); if(!q) return null;
   var items=await search(q+" in:name", null), key=function(x){ return String(x||"").toLowerCase().replace(/[-_.\s]/g,""); }, want=key(q);
@@ -935,14 +945,11 @@ async function run(){
   var minStars=Math.max(0,parseInt(document.getElementById("minstars").value,10)||0);
   var preferStarters=document.getElementById("starters").value==="yes";
   var stack=(document.getElementById("stack").value||"").trim().slice(0,80);
-  var like=(document.getElementById("like").value||"").trim();
+  var like=(document.getElementById("like").value||"").trim(), origText=text, softLike=false;
+  if(!like){ var rt=repoInText(text); if(rt){ like=rt.like; text=rt.rest; softLike=rt.soft; } }   // RS27b: repos go in the search bar
   var st=document.getElementById("status"), out=document.getElementById("out"), go=document.getElementById("go");
   stopDemo("heroDemo"); out.innerHTML=""; if(window.__resetPicks) window.__resetPicks(); syncClearQ();
   if(!text && !like){ st.textContent="Type what you're building, or paste a repo to find similar ones."; return; }
-  if(like && !text){   // similar-repo search needs words too, so results are narrowed to what you actually want (RS27a)
-    st.textContent="Add a few words too: what kind of repos like this? e.g. “free ai call”, then Find.";
-    var lq=document.getElementById("q"); if(lq){ lq.focus(); lq.scrollIntoView({block:"center"}); }
-    return; }
   if(text.length>200){ st.textContent=""; showErr(out,'<p class="err">Too long. Use a short sentence (max 200 characters).</p>'); return; }
   if(text && harmful(text)){ showErr(out,'<p class="err">I can’t help find tools for that.</p>'+
     '<p class="mut">For learning security on systems you own, try: "learn web security by hacking a practice app".</p>'); return; }
@@ -958,6 +965,8 @@ async function run(){
   var gen=++window.__runGen;   // a reset or newer search bumps this; stale results are dropped
   try{
     var queries, heading=null, seen={}, qtok;
+    if(like&&softLike){ try{ await repoMeta(parseRepo(like)); }   // "client/server" is words, not a repo: search the text as typed
+      catch(e){ if(/rate limit/i.test(e.message)) throw e; like=""; text=origText; } if(gen!==window.__runGen) return; }
     if(like){
       think(st,"Finding the repo");
       var target=await resolveRepo(like);
@@ -1144,8 +1153,9 @@ document.addEventListener("click",function(e){ var t=e.target&&e.target.closest&
 // Filters chip and "Find similar repos" tile each open a popup window
 document.getElementById("optsBtn").addEventListener("click",function(){ openModal("filtersModal"); });
 // RS24: the two search modes are also in Filters, so they stay reachable when the intro is folded away
-document.getElementById("fmLike").addEventListener("click",function(){ closeModals(); openModal("likeModal"); });
-document.getElementById("fmPrd").addEventListener("click",function(){ closeModals(); });   // the label opens the file picker
+// RS102: the console's Launch stack / Pre-launch / Post go-live open the Launch window on that part
+[["vbLaunch",null],["vbPre","before"],["vbPost","after"]].forEach(function(p){ var b=document.getElementById(p[0]);
+  if(b) b.addEventListener("click",function(){ if(window.__launch) window.__launch.open(p[1]); }); });
 // "Find similar →" in the modal runs the similar-repo search
 (function(){ var go=document.getElementById("likeGo"), like=document.getElementById("like");
   if(go) go.addEventListener("click",function(){ closeModals(); run(); });
@@ -1263,10 +1273,16 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
   function buildPrompt(){
     var q=(document.getElementById("q").value||"").trim() || "my project";
     var list=picks.map(function(r,i){ return (i+1)+". "+r.name+": "+r.url+(r.desc?"\n   "+r.desc:""); }).join("\n");
+    var L=window.__launch, inc=function(id){ var c=document.getElementById(id); return !!(c&&c.checked); }, stk=((document.getElementById("stack")||{}).value||"").trim();
+    var launch=(stk?"Tech stack I want: "+stk+".\n\n":"")+   // RS102: tech stack, launch stack, pre-launch and post go-live
+      (L&&inc("prdInLaunch")?"Where it will run (my launch stack from Replore's Launch planner):\n"+L.answers()+"\nSuggested setup:\n"+L.planText()+"\n\n":"")+
+      (L&&inc("prdInPre")?"Pre-launch checklist:\n"+L.before()+"\n\n":"")+
+      (L&&inc("prdInPost")?"Post go-live checklist:\n"+L.after()+"\n\n":"");
     return "You are the principal architect for my vibe coding app, with 15+ years of experience building similar apps.\n\n"+   // RS28e
       "I'm building: "+q+"\n\n"+
       (window.__selling&&sellSummary(picks)?sellSummary(picks)+"\n\n":"")+   // RS83: picks that conflict with a closed-source product
       "Write a product requirements document (PRD) for it, built on these open-source GitHub repos. "+DATA_GUARD+"\n\n"+list+"\n\n"+   // RS9, RS25
+      (launch?launch+"Plan the build for that stack. Add a section on deployment and launch that follows the launch stack, and turn the checklists above into tasks in the plan (before launch, then after go-live).\n\n":"")+
       "Not every repo above will fit (they came from a keyword search). First triage each one as USE, REFERENCE ONLY "+
       "or REJECT, with a one-line reason, and build only on the ones you USE.\n\n"+
       "Include: overview and goals; key features; which repo above covers each part (with its GitHub URL); "+
@@ -1298,7 +1314,12 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
     var many=document.getElementById("prdMany"); if(many) many.hidden=true;
     openModal("prdModal"); }
   window.__handoff=handoff; window.__getPicks=function(){ return picks.slice(); };
-  if(goBtn) goBtn.addEventListener("click",function(){ if(!picks.length) return;
+  var incl=document.getElementById("prdIncl"), inclIds=["prdInLaunch","prdInPre","prdInPost"], inclSet=false;
+  function showIncl(on){ if(!incl) return; incl.hidden=!on; if(!on) return; var L=window.__launch, used=!!(L&&L.touched());
+    if(!inclSet){ inclIds.forEach(function(id){ var c=document.getElementById(id); if(c) c.checked=used; }); }
+    var hint=document.getElementById("prdInclHint"); if(hint) hint.textContent=used?"":"Set your launch stack first (Launch stack button next to search), or tick these to use the default answers."; }
+  inclIds.forEach(function(id){ var c=document.getElementById(id); if(c) c.addEventListener("change",function(){ inclSet=true; if(goBtn) goBtn.click(); }); });   // RS102
+  if(goBtn) goBtn.addEventListener("click",function(){ if(!picks.length) return; showIncl(true);
     var text=buildPrompt(); var t0=document.getElementById("prdTitle"), i0=document.getElementById("prdIntro");
     if(t0) t0.textContent=PRD_T; if(i0) i0.innerHTML=PRD_I; if(pre) pre.textContent=text;
     if(openLink){ var url="https://claude.ai/new?q="+encodeURIComponent(text);
@@ -1381,6 +1402,10 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
         :A.gplat==="mobile"?["<b>App Store</b> and <b>Google Play</b>","Unity, Godot and most engines export to both. Plan two store listings."]
         :["<b>Steam</b> or <b>itch.io</b>","Steam has a per-game fee and a review; itch.io is free to publish."]}[k];
     out.push(row("host",m?"Where it ships":"Host",host[0]+"<small>"+host[1]+"</small>"));
+    var dom=m?"No domain needed for the stores<small>You only need a privacy policy page, and it can live on a free address.</small>"   // RS102
+      :A.who==="public"?"<b>Your own domain</b> recommended<small>A small yearly fee: Cloudflare Registrar sells at cost, or GoDaddy / Namecheap. Point it at your host; HTTPS is free on every host above. Not needed to start: the free address works.</small>"
+      :"Not needed<small>Use the free address your host gives you (yourapp.netlify.app, yourname.github.io, yourapp.pages.dev, yourapp.vercel.app), with free HTTPS.</small>";
+    out.push(row("host","Domain",dom));
     if(m){ var st=(k!=="android"?"Apple Developer Program: a yearly fee and an app review before release. ":"")+(k!=="ios"?"Google Play Console: a one-time fee, a review, and a closed test period for new personal accounts. ":"");
       out.push(row("store","Store account",st+"<small>Check each store's current fees and rules.</small>")); }
     if(k==="game"&&A.multi==="yes") out.push(row("game","Multiplayer","<b>A realtime game server</b><small>Colyseus or Nakama on Fly.io, or a managed service. Start in one region near your players.</small>"));
@@ -1401,7 +1426,8 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
     add(B,"Safety","Put secrets (API keys) in the host's environment settings, never in code");
     if(m){ add(B,"Store","Store listing: icon, screenshots, description, privacy policy URL and the data-safety / privacy answers");
       add(B,"Store",(k==="android"?"Run a closed test with real testers":k==="ios"?"Send a TestFlight build to testers":"Test with TestFlight and a Play closed track")+" before you submit for review"); }
-    else { add(B,"Safety","Set up a staging copy and turn on preview deploys"); }
+    else { add(B,"Safety","Set up a staging copy and turn on preview deploys");
+      if(A.who==="public") add(B,"Domain","Point your domain at the host (both the bare domain and www) and check HTTPS works on both"); }
     if(A.data!=="none") add(B,"Data","Turn on database backups and test one restore");
     if(k==="ai") add(B,"Safety","Set a spending limit and a rate limit on your model key");
     if(A.paid!=="free"){ add(B,"Money","Test a full purchase and a refund in test mode"); add(B,"Money","Add terms, a privacy policy and a refund policy before taking money"); }
@@ -1434,7 +1460,7 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
     add(L,"Email","If you send email: SPF, DKIM and DMARC records on your domain, so mail is not marked as spam");
     add(L,"Safety","Uptime and error monitoring, and a feedback link people can find");
     return {before:B, after:L}; }
-  var GC={Safety:"auth",Store:"store",Data:"data",Money:"pay",Game:"game",Security:"auth",Bots:"game",SEO:"host",Google:"cost",Bing:"live",Legal:"pay",Email:"data"};
+  var GC={Domain:"host",Safety:"auth",Store:"store",Data:"data",Money:"pay",Game:"game",Security:"auth",Bots:"game",SEO:"host",Google:"cost",Bing:"live",Legal:"pay",Email:"data"};
   function checklist(items){ var groups=[], by={};
     items.forEach(function(it){ if(!by[it[0]]){ by[it[0]]=[]; groups.push(it[0]); } by[it[0]].push(it); });
     return groups.map(function(g){ return '<div class="ln-group" style="--gc:var(--ln-'+GC[g]+')"><b>'+g+'</b><ul class="ln-check">'+by[g].map(function(it){
@@ -1493,12 +1519,22 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
   plan.addEventListener("click",function(e){ var t=e.target;
     var tb=t.closest&&t.closest(".ln-tab"); if(tb){ tab=tb.getAttribute("data-t"); render();
       var g=plan.querySelectorAll(".ln-group"); if(!reduceLn&&canAnimate()) [].forEach.call(g,function(x,i){ x.animate([{opacity:0,transform:"translateY(8px)"},{opacity:1,transform:"none"}],{duration:240,delay:i*40,easing:"cubic-bezier(.22,1,.36,1)",fill:"backwards"}); }); return; }
-    if(t.closest&&t.closest("#lnAsk")&&window.__handoff){ window.__handoff(prompt(),"Your launch plan, by your own AI",
+    if(t.closest&&t.closest("#lnAsk")&&window.__handoff){ var pi=document.getElementById("prdIncl"); if(pi) pi.hidden=true; window.__handoff(prompt(),"Your launch plan, by your own AI",
       "Replore doesn't write it: your <b>own</b> AI does, free and private. The prompt has your answers, the checklist and the repos you picked. Copy it into any AI agent, or open it in Claude, ChatGPT or Gemini."); return; }
     if(t.closest&&t.closest("#lnCopy")){ var L=lists(), txt="Before launch:\n"+plainList(L.before)+"\n\nAfter you go live:\n"+plainList(L.after), b=t.closest("#lnCopy");
       var ok=function(){ b.textContent="Copied"; setTimeout(function(){ b.textContent="Copy checklist"; },1400); };
       try{ navigator.clipboard.writeText(txt).then(ok,function(){}); }catch(_){} } });
   var lb=document.getElementById("launchBtn"); if(lb) lb.addEventListener("click",function(){ openModal("launchModal"); });
+  // RS102: the console buttons open it on a part, and the build plan reads its answers, plan and checklists as text
+  var touched=false;
+  function planText(){ var d=document.createElement("div"); d.innerHTML=rows().join("");
+    return [].map.call(d.querySelectorAll(".ln-row"),function(r){ var dt=r.querySelector("dt"), dd=r.querySelector("dd").cloneNode(true), sm=dd.querySelector("small"), extra="";
+      if(sm){ extra=sm.textContent.trim(); sm.remove(); } return "- "+(dt?dt.textContent:"")+": "+dd.textContent.trim()+(extra?" ("+extra+")":""); }).join("\n"); }
+  window.__launch={ open:function(t){ touched=true; if(t){ tab=t; } render(); openModal("launchModal");
+      if(t){ var tb=plan.querySelector(".ln-tabs"); if(tb&&tb.scrollIntoView) setTimeout(function(){ try{ tb.scrollIntoView({block:"start"}); }catch(_){} },60); } },
+    touched:function(){ return touched; }, answers:answers, planText:planText,
+    before:function(){ return plainList(lists().before); }, after:function(){ return plainList(lists().after); } };
+  qs.addEventListener("click",function(){ touched=true; });
   render();
 })();
 

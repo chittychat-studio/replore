@@ -1830,6 +1830,12 @@ body:not(.has-results) .hero > .hero-fx{display:none}
     body:not(.has-results) .out-wrap{padding-top:0;margin-top:0}
     body:not(.has-results) #trendCar{margin-top:10px} }
   .rc-pin{font:700 10.5px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:var(--accent);color:#090d16;white-space:nowrap}   /* RS27b */
+  /* RS102: what the build plan also carries */
+  .prd-incl{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:10px 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px}
+  .prd-incl-k{font:600 11px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);width:100%}
+  .prd-incl label{display:inline-flex;align-items:center;gap:6px;font-size:14px;cursor:pointer}
+  .prd-incl-hint{width:100%;font-size:12.5px;color:var(--muted)}
+  .vc-amber{--vc:var(--ln-pay,#f0bd6a)}
 </style>
 </head>
 <body>
@@ -1875,8 +1881,9 @@ body:not(.has-results) .hero > .hero-fx{display:none}
         </div>
         <div class="vb-acts">
           <button id="optsBtn" class="vb-chip vc-cyan" type="button" aria-haspopup="dialog" title="Narrow by platform, stack, stars"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.5h6M11.5 4.5h2M2.5 11.5h2M7.5 11.5h6"/><circle cx="10" cy="4.5" r="1.6"/><circle cx="6" cy="11.5" r="1.6"/></svg><span class="vc-l">Tech stack, platform</span></button>
-          <label class="vb-chip vc-violet" for="prd" id="vbPrd" title="Upload a plan / PRD, read locally" role="button" tabindex="0"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 1.8h5.2L12.5 5v9.2H4z"/><path d="M9 1.8V5h3.5M6.3 8.3h3.9M6.3 11h3.9"/></svg><span class="vc-l">Match a PRD</span></label>
-          <button id="vbLike" class="vb-chip vc-mint" type="button" aria-haspopup="dialog" title="A repo you like + a few words"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="7" height="7" rx="1.6"/><rect x="6.5" y="6.5" width="7" height="7" rx="1.6"/></svg><span class="vc-l">Find similar</span></button>
+          <button id="vbLaunch" class="vb-chip vc-violet" type="button" aria-haspopup="dialog" title="Where it will run: host, database, sign-in, payments"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.5h11v3h-11zM2.5 9.5h11v3h-11z"/><path d="M5 6h.01M5 11h.01"/></svg><span class="vc-l">Launch stack</span></button>
+          <button id="vbPre" class="vb-chip vc-mint" type="button" aria-haspopup="dialog" title="What to check before you launch"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.5l1.2 1.2L6.5 3.4M3 10.5l1.2 1.2 2.3-2.3M8.5 4.5h5M8.5 10.5h5"/></svg><span class="vc-l">Pre-launch</span></button>
+          <button id="vbPost" class="vb-chip vc-amber" type="button" aria-haspopup="dialog" title="What to do after you go live"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9h2.5l1.5-4 2.5 7 1.5-3H14"/></svg><span class="vc-l">Post go-live</span></button>   <!-- RS102: all four feed the build plan -->
           <button id="go" class="go-btn" title="Find repos" data-magnet><span class="roll"><span>Find repos</span><span aria-hidden="true">Find repos</span></span> <span class="arr">&rarr;</span></button>
         </div>
       </div>
@@ -1963,6 +1970,13 @@ body:not(.has-results) .hero > .hero-fx{display:none}
   <p class="mut" id="prdIntro">A build plan (a PRD, or product requirements doc) your AI can code straight from. Replore doesn't
     write it: your <b>own</b> AI does, free and private. Copy the prompt below into any AI agent (Claude Code,
     Codex, Cursor…) or open it in Claude, ChatGPT or Gemini. It lists the repos you selected.</p>
+  <div class="prd-incl" id="prdIncl" hidden>   <!-- RS102: the build plan can carry the launch stack and both checklists -->
+    <span class="prd-incl-k">Also put in the plan</span>
+    <label><input type="checkbox" id="prdInLaunch"> Launch stack</label>
+    <label><input type="checkbox" id="prdInPre"> Pre-launch checklist</label>
+    <label><input type="checkbox" id="prdInPost"> Post go-live checklist</label>
+    <span class="prd-incl-hint" id="prdInclHint"></span>
+  </div>
   <div class="prd-prompt">
     <pre class="cmd" id="prdPrompt" data-copy-ready="1" style="margin:0;max-height:240px;overflow:auto;white-space:pre-wrap;padding-right:46px"></pre>
     <button id="prdCopy" class="copy" title="Copy prompt" aria-label="Copy prompt"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="5.5" width="8" height="8" rx="1.6"/><path d="M10.5 5.5V3.9c0-.8-.6-1.4-1.4-1.4H3.9c-.8 0-1.4.6-1.4 1.4v5.2c0 .8.6 1.4 1.4 1.4h1.6"/></svg></button>
@@ -1985,12 +1999,6 @@ body:not(.has-results) .hero > .hero-fx{display:none}
 <div class="modal" id="filtersModal"><div class="sheet">
   <button class="x" data-close aria-label="Close"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   <p class="kicker">Search options</p><h2>Filters</h2>
-  <div class="fm-modes" aria-label="Other ways to search">
-    <button type="button" class="mode-tile" id="fmLike"><span class="mt-ico"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="7" height="7" rx="1.6"/><rect x="6.5" y="6.5" width="7" height="7" rx="1.6"/></svg></span>
-      <span class="mt-txt"><b>Find similar repos</b><small>A repo you like + a few words</small></span></button>
-    <label class="mode-tile" for="prd" id="fmPrd"><span class="mt-ico"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 1.8h5.2L12.5 5v9.2H4z"/><path d="M9 1.8V5h3.5M6.3 8.3h3.9M6.3 11h3.9"/></svg></span>
-      <span class="mt-txt"><b>Match a whole plan</b><small>Upload a plan / PRD, read locally</small></span></label>
-  </div>
   <p class="mut">Narrow your search. All optional. These apply to your next search.</p>
   <div class="field"><label for="stackInput">Tech stack</label>
     <div class="ms" id="stackMS">
@@ -2012,14 +2020,7 @@ body:not(.has-results) .hero > .hero-fx{display:none}
   <button class="primary" data-close>Done</button>
 </div></div>
 
-<div class="modal" id="likeModal"><div class="sheet">
-  <button class="x" data-close aria-label="Close"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
-  <p class="kicker">Find similar</p><h2>Find similar repos</h2>
-  <p class="mut">Paste a repo you already like (<code>owner/repo</code> or a GitHub link), then type a few words in the
-    search box (e.g. “free ai call”) so I can narrow the similar repos to what you actually want.</p>
-  <input id="like" type="text" placeholder="e.g. vercel/next.js" autocomplete="off" maxlength="120">
-  <button id="likeGo" class="primary">Find similar →</button>
-</div></div>
+<input id="like" type="hidden">   <!-- RS27b: filled from the search bar when it holds a repo (the Find similar window is gone, owner 2026-10-25) -->
 
 <div class="modal" id="howModal"><div class="sheet tour-sheet">
   <button class="x" data-close aria-label="Close"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
@@ -2234,6 +2235,6 @@ body:not(.has-results) .hero > .hero-fx{display:none}
 <script src="auth.js?v=f43383d4f7" defer></script>
 <script src="vendor/lenis-1.3.26/lenis.min.js" defer></script>   <!-- RS101: smooth wheel scrolling (MIT) -->
 <script src="vendor/motion-14.1.0/motion.js" defer></script>   <!-- RS101: spring reveals (MIT) -->
-<script src="app.js?v=75a28d112f" defer></script>
+<script src="app.js?v=b2719c118a" defer></script>
 </body>
 </html>

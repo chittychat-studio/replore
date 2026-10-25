@@ -725,7 +725,7 @@ def test_web_page_is_safe_static(monkeypatch):
     assert 'id="nextBtn"' in html and 'id="nextModal"' in html and "Next steps" in html
     assert "Generate plan" in html and "Build it with your AI agent" in html
     # RS27a: similar-repo requires text and is narrowed by it (no silent drop); "find similar" alone is blocked
-    assert "RS27a" in html and "· matching" in html and "Add a few words too" in html
+    assert "· matching" in html and "function repoInText" in html and "Add a few words too" not in html   # RS27b/RS102: the repo goes in the search bar, a repo alone is enough
     # RS29d: two on/off filters, no "All" chip; an empty filtered set still offers "Clear filter"
     assert "function resFlags" in html and 'aria-pressed="false"' in html and '["all","All"]' not in html
     assert 'id="resClear"' in html and "Clear filter" in html
@@ -857,7 +857,7 @@ def test_accessibility_baseline():
     assert '<p id="srStatus" class="sr-only" role="status" aria-live="polite">' in index and "function resultSummary" in app
     assert 'setAttribute("aria-labelledby",h2.id)' in app
     heads = re.findall(r'<div class="modal" id="[^"]+"><div class="sheet[^"]*">([\s\S]*?)</h2>', index)
-    assert len(heads) == index.count('<div class="modal"') == 10 and not any('class="modal"' in h for h in heads)   # every dialog has its own heading
+    assert len(heads) == index.count('<div class="modal"') == 9 and not any('class="modal"' in h for h in heads)   # every dialog has its own heading
     assert re.search(r"\.x\{[^}]*min-width:32px;min-height:32px", index) and re.search(r"\.cmd \.copy\{[^}]*min-height:26px", index)
     for theme in (index.split(":root{", 1)[1], index.split(':root[data-theme="dark"]{', 1)[1]):
         var = lambda n: re.search(r"--" + n + r":(#[0-9a-f]{6})", theme).group(1)
