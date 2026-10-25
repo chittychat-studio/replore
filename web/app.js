@@ -1323,10 +1323,10 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
   function row(k,label,html){ return '<dl class="ln-row" style="'+cv(k)+'"><span class="ln-ic" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'+I[k]+'</svg></span><dt>'+label+'</dt><dd>'+html+'</dd></dl>'; }
   function isMobile(){ return A.kind==="ios"||A.kind==="android"||(A.kind==="game"&&A.gplat==="mobile"); }
   function rows(){ var k=A.kind, m=isMobile(), out=[];
-    var host={static:["<b>Cloudflare Pages</b>","or GitHub Pages / Netlify. Static files on a global network, free HTTPS."],
-      next:["<b>Vercel</b>","or Cloudflare Pages. Built for Next.js, with a preview for every change."],
-      api:["<b>Render</b>","or Railway / Fly.io. Runs your server; keep the database in the same region."],
-      ai:["<b>Vercel</b> (front end) + <b>Render</b> (API)","Your model key stays on the server, never in the browser."],
+    var host={static:["<b>Netlify</b>, <b>GitHub Pages</b>, <b>Cloudflare Pages</b> or <b>GoDaddy</b>","Any of them puts a simple site live in minutes with free HTTPS: Netlify by drag and drop, GitHub Pages straight from your repo, Cloudflare Pages on a fast global network, GoDaddy if your domain or hosting is already there. Need a server later? Vercel, Render or Cloudflare Workers."],
+      next:["<b>Vercel</b>","or Netlify / Cloudflare Pages. Built for Next.js, with a preview for every change."],
+      api:["<b>Render</b>","or Cloudflare Workers / Railway / Fly.io. Runs your server; keep the database in the same region."],
+      ai:["<b>Vercel</b> (front end) + <b>Render</b> (API)","or Cloudflare Workers for both. Your model key stays on the server, never in the browser."],
       ios:["<b>Apple App Store</b>","Build with Xcode, or Expo EAS if you used React Native. Beta test with TestFlight."],
       android:["<b>Google Play</b>","Build with Android Studio, or Expo EAS if you used React Native. Beta test on an internal or closed track."],
       game:A.gplat==="web"?["<b>itch.io</b> or <b>Cloudflare Pages</b>","itch.io gives you a game page and players; Pages is for your own site."]
