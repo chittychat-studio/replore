@@ -1,0 +1,4 @@
+
+# RS101: vendored libraries stay byte-for-byte as published (their SHA-256 is in NOTICE.md)
+web/vendor/motion-14.1.0/** -text
+web/vendor/lenis-1.3.26/** -text
