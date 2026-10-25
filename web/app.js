@@ -1311,7 +1311,18 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
     ["data","What data does it keep?","data",[["none","None"],["accounts","User accounts"],["sensitive","Health or other sensitive data"]]],
     ["paid","How will people pay?","pay",[["free","It's free"],["once","One-time purchase"],["sub","Subscription"],["iap","In-app purchases"]]],
     ["budget","Monthly budget for hosting","cost",[["free","Free tiers only"],["small","A little"],["any","Whatever it needs"]]]];
-  var A={kind:"next",gplat:"web",multi:"no",who:"public",data:"accounts",paid:"free",budget:"free"}, tab="before";
+  var A={kind:"next",gplat:"web",multi:"no",who:"public",data:"accounts",paid:"free",budget:"free"}, tab="before", step=0, ticked={};
+  // RS79 cards (owner 2026-10-25, from the Stitch screen "Replore - Launch it with Leo Modal"): one question at a time as
+  // option cards with a one-line description; the plan on the right updates live
+  var SL={kind:"Stack",gplat:"Platform",multi:"Players",who:"Audience",data:"Data",paid:"Payments",budget:"Budget"};
+  var OD={static:"HTML, CSS and JS files, no server code",next:"A React or Next.js front end, maybe API routes",api:"Your own server code and a database",
+    ai:"Calls an AI model with your own key",ios:"Native Swift, Expo or React Native",android:"Native Kotlin, Expo or React Native",game:"In the browser, on phones or on PC",
+    web:"Plays in a browser tab",mobile:"App Store and Google Play",desktop:"Steam or itch.io",no:"One player at a time",yes:"Players connect in real time",
+    me:"Only you use it",test:"A small group you invite",public:"Anyone can visit or sign up",none:"Nothing saved about users",accounts:"Sign-ins, profiles, saved work",
+    sensitive:"Health, money or other private data",once:"Pay once and keep it",sub:"A monthly or yearly plan",iap:"Purchases inside an app",
+    small:"A few dollars a month is fine",any:"Pay for what it needs"};
+  function od(q,v){ return q==="paid"&&v==="free"?"No payments":q==="budget"&&v==="free"?"Stay on free plans":OD[v]||""; }
+  var reduceLn=window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches, fineLn=window.matchMedia&&matchMedia("(hover:hover) and (pointer:fine)").matches;
   var I={host:'<path d="M3 5.5h14v4H3zM3 11.5h14v4H3z"/><path d="M6 7.5h.01M6 13.5h.01"/>',
     data:'<ellipse cx="10" cy="5" rx="6" ry="2.5"/><path d="M4 5v10c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5V5M4 10c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5"/>',
     auth:'<rect x="4.5" y="9" width="11" height="8" rx="2"/><path d="M7 9V6.5a3 3 0 0 1 6 0V9"/>',
@@ -1391,17 +1402,31 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
     items.forEach(function(it){ if(!by[it[0]]){ by[it[0]]=[]; groups.push(it[0]); } by[it[0]].push(it); });
     return groups.map(function(g){ return '<div class="ln-group" style="--gc:var(--ln-'+GC[g]+')"><b>'+g+'</b><ul class="ln-check">'+by[g].map(function(it){
       return '<li><input type="checkbox" aria-label="'+esc(it[1])+'"><span>'+esc(it[1])+(it[2]?'<small>'+esc(it[2])+'</small>':'')+'</span></li>'; }).join("")+'</ul></div>'; }).join(""); }
-  function render(){
-    var shown=Q.filter(function(q){ return (q[0]!=="gplat"&&q[0]!=="multi")||A.kind==="game"; });
-    qs.innerHTML=shown.map(function(q,n){ return '<div class="ln-q" role="group" aria-label="'+q[1]+'" style="--qc:var(--ln-'+q[2]+');--qt:var(--lt-'+q[2]+')"><b><i>'+(n+1)+'</i>'+q[1]+'</b><div class="ln-chips">'+
-      q[3].map(function(o){ return '<button type="button" class="ln-chip" data-k="'+q[0]+'" data-v="'+o[0]+'" aria-pressed="'+(A[q[0]]===o[0])+'">'+o[1]+'</button>'; }).join("")+'</div></div>'; }).join("");
+  function shownQ(){ return Q.filter(function(q){ return (q[0]!=="gplat"&&q[0]!=="multi")||A.kind==="game"; }); }
+  function render(dir){
+    var shown=shownQ(); step=Math.min(step,shown.length-1); var q=shown[step], nx=shown[step+1];
+    qs.innerHTML='<ol class="ln-steps">'+shown.map(function(x,n){ return '<li><button type="button" class="ln-step'+(n===step?" on":"")+(n<step?" done":"")+'" data-s="'+n+'"'+(n===step?' aria-current="step"':'')+'><i>'+(n+1)+'</i>'+SL[x[0]]+'</button></li>'; }).join("")+'</ol>'+
+      '<div class="ln-qcard" style="--qc:var(--ln-'+q[2]+')"><p class="ln-qn">Step '+(step+1)+' of '+shown.length+'</p><h3 class="ln-qt">'+q[1]+'</h3>'+
+      '<div class="ln-opts" role="radiogroup" aria-label="'+q[1]+'">'+q[3].map(function(o){ var on=A[q[0]]===o[0], d=od(q[0],o[0]);
+        return '<button type="button" class="ln-opt'+(on?" on":"")+'" role="radio" aria-checked="'+on+'" data-k="'+q[0]+'" data-v="'+o[0]+'"><b>'+o[1]+'</b>'+(d?'<small>'+d+'</small>':'')+'<span class="ln-tick" aria-hidden="true"></span></button>'; }).join("")+'</div>'+
+      '<div class="ln-nav"><button type="button" class="ln-btn" id="lnBack"'+(step?'':' disabled')+'>Back</button>'+
+      (nx?'<button type="button" class="ln-btn main" id="lnNext">Next: '+SL[nx[0]]+'</button>':'<span class="ln-done">All set: your plan is on the right</span>')+'</div></div>';
+    if(dir&&!reduceLn&&canAnimate()){ var c=qs.querySelector(".ln-qcard"); if(c) c.animate([{opacity:0,transform:"translateX("+(dir*28)+"px)"},{opacity:1,transform:"none"}],{duration:220,easing:"cubic-bezier(.22,1,.36,1)"}); }
     var L=lists(), risk=A.data==="sensitive"||(A.paid!=="free"&&A.who==="public")?'<span class="ln-tag w">Extra care</span>':'<span class="ln-tag ok">Standard</span>';
+    var before={}; [].forEach.call(plan.querySelectorAll(".ln-row"),function(r,i){ before[i]=r.textContent; });
     plan.innerHTML='<h3>Leo’s launch plan</h3><p class="ln-say">Here’s where I’d put it, and what to check. '+risk+'</p>'+rows().join("")+
       '<div class="ln-tabs" role="tablist"><button type="button" role="tab" class="ln-tab" data-t="before" aria-selected="'+(tab==="before")+'">Before launch</button>'+
       '<button type="button" role="tab" class="ln-tab" data-t="after" aria-selected="'+(tab==="after")+'">After you go live</button></div>'+
       checklist(L[tab])+
       '<div class="ln-acts"><button type="button" class="ln-btn main" id="lnAsk">Get the full plan from your AI</button><button type="button" class="ln-btn" id="lnCopy">Copy checklist</button></div>'+
-      '<p class="ln-fine">Suggestions, not endorsements. Check each provider’s current pricing and store rules.</p>'; }
+      '<p class="ln-fine">Suggestions, not endorsements. Check each provider’s current pricing and store rules.</p>';
+    [].forEach.call(plan.querySelectorAll(".ln-check input"),function(b){ if(ticked[b.getAttribute("aria-label")]) b.checked=true; });
+    tickCount();
+    if(!reduceLn&&canAnimate()) [].forEach.call(plan.querySelectorAll(".ln-row"),function(r,i){ if(before[i]!==undefined&&before[i]!==r.textContent)   // only rows whose answer changed
+      r.animate([{opacity:.25,transform:"translateY(6px)"},{opacity:1,transform:"none"}],{duration:260,easing:"cubic-bezier(.22,1,.36,1)"}); }); }
+  function tickCount(){ var all=plan.querySelectorAll(".ln-check input"), n=0; [].forEach.call(all,function(b){ if(b.checked) n++; });
+    var t=plan.querySelector(".ln-count"); if(!t){ t=document.createElement("p"); t.className="ln-count"; var tabs=plan.querySelector(".ln-tabs"); if(tabs) tabs.parentNode.insertBefore(t,tabs.nextSibling); }
+    t.textContent=n+" of "+all.length+" done"; }
   function answers(){ return Q.filter(function(q){ return (q[0]!=="gplat"&&q[0]!=="multi")||A.kind==="game"; }).map(function(q){
     var o=q[3].filter(function(x){ return x[0]===A[q[0]]; })[0]; return q[1]+" "+(o?o[1]:""); }).join("\n"); }
   function plainList(arr){ return arr.map(function(it){ return "- ["+it[0]+"] "+it[1]+(it[2]?" ("+it[2]+")":""); }).join("\n"); }
@@ -1414,9 +1439,23 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
       "staging and production, secrets, database and backups, sign-in, payments (store rules for iPhone and Android), domain and HTTPS, "+
       "security headers, bot protection, monitoring, SEO with Google Search Console and Bing Webmaster Tools, legal pages, "+
       "and a day-1 and week-1 checklist with exact steps. Keep Governor on in my coding agent and ask me before any deploy."; }
-  qs.addEventListener("click",function(e){ var c=e.target.closest&&e.target.closest(".ln-chip"); if(!c) return; A[c.getAttribute("data-k")]=c.getAttribute("data-v"); render(); });
+  qs.addEventListener("click",function(e){ var t=e.target, c=t.closest&&t.closest(".ln-opt");
+    if(c){ A[c.getAttribute("data-k")]=c.getAttribute("data-v"); var last=step>=shownQ().length-1; render();
+      if(!last) setTimeout(function(){ if(step<shownQ().length-1){ step++; render(1); var f=qs.querySelector(".ln-opt.on")||qs.querySelector(".ln-opt"); if(f&&qs.contains(document.activeElement)) f.focus(); } },reduceLn?0:320);
+      else { var f2=qs.querySelector(".ln-opt.on"); if(f2) f2.focus(); } return; }
+    var st=t.closest&&t.closest(".ln-step"); if(st){ var to=+st.getAttribute("data-s"); if(to!==step){ var d=to>step?1:-1; step=to; render(d); } return; }
+    if(t.closest&&t.closest("#lnBack")&&step>0){ step--; render(-1); return; }
+    if(t.closest&&t.closest("#lnNext")){ step++; render(1); } });
+  qs.addEventListener("keydown",function(e){ var c=e.target.closest&&e.target.closest(".ln-opt"); if(!c||(e.key!=="ArrowRight"&&e.key!=="ArrowDown"&&e.key!=="ArrowLeft"&&e.key!=="ArrowUp")) return;
+    var all=[].slice.call(qs.querySelectorAll(".ln-opt")), i=all.indexOf(c); e.preventDefault(); all[(i+(e.key==="ArrowRight"||e.key==="ArrowDown"?1:all.length-1))%all.length].focus(); });
+  plan.addEventListener("change",function(e){ var b=e.target; if(b&&b.type==="checkbox"){ ticked[b.getAttribute("aria-label")]=b.checked; tickCount(); } });
+  if(fineLn&&!reduceLn){   // the option cards lean a little toward the pointer (transform only)
+    qs.addEventListener("pointermove",function(e){ var c=e.target.closest&&e.target.closest(".ln-opt"); if(!c) return; var r=c.getBoundingClientRect();
+      var x=(e.clientX-r.left)/r.width-.5, y=(e.clientY-r.top)/r.height-.5; c.style.transform="perspective(700px) rotateX("+(-y*6).toFixed(2)+"deg) rotateY("+(x*8).toFixed(2)+"deg) translateY(-2px)"; });
+    qs.addEventListener("pointerout",function(e){ var c=e.target.closest&&e.target.closest(".ln-opt"); if(c&&!c.contains(e.relatedTarget)) c.style.transform=""; }); }
   plan.addEventListener("click",function(e){ var t=e.target;
-    var tb=t.closest&&t.closest(".ln-tab"); if(tb){ tab=tb.getAttribute("data-t"); render(); return; }
+    var tb=t.closest&&t.closest(".ln-tab"); if(tb){ tab=tb.getAttribute("data-t"); render();
+      var g=plan.querySelectorAll(".ln-group"); if(!reduceLn&&canAnimate()) [].forEach.call(g,function(x,i){ x.animate([{opacity:0,transform:"translateY(8px)"},{opacity:1,transform:"none"}],{duration:240,delay:i*40,easing:"cubic-bezier(.22,1,.36,1)",fill:"backwards"}); }); return; }
     if(t.closest&&t.closest("#lnAsk")&&window.__handoff){ window.__handoff(prompt(),"Your launch plan, by your own AI",
       "Replore doesn't write it: your <b>own</b> AI does, free and private. The prompt has your answers, the checklist and the repos you picked. Copy it into any AI agent, or open it in Claude, ChatGPT or Gemini."); return; }
     if(t.closest&&t.closest("#lnCopy")){ var L=lists(), txt="Before launch:\n"+plainList(L.before)+"\n\nAfter you go live:\n"+plainList(L.after), b=t.closest("#lnCopy");

@@ -1242,6 +1242,34 @@
     .pro-row img{width:120px}
     .pro-acts .go-btn,.pro-have{flex:1 1 100%;justify-content:center}
   }
+  /* RS79 cards (owner 2026-10-25, ported from the Stitch "Launch it with Leo Modal"): step tabs, one question as option
+     cards that lean toward the pointer, a tick on the chosen card; transform and opacity only */
+  .ln-steps{list-style:none;display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px;padding:0}
+  .ln-step{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:transparent;
+    color:var(--muted);font:600 12px var(--f-mono);letter-spacing:.04em;cursor:pointer}
+  .ln-step i{font-style:normal;color:var(--accent-ink)}
+  .ln-step.done{color:var(--ink)} .ln-step.on{border-color:var(--accent);color:var(--ink);background:color-mix(in srgb,var(--accent) 10%,transparent)}
+  .ln-qcard{padding:18px;border-radius:18px;border:1px solid var(--line);background:color-mix(in srgb,var(--card) 70%,transparent)}
+  .ln-qn{margin:0 0 4px;font:600 11px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .ln-qt{margin:0 0 14px;font-size:20px}
+  .ln-opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;perspective:900px}
+  .ln-opt{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-height:74px;padding:14px 40px 14px 14px;text-align:left;
+    border-radius:14px;border:1px solid var(--line);background:color-mix(in srgb,var(--card) 85%,transparent);color:var(--ink);cursor:pointer;
+    transition:transform .25s cubic-bezier(.22,1,.36,1),border-color .2s ease,box-shadow .25s ease;will-change:transform}
+  .ln-opt b{font-size:14.5px} .ln-opt small{font-size:12.5px;line-height:1.45;color:var(--muted)}
+  .ln-opt:hover{border-color:color-mix(in srgb,var(--qc,var(--accent)) 55%,transparent)}
+  .ln-opt:active{transform:scale(.97)}
+  .ln-opt.on{border-color:var(--accent);box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 40%,transparent),0 16px 30px -22px rgba(0,0,0,.7)}
+  .ln-tick{position:absolute;top:12px;right:12px;width:18px;height:18px;border-radius:6px;border:1px solid var(--line)}
+  .ln-opt.on .ln-tick{background:var(--accent);border-color:var(--accent)}
+  .ln-opt.on .ln-tick::after{content:"";position:absolute;left:5px;top:2px;width:5px;height:9px;border:solid #090d16;border-width:0 2px 2px 0;transform:rotate(45deg)}
+  .ln-opt:focus-visible,.ln-step:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .ln-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px}
+  .ln-nav .ln-btn:disabled{opacity:.4;cursor:default}
+  .ln-done{font:600 12px var(--f-mono);color:var(--accent-ink)}
+  .ln-count{margin:8px 0 4px;font:600 12px var(--f-mono);color:var(--accent-ink);letter-spacing:.04em}
+  @media (max-width:560px){ .ln-opts{grid-template-columns:1fr} .ln-qcard{padding:14px} }
+  @media (prefers-reduced-motion:reduce){ .ln-opt{transition:none} .ln-opt:active{transform:none} }
   #launchModal .ln-sheet{max-width:1080px}
   .ln-head{display:flex;align-items:center;gap:14px;margin:0 34px 16px 0}
   .ln-head img{flex:none;width:56px;height:auto}
@@ -2154,6 +2182,6 @@ body:not(.has-results) .hero > .hero-fx{display:none}
 
 <script src="pro-core.js?v=31e38fed4a" defer></script>
 <script src="auth.js?v=f43383d4f7" defer></script>
-<script src="app.js?v=0eb5708067" defer></script>
+<script src="app.js?v=46ff1d5336" defer></script>
 </body>
 </html>
