@@ -4,7 +4,7 @@
 // Stores no request content (RS33); failures are logged as codes only (RS34d). Fails open: any problem -> an error status, and the page
 // shows its normal keyword results with a note (never a blank page, never invented repos — RS7).
 
-import { looksLikeProKey, proOn, proSigOk, proSubId, proItemOk, GRANTED, STRIPE_API } from "./pro/claim.js";   // RS87/RS90 shared Pro-key helpers
+import { looksLikeProKey, proOn, proSigOk, proSubId, proItemOk, GRANTED, STRIPE_API, stripeKey } from "./pro/claim.js";   // RS87/RS90 shared Pro-key helpers
 import { signedInUser } from "./auth/session.js";   // RS94: a signed-in Pro user (Firebase ID token) = a granted Pro key on the web
 import { BAD_KEY, MAX_ATTEMPTS, normIp, estTokens, outTokens, parseGroqHeaders, parseLimitText, retryAfterSec } from "../../router/src/policy.js";   // RS95
 import { RouterClient, routerCatalog, reasoningModel } from "../../router/src/client.js";   // RS95: keys stay here; the DO gets none
@@ -424,8 +424,8 @@ export function proGranted(status, j, env = {}) {
 export async function validateProKey(subId, env, fetchImpl = fetch) {
   const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), PRO_TIMEOUT_MS);
   try {
-    const res = await fetchImpl(STRIPE_SUBSCRIPTIONS + subId, { method: "GET", redirect: "error", signal: ctl.signal,
-      headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`, Accept: "application/json" } });
+    const res = await fetchImpl(STRIPE_SUBSCRIPTIONS + subId, { method: "GET", redirect: "manual", signal: ctl.signal,
+      headers: { Authorization: `Bearer ${stripeKey(env)}`, Accept: "application/json" } });
     if (res.status === 404) return "denied";
     if (res.status !== 200) return "error";
     let j; try { j = await res.json(); } catch { return "error"; }

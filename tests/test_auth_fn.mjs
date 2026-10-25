@@ -88,7 +88,7 @@ try {
   const pay = await session.verifyIdToken(good, PROJECT);
   assert.ok(pay && pay.sub === UID, "a good token verifies");
   assert.deepStrictEqual(f.urls(), [session.JWKS_URL]);
-  assert.strictEqual(f.calls[0].init.redirect, "error");
+  assert.strictEqual(f.calls[0].init.redirect, "manual");
   await session.verifyIdToken(await token({ sub: "other-uid" }), PROJECT);
   assert.strictEqual(f.calls.length, 1, "keys are cached per Cache-Control");
   const bad = [
@@ -162,7 +162,7 @@ try {
   assert.strictEqual(await google.setClaims(env, UID, google.proClaims(true, SUB, NOW)), true);
   assert.deepStrictEqual(f.urls(), [google.TOKEN_URL, google.ITK + PROJECT + "/accounts:update"]);
   assert.deepStrictEqual(JSON.parse(f.calls[1].init.body), { localId: UID, customAttributes: JSON.stringify({ pro: true, sub_id: SUB, checked_at: NOW }) });
-  assert.ok(f.calls.every(c => c.init.redirect === "error"));
+  assert.ok(f.calls.every(c => c.init.redirect === "manual"));
   await google.setClaims(env, UID, google.proClaims(false, SUB, NOW));
   assert.strictEqual(f.calls.filter(c => c.url === google.TOKEN_URL).length, 1, "the access token is cached");
   reset(); f = use(fakeNet({ oauth: 400 }));

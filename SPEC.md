@@ -1211,7 +1211,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   (and `X-Replore-Eval-Key` against `EVAL_KEY`) exactly as before (RS34g, unchanged). Only if that fails and the value
   has the Pro shape, the function recomputes the signature and compares it in constant time; a bad signature is refused
   with no Stripe call (so the endpoint cannot be used to probe Stripe). A good signature leads to
-  `GET https://api.stripe.com/v1/subscriptions/{id}` with the restricted key, a 3 s deadline and `redirect: "error"`.
+  `GET https://api.stripe.com/v1/subscriptions/{id}` with the restricted key, a 3 s deadline and `redirect: "manual"` (any 3xx is a failure).
   Granted means HTTP 200 with `status` `active` or `trialing` and a Pro price among `items.data[].price` (above); 200
   with any other status or no Pro item (`canceled`, `past_due`,
   `unpaid`, `incomplete` and so on) or 404 is a denial. A network error, timeout, redirect, other status or unreadable
@@ -1282,7 +1282,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   `^cs_(live|test)_[A-Za-z0-9]{10,200}$` or the answer is 400 `bad_session` before any network call. Off (503
   `pro_off`) unless both RS87 secrets and the Pro price list (or product) are set. The function asks Stripe
   `GET https://api.stripe.com/v1/checkout/sessions/{id}?expand[]=subscription` with the restricted key, a 5 s deadline
-  and `redirect: "error"`, and issues a key only when `payment_status` is `paid` and the expanded subscription's
+  and `redirect: "manual"` (any 3xx is a failure), and issues a key only when `payment_status` is `paid` and the expanded subscription's
   `status` is `active` or `trialing`; otherwise 403 `not_paid`; a paid, active subscription with no Pro price among its
   items (another product) gets 403 `not_pro`; Stripe 404 gives 404 `unknown_session`, and anything
   else (network, timeout, redirect, other status, unreadable body, subscription not expanded) gives 503
@@ -1310,6 +1310,14 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   `https://replore.cardzo.co.in/pro?session_id={CHECKOUT_SESSION_ID}`. Linked from the page footer and listed in the
   sitemap; no inline script (RS49), no emoji (RS55), no em dash (RS66), 44px targets, CSP unchanged (the page calls only
   its own site); the script is hash-stamped by `ops/stamp_assets.py` (RS52).
+  **Stripe key hygiene (found live 2026-10-25).** Every Stripe call (claim, Pro key check, RS94 link and refresh) uses
+  `STRIPE_SECRET_KEY` trimmed of spaces and line breaks; a stray line break made the Authorization header invalid and
+  every claim failed before reaching Stripe (logged upstream 0, 0 ms). A value that is still not an `rk_`/`sk_`
+  `live`/`test` key fails closed with no call and logs `upstream: -1` (key format).
+  **No `redirect: "error"` (found live 2026-10-25).** The Workers runtime rejects that option before sending ("must
+  be one of follow or manual"), so every claim failed in 0 ms whatever the key. Every outbound call in `functions/`
+  (Stripe, Google keys and Identity Toolkit, RS94) uses `redirect: "manual"`, and every caller accepts only a 200, so a
+  redirect still fails closed.
 - **RS91** No animation library on the web page (owner 2026-10-24, from the frontend-stack review). GSAP 3.12.5 is
   removed: it ships under GreenSock's own "Standard" licence, not MIT, inside this MIT repo (RS12), with no NOTICE,
   and the owner's stack bans it. Every effect it ran is ported, with the same timings and easings, to the browser's Web
