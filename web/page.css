@@ -110,7 +110,7 @@ code{font-family:var(--f-mono);font-size:.88em;padding:1px 6px;border-radius:6px
 
 /* SPEC RS90: /pro, the Leo, Pro window (RS89) as a page. 44px targets, one column on phones. */
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-.pp-main{max-width:680px}
+.pp-main{max-width:840px}
 .pp-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:26px;margin:0 0 20px;
   -webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);box-shadow:0 0 40px rgba(0,240,255,.06)}
 .pp-card h2{margin:0 0 10px}
@@ -205,3 +205,26 @@ code{font-family:var(--f-mono);font-size:.88em;padding:1px 6px;border-radius:6px
 .pb-dot.done{background:var(--accent);border-color:var(--accent)}.pb-dot.cur{transform:scale(1.35);border-color:var(--accent)}
 .pb-btn:focus-visible,.pb-dot:focus-visible,.pb-mark:focus-visible,.pb-pick:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 @media (max-width:520px){ .pb-card{padding:16px} .pb-btn{min-width:64px} }
+/* RS99 (owner 2026-10-25, ported from the Stitch "Leo, Pro Modal Redesign"): six benefit tiles and two plan cards */
+.pro-hero{align-items:center}
+.pro-sub{margin:18px 0 10px;font:600 11px var(--f-mono,monospace);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.pro-bens{list-style:none;margin:0 0 18px;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.pro-bens li{display:flex;flex-direction:column;gap:4px;padding:14px 14px 15px;border-radius:14px;border:1px solid var(--line);
+  background:color-mix(in srgb,var(--card) 80%,transparent);transition:transform .25s cubic-bezier(.22,1,.36,1),border-color .25s ease}
+.pro-bens li:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--accent) 45%,transparent)}
+.pro-bens .pb-n{font:600 11px var(--f-mono,monospace);color:var(--accent-ink);letter-spacing:.08em}
+.pro-bens b{font-size:15px;line-height:1.3}
+.pro-bens span:last-child{font-size:13px;line-height:1.5;color:var(--muted)}
+.pro-bens a{color:var(--accent-ink)}
+.pro-plans{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0 0 16px}
+.pro-plan{position:relative;padding:16px 18px;border-radius:14px;border:1px solid var(--line);background:color-mix(in srgb,var(--card) 80%,transparent)}
+.pro-plan-on{border-color:var(--accent);box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 35%,transparent),0 18px 40px -28px var(--accent)}
+.pro-plan-tag{position:absolute;top:-10px;right:14px;padding:3px 9px;border-radius:999px;background:var(--btn);color:var(--on-btn);font:700 10px var(--f-mono,monospace);letter-spacing:.08em;text-transform:uppercase}
+.pro-plan-k{margin:0 0 6px;font:600 11px var(--f-mono,monospace);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.pro-plan-on .pro-plan-k{color:var(--accent-ink)}
+.pro-plan-p{margin:0 0 4px;font-size:22px;font-weight:800;line-height:1.2}
+.pro-plan-s{margin:0;font-size:12.5px;color:var(--muted)}
+.pro-stripe{margin:10px 0 0;font:500 12px var(--f-mono,monospace);color:var(--muted)}
+@media (max-width:720px){ .pro-bens{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (max-width:440px){ .pro-bens{grid-template-columns:1fr} .pro-plans{grid-template-columns:1fr} }
+@media (prefers-reduced-motion:reduce){ .pro-bens li{transition:none} .pro-bens li:hover{transform:none} }
