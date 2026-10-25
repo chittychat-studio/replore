@@ -29,6 +29,7 @@ jobs:
       - run: node tests/test_trust_fn.mjs  # RS53b trust function (fake Scorecard/deps.dev, no network)
       - run: node tests/test_pro_fn.mjs  # RS90 Pro key claim function (fake Stripe, no network)
       - run: node tests/test_playbook_fn.mjs  # RS97 Pro playbook function (fake KV, no network)
+      - run: node tests/test_playbooks_web.js  # RS97 step cards: safe renderer and progress
       - run: node tests/test_auth_fn.mjs  # RS94 sign-in functions (fake Google keys, Identity Toolkit and Stripe, no network)
       - run: node tests/test_router.mjs  # RS95/RS96 router scheduler, budgets, credits (fake clock, no network)
       - run: node tests/test_router_fn.mjs  # RS95/RS96 relevance check with the router bound (fake DO and providers)

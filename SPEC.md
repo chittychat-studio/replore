@@ -220,10 +220,10 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   shown as the results panel's empty state; a current screenshot of the live page (`web/tour.png`) is committed
   under `web/` and shown in the Tour.
   Type follows RS47 (self-hosted Anton / Inter Tight / JetBrains Mono, no external stylesheet) with a full system
-  fallback if a font fails to load; sizes and weights are raised for prominence and legibility. The page opens in dark until the visitor picks a theme (owner 2026-10-25: "default the site to dark"; this replaces
-  following `prefers-color-scheme`, set after the peer review 2026-10-18 reversed an earlier hard-coded `data-theme="light"`):
-  `web/theme.js` sets `data-theme="dark"` before first paint when nothing is saved, so the dark CSS is always reachable; a toggle switches theme and the choice is
-  remembered in `localStorage` (a per-viewer convenience, wrapped in try/catch) and restored by `web/theme.js` before first paint. No key or token is ever stored (RS22).
+  fallback if a font fails to load; sizes and weights are raised for prominence and legibility. Replore is dark only (owner 2026-10-25: "remove the light mode altogether, we only need dark mode"; this
+  replaces the earlier toggle, the remembered choice and following `prefers-color-scheme`): `web/theme.js` sets
+  `data-theme="dark"` before first paint on every page; there is no theme button and nothing is stored. The light CSS
+  tokens remain in the stylesheets, unused. No key or token is ever stored (RS22).
   Each result — web card and script row alike — carries a one-line *why relevant* note derived from the search:
   the user's own matching words if they appear in the repo name/description, else a best-match fallback. It is
   stated as keyword transparency, never as an AI judgement.
@@ -1595,12 +1595,12 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   earlier or later, and a done step's dot is filled. A progress line and bar ("4 of 9 done"). Changing card slides it
   (transform and opacity, about 240 ms; none under reduced motion). Progress (done steps and the last step open) is kept
   only in this browser, `localStorage` key `replore.pb.<id>`, wrapped in try/catch (RS22); nothing is sent back. Bodies
-  are rendered from a safe subset: paragraphs, `-` bullets, `**bold**`, `` `code` `` and https links (new tab,
+  are rendered from a safe subset: paragraphs, `-` bullets, `1.` numbered steps, `**bold**`, `` `code` `` and https links (new tab,
   `rel="noopener noreferrer"`), built with text nodes, never `innerHTML` of the stored text, so a playbook is data, not
   code (RS9, RS25). No em dash in the copy (RS66). `PRIVACY.md` lists the key (RS33).
   **Owner steps:** create a KV namespace, bind it to the Pages project as `PLAYBOOKS` (Production and Preview), run
-  `python ops/playbooks.py` and the printed commands, redeploy. Status: the server function is implemented and
-  unit-tested (`tests/test_playbook_fn.mjs`); the cards page, `ops/playbooks.py` and the PRIVACY.md line are not built yet.
+  `python ops/playbooks.py` and the printed commands, redeploy. Status: implemented and unit-tested (`tests/test_playbook_fn.mjs`,
+  `tests/test_playbooks_web.js`, `tests/test_playbooks_ops.py`); not verified live (needs the KV namespace).
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
 - **RX3** Ranking by forks, trending or download counts. (Relevance, stars and license-freedom are the only
