@@ -1613,7 +1613,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   same `PRO_PRICE` / `PRO_PRICE_YEAR` / `PRO_PRICE_YEAR_WAS` the buy buttons use, so they never disagree; then the
   buttons and "Sold by Stripe. Cancel any time." The copy Stitch invented (telemetry claims, "instant activation",
   "millions of repositories") is not used: every claim must be true today (RS7). No icon tiles (the slop rules), no em
-  dash (RS66). Tiles lift 2 px on hover (transform only, none under reduced motion).
+  dash (RS66). Tiles lift 2 px on hover (transform only, none under reduced motion). On screens 960 px and wider the benefits sit left and the plans, buttons and key form right, tightened so a laptop (about 1175 by 716) shows it all without scrolling (owner 2026-10-25); phones keep one column.
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
 - **RX3** Ranking by forks, trending or download counts. (Relevance, stars and license-freedom are the only

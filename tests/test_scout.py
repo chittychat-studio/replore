@@ -1262,7 +1262,7 @@ def test_pro_window_markup_copy_and_switch():
     for sel in (".pro-head .x{", ".pro-have{", ".pro-in input{", ".pro-save{", ".pro-on .link-btn{", ".pro-acts .go-btn{", ".pro-copy{"):
         rule = css[css.index(sel):css.index("}", css.index(sel))]
         assert "min-height:44px" in rule, sel
-    assert "max-width:860px" in css and "@media (max-width:560px)" in css and "grid-template-columns:1fr" in css
+    assert "max-width:1080px" in css and "@media (max-width:560px)" in css and "grid-template-columns:1fr" in css
     # the in-page privacy window names the key and Stripe
     priv = html[html.index('id="privacyModal"'):html.index('id="aboutModal"')]
     assert "A Replore Pro key" in priv and "Stripe" in priv
