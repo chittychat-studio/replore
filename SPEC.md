@@ -1085,7 +1085,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   broader words; the skill says the note in one line. Shared cases: `tests/fixtures/relaxed_cases.json`, run by
   `tests/test_scout.py` and `tests/test_web_logic.js`. The web behaviour is unchanged.
 - **RS79** Launch it with Leo (owner 2026-10-23, from a mock-up). A Launch button in the top menu opens a window: a few
-  tap answers (what you built, including iPhone, Android and games; who uses it; data; how people pay; budget) build a
+  tap answers (what you built, including iPhone, Android and games; who uses it; data; how people pay; budget; owner 2026-10-25, from the Stitch screen "Replore - Launch it with Leo Modal": one question at a time as option cards with a one-line description, step tabs to jump back, Back and Next, the chosen card gets a cyan rim and a tick and the next question slides in, cards lean slightly toward the pointer, changed plan rows fade in, checklist ticks survive answer changes with an "x of y done" count; transform and opacity only, none under reduced motion) build a
   colour-coded plan (host or store; a simple website lists Netlify, GitHub Pages, Cloudflare Pages and GoDaddy, with Vercel, Render or Cloudflare Workers for when a server is needed, owner 2026-10-25; store accounts, multiplayer, database, sign-in, payments with store billing rules on
   mobile, cost) and a checklist in two tabs: Before launch (Governor first, secrets, staging, backups, payment tests,
   legal pages) and After you go live, from Cardzo's go-live playbook (HTTPS and Cloudflare Full Strict, security
@@ -1617,7 +1617,12 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   same `PRO_PRICE` / `PRO_PRICE_YEAR` / `PRO_PRICE_YEAR_WAS` the buy buttons use, so they never disagree; then the
   buttons and "Sold by Stripe. Cancel any time." The copy Stitch invented (telemetry claims, "instant activation",
   "millions of repositories") is not used: every claim must be true today (RS7). No icon tiles (the slop rules), no em
-  dash (RS66). Tiles lift 2 px on hover (transform only, none under reduced motion).
+  dash (RS66). Tiles lift 2 px on hover (transform only, none under reduced motion). On screens 960 px and wider the benefits sit left and the plans, buttons and key form right, tightened so a laptop (about 1175 by 716) shows it all without scrolling (owner 2026-10-25); phones keep one column.
+- **RS100** Filters and sort never make the page jump (owner 2026-10-25: "why is the screen flickering going up and down
+  when I click on filter?"). A filter, star or update switch, Clear, or a new sort order keeps the number of cards already
+  revealed (it used to reset to 10, so the page shrank, the browser jumped up, the scroll-for-more marker came into view
+  and added cards back: an up-and-down bounce). If the list still gets shorter while you are below its top, the page
+  scrolls to the list's top once, below the sticky header (`scroll-margin-top`). Cards a filter brings back appear at once, without the slide-up entrance (many sliding together read as the page moving); scrolling down still reveals new cards with it. A new search still starts at 10.
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
 - **RX3** Ranking by forks, trending or download counts. (Relevance, stars and license-freedom are the only
