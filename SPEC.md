@@ -1681,6 +1681,13 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   just me or testers, the host's free address with free HTTPS; for the public, an own domain recommended (a small yearly
   fee; Cloudflare Registrar at cost, or GoDaddy / Namecheap) with the free address fine to start; public web projects get
   a pre-launch step to point the domain at the host and check HTTPS on both the bare domain and www.
+  **Only relevant filters** (owner 2026-10-25: "pre launch still shows launch filter at top", "check filter buttons to only
+  shows whats relevant"). Launch stack keeps the step-by-step question cards, each of which changes the plan (Platform
+  and Players only for a game). Pre-launch and Post go-live drop the question cards: the checklist is the window (one
+  column), with a compact row of filters above it, one dropdown per question that changes that checklist and nothing
+  else. Pre-launch: Stack, Platform (games), Audience (not for store apps, where it changes nothing), Data, Payments.
+  Post go-live: Stack, Platform (games), Data, Payments. Budget and Players never show there. Changing a filter
+  updates the list at once (the groups ease in; none under reduced motion); answers are shared with Launch stack.
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
 - **RX3** Ranking by forks, trending or download counts. (Relevance, stars and license-freedom are the only
