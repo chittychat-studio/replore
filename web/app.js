@@ -510,7 +510,7 @@ function orderGrid(g, how){
 function sortCards(how){ var g=document.querySelector("#out .grid"); if(!g) return;
   __trustSortGen++; clearTrustSort(g);
   orderGrid(g, how==="trust"?"fit":how);   // RS82: the trust sort starts from the fit order
-  window.__resLimit=10; applyResultFilter(); checkMore();
+  filterChanged();   // same as a filter: no shrink-and-bounce
   if(how==="trust") trustSort(g); }
 // RS82: opt-in "Trust" sort. Same formula as scripts/trust.py trust_score (shared cases: tests/fixtures/trust_rank_cases.json):
 // Scorecard score + half the Maintained score + 2 when no known vulnerabilities; a part that couldn't be checked counts 0.
@@ -594,7 +594,7 @@ function applyResultFilter(){
       && (!langOn.length || fl.langs[c.getAttribute("data-lang")||""]===true)   // RS67: any ticked language
       && ((+c.getAttribute("data-stars")||0) >= fl.stars)
       && (!fl.upd || (Date.parse(c.getAttribute("data-pushed"))||0) >= now-fl.upd*864e5);
-    if(ok){ matched++; if(shown<limit){ if(c.style.display==="none"){ c.style.display=""; if(inView(c)){ c.classList.remove("reveal"); void c.offsetWidth; c.classList.add("reveal"); } else queueReveal(c); }
+    if(ok){ matched++; if(shown<limit){ if(c.style.display==="none"){ c.style.display=""; if(window.__rfQuiet){ c.classList.remove("rv-wait","reveal"); } else if(inView(c)){ c.classList.remove("reveal"); void c.offsetWidth; c.classList.add("reveal"); } else queueReveal(c); }   // RS100: a filter shows cards at once; scrolling still reveals
         c.style.display=""; shown++; } else c.style.display="none"; }
     else c.style.display="none";
   }
@@ -619,6 +619,14 @@ function syncSelAll(){ var b=document.getElementById("resSelAll"); if(!b) return
 // infinite scroll: no button: when the sentinel nears the viewport, reveal 10 more (cards are already fetched; no API call)
 function checkMore(){ requestAnimationFrame(function(){ var s=document.querySelector("#out #resMore");
   if(s && !s.hidden && s.getBoundingClientRect().top < window.innerHeight+400) revealMore(); }); }
+// a filter change keeps the current number of cards (resetting to 10 made the page shrink, jump up, then load more
+// and grow again: the up-and-down flicker, owner 2026-10-25); if the list still got shorter while you were below its
+// top, the page shows its top once instead of bouncing
+function filterChanged(){ var out=document.getElementById("out"), top=out?out.getBoundingClientRect().top:0;
+  window.__rfQuiet=true; try{ applyResultFilter(); } finally { window.__rfQuiet=false; }
+  if(out) [].forEach.call(out.querySelectorAll(".rcard.rv-wait"),function(c){ if(c.style.display!=="none"){ c.classList.remove("rv-wait"); if(__rvIO) __rvIO.unobserve(c); } });   // queued entrances would all fire after the scroll
+  if(out&&top<0&&out.getBoundingClientRect().top<0&&out.scrollIntoView){ try{ out.scrollIntoView({block:"start"}); }catch(_){ out.scrollIntoView(); } }
+  checkMore(); }
 function revealMore(){ window.__resLimit=(window.__resLimit||10)+10; applyResultFilter(); checkMore(); }
 function watchMore(){ var s=document.querySelector("#out #resMore"); if(!s) return;
   if(window.__moreObs) window.__moreObs.disconnect();
@@ -1199,7 +1207,7 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
   out.addEventListener("change",function(e){ var cb=e.target;
     if(cb&&cb.classList&&cb.classList.contains("rf-cb")){ var fl=resFlags(), f=cb.getAttribute("data-f");   // RS67: licence / type / language
       if(f==="lang") fl.langs[cb.getAttribute("data-v")]=cb.checked; else fl[f]=cb.checked;
-      window.__resLimit=10; applyResultFilter(); checkMore(); return; }
+      filterChanged(); return; }
     if(cb&&cb.id==="resSort"){ sortCards(cb.value); return; }
     if(cb&&cb.classList&&cb.classList.contains("rf-sell")){ window.__selling=cb.checked; out.classList.toggle("selling",cb.checked); return; }   // RS83: flags only
     if(!cb||!cb.classList||!cb.classList.contains("pick-cb")) return;
@@ -1210,7 +1218,7 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
   // result-filter chips + show-more + clear (delegated, survives re-render)
   out.addEventListener("click",function(e){ var t=e.target;
     var sb=t.closest&&t.closest(".rr-sb");   // RS67: stars / updated segments
-    if(sb){ resFlags()[sb.getAttribute("data-f")]=+sb.getAttribute("data-v")||0; window.__resLimit=10; applyResultFilter(); checkMore(); return; }
+    if(sb){ resFlags()[sb.getAttribute("data-f")]=+sb.getAttribute("data-v")||0; filterChanged(); return; }
     var tg=t.closest&&t.closest(".rr-toggle");   // phones: the panel folds behind a Filters button
     if(tg){ var rl=tg.closest(".res-rail"), op=!rl.classList.contains("open"); rl.classList.toggle("open",op); tg.setAttribute("aria-expanded",String(op)); return; }
     var det=t.closest&&t.closest(".rc-det");
@@ -1219,7 +1227,7 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal
     if(card && !(t.closest("a,button,label,input,select,summary,.rc-more")) && !(window.getSelection&&String(window.getSelection()).trim())){
       var pcb=card.querySelector(".pick-cb"); if(pcb){ pcb.click(); return; } }
     if(t.closest&&t.closest(".trend-tab")){ showTrending(t.closest(".trend-tab").getAttribute("data-trend")); return; }
-    if(t.closest&&(t.closest("#resClear")||t.closest(".rf-clear"))){ rfReset(); window.__resLimit=10; applyResultFilter(); checkMore(); return; }
+    if(t.closest&&(t.closest("#resClear")||t.closest(".rf-clear"))){ rfReset(); filterChanged(); return; }
     if(t.closest&&t.closest("#resSelAll")){ var bx=shownPickBoxes(), all=bx.every(function(x){ return x.checked; });
       bx.forEach(function(x){ if(x.checked===all){ x.checked=!all; x.dispatchEvent(new Event("change",{bubbles:true})); } });
       syncSelAll(); } });
