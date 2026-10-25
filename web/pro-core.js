@@ -6,9 +6,9 @@
 // PRO_URL / PRO_URL_YEAR: Stripe Payment Links (monthly / yearly), optionally with ?prefilled_promo_code=CODE.
 // PRO_PRICE_WAS / PRO_PRICE_YEAR_WAS: an old price shown struck through before PRO_PRICE / PRO_PRICE_YEAR (empty = hidden).
 // PRO_OFFER: one offer line (empty = hidden).
-var PRO_URL="", PRO_URL_YEAR="";   // the owner pastes the two Stripe Payment Links here (yearly with ?prefilled_promo_code=CODE)
+var PRO_URL="https://buy.stripe.com/cNifZk7PYeTzeAMd5OgrS02", PRO_URL_YEAR="https://buy.stripe.com/3cI7sO2vEdPv78kd5OgrS03?prefilled_promo_code=YEAR50";   // owner 2026-10-25   // the owner pastes the two Stripe Payment Links here (yearly with ?prefilled_promo_code=CODE)
 var PRO_PRICE="8 USD a month", PRO_PRICE_WAS="", PRO_PRICE_YEAR="36 USD for your first year", PRO_PRICE_YEAR_WAS="72 USD",
-  PRO_OFFER="Launch offer: pay yearly and your first year is half price, 36 USD instead of 72. Cancel any time.";   // owner's copy 2026-10-24
+  PRO_OFFER="Launch offer: pay yearly and your first year is half price, 36 USD instead of 72. Cancel any time.";   // owner's copy 2026-10-24; checked on Stripe 2026-10-25: YEAR50 makes the first year 36, then 72
 // RS94: Stripe customer portal login link (Stripe dashboard, Settings, Billing, Customer portal), shown next to "Delete my account"
 // so a signed-in user can cancel; empty = the page says to write to hello@cardzo.co.in instead.
 var PRO_PORTAL_URL="";
@@ -71,7 +71,7 @@ function proMount(p, host){ var $=function(id){ return document.getElementById(p
   if(yr){ if(b.year){ yr.href=b.year.href; proBuyLabel(yr,b.year); } yr.hidden=!b.year; }
   if(off){ off.textContent=b.offer; off.hidden=!b.offer; }
   var c=proConfig(), pm=$("PlanM"), py=$("PlanY"), pw=$("PlanYWas");   // RS99: the plan cards show the same prices as the buttons
-  if(pm) pm.textContent=c.price; if(py) py.textContent=c.priceYear; if(pw) pw.textContent=c.wasYear?"Then "+c.wasYear+" a year. Cancel any time.":"Cancel any time.";
+  if(pm) pm.textContent=c.price; if(py){ py.textContent=c.priceYear; var tg=py.parentNode.querySelector(".pro-plan-tag"); if(tg) tg.hidden=!c.offer; if(!c.offer) py.parentNode.classList.remove("pro-plan-on"); } if(pw) pw.textContent=c.wasYear?"Then "+c.wasYear+" a year. Cancel any time.":"Cancel any time.";
   if(buy) buy.addEventListener("click",proCheckoutMark);
   if(yr) yr.addEventListener("click",proCheckoutMark);
   var have=$("Have"), form=$("Form"), rm=$("Remove"), cp=$("Copy"), ecp=$("EnvCopy");
