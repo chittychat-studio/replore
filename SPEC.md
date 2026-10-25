@@ -1601,6 +1601,26 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   **Owner steps:** create a KV namespace, bind it to the Pages project as `PLAYBOOKS` (Production and Preview), run
   `python ops/playbooks.py` and the printed commands, redeploy. Status: implemented and unit-tested (`tests/test_playbook_fn.mjs`,
   `tests/test_playbooks_web.js`, `tests/test_playbooks_ops.py`); not verified live (needs the KV namespace).
+- **RS98** Replore Templates showroom at `/templates/` (owner 2026-10-25: "publish everything into our site", picked a
+  Replore address and "showroom now, sell later"). The paid template gallery (Replore Templates; Cardzo is only the
+  seller) is served at `replore.cardzo.co.in/templates/`.
+  **Never in this repo.** This repository is public and the templates are paid, so no template source, build, demo or
+  screenshot is ever committed here. The storefront is its own Cloudflare Pages project (direct upload from the
+  owner's machine, built with the base path `/templates/`), and `functions/templates/[[path]].js` passes
+  `GET`/`HEAD` requests for `/templates` and `/templates/*` through to it.
+  **The pass-through.** The upstream is the plain variable `TEMPLATES_ORIGIN` (an `https://` origin, nothing else;
+  for example the project's `pages.dev` address). Fail closed: unset or malformed = 503 `templates_off`, a failed or
+  timed-out upstream (10 s) = 502, never a page from anywhere else (RS7). Only the path and query under `/templates`
+  are forwarded, with the same path; no cookies, `Authorization`, or Replore keys or headers are sent upstream, and the
+  upstream's `Set-Cookie` is dropped. Methods other than `GET` and `HEAD` = 405 (the store sells through Stripe
+  Payment Links, which never post here). Responses keep the storefront's own headers (its `_headers` CSP); `/demo/`
+  pages stay `noindex`. Redirects from the upstream are rewritten only when they point back into its own origin.
+  **Showroom first.** Every template shows with its Draft tag and a "Coming soon" Buy button until the owner finishes
+  the storefront's Stripe and licence go-live checklist; nothing is sold through Replore itself. A "Templates" link in
+  the footer, beside Replore Pro. No em dash in the copy (RS66).
+  **Owner steps:** `npx wrangler login`; create the Pages project; deploy the storefront; set `TEMPLATES_ORIGIN` on
+  the Replore Pages project (Production and Preview); redeploy. Status: implemented and unit-tested
+  (`tests/test_templates_fn.mjs`); not verified live.
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
 - **RX3** Ranking by forks, trending or download counts. (Relevance, stars and license-freedom are the only
