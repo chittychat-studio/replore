@@ -159,7 +159,7 @@ def test_pro_page_is_static_csp_safe_and_linked():
     assert CANON + "pro</loc>" in (WEB / "sitemap.xml").read_text(encoding="utf-8")
     assert 'href="/pro">' in (WEB / "index.html").read_text(encoding="utf-8")
     assert re.search(r'<script src="/pro-core\.js\?v=[0-9a-f]{10}" defer></script>\s*<script src="/pro\.js\?v=[0-9a-f]{10}" defer></script>', html)
-    for s in ("Leo, <em>Pro</em>", "Search stays free for everyone. Pro is for getting your project live faster",   # RS99
+    for s in ("Leo, <em>Pro</em>", "What Pro adds",   # RS99
               "<b>No daily limit</b>", 'id="ppPlanY"', "Sold by Stripe. Cancel any time.", 'id="ppCardY"', ">Get Pro yearly<", 'id="ppKeyBox"',
               'placeholder="Paste it here"', "Pro is on for this browser", ">Remove key</button>", "Pro is not on sale yet.",
               "Stays in this browser. I check it with Stripe, who sold it to you, and never keep it.",

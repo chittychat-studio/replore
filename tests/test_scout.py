@@ -1238,7 +1238,7 @@ def test_pro_window_markup_copy_and_switch():
     win = html[start:html.index("<div class=\"modal\" id=\"pluginModal\"", start)]
     assert "leo-hero.webp" not in win   # owner 2026-10-25: no Leo in the Pro window
     for s in ("<h2>Leo, <em>Pro</em></h2>", 'aria-label="Close"',   # RS92 2026-10-25: the current Leo
-              "Search stays free for everyone. Pro is for getting your project live faster",   # RS99: the six benefits and plans
+              "What Pro adds",   # RS99: straight to the six benefits and plans (owner 2026-10-25: no lead-in line)
               "<b>Skip the queue</b>", "<b>Help from a person</b>", 'id="proPlanM"', 'id="proPlanY"', "Sold by Stripe. Cancel any time.",
               'id="proCardM" href="#" target="_blank" rel="noopener noreferrer"', ">Get Pro monthly<", ">Get Pro yearly<", 'id="proKeyBox"', "Add your Pro key</summary>",   # RS99: cards are the buy buttons, the key folds away
               '<label for="proKey">Your key</label>', 'placeholder="Paste it here" autocomplete="off" spellcheck="false"',

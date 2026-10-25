@@ -1339,7 +1339,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   violet `#8B5CF6`, emerald `#10B981`, amber `#F59E0B` and red `#EF4444`. There is a matching light theme, and the theme
   toggle stays. The type is Plus Jakarta Sans for headings and UI, and JetBrains Mono for labels, chips and numbers, both
   self-hosted (OFL). The parts: a frosted sticky header, a 36 px cyber grid behind the hero, a status bar, Leo beside a
-  framed search console, and Trending as the card shuffle deck (pause, Previous, Next, Shuffle, dots, counter; swipe the top card sideways to send it under the deck, which loops forever, with the next two cards clearly peeking below: owner 2026-10-25). The owner
+  framed search console, and Trending as the card shuffle deck (pause, Previous, Next, Shuffle, dots, counter; swipe the top card sideways to send it under the deck, which loops forever, with the next two cards clearly peeking below: owner 2026-10-25; and the full shuffle from the frontend-stack pattern, same day: every fourth beat the top four cards fan around a pivot below the deck, up to 44 degrees in all, hold and close, the other beats are the slide-off-and-tuck, again and again; transform and opacity only, no loop under reduced motion). The owner
   asked for this design, so its soft cyan glows and the cyan-to-violet title gradient are allowed (they lift the RS65
   "no glows/gradients" note). The truth rules still hold. Every number on screen comes from the live data, or it is
   not shown: no invented star counts, latencies, index sizes, scores, velocities or sparklines (RS7, RS67). There is no
@@ -1635,8 +1635,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
 - **RS99** The Pro window and `/pro` list every Pro benefit (owner 2026-10-25: "pro screen should give all benefits we
   offer in pro", "its outdated now"; layout from the Stitch screen "Replore - Leo, Pro Modal Redesign" in the owner's
   project "Replore 3D Website Redesign"). Pro sells getting a project live, not AI ranking (it no longer says "meaning").
-  One line under the title ("Search stays free for everyone. Pro is for getting your project live faster: no waiting,
-  no daily cap, guided setup and a person to ask."), then six tiles, each a mono number, a title and one line: Skip the
+  One short line under the title, "Get your idea live faster: the boring setup and admin, packaged for you." (owner 2026-10-25: "get to the point", "we help you save time with all mundane admin done as a package", "get your idea live faster"); then six tiles, each a mono number, a title and one line: Skip the
   queue (RS87 per-IP limit skip); No daily limit (RS96: 5 a day anonymous, 20 signed in, Pro uncapped); Step-by-step
   playbooks (RS97); Everywhere you build (web, Claude Code plugin, MCP agents, RS87); Sign in with Google (RS94); Help
   from a person (owner commitment 2026-10-25: hands-on help by email at hello@cardzo.co.in). Then two plan cards,
@@ -1649,7 +1648,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   when I click on filter?"). A filter, star or update switch, Clear, or a new sort order keeps the number of cards already
   revealed (it used to reset to 10, so the page shrank, the browser jumped up, the scroll-for-more marker came into view
   and added cards back: an up-and-down bounce). If the list still gets shorter while you are below its top, the page
-  scrolls to the list's top once, below the sticky header (`scroll-margin-top`). Cards a filter brings back appear at once, without the slide-up entrance (many sliding together read as the page moving); scrolling down still reveals new cards with it. A new search still starts at 10.
+  scrolls to the list's top once, below the sticky header (`scroll-margin-top`). Switching lists on the Trending page (Rising, Most stars, Most forks) keeps the scroll position and the filter choices and swaps the cards with one short fade, without the page dissolve or the card entrance (owner 2026-10-25: "filter still flickers on desktop when you select between tabs"). Cards a filter brings back appear at once, without the slide-up entrance (many sliding together read as the page moving); scrolling down still reveals new cards with it. A new search still starts at 10.
 - **RS101** Smooth scrolling and spring reveals with Lenis and Motion (owner 2026-10-25: "butter smooth motion", "where is
   our butter smooth motion?"; this amends RS91, which had kept the page library-free). Two MIT libraries, vendored at pinned
   versions (each the newest release at least two weeks old), no CDN, licences beside them and in `NOTICE.md`:
@@ -1666,7 +1665,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   based on launch option selected along with repos", "input PRD is irrelevant, remove it in web", "also input repo, as
   they can paste repo in the search bar itself", "include domain hosting part of launch"). The search console's buttons
   are Tech stack (the Filters sheet), Launch stack (the Launch window), Pre-launch and Post go-live (the Launch window
-  opened on that checklist tab). "Match a PRD" (uploading a plan) and the separate Find similar window are gone from the
+  opened on that checklist). These are three separate windows (owner 2026-10-25: "remove before launch and after go live in launch window, redundant", "3 separate windows"): Launch stack shows the answers and the plan; Pre-launch and Post go-live each show the answers and only their checklist, with an "x of y done" count; there are no Before/After tabs, and each window's Copy button copies what it shows. "Match a PRD" (uploading a plan) and the separate Find similar window are gone from the
   web page (the plugin still reads plans); a repo goes in the search bar (RS27b). The build plan window has three
   switches, Launch stack, Pre-launch checklist and Post go-live checklist, on when the Launch window was used in this
   visit; the build plan prompt then carries the tech stack, the launch answers with the suggested setup, and each ticked
