@@ -64,7 +64,7 @@ function proView(p){ var $=function(id){ return document.getElementById(p+id); }
   var ed=$("Edit"), on=$("On"), inp=$("Key"), sh=$("Show"), env=$("Env");
   if(ed) ed.hidden=!!r; if(on) on.hidden=!r;
   if(inp){ inp.value=""; inp.removeAttribute("aria-invalid"); }
-  if(sh) sh.value=r?r.key:""; if(env) env.value=r?r.env:""; }
+  if(sh) sh.value=r?r.key:""; if(env) env.value=r?r.env:""; var kb=$("KeyBox"); if(kb&&r) kb.open=true; }
 function proMount(p, host){ var $=function(id){ return document.getElementById(p+id); }, b=proButtons(proConfig(), host);
   var buy=$("Buy"), yr=$("Year"), off=$("Offer");
   if(buy){ if(b.month){ buy.href=b.month.href; proBuyLabel(buy,b.month); } buy.hidden=!b.month; }
@@ -73,6 +73,9 @@ function proMount(p, host){ var $=function(id){ return document.getElementById(p
   var c=proConfig(), pm=$("PlanM"), py=$("PlanY"), pw=$("PlanYWas");   // RS99: the plan cards show the same prices as the buttons
   if(pm) pm.textContent=c.price; if(py){ py.textContent=c.priceYear; var tg=py.parentNode.querySelector(".pro-plan-tag"); if(tg) tg.hidden=!c.offer; if(!c.offer) py.parentNode.classList.remove("pro-plan-on"); } if(pw) pw.textContent=c.wasYear?"Then "+c.wasYear+" a year. Cancel any time.":"Cancel any time.";
   if(buy) buy.addEventListener("click",proCheckoutMark);
+  var cm=$("CardM"), cy=$("CardY");   // RS99: the plan cards are the buy buttons
+  if(cm){ if(b.month) cm.href=b.month.href; cm.hidden=!b.month; cm.addEventListener("click",proCheckoutMark); }
+  if(cy){ if(b.year) cy.href=b.year.href; cy.hidden=!b.year; cy.addEventListener("click",proCheckoutMark); }
   if(yr) yr.addEventListener("click",proCheckoutMark);
   var have=$("Have"), form=$("Form"), rm=$("Remove"), cp=$("Copy"), ecp=$("EnvCopy");
   if(have) have.addEventListener("click",function(){ proView(p); var i=$("Key"); if(i&&!i.closest("[hidden]")) i.focus(); });

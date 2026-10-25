@@ -1856,7 +1856,7 @@ var LIVE_DEMO=[   // RS67: the example searches Leo types into the search bar (n
 var LEO_NOALPHA=/^((?!chrome|chromium|android|crios|fxios|edg).)*safari/i.test(navigator.userAgent||"")||/iPhone|iPad|iPod/.test(navigator.userAgent||"")||
   (/Macintosh/.test(navigator.userAgent||"")&&(navigator.maxTouchPoints||0)>1);
 if(LEO_NOALPHA) document.documentElement.classList.add("leo-still");
-var LEO_VIDEO=LEO_NOALPHA?{intro:"", idle:""}:{intro:"leo-intro.webm?v=4ab4a8c5e5", idle:"leo-idle.webm?v=1ca511a5c6"};
+var LEO_VIDEO=LEO_NOALPHA?{intro:"", idle:""}:{intro:"", idle:"leo-idle.webm?v=1ca511a5c6"};   // owner 2026-10-25: no fly-in (it showed Leo far off with a trail, then turned away); he starts facing you
 function buildLiveDemo(host){
   if(!host || host.dataset.built) return; host.dataset.built="1";
   var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches;
@@ -1900,12 +1900,12 @@ function buildLiveDemo(host){
         {transform:"translate3d(0px,0px,0px) rotateY(0deg) scale(1)",opacity:1}],{duration:1800,easing:"cubic-bezier(.2,.8,.25,1)"}).finished.then(land,land);
       setTimeout(land, 2600); }
     else greet(); }
-  if(hv&&hv.play&&sb&&sb.classList&&LEO_VIDEO.intro&&LEO_VIDEO.idle&&!reduce){   // RS92: the hero video (fly-in once, then the idle loop)
+  if(hv&&hv.play&&sb&&sb.classList&&LEO_VIDEO.idle&&!reduce){   // RS92: the hero video (fly-in once, then the idle loop)
     var failed=false, fail=function(){ if(failed) return; failed=true; still(); };
     hv.setAttribute("data-leo-intro",LEO_VIDEO.intro); hv.setAttribute("data-leo-idle",LEO_VIDEO.idle); hv.hidden=false; sb.classList.add("herovid");
     var toIdle=function(){ hv.removeEventListener("ended",toIdle); hv.loop=true; hv.src=LEO_VIDEO.idle; var q=hv.play(); if(q&&q.catch) q.catch(fail); greet(); };
     hv.addEventListener("ended",toIdle); hv.addEventListener("error",fail);
-    hv.src=LEO_VIDEO.intro; var hp=hv.play(); if(hp&&hp.catch) hp.catch(fail);
+    if(LEO_VIDEO.intro){ hv.src=LEO_VIDEO.intro; var hp=hv.play(); if(hp&&hp.catch) hp.catch(fail); } else toIdle();
     setTimeout(greet, 6000); }   // his words never wait on the clip
   else still();
   // typing: Leo pauses the example and answers you

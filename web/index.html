@@ -1760,7 +1760,7 @@ body:not(.has-results) .hero > .hero-fx{display:none}
   .pro-plans{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0 0 16px}
   .pro-plan{position:relative;padding:16px 18px;border-radius:14px;border:1px solid var(--line);background:color-mix(in srgb,var(--card) 80%,transparent)}
   .pro-plan-on{border-color:var(--accent);box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 35%,transparent),0 18px 40px -28px var(--accent)}
-  .pro-plan-tag{position:absolute;top:-10px;right:14px;padding:3px 9px;border-radius:999px;background:var(--btn);color:var(--on-btn);font:700 10px var(--f-mono,monospace);letter-spacing:.08em;text-transform:uppercase}
+  .pro-plan-tag{position:absolute;top:-10px;right:14px;padding:3px 9px;border-radius:999px;background:var(--accent);color:#090d16;font:700 10px var(--f-mono,monospace);letter-spacing:.08em;text-transform:uppercase}
   .pro-plan-k{margin:0 0 6px;font:600 11px var(--f-mono,monospace);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
   .pro-plan-on .pro-plan-k{color:var(--accent-ink)}
   .pro-plan-p{margin:0 0 4px;font-size:22px;font-weight:800;line-height:1.2}
@@ -1794,6 +1794,41 @@ body:not(.has-results) .hero > .hero-fx{display:none}
   .lenis.lenis-smooth{scroll-behavior:auto !important}
   .lenis.lenis-smooth [data-lenis-prevent]{overscroll-behavior:contain}
   .lenis.lenis-stopped{overflow:hidden}
+  /* RS99 (owner 2026-10-25: "fit in page no scroll"): tighter still on wide screens; the offer sentence is hidden there
+     because the yearly card and the struck price already say it; the two buy buttons share a row */
+  @media (min-width:960px){
+    .pro-split .pro-head h1,.pro-sheet .pro-head h2{font-size:34px;margin:0 0 4px}
+    .pro-split .pro-say{font-size:14.5px;line-height:1.4;margin:0 0 2px}
+    .pro-split .pro-sub{margin:8px 0 6px}
+    .pro-split .pro-bens li{padding:9px 11px 10px}
+    .pro-split .pro-bens b{font-size:13.5px}
+    .pro-split .pro-bens span:last-child{font-size:12px;line-height:1.35}
+    .pro-split .pro-offer{display:none}
+    .pro-r .pro-acts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0}
+    .pro-r .pro-acts > *{min-height:42px;padding:0 12px;font-size:14px;justify-content:center;text-align:center;width:100%}
+    .pro-r .pro-acts{grid-template-areas:"buy have" "year year"} .pro-r [id$="Buy"]{grid-area:buy} .pro-r [id$="Have"]{grid-area:have} .pro-r [id$="Year"]{grid-area:year}   /* the long yearly label gets its own row */
+    .pro-r .pro-stripe{margin:8px 0 0}
+    .pro-r .pro-plan-p{font-size:17px}
+    #proModal .pro-sheet{padding:20px 24px;max-height:calc(100vh - 32px);overflow:auto}
+  }
+  /* RS99: plan cards as buy buttons, and the key folded away for plugin and MCP users */
+  a.pro-plan{display:block;color:inherit;text-decoration:none;cursor:pointer;transition:transform .2s cubic-bezier(.22,1,.36,1),border-color .2s ease}
+  a.pro-plan:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--accent) 55%,transparent)}
+  a.pro-plan:active{transform:scale(.98)}
+  a.pro-plan:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+  .pro-plan-go{display:inline-flex;align-items:center;min-height:36px;margin-top:10px;padding:0 14px;border-radius:10px;border:1px solid var(--accent);color:var(--accent-ink);font-weight:700;font-size:14px}
+  .pro-plan-on .pro-plan-go{background:var(--accent);color:#090d16}
+  .pro-after{margin:8px 0 0;font-size:13px;line-height:1.45;color:var(--muted)}
+  .pro-keybox{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+  .pro-keybox summary{cursor:pointer;font-size:13px;color:var(--muted);list-style:revert}
+  .pro-keybox summary:hover{color:var(--ink)}
+  .pro-keybox[open] summary{margin-bottom:8px}
+  @media (prefers-reduced-motion:reduce){ a.pro-plan{transition:none} a.pro-plan:hover,a.pro-plan:active{transform:none} }
+  @media (max-width:999px){ .st-stage::before,.st-stage::after{display:none} }   /* owner 2026-10-25: on phones the glow behind Leo read as a blue patch */
+  @media (max-width:699px){   /* owner 2026-10-25: phones, less empty space between the quick prompts and Trending */
+    body:not(.has-results) .hero{padding-bottom:4px;margin-bottom:0}
+    body:not(.has-results) .out-wrap{padding-top:0;margin-top:0}
+    body:not(.has-results) #trendCar{margin-top:10px} }
 </style>
 </head>
 <body>
@@ -2005,18 +2040,16 @@ body:not(.has-results) .hero > .hero-fx{display:none}
 <div class="modal pro-el" id="proModal" hidden><div class="sheet pro-sheet">   <!-- RS89: Leo, Pro (owner pick 2026-10-23); hidden until PRO_URL is set -->
   <div class="pro-head"><div><p class="kicker">Replore Pro</p><h2>Leo, <em>Pro</em></h2></div>
     <button type="button" class="x" data-close aria-label="Close"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>
-  <div class="pro-split"><div class="pro-l"><div class="pro-row pro-hero"><img src="leo-hero.webp?v=1ca927d5e6" alt="Leo, the Replore scout" width="150" height="142" decoding="async">
-      <p class="pro-say">Search stays free for everyone. Pro is for getting your project live faster: no waiting, no daily cap, guided setup and a person to ask.</p></div>
+  <div class="pro-split"><div class="pro-l"><p class="pro-say">Search stays free for everyone. Pro is for getting your project live faster: no waiting, no daily cap, guided setup and a person to ask.</p>   <!-- owner 2026-10-25: no Leo in the Pro window -->
     <p class="pro-sub">What Pro adds</p>
     <ul class="pro-bens"><li><span class="pb-n">01</span><b>Skip the queue</b><span>AI ranking never makes you wait.</span></li><li><span class="pb-n">02</span><b>No daily limit</b><span>Free use gets 5 AI searches a day (20 signed in). Pro has no cap.</span></li><li><span class="pb-n">03</span><b>Step-by-step playbooks</b><span>Guided setup cards you tick off, starting with Google sign-in for your app.</span></li><li><span class="pb-n">04</span><b>Everywhere you build</b><span>The web app, the Claude Code plugin and any MCP agent.</span></li><li><span class="pb-n">05</span><b>Sign in with Google</b><span>Pro on every device, no key to paste.</span></li><li><span class="pb-n">06</span><b>Help from a person</b><span>Write to <a href="mailto:hello@cardzo.co.in">hello@cardzo.co.in</a> and get hands-on help with your setup.</span></li></ul>   <!-- RS99: the six Pro benefits (owner 2026-10-25, Stitch "Leo, Pro Modal Redesign") -->
-    </div><div class="pro-r"><div class="pro-plans"><div class="pro-plan"><p class="pro-plan-k">Monthly</p><p class="pro-plan-p" id="proPlanM"></p><p class="pro-plan-s">Billed monthly, cancel any time</p></div>
-      <div class="pro-plan pro-plan-on"><span class="pro-plan-tag">Launch offer</span><p class="pro-plan-k">Yearly</p><p class="pro-plan-p" id="proPlanY"></p><p class="pro-plan-s" id="proPlanYWas"></p></div></div>
+    </div><div class="pro-r"><div class="pro-plans"><a class="pro-plan" id="proCardM" href="#" target="_blank" rel="noopener noreferrer" hidden><p class="pro-plan-k">Monthly</p><p class="pro-plan-p" id="proPlanM"></p><p class="pro-plan-s">Billed monthly, cancel any time</p><span class="pro-plan-go">Get Pro monthly</span></a>
+      <a class="pro-plan pro-plan-on" id="proCardY" href="#" target="_blank" rel="noopener noreferrer" hidden><span class="pro-plan-tag">Launch offer</span><p class="pro-plan-k">Yearly</p><p class="pro-plan-p" id="proPlanY"></p><p class="pro-plan-s" id="proPlanYWas"></p><span class="pro-plan-go">Get Pro yearly</span></a></div>
+    <p class="pro-after">After paying, Stripe brings you back here and Pro turns on in this browser.</p>   <!-- RS99: the cards are the buy buttons (owner 2026-10-25) -->
   <p id="proOffer" class="pro-offer" hidden></p>
-  <div class="pro-acts"><a id="proBuy" class="go-btn" href="#" target="_blank" rel="noopener noreferrer">Get a key</a>
-    <a id="proYear" class="pro-have" href="#" target="_blank" rel="noopener noreferrer" hidden>Yearly</a>
-    <button type="button" id="proHave" class="pro-have">I have a key</button></div>
   <p class="pro-stripe">Sold by Stripe. Cancel any time.</p>
   <div id="proAuth" class="auth-box" aria-live="polite" hidden></div>   <!-- RS94: optional Google sign-in (auth.js); stays hidden until sign-in is configured -->
+  <details class="pro-keybox" id="proKeyBox"><summary>Using the Claude Code plugin or an MCP agent? Add your Pro key</summary>
   <form id="proForm" class="pro-form" autocomplete="off" novalidate>
     <div id="proEdit"><label for="proKey">Your key</label>
       <div class="pro-in"><input id="proKey" type="text" placeholder="Paste it here" autocomplete="off" spellcheck="false" autocapitalize="off">
@@ -2028,7 +2061,7 @@ body:not(.has-results) .hero > .hero-fx{display:none}
         <button type="button" id="proEnvCopy" class="pro-copy">Copy</button></div>
       <p class="pro-hint">For the plugin: in Claude Code, set it in your shell before you start <code>claude</code>; in an MCP config, add it as an <code>env</code> entry.</p></div>
     <p class="pro-note">Stays in this browser. I check it with Stripe, who sold it to you, and never keep it.</p>
-  </form></div></div>
+  </form></details></div></div>
 </div></div>
 <div class="modal" id="pluginModal"><div class="sheet ag-sheet">
   <button class="x" data-close aria-label="Close"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
@@ -2196,10 +2229,10 @@ body:not(.has-results) .hero > .hero-fx{display:none}
   <p class="mut rag-only" style="margin-top:12px" hidden><b>Hybrid search:</b> repos are ranked by your words and by what you mean, so "voice notes" also finds "speech-to-text". Repos our index finds that the word search missed are checked on GitHub before you see them.</p>
 </div></div>
 
-<script src="pro-core.js?v=2ec04efd2a" defer></script>
+<script src="pro-core.js?v=e07c58fdf5" defer></script>
 <script src="auth.js?v=f43383d4f7" defer></script>
 <script src="vendor/lenis-1.3.26/lenis.min.js" defer></script>   <!-- RS101: smooth wheel scrolling (MIT) -->
 <script src="vendor/motion-14.1.0/motion.js" defer></script>   <!-- RS101: spring reveals (MIT) -->
-<script src="app.js?v=c1ad9bf149" defer></script>
+<script src="app.js?v=fc119ffdd4" defer></script>
 </body>
 </html>

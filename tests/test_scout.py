@@ -1236,13 +1236,14 @@ def test_pro_window_markup_copy_and_switch():
     assert html.index('id="pluginBtn"') < html.index('id="proBtn"') < html.index('id="starBtn"')   # after Plugin
     start = html.index('<div class="modal pro-el" id="proModal" hidden>')
     win = html[start:html.index("<div class=\"modal\" id=\"pluginModal\"", start)]
-    for s in ("<h2>Leo, <em>Pro</em></h2>", 'aria-label="Close"', 'src="leo-hero.webp?v=1ca927d5e6" alt="Leo, the Replore scout" width="150"',   # RS92 2026-10-25: the current Leo
+    assert "leo-hero.webp" not in win   # owner 2026-10-25: no Leo in the Pro window
+    for s in ("<h2>Leo, <em>Pro</em></h2>", 'aria-label="Close"',   # RS92 2026-10-25: the current Leo
               "Search stays free for everyone. Pro is for getting your project live faster",   # RS99: the six benefits and plans
               "<b>Skip the queue</b>", "<b>Help from a person</b>", 'id="proPlanM"', 'id="proPlanY"', "Sold by Stripe. Cancel any time.",
-              'id="proBuy" class="go-btn" href="#" target="_blank" rel="noopener noreferrer"', ">I have a key</button>",
+              'id="proCardM" href="#" target="_blank" rel="noopener noreferrer"', ">Get Pro monthly<", ">Get Pro yearly<", 'id="proKeyBox"', "Add your Pro key</summary>",   # RS99: cards are the buy buttons, the key folds away
               '<label for="proKey">Your key</label>', 'placeholder="Paste it here" autocomplete="off" spellcheck="false"',
               ">Save</button>", "Pro is on for this browser", ">Remove key</button>",
-              'id="proOffer" class="pro-offer" hidden', 'id="proYear" class="pro-have"', 'id="proShow" type="text" readonly',
+              'id="proOffer" class="pro-offer" hidden', 'id="proShow" type="text" readonly',
               'id="proCopy" class="pro-copy">Copy</button>', 'id="proEnv" type="text" readonly', 'id="proEnvCopy" class="pro-copy">Copy</button>',
               "Stays in this browser. I check it with Stripe, who sold it to you, and never keep it."):
         assert s in win, s

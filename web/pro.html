@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Replore Pro: get your project live faster</title>
-<meta name="description" content="Replore Pro: no waiting and no daily cap on AI ranking, step-by-step setup playbooks, Google sign-in on every device and hands-on help from a person. Get a key, or find the key you bought.">
+<meta name="description" content="Replore Pro: no waiting and no daily cap on AI ranking, step-by-step setup playbooks, Google sign-in on every device and hands-on help from a person. Monthly or yearly, sold by Stripe.">
 <link rel="canonical" href="https://replore.cardzo.co.in/pro">
 <!-- SPEC RS90: the Leo, Pro window (RS89) as a page, plus the claim state after a Stripe checkout. Switches and key rules
      are in pro-core.js (shared with the window); the page logic is pro.js. No inline script (RS49), no emoji (RS55),
      no em dash (RS66), 44px targets. -->
 <script src="/theme.js?v=6d53c2f925"></script>
-<script src="/pro-core.js?v=2ec04efd2a" defer></script>
+<script src="/pro-core.js?v=e07c58fdf5" defer></script>
 <script src="/pro.js?v=bc69301b2f" defer></script>
 <script src="/auth.js?v=f43383d4f7" defer></script>
 <script src="/playbooks.js?v=20733dd90a" defer></script>
@@ -49,15 +49,14 @@
     <p class="pro-say">Search stays free for everyone. Pro is for getting your project live faster: no waiting, no daily cap, guided setup and a person to ask.</p>   <!-- owner 2026-10-25: no Leo on /pro -->
     <p class="pro-sub">What Pro adds</p>
     <ul class="pro-bens"><li><span class="pb-n">01</span><b>Skip the queue</b><span>AI ranking never makes you wait.</span></li><li><span class="pb-n">02</span><b>No daily limit</b><span>Free use gets 5 AI searches a day (20 signed in). Pro has no cap.</span></li><li><span class="pb-n">03</span><b>Step-by-step playbooks</b><span>Guided setup cards you tick off, starting with Google sign-in for your app.</span></li><li><span class="pb-n">04</span><b>Everywhere you build</b><span>The web app, the Claude Code plugin and any MCP agent.</span></li><li><span class="pb-n">05</span><b>Sign in with Google</b><span>Pro on every device, no key to paste.</span></li><li><span class="pb-n">06</span><b>Help from a person</b><span>Write to <a href="mailto:hello@cardzo.co.in">hello@cardzo.co.in</a> and get hands-on help with your setup.</span></li></ul>   <!-- RS99: the six Pro benefits (owner 2026-10-25, Stitch "Leo, Pro Modal Redesign") -->
-    </div><div class="pro-r"><div class="pro-plans"><div class="pro-plan"><p class="pro-plan-k">Monthly</p><p class="pro-plan-p" id="ppPlanM"></p><p class="pro-plan-s">Billed monthly, cancel any time</p></div>
-      <div class="pro-plan pro-plan-on"><span class="pro-plan-tag">Launch offer</span><p class="pro-plan-k">Yearly</p><p class="pro-plan-p" id="ppPlanY"></p><p class="pro-plan-s" id="ppPlanYWas"></p></div></div>
-    <p id="ppNotSale" class="pp-notsale">Keys are not on sale yet.</p>
+    </div><div class="pro-r"><div class="pro-plans"><a class="pro-plan" id="ppCardM" href="#" target="_blank" rel="noopener noreferrer" hidden><p class="pro-plan-k">Monthly</p><p class="pro-plan-p" id="ppPlanM"></p><p class="pro-plan-s">Billed monthly, cancel any time</p><span class="pro-plan-go">Get Pro monthly</span></a>
+      <a class="pro-plan pro-plan-on" id="ppCardY" href="#" target="_blank" rel="noopener noreferrer" hidden><span class="pro-plan-tag">Launch offer</span><p class="pro-plan-k">Yearly</p><p class="pro-plan-p" id="ppPlanY"></p><p class="pro-plan-s" id="ppPlanYWas"></p><span class="pro-plan-go">Get Pro yearly</span></a></div>
+    <p class="pro-after">After paying, Stripe brings you back here and Pro turns on in this browser.</p>   <!-- RS99: the cards are the buy buttons (owner 2026-10-25) -->
+    <p id="ppNotSale" class="pp-notsale">Pro is not on sale yet.</p>
     <p id="ppOffer" class="pro-offer" hidden></p>
-    <div class="pro-acts"><a id="ppBuy" class="pp-buy" href="#" target="_blank" rel="noopener noreferrer" hidden>Get a key</a>
-      <a id="ppYear" class="pro-have" href="#" target="_blank" rel="noopener noreferrer" hidden>Yearly</a>
-      <button type="button" id="ppHave" class="pro-have">I have a key</button></div>
     <p class="pro-stripe">Sold by Stripe. Cancel any time.</p>
     <div id="ppAuth" class="auth-box" aria-live="polite" hidden></div>   <!-- RS94: optional Google sign-in (auth.js); stays hidden until sign-in is configured -->
+    <details class="pro-keybox" id="ppKeyBox"><summary>Using the Claude Code plugin or an MCP agent? Add your Pro key</summary>
     <form id="ppForm" class="pro-form" autocomplete="off" novalidate>
       <div id="ppEdit"><label for="ppKey">Your key</label>
         <div class="pro-in"><input id="ppKey" type="text" placeholder="Paste it here" autocomplete="off" spellcheck="false" autocapitalize="off">
@@ -69,7 +68,7 @@
           <button type="button" id="ppEnvCopy" class="pro-copy">Copy</button></div>
         <p class="pro-hint">For the plugin: in Claude Code, set it in your shell before you start <code>claude</code>; in an MCP config, add it as an <code>env</code> entry.</p></div>
       <p class="pro-note">Stays in this browser. I check it with Stripe, who sold it to you, and never keep it.</p>
-    </form></div></div>
+    </form></details></div></div>
   </section>
   <noscript><p class="sp-lead">This page needs JavaScript to save or show a key.</p></noscript>
   <p class="sp-acts"><a class="sp-btn" href="/">Find repos for your idea</a></p>

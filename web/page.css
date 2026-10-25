@@ -248,3 +248,33 @@ code{font-family:var(--f-mono);font-size:.88em;padding:1px 6px;border-radius:6px
   .pro-r .pro-form{margin-top:12px;padding-top:12px}
 }
 @media (min-width:960px){ .pp-main{padding-top:20px;padding-bottom:40px} .pp-main .pp-card{padding:22px 26px} }
+/* RS99 (owner 2026-10-25: "fit in page no scroll"): tighter still on wide screens; the offer sentence is hidden there
+   because the yearly card and the struck price already say it; the two buy buttons share a row */
+@media (min-width:960px){
+  .pro-split .pro-head h1,.pro-sheet .pro-head h2{font-size:34px;margin:0 0 4px}
+  .pro-split .pro-say{font-size:14.5px;line-height:1.4;margin:0 0 2px}
+  .pro-split .pro-sub{margin:8px 0 6px}
+  .pro-split .pro-bens li{padding:9px 11px 10px}
+  .pro-split .pro-bens b{font-size:13.5px}
+  .pro-split .pro-bens span:last-child{font-size:12px;line-height:1.35}
+  .pro-split .pro-offer{display:none}
+  .pro-r .pro-acts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0}
+  .pro-r .pro-acts > *{min-height:42px;padding:0 12px;font-size:14px;justify-content:center;text-align:center;width:100%}
+  .pro-r .pro-acts{grid-template-areas:"buy have" "year year"} .pro-r [id$="Buy"]{grid-area:buy} .pro-r [id$="Have"]{grid-area:have} .pro-r [id$="Year"]{grid-area:year}   /* the long yearly label gets its own row */
+  .pro-r .pro-stripe{margin:8px 0 0}
+  .pro-r .pro-plan-p{font-size:17px}
+  #proModal .pro-sheet{padding:20px 24px;max-height:calc(100vh - 32px);overflow:auto}
+}
+/* RS99: plan cards as buy buttons, and the key folded away for plugin and MCP users */
+a.pro-plan{display:block;color:inherit;text-decoration:none;cursor:pointer;transition:transform .2s cubic-bezier(.22,1,.36,1),border-color .2s ease}
+a.pro-plan:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--accent) 55%,transparent)}
+a.pro-plan:active{transform:scale(.98)}
+a.pro-plan:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.pro-plan-go{display:inline-flex;align-items:center;min-height:36px;margin-top:10px;padding:0 14px;border-radius:10px;border:1px solid var(--accent);color:var(--accent-ink);font-weight:700;font-size:14px}
+.pro-plan-on .pro-plan-go{background:var(--accent);color:#090d16}
+.pro-after{margin:8px 0 0;font-size:13px;line-height:1.45;color:var(--muted)}
+.pro-keybox{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+.pro-keybox summary{cursor:pointer;font-size:13px;color:var(--muted);list-style:revert}
+.pro-keybox summary:hover{color:var(--ink)}
+.pro-keybox[open] summary{margin-bottom:8px}
+@media (prefers-reduced-motion:reduce){ a.pro-plan{transition:none} a.pro-plan:hover,a.pro-plan:active{transform:none} }
