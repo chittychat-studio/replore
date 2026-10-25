@@ -71,7 +71,8 @@ function pbOpen(box,book){
   dots.addEventListener("click",function(e){ var d=e.target.closest&&e.target.closest(".pb-dot"); if(!d) return; var to=+d.getAttribute("data-i"); if(to!==st.at) go(to-st.at); });
   view.onkeydown=function(e){ if(e.target&&/^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
     if(e.key==="ArrowLeft"){ e.preventDefault(); go(-1); } else if(e.key==="ArrowRight"){ e.preventDefault(); go(1); } };
-  paint(0); }
+  paint(0);
+  if(!reduce&&view.animate) view.animate([{opacity:0,transform:"translateY(8px)"},{opacity:1,transform:"none"}],{duration:260,easing:"cubic-bezier(.22,1,.36,1)"}); }   // a newly opened playbook eases in
 
 async function pbStart(){ var box=document.getElementById("ppBooks"); if(!box) return;
   var idx=await pbFetch(""); if(!idx||!Array.isArray(idx.playbooks)||!idx.playbooks.length) return;   // not Pro, or nothing stored: stays hidden
@@ -79,6 +80,7 @@ async function pbStart(){ var box=document.getElementById("ppBooks"); if(!box) r
   idx.playbooks.forEach(function(p){ var b=pbEl("button","pb-pick"); b.type="button";
     b.appendChild(pbEl("span","pb-pick-t",p.title)); b.appendChild(pbEl("span","pb-pick-n",p.steps+" steps"));
     b.addEventListener("click",async function(){ [].forEach.call(list.children,function(x){ x.classList.toggle("on",x===b); x.setAttribute("aria-pressed",String(x===b)); });
+      if(b.scrollIntoView) b.scrollIntoView({block:"nearest",inline:"nearest",behavior:matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth"});   // phones: the picked playbook glides into view
       var book=await pbFetch("?id="+encodeURIComponent(p.id)); if(book&&book.steps) pbOpen(box,book); });
     list.appendChild(b); });
   box.hidden=false; if(idx.playbooks.length===1){ list.hidden=true; list.firstChild.click(); } }   // one playbook: no picker
