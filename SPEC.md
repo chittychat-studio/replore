@@ -270,7 +270,7 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   owner/repo anywhere in it, is used as is; otherwise, or when that owner/repo does not exist, GitHub is searched by name
   (up to 4 words, `in:name`) and an exact name match wins, else GitHub's best match. The repo found is shown first, marked
   "The repo you entered" (even if it would fail the licence or age filters, which its card states), then the similar
-  repos, which never repeat it. No message asks for owner/repo.
+  repos, which never repeat it. No message asks for owner/repo. Since RS102 the repo goes in the search bar: a GitHub link or owner/repo anywhere in the text, or "similar to X", "alternatives to X" or "repos like X"; the other words narrow the results, and a repo alone is enough (this lifts RS27a's need for words). A bare owner/repo that does not exist on GitHub (for example "client/server") is searched as ordinary words.
   **How we searched** reads in plain words (same day: "technical slop like active, inactive, search"): the phrases Leo
   searched without GitHub qualifiers, then only the reasons that actually left repos out ("without an open-source licence",
   "not updated in the last 2 years", "below your star filter", "copies or archived projects", "that looked unsafe"); no zero counts.
@@ -1661,6 +1661,20 @@ Replore is a Claude Code plugin that returns the top 20 open-source GitHub repos
   bounce 0.12, about 0.55 s) the first time it scrolls into view, only if it starts off screen. Everything else keeps
   the Web Animations API (RS91's ports stay). Under `prefers-reduced-motion` neither runs; if either file fails to load
   the page behaves as before. Status: implemented and checked in Chrome; not verified on Safari.
+- **RS102** Tech stack, Launch stack, Pre-launch and Post go-live feed the build plan (owner 2026-10-25: "we need launch
+  button along with search", "pre/post live checklist can be separate buttons and included in PRD", "our PRD must be
+  based on launch option selected along with repos", "input PRD is irrelevant, remove it in web", "also input repo, as
+  they can paste repo in the search bar itself", "include domain hosting part of launch"). The search console's buttons
+  are Tech stack (the Filters sheet), Launch stack (the Launch window), Pre-launch and Post go-live (the Launch window
+  opened on that checklist tab). "Match a PRD" (uploading a plan) and the separate Find similar window are gone from the
+  web page (the plugin still reads plans); a repo goes in the search bar (RS27b). The build plan window has three
+  switches, Launch stack, Pre-launch checklist and Post go-live checklist, on when the Launch window was used in this
+  visit; the build plan prompt then carries the tech stack, the launch answers with the suggested setup, and each ticked
+  checklist, and asks the user's AI to plan deployment for that stack and turn the checklists into tasks. The launch
+  plan has a Domain row: not needed for store apps (only a privacy policy page, which can live on a free address); for
+  just me or testers, the host's free address with free HTTPS; for the public, an own domain recommended (a small yearly
+  fee; Cloudflare Registrar at cost, or GoDaddy / Namecheap) with the free address fine to start; public web projects get
+  a pre-launch step to point the domain at the host and check HTTPS on both the bare domain and www.
 - **RX1** Scraping github.com HTML, or any non-API source.
 - **RX2** Caching results on disk. (Scope: the plugin and its scripts. A server-side index of repo metadata is allowed only as RS42 Phase 2, after its gates.)
 - **RX3** Ranking by forks, trending or download counts. (Relevance, stars and license-freedom are the only
