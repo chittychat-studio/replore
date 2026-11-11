@@ -669,7 +669,7 @@ def test_web_page_is_safe_static(monkeypatch):
     index = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
     srcs = _re.findall(r'<script[^>]+src="([^"]+)"', index)
     srcs = [s.split("?v=")[0] for s in srcs]   # RS52: app.js / theme.js carry a ?v=<hash> stamp
-    assert srcs == ["theme.js", "pro-core.js", "auth.js", "vendor/lenis-1.3.26/lenis.min.js", "vendor/motion-14.1.0/motion.js", "app.js"], srcs   # RS101: pinned, vendored   # RS49: no inline script; app.js after pro-core.js (RS89); auth.js: optional sign-in (RS94)
+    assert srcs == ["theme.js", "pro-core.js", "auth.js", "vendor/lenis-1.3.26/lenis.min.js", "vendor/motion-14.1.0/motion.js", "app.js", "homepage.js"], srcs
     assert _re.search(r'<script src="app\.js\?v=[0-9a-f]{10}" defer>', index)
     assert not _re.search(r"<script(?![^>]*src=)[^>]*>", index) and not _re.search(r"\son[a-z]+\s*=", index)
     assert "<html lang=\"en\">" in index   # RS24: no forced light theme; the system setting applies until the visitor picks one
@@ -678,7 +678,7 @@ def test_web_page_is_safe_static(monkeypatch):
     app = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
     assert "window.gsap" not in app and "function canAnimate()" in app
     sheets = _re.findall(r'<link[^>]+rel="stylesheet"[^>]+href="([^"]+)"', html)
-    assert sheets == ["fonts.css"], sheets
+    assert [s.split("?v=")[0] for s in sheets] == ["fonts.css", "redesign.css"], sheets
     fcss = (ROOT / "web" / "fonts.css").read_text(encoding="utf-8")
     fonts = _re.findall(r"url\((fonts/[^)]+)\)", fcss)
     assert fonts and all((ROOT / "web" / f).exists() for f in fonts), fonts
@@ -759,7 +759,7 @@ def test_web_page_is_safe_static(monkeypatch):
     assert "Write the PRD only after I approve, and match what I approved." in html   # RS28h
     # RS79: Launch with Leo (nav button, local plan + playbook go-live checklist, hand-off to the user's own AI); Tour in the menu
     assert 'id="launchBtn"' in html and 'id="launchModal"' in html and "After you go live" in html and "window.__handoff=handoff" in html
-    assert 'class="nav-btn" title="Watch how Replore works">Tour' in html and 'class="gh-credit"' not in html
+    assert 'class="nav-btn" title="Watch how Replore works">How it works' in html and 'class="gh-credit"' not in html
     assert "Search Console" in html and "Bing Webmaster Tools" in html and "Turnstile" in html and "sitemap.xml" in html
     assert "Make step 0 of the build plan: set up Governor" in html and "governor@chittychat-governor" in html   # RS28i
     skill = (ROOT / "skills" / "find" / "SKILL.md").read_text(encoding="utf-8")
@@ -987,7 +987,7 @@ def test_rs47_look_and_motion_kit():
     # of theme tokens, with --btn-grad the fill every accent button uses
     assert "--accent:#0091a8" in html and "--accent:#00f0ff" in html and "--btn-grad:" in html and "192,83,44" not in html
     assert "--accent:#3f6f8e" not in html and "Plus Jakarta Sans" in html
-    assert 'class="ln" aria-hidden="true"' in html and 'aria-label="Find it before you build it."' in html and "var segs=" not in html
+    assert 'class="ln" aria-hidden="true"' in html and 'aria-label="Your next build probably already has a head start."' in html and "var segs=" not in html
     assert "data-magnet" in html and "el.style.translate=" in html and "(hover:hover) and (pointer:fine)" in html   # RS91: no GSAP quickTo
     assert "function odometer(" in html and "function snapHtml(" in html and "html:out.innerHTML" not in html
     assert 'class="tring"' not in html and 'class="ttape"' not in html and "TAPE_ICON" not in html and "✦</b>" not in html   # RS62
@@ -1100,7 +1100,12 @@ def test_home_demo_is_the_real_product_and_honest():
     js = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
     start = js.index("var LIVE_DEMO=")
     block = js[start:js.index("// remember the last results", start)]
-    assert "buildLiveDemo(hd)" in js and "fetch(" not in block
+    # Redesign replaces autoplay with a manually controlled walkthrough. Legacy helpers stay dormant.
+    home = js[js.index("function showHome()"):js.index("var LIVE_DEMO=")]
+    assert "buildLiveDemo(hd)" not in home and "fetch(" not in block
+    walkthrough = (ROOT / "web" / "homepage.js").read_text(encoding="utf-8")
+    assert "fetch(" not in walkthrough and "setInterval(" not in walkthrough
+    assert 'role="tablist" aria-label="Discovery to build workflow"' in _page()
     assert block.count('{q:"') == 3 and "kstars(" not in block and "repos fit" not in block
     assert "prefers-reduced-motion" in block and "isConnected" in block   # RS92: no desktop-only globe, so no width switch here
     # RS65: the studio stage and stage pills; RS67: the search bar joins Leo, no example deck or pointer.
