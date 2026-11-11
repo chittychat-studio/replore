@@ -3,7 +3,7 @@
 // (arrow keys too), step dots to jump to any step, "Mark complete", a progress line. Progress lives only in this browser
 // (localStorage "replore.pb.<id>", try/catch). Stored text is data: rendered with text nodes from a safe subset
 // (paragraphs, "- " bullets, "1. " numbered steps, **bold**, `code`, https links), never innerHTML.
-var PB_API="/api/pro/playbook", PB_STORE="replore.pb.";
+var PB_API="/api/pro/playbook", PB_STORE="replore.pb.", PB_GEN=0, PB_BOOK_REQUEST=0;
 
 // "line one\n- a\n- b\n\n1. x" -> [{p:[...inline]}, {ul:[[...inline],[...inline]]}, {ol:[[...inline]]}, ...]
 function pbBlocks(body){ var out=[], para=[], list=null, kind="ul";
@@ -35,11 +35,12 @@ function pbRenderBody(parent,body){ pbBlocks(body).forEach(function(b){
   if(b.p){ var p=pbEl("p"); pbRenderInline(p,b.p); parent.appendChild(p); }
   else { var l=pbEl(b.ol?"ol":"ul"); (b.ol||b.ul).forEach(function(it){ var li=pbEl("li"); pbRenderInline(li,it); l.appendChild(li); }); parent.appendChild(l); } }); }
 
-async function pbFetch(q){ var h={Accept:"application/json"};
+async function pbFetch(q,outcome){ var h={Accept:"application/json"};
   var k=typeof proKeyGet==="function"?proKeyGet():""; if(k) h["X-Replore-Plugin-Key"]=k;
   if(typeof authHeader==="function"){ try{ h=await authHeader(h); }catch(_){} }
-  var r=await fetch(PB_API+(q||""),{headers:h,credentials:"same-origin"}); if(r.status!==200) return null;
-  try{ return await r.json(); }catch(_){ return null; } }
+  try{var r=await fetch(PB_API+(q||""),{headers:h,credentials:"same-origin"});if(outcome)outcome.status=r.status;
+    if(r.status!==200)return null;return await r.json();
+  }catch(_){if(outcome)outcome.status=0;return null;} }
 
 function pbOpen(box,book){
   var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches, n=book.steps.length, st=pbLoad(book.id);
@@ -74,16 +75,33 @@ function pbOpen(box,book){
   paint(0);
   if(!reduce&&view.animate) view.animate([{opacity:0,transform:"translateY(8px)"},{opacity:1,transform:"none"}],{duration:260,easing:"cubic-bezier(.22,1,.36,1)"}); }   // a newly opened playbook eases in
 
+function pbMessage(text,retry){var status=document.getElementById("pbStatus"),button=document.getElementById("pbRetry");
+  if(status)status.textContent=text;if(button)button.hidden=!retry;}
+function pbFailure(status){return status===401||status===403?"Sign in with a Pro account or add your Pro key to load playbooks.":status===429?"Too many requests. Wait a minute, then retry loading your playbooks.":"Playbooks are unavailable right now. Retry or contact hello@cardzo.co.in.";}
 async function pbStart(){ var box=document.getElementById("ppBooks"); if(!box) return;
-  var idx=await pbFetch(""); if(!idx||!Array.isArray(idx.playbooks)||!idx.playbooks.length) return;   // not Pro, or nothing stored: stays hidden
-  var list=box.querySelector(".pb-list"); list.textContent="";
+  var generation=++PB_GEN,outcome={};++PB_BOOK_REQUEST;
+  // Clear stale paid UI as soon as credentials change; late replies cannot restore it.
+  box.hidden=true;var list=box.querySelector(".pb-list"),view=box.querySelector(".pb-view");list.textContent="";view.textContent="";
+  pbMessage("Checking access to Pro playbooks...",false);
+  var idx=await pbFetch("",outcome);if(generation!==PB_GEN)return;
+  if(!idx||!Array.isArray(idx.playbooks))return pbMessage(pbFailure(outcome.status),outcome.status!==401&&outcome.status!==403);
+  if(!idx.playbooks.length)return pbMessage("No Pro playbooks are available on this site yet. Contact hello@cardzo.co.in for help.",true);
+  pbMessage("",false);list.hidden=false;
   idx.playbooks.forEach(function(p){ var b=pbEl("button","pb-pick"); b.type="button";
     b.appendChild(pbEl("span","pb-pick-t",p.title)); b.appendChild(pbEl("span","pb-pick-n",p.steps+" steps"));
     b.addEventListener("click",async function(){ [].forEach.call(list.children,function(x){ x.classList.toggle("on",x===b); x.setAttribute("aria-pressed",String(x===b)); });
       if(b.scrollIntoView) b.scrollIntoView({block:"nearest",inline:"nearest",behavior:matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth"});   // phones: the picked playbook glides into view
-      var book=await pbFetch("?id="+encodeURIComponent(p.id)); if(book&&book.steps) pbOpen(box,book); });
+      var current=++PB_BOOK_REQUEST,result={};pbMessage("Loading playbook...",false);
+      var book=await pbFetch("?id="+encodeURIComponent(p.id),result);
+      if(generation!==PB_GEN||current!==PB_BOOK_REQUEST)return;
+      if(book&&book.steps){pbMessage("",false);pbOpen(box,book);}
+      else{view.textContent="";pbMessage(pbFailure(result.status),true);}
+    });
     list.appendChild(b); });
   box.hidden=false; if(idx.playbooks.length===1){ list.hidden=true; list.firstChild.click(); } }   // one playbook: no picker
 
 if(typeof document!=="undefined" && document.getElementById){
+  document.addEventListener("replore-key",pbStart);
+  document.addEventListener("replore-auth",pbStart);
+  var retry=document.getElementById("pbRetry");if(retry)retry.addEventListener("click",pbStart);
   if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",pbStart); else pbStart(); }

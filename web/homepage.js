@@ -7,7 +7,7 @@
     if(pricing.on){
       document.getElementById("home-pro-offer").hidden=false;
       document.getElementById("home-pro-price").textContent=pricing.month.price;
-      document.getElementById("home-pro-year").textContent=pricing.year?pricing.year.price:"";
+      document.getElementById("home-pro-year").textContent=pricing.year?(proConfig().yearCheckoutReady?pricing.year.price+"; then "+proConfig().renewalYear:"Yearly offer pending verification. See Pro for details."):"";
     }
   }
   var tabs=Array.from(document.querySelectorAll("[data-journey]"));
@@ -49,4 +49,7 @@
   document.querySelectorAll('a[href="#q"]').forEach(function(link){
     link.addEventListener("click",function(){var q=document.getElementById("q");if(q) q.focus({preventScroll:true});});
   });
+  if(location.hash==="#launch"){
+    var launch=document.getElementById("launchBtn");if(launch)launch.click();
+  }
 })();

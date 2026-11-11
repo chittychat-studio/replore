@@ -678,7 +678,7 @@ def test_web_page_is_safe_static(monkeypatch):
     app = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
     assert "window.gsap" not in app and "function canAnimate()" in app
     sheets = _re.findall(r'<link[^>]+rel="stylesheet"[^>]+href="([^"]+)"', html)
-    assert [s.split("?v=")[0] for s in sheets] == ["fonts.css", "redesign.css"], sheets
+    assert [s.split("?v=")[0] for s in sheets] == ["fonts.css", "redesign.css", "pro.css"], sheets
     fcss = (ROOT / "web" / "fonts.css").read_text(encoding="utf-8")
     fonts = _re.findall(r"url\((fonts/[^)]+)\)", fcss)
     assert fonts and all((ROOT / "web" / f).exists() for f in fonts), fonts
@@ -1242,15 +1242,15 @@ def test_pro_window_markup_copy_and_switch():
     start = html.index('<div class="modal pro-el" id="proModal" hidden>')
     win = html[start:html.index("<div class=\"modal\" id=\"pluginModal\"", start)]
     assert "leo-hero.webp" not in win   # owner 2026-10-25: no Leo in the Pro window
-    for s in ("<h2>Leo, <em>Pro</em></h2>", 'aria-label="Close"',   # RS92 2026-10-25: the current Leo
+    for s in ("<h2>Replore Pro</h2>", 'aria-label="Close"',   # RS92 2026-10-25: the current Leo
               "What Pro adds",   # RS99: straight to the six benefits and plans (owner 2026-10-25: no lead-in line)
-              "<b>Skip the queue</b>", "<b>Help from a person</b>", 'id="proPlanM"', 'id="proPlanY"', "Sold by Stripe. Cancel any time.",
+              "<b>Search without the daily cap</b>", "<b>Get launch-ready, step by step</b>", 'id="proPlanM"', 'id="proPlanY"', "Payments processed by Stripe. Cancel any time.",
               'id="proCardM" href="#" target="_blank" rel="noopener noreferrer"', ">Get Pro monthly<", ">Get Pro yearly<", 'id="proKeyBox"', "Add your Pro key</summary>",   # RS99: cards are the buy buttons, the key folds away
               '<label for="proKey">Your key</label>', 'placeholder="Paste it here" autocomplete="off" spellcheck="false"',
-              ">Save</button>", "Pro is on for this browser", ">Remove key</button>",
+              ">Save</button>", "Pro key saved for this browser. Access is verified by the server.", ">Remove key</button>",
               'id="proOffer" class="pro-offer" hidden', 'id="proShow" type="text" readonly',
               'id="proCopy" class="pro-copy">Copy</button>', 'id="proEnv" type="text" readonly', 'id="proEnvCopy" class="pro-copy">Copy</button>',
-              "Stays in this browser. I check it with Stripe, who sold it to you, and never keep it."):
+              "Your key stays in this browser. Replore checks subscription access with Stripe."):
         assert s in win, s
     visible = re.sub(r"<[^>]+>", " ", win)
     assert "—" not in visible and not re.search("[\U0001F000-\U0001FAFF☀-➿✕×]", win)

@@ -9,6 +9,11 @@
 var PRO_URL="https://buy.stripe.com/cNifZk7PYeTzeAMd5OgrS02", PRO_URL_YEAR="https://buy.stripe.com/3cI7sO2vEdPv78kd5OgrS03?prefilled_promo_code=YEAR50";   // owner 2026-10-25   // the owner pastes the two Stripe Payment Links here (yearly with ?prefilled_promo_code=CODE)
 var PRO_PRICE="8 USD a month", PRO_PRICE_WAS="", PRO_PRICE_YEAR="36 USD for your first year", PRO_PRICE_YEAR_WAS="72 USD",
   PRO_OFFER="Launch offer: pay yearly and your first year is half price, 36 USD instead of 72. Cancel any time.";   // owner's copy 2026-10-24; checked on Stripe 2026-10-25: YEAR50 makes the first year 36, then 72
+// Renewal is an explicit disclosure, not an inferred crossed-out comparison price. Billing links are unchanged.
+var PRO_RENEWAL_YEAR="72 USD a year";
+// Read-only checkout verification on 2026-11-12: YEAR50 is rejected by Stripe. Keep the existing
+// billing link/price unchanged, but block this UI's yearly purchase until the offer is fixed and verified.
+var PRO_YEAR_CHECKOUT_READY=false;
 // RS94: Stripe customer portal login link (Stripe dashboard, Settings, Billing, Customer portal), shown next to "Delete my account"
 // so a signed-in user can cancel; empty = the page says to write to hello@cardzo.co.in instead.
 var PRO_PORTAL_URL="";
@@ -47,7 +52,8 @@ function proButtons(c, host){ c=c||{};
   return {on:true, month:{href:c.url, label:"Get a key, ", price:String(c.price||""), was:String(c.was||"").trim()},
     year:proUrlOk(c.urlYear, host)&&c.priceYear ? {href:c.urlYear, label:"Yearly, ", price:String(c.priceYear), was:String(c.wasYear||"").trim()} : null,
     offer:String(c.offer||"").trim()}; }
-function proConfig(){ return {url:PRO_URL, urlYear:PRO_URL_YEAR, price:PRO_PRICE, priceYear:PRO_PRICE_YEAR, was:PRO_PRICE_WAS, wasYear:PRO_PRICE_YEAR_WAS, offer:PRO_OFFER}; }
+function proConfig(){ return {url:PRO_URL, urlYear:PRO_URL_YEAR, price:PRO_PRICE, priceYear:PRO_PRICE_YEAR, was:PRO_PRICE_WAS, wasYear:PRO_PRICE_YEAR_WAS, renewalYear:PRO_RENEWAL_YEAR, yearCheckoutReady:PRO_YEAR_CHECKOUT_READY, offer:PRO_OFFER}; }
+function proAnnualTerms(c){ return c.renewalYear?"Then "+c.renewalYear+". Renews until canceled.":c.wasYear?"Then "+c.wasYear+" a year. Cancel any time.":"Cancel any time."; }
 // pure: the saved key shown back (so moving to another browser or the plugin is copy-paste), or null
 function proReveal(k){ k=String(k==null?"":k).trim(); if(!PRO_SHAPE.test(k)) return null;
   return {key:k, env:"REPLORE_KEY="+k, hint:PRO_ENV_HINT}; }
@@ -71,11 +77,19 @@ function proMount(p, host){ var $=function(id){ return document.getElementById(p
   if(yr){ if(b.year){ yr.href=b.year.href; proBuyLabel(yr,b.year); } yr.hidden=!b.year; }
   if(off){ off.textContent=b.offer; off.hidden=!b.offer; }
   var c=proConfig(), pm=$("PlanM"), py=$("PlanY"), pw=$("PlanYWas");   // RS99: the plan cards show the same prices as the buttons
-  if(pm) pm.textContent=c.price; if(py){ py.textContent=c.priceYear; var tg=py.parentNode.querySelector(".pro-plan-tag"); if(tg) tg.hidden=!c.offer; if(!c.offer) py.parentNode.classList.remove("pro-plan-on"); } if(pw) pw.textContent=c.wasYear?"Then "+c.wasYear+" a year. Cancel any time.":"Cancel any time.";
+  if(pm) pm.textContent=c.price; if(py){ py.textContent=c.priceYear; var tg=py.parentNode.querySelector(".pro-plan-tag"); if(tg) tg.hidden=!c.offer; if(!c.offer) py.parentNode.classList.remove("pro-plan-on"); } if(pw) pw.textContent=proAnnualTerms(c);
   if(buy) buy.addEventListener("click",proCheckoutMark);
   var cm=$("CardM"), cy=$("CardY");   // RS99: the plan cards are the buy buttons
   if(cm){ if(b.month) cm.href=b.month.href; cm.hidden=!b.month; cm.addEventListener("click",proCheckoutMark); }
-  if(cy){ if(b.year) cy.href=b.year.href; cy.hidden=!b.year; cy.addEventListener("click",proCheckoutMark); }
+  if(cy){ if(b.year) cy.href=b.year.href; cy.hidden=!b.year;
+    cy.setAttribute("aria-disabled",String(!c.yearCheckoutReady));
+    if(!c.yearCheckoutReady){cy.removeAttribute("href");cy.setAttribute("role","link");cy.tabIndex=0;
+      var pendingTag=cy.querySelector(".pro-plan-tag");if(pendingTag)pendingTag.textContent="Verification pending";}
+    var warning=$("YearWarning"); if(warning){warning.hidden=!!c.yearCheckoutReady;cy.setAttribute("aria-describedby",p+"YearWarning");}
+    var action=cy.querySelector(".pro-plan-go"); if(action&&!c.yearCheckoutReady)action.textContent="Yearly offer pending verification";
+    cy.addEventListener("click",function(e){if(!c.yearCheckoutReady){e.preventDefault();if(warning)warning.focus();return;}proCheckoutMark();});
+    cy.addEventListener("keydown",function(e){if(!c.yearCheckoutReady&&(e.key==="Enter"||e.key===" ")){e.preventDefault();if(warning)warning.focus();}});
+  }
   if(yr) yr.addEventListener("click",proCheckoutMark);
   var have=$("Have"), form=$("Form"), rm=$("Remove"), cp=$("Copy"), ecp=$("EnvCopy");
   if(have) have.addEventListener("click",function(){ proView(p); var i=$("Key"); if(i&&!i.closest("[hidden]")) i.focus(); });
