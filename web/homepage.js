@@ -7,14 +7,14 @@
     if(pricing.on){
       document.getElementById("home-pro-offer").hidden=false;
       document.getElementById("home-pro-price").textContent=pricing.month.price;
-      document.getElementById("home-pro-year").textContent=pricing.year?pricing.year.price+". "+pricing.offer:"";
+      document.getElementById("home-pro-year").textContent=pricing.year?pricing.year.price:"";
     }
   }
   var tabs=Array.from(document.querySelectorAll("[data-journey]"));
   var steps={
-    idea:{label:"START WITH THE PROBLEM",heading:"What do you want to build?",description:"Describe the app and the features you need. Choose a prompt above or write your own, then narrow by tech stack or platform.",action:"Describe my idea",href:"#q"},
-    repos:{label:"INSPECT THE BUILDING BLOCKS",heading:"Find the fit. Check the trade-offs.",description:"Results come from GitHub. Review the description, language, license and latest code push. Keyword fit highlights matching terms; stars indicate popularity. Open Details to inspect more, and bookmark the repos you want in your plan.",action:"Find repositories",href:"#q"},
-    plan:{label:"TAKE YOUR PICKS INTO YOUR AI",heading:"Your choices become a build-plan prompt.",description:"Select repos in the results, then choose Generate plan. Replore assembles a prompt with your selections and optional launch checklists. Copy it or open your own AI assistant to write the plan. This walkthrough does not generate or submit anything.",action:"Start with a search",href:"#q"}
+    idea:{label:"DESCRIBE",heading:"Start with your idea.",description:"Tell us what you need. Use stack and platform filters when you have a preference.",action:"Describe my idea",href:"#q"},
+    repos:{label:"DISCOVER",heading:"Check the fit and trade-offs.",description:"Inspect real GitHub results, matching terms, licenses and code activity. Select the repos worth building on.",action:"Find repositories",href:"#q"},
+    plan:{label:"BUILD",heading:"Bring your picks to your agent.",description:"Generate a plan prompt with your selected repos. Copy it into your own AI to write the build plan.",action:"Start with a search",href:"#q"}
   };
   function select(tab){
     var step=steps[tab.dataset.journey]; if(!step) return;

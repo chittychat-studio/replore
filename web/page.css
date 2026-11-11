@@ -1,16 +1,16 @@
 /* SPEC RS80, RS92: the look of Replore's secondary pages (404.html, evals.html, pro.html), in the Stitch design of the
    home page. Same token mechanism as index.html's :root (light; dark by system setting, or the visitor's saved choice
    set by theme.js), same self-hosted fonts (Plus Jakarta Sans, JetBrains Mono). RS92 allows the soft cyan glows and the
-   cyan-to-violet title gradient. Motion is transform/opacity only and off under reduced motion (RS47, RS91). */
+   cyan-to-neon title gradient. Motion is transform/opacity only and off under reduced motion (RS47, RS91). */
 :root{
   --bg:#f5f8fb; --bg-top:#eaf1f6; --card:#ffffff; --surf-lo:#eef2f6; --surf-hi:#e3e9ef; --field:#f8fafc;
   --line:rgba(71,85,105,.22); --line-hi:rgba(71,85,105,.38);
   --ink:#0f172a; --muted:#475569; --head:#0b2530;
   --accent:#0091a8; --accent-ink:#007a8f; --btn:#00c2d6; --on-btn:#090D16; --tint:rgba(0,145,168,.09);
   --good:#047857; --goodbg:rgba(4,120,87,.1); --warn:#9a5b06; --warnbg:rgba(245,158,11,.14); --bad:#b91c1c;
-  --grid:rgba(0,145,168,.08); --field-a:rgba(0,194,214,.16); --field-b:rgba(139,92,246,.12);
+  --grid:rgba(0,145,168,.08); --field-a:rgba(0,194,214,.16); --field-b:rgba(0,240,255,.12);
   --head-bar:rgba(245,248,251,.85); --glow:0 0 18px rgba(0,145,168,.25); --head-glow:0 1px 16px rgba(0,145,168,.06);
-  --title-grad:linear-gradient(90deg,#007a8f,#047857 55%,#6d28d9);
+  --title-grad:linear-gradient(90deg,#007a8f,#047857 55%,#00788c);
   --f-body:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
   --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   color-scheme:light;
@@ -22,9 +22,9 @@
     --ink:#dfe2ef; --muted:#b9cacb; --head:#dbfcff;
     --accent:#00F0FF; --accent-ink:#00F0FF; --btn:#00F0FF; --on-btn:#090D16; --tint:rgba(0,240,255,.07);
     --good:#4edea3; --goodbg:rgba(16,185,129,.12); --warn:#F59E0B; --warnbg:rgba(245,158,11,.12); --bad:#EF4444;
-    --grid:rgba(0,240,255,.04); --field-a:rgba(0,240,255,.15); --field-b:rgba(139,92,246,.18);
+    --grid:rgba(0,240,255,.04); --field-a:rgba(0,240,255,.15); --field-b:rgba(0,240,255,.18);
     --head-bar:rgba(9,13,22,.85); --glow:0 0 24px rgba(0,240,255,.45); --head-glow:0 1px 16px rgba(0,240,255,.06);
-    --title-grad:linear-gradient(90deg,#00F0FF,#4edea3 55%,#8B5CF6);
+    --title-grad:linear-gradient(90deg,#00F0FF,#4edea3 55%,#00f0ff);
     color-scheme:dark;
   }
 }
@@ -34,9 +34,9 @@
   --ink:#dfe2ef; --muted:#b9cacb; --head:#dbfcff;
   --accent:#00F0FF; --accent-ink:#00F0FF; --btn:#00F0FF; --on-btn:#090D16; --tint:rgba(0,240,255,.07);
   --good:#4edea3; --goodbg:rgba(16,185,129,.12); --warn:#F59E0B; --warnbg:rgba(245,158,11,.12); --bad:#EF4444;
-  --grid:rgba(0,240,255,.04); --field-a:rgba(0,240,255,.15); --field-b:rgba(139,92,246,.18);
+  --grid:rgba(0,240,255,.04); --field-a:rgba(0,240,255,.15); --field-b:rgba(0,240,255,.18);
   --head-bar:rgba(9,13,22,.85); --glow:0 0 24px rgba(0,240,255,.45); --head-glow:0 1px 16px rgba(0,240,255,.06);
-  --title-grad:linear-gradient(90deg,#00F0FF,#4edea3 55%,#8B5CF6);
+  --title-grad:linear-gradient(90deg,#00F0FF,#4edea3 55%,#00f0ff);
   color-scheme:dark;
 }
 *{box-sizing:border-box}

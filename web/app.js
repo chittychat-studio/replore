@@ -253,7 +253,7 @@ function licenseVerdict(spdx){
   return {c:"t-warn", i:"ban", t:"No licence, can't reuse"};
 }
 // RS24 result card helpers: owner initial tile (colour from the name, no image fetch) and "updated N ago"
-function ownerHue(o){ var h=0; for(var k=0;k<o.length;k++) h=(h*31+o.charCodeAt(k))>>>0; return [14,24,32,198,152,268,340][h%7]; }
+function ownerHue(o){ var h=0; for(var k=0;k<o.length;k++) h=(h*31+o.charCodeAt(k))>>>0; return [14,24,32,198,152,185,165][h%7]; }
 function agoText(d){ var t=Date.parse(d); if(!t) return ""; var days=Math.floor((Date.now()-t)/864e5);
   return days<1?"today":days<2?"yesterday":days<31?days+" days ago":days<365?Math.round(days/30)+" mo ago":Math.round(days/365)+" yr ago"; }
 // RS51: "Explore" links: each tool takes the same owner/repo path as github.com; only a well-formed name gets links
@@ -757,7 +757,7 @@ async function relevanceGate(query, repos){
 // RS21: ready-made prompts the user can click to fill the box.
 var HOME_EXAMPLES=[
   {label:"AI SaaS", text:"Build an AI SaaS with auth, payments and a dashboard", platform:"web", starters:"yes"},
-  {label:"React admin dashboard", text:"Find a React admin dashboard starter", platform:"web", starters:"yes"},
+  {label:"Admin dashboard", text:"Find a React admin dashboard starter", platform:"web", starters:"yes"},
   {label:"RAG chatbot", text:"Open-source RAG chatbot with citations", platform:"", starters:"no"},
   {label:"Self-hosted analytics", text:"Self-hosted analytics for a SaaS", platform:"web", starters:"no"},
   {label:"FastAPI backend", text:"Python FastAPI backend with authentication", platform:"", starters:"yes"},
@@ -793,7 +793,7 @@ function buildExamples(box){
     box.appendChild(b); });
 }
 // Homepage examples require an explicit search. Legacy cached examples remain unchanged.
-var PILL_IDX=[0,1,2,3,4];
+var PILL_IDX=[0,1,2];
 function buildQuickpicks(box){
   if(!box || box.dataset.built) return; box.dataset.built="1";
   HOME_EXAMPLES.forEach(function(ex,i){ if(PILL_IDX.indexOf(i)<0) return;
@@ -1661,7 +1661,7 @@ function buildDemo(host){
 function stopDemo(id){ var h=document.getElementById(id); if(h&&h.__stopDemo) h.__stopDemo(); }
 // empty-state in the results panel: the animated demo carousel (home view)
 // ---- RS35: trending gallery: three API-sorted lists, fetched only when opened, cached 30 min per tab ----
-var TREND_TABS={rising:"Rising", stars:"Most stars", forks:"Most forks"};
+var TREND_TABS={rising:"New & popular", stars:"Most stars", forks:"Most forks"};
 var TREND_NOTE={
   rising:"Created in the last 30 days, most stars first.",
   stars:"The most-starred open-source repos on GitHub that are still maintained.",
@@ -1772,23 +1772,10 @@ function think(st, text){
   st.innerHTML=thinkPill(text,"think-sm"); startDotOrb(st.querySelector(".think-orb"));
 }
 
-// RS35 home carousel. RS92: Trending on GitHub is the card shuffle deck (frontend-stack pattern, Web Animations API and
-// CSS transitions only, RS91). Up to 6 real repos from the open tab's list: the top card slides off and tucks under the
-// deck about every 4 s; paused on hover, keyboard focus, a hidden tab, off screen or the Pause button. Previous, Next,
-// Shuffle and the dots always work. Swipe (owner 2026-10-25): drag the top card sideways; past about 90 px or a quick
-// flick it flies off that way and tucks under the deck (the deck never ends), a short drag springs back. Vertical drags
-// still scroll the page. Reduced motion: no auto-shuffle, and the buttons and swipes swap the top card at once.
-// Only the top card is exposed; the others are aria-hidden and inert. Each list is fetched only when its tab is first
-// opened (cached 30 min, RS35).
-var DECK_N=6, DECK_MS=4000, DECK_TINT=["cyan","violet","mint"];
-// RS92 card shuffle, full sequence (owner 2026-10-25, the frontend-stack pattern: "a deck fans out, closes, then the top
-// card slides off and tucks under the deck, again and again"): every 4th beat the top cards fan around a pivot below the
-// deck (700 ms), hold (900 ms) and close (550 ms); the other beats are the tuck. The rest poses mirror the CSS data-pos.
-var DECK_REST=["translateY(0px) translateZ(0px) scale(1) rotate(0deg)","translateY(22px) translateZ(-40px) scale(.955) rotate(.8deg)",
-  "translateY(42px) translateZ(-80px) scale(.91) rotate(-.8deg)","translateY(56px) translateZ(-120px) scale(.86) rotate(0deg)"], DECK_OP=[1,.9,.7,0];
-function deckFanPose(d,n){ var spread=Math.min(44,11*(n-1)), a=-spread/2+(spread/Math.max(1,n-1))*(n-1-d);
-  return "translateY("+(d*4)+"px) translateZ("+(-d*40)+"px) scale("+(1-d*.02).toFixed(3)+") rotate("+a.toFixed(1)+"deg)"; }
-var DECK_FRONT="translateY(0px) translateZ(0px) scale(1)";
+// RS35 home carousel: the repository data and sorting contracts are unchanged.
+// Transform-based coverflow over six cached GitHub results. Only the center slide exposes links;
+// side overlays provide pointer navigation and labeled Previous/Next buttons serve keyboards.
+var DECK_N=6, DECK_TINT=["cyan","neon","mint"];
 function deckCardHtml(r, k, n, kind){
   var p=String(r.name).split("/"), o=p[0], nm=p.slice(1).join("/"), v=licenseVerdict(r.spdx), xs=exploreLinks(r.name), lang=cleanLang(r.lang);
   var spdx=/^[A-Za-z0-9.+-]{1,40}$/.test(r.spdx||"")&&r.spdx!=="NOASSERTION"?r.spdx:"";
@@ -1804,119 +1791,172 @@ function deckCardHtml(r, k, n, kind){
         '<span class="td-line">'+(badge?'<span class="td-badge">'+esc(badge)+'</span>':'')+(tl.length?'<span class="td-topics">'+tl.map(esc).join(" · ")+'</span>':'')+'</span></div>'+
       '<a class="td-gh" href="'+esc(r.url)+'" target="_blank" rel="noopener" aria-label="Open '+esc(r.name)+' on GitHub" title="Open on GitHub">'+ico("external")+'</a></div>'+
     '<p class="td-desc">'+esc(plainDesc(r.desc))+'</p>'+
-    '<div class="td-metrics"><span class="td-m"><small>GitHub stars</small><b>'+ico("star","td-star")+'<span class="td-n">'+kstars(r.stars)+'</span></b></span>'+
+    '<div class="td-metrics"><span class="td-m"><small>Stars</small><b>'+ico("star","td-star")+'<span class="td-n">'+kstars(r.stars)+'</span></b></span>'+
       '<span class="td-m"><small>Forks</small><b>'+ico("fork")+kstars(r.forks)+'</b></span>'+
-      '<span class="td-m"><small>Updated</small><b>'+esc(agoText(r.pushed)||r.pushed)+'</b></span>'+lic+'</div>'+
-    (tools?'<div class="td-foot"><span class="td-look">Look inside</span><nav class="td-tools" aria-label="Look inside '+esc(r.name)+'">'+tools+'</nav></div>':'')+
+      '<span class="td-m"><small>Updated</small><b>'+esc(agoText(r.pushed)||r.pushed||"Unknown")+'</b></span>'+lic+'</div>'+
+    '<div class="td-foot"><button type="button" class="td-explore" data-explore="'+esc(r.name)+'">Explore with Replore '+ico("external")+'</button>'+
+      (tools?'<nav class="td-tools" aria-label="Look inside '+esc(r.name)+'">'+tools+'</nav>':'')+'</div>'+
   '</article>'; }
 function buildTrendCarousel(){
-  var box=document.getElementById("trendCar"), deck=document.getElementById("tcarTrack"); if(!box||!deck||!box.querySelector) return;
-  var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches, G=canAnimate();
+  var box=document.getElementById("trendCar"), deck=document.getElementById("tcarTrack");
+  if(!box||!deck||!box.querySelector) return;
+  var motion=window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)"), reduce=!!(motion&&motion.matches);
   var note=document.getElementById("tcarNote"), cnt=document.getElementById("tcCount"), dots=document.getElementById("tcDots"), play=document.getElementById("tcPlay");
-  var cur="", gen=0, order=[], paused=false, hover=false, focus=false, visible=true, busy=false;
-  var EASE_OUT="cubic-bezier(.22,1,.36,1)";
-  function layout(){ order.forEach(function(c,i){ c.setAttribute("data-pos",String(Math.min(i,3))); c.style.zIndex=String(30-i);
-      if(i){ c.setAttribute("aria-hidden","true"); c.inert=true; } else { c.removeAttribute("aria-hidden"); c.inert=false; } });
+  var cur="", gen=0, order=[], paused=true, hover=false, focus=false, visible=!window.IntersectionObserver;
+  var ticking=0, drag=null, suppressClick=false, dragReset=0;
+  deck.tabIndex=0;
+  function paintPlay(){
+    if(!play) return;
+    play.hidden=reduce; play.setAttribute("aria-pressed",String(paused));
+    play.innerHTML=ico(paused?"play":"pause")+'<span class="tc-pl">'+(paused?"Auto-advance off":"Auto-advance on")+'</span>';
+    play.title=paused?"Start auto-advance":"Pause auto-advance";
+    deck.setAttribute("aria-live",paused||reduce?"polite":"off");
+  }
+  function interact(){ paused=true; paintPlay(); }
+  function layout(){
+    ["tcPrev","tcNext","tcShuffle","tcPlay"].forEach(function(id){var control=document.getElementById(id);if(control)control.disabled=order.length<2;});
+    order.forEach(function(c,i){
+      var pos=i===0?0:i===1?1:i===order.length-1?2:3;
+      c.setAttribute("data-pos",String(pos));c.style.zIndex=String(pos===0?3:pos===3?0:1);
+      if(i){c.setAttribute("aria-hidden","true");c.inert=true;}else{c.removeAttribute("aria-hidden");c.inert=false;}
+    });
     var top=order[0], k=top?+top.getAttribute("data-k"):0;
     if(cnt) cnt.textContent=order.length?(k+1)+" / "+order.length:"";
-    if(dots) [].forEach.call(dots.children,function(d,j){ var on=j===k; d.classList.toggle("on",on); if(on) d.setAttribute("aria-current","true"); else d.removeAttribute("aria-current"); }); }
-  function hold(el){ el.style.transition="none"; return function(){ void el.offsetWidth; el.style.transition=""; }; }
-  function step(dir){ if(busy||order.length<2) return; var anim=G&&!reduce;
-    if(dir>0){ var top=order[0]; order.push(order.shift());
-      if(!anim){ layout(); return; } busy=true;
-      var a=top.animate([{transform:DECK_FRONT,opacity:1},{transform:"translate(110%,-4%) rotate(6deg)",opacity:0}],{duration:420,easing:EASE_OUT,fill:"forwards"});
-      layout();   // the rest move up one while the top card slides off; it lands at the back, unseen
-      var done=function(){ var back=hold(top); a.cancel(); back(); busy=false; }; a.finished.then(done,done); }
-    else { var nt=order.pop(); order.unshift(nt);
-      if(!anim){ layout(); return; } busy=true; var back2=hold(nt); layout();
-      var b=nt.animate([{transform:"translate(-110%,-4%) rotate(-6deg)",opacity:0},{transform:DECK_FRONT,opacity:1}],{duration:520,easing:EASE_OUT});
-      var done2=function(){ back2(); busy=false; }; b.finished.then(done2,done2); } }
-  // a swiped card leaves from where the finger let go, in the swipe's direction, and tucks under like step(1)
-  function fanOut(){ if(busy||order.length<3||!(G&&!reduce)) return; busy=true;
-    var vis=order.slice(0,4), n=vis.length, E="cubic-bezier(.22,1,.36,1)";
-    var outs=vis.map(function(c,d){ return c.animate([{transform:DECK_REST[d],opacity:DECK_OP[d]},{transform:deckFanPose(d,n),opacity:1}],{duration:700,easing:E,fill:"forwards"}); });
-    var end=function(){ vis.forEach(function(c){ c.getAnimations().forEach(function(a){ a.cancel(); }); }); busy=false; };
-    Promise.all(outs.map(function(a){ return a.finished; })).then(function(){ return new Promise(function(r){ setTimeout(r,900); }); }).then(function(){
-      var backs=vis.map(function(c,d){ return c.animate([{transform:deckFanPose(d,n),opacity:1},{transform:DECK_REST[d],opacity:DECK_OP[d]}],{duration:550,easing:E,fill:"forwards"}); });
-      return Promise.all(backs.map(function(a){ return a.finished; })); }).then(end,end); }
-  function fling(top,dir){ var from=top.style.transform; order.push(order.shift());
-    if(!(G&&!reduce)){ top.style.transform=""; layout(); return; } busy=true;
-    var a=top.animate([{transform:from,opacity:1},{transform:"translateX("+(dir*130)+"%) rotate("+(dir*14)+"deg)",opacity:0}],{duration:380,easing:EASE_OUT,fill:"forwards"});
-    var back=hold(top); top.style.transform=""; layout(); back();
-    var done=function(){ var b2=hold(top); a.cancel(); b2(); busy=false; }; a.finished.then(done,done); }
-  function front(k){ var i=-1; order.forEach(function(c,j){ if(+c.getAttribute("data-k")===k) i=j; }); if(i<=0) return;
-    order=order.slice(i).concat(order.slice(0,i)); layout(); }
-  function shuffle(){ if(order.length<2) return; var o=order.slice(), first=o[0];
-    for(var i=o.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)), t=o[i]; o[i]=o[j]; o[j]=t; }
-    if(o[0]===first) o.push(o.shift()); order=o; layout(); }
-  function canRun(){ return !reduce&&!paused&&!hover&&!focus&&visible&&!document.hidden&&!box.hidden; }
-  var ticking=0;   // the timer starts once a list is on screen
-  box.addEventListener("pointerenter",function(e){ if(e.pointerType==="mouse") hover=true; });
-  box.addEventListener("pointerleave",function(){ hover=false; });
-  box.addEventListener("focusin",function(){ focus=true; });
-  box.addEventListener("focusout",function(e){ if(!box.contains(e.relatedTarget)) focus=false; });
-  if(window.IntersectionObserver) new IntersectionObserver(function(es){ visible=es[0].isIntersecting; }).observe(deck);
-  // the deck is as tall as its tallest card (measured at its natural height), so no card has an empty band
-  function fit(){ if(!order.length||!deck.classList) return; deck.classList.add("td-measure"); var h=0;
-    order.forEach(function(c){ h=Math.max(h,c.offsetHeight||0); }); deck.classList.remove("td-measure");
-    if(h) deck.style.setProperty("--deck-h",Math.ceil(h)+"px"); }
-  var fitW=0; if(window.ResizeObserver) new ResizeObserver(function(es){ var w=Math.round(es[0].contentRect.width); if(w!==fitW){ fitW=w; fit(); } }).observe(deck);
-  if(document.fonts&&document.fonts.ready) document.fonts.ready.then(fit,function(){});
-  function paintPlay(){ if(!play) return; play.setAttribute("aria-pressed",String(paused));
-    play.innerHTML=ico(paused?"play":"pause")+'<span class="tc-pl">'+(paused?"Auto-shuffle off":"Auto-shuffle on")+'</span>';
-    play.title=paused?"Start the auto-shuffle":"Pause the auto-shuffle"; }
-  if(play){ if(reduce) play.hidden=true; play.addEventListener("click",function(){ paused=!paused; paintPlay(); }); }
-  var on=function(id,f){ var el=document.getElementById(id); if(el) el.addEventListener("click",f); };
-  on("tcPrev",function(){ step(-1); }); on("tcNext",function(){ step(1); }); on("tcShuffle",shuffle);
-  var drag=null, lastStep=0;
-  deck.addEventListener("pointerdown",function(e){ var top=order[0];
-    if(busy||order.length<2||e.button>0||!top||!top.contains(e.target)||(e.target.closest&&e.target.closest("a,button"))) return;
-    drag={x:e.clientX,y:e.clientY,dx:0,v:0,lx:e.clientX,lt:e.timeStamp,id:e.pointerId,top:top,live:false}; });
-  deck.addEventListener("pointermove",function(e){ if(!drag||e.pointerId!==drag.id) return; var dx=e.clientX-drag.x, dy=e.clientY-drag.y;
-    if(!drag.live){ if(Math.abs(dx)<8&&Math.abs(dy)<8) return; if(Math.abs(dy)>Math.abs(dx)){ drag=null; return; }   // a scroll, not a swipe
-      drag.live=true; hover=true; try{ deck.setPointerCapture(e.pointerId); }catch(_){} drag.top.style.transition="none"; deck.classList.add("td-drag"); }
-    var dt=Math.max(1,e.timeStamp-drag.lt); drag.v=(e.clientX-drag.lx)/dt; drag.lx=e.clientX; drag.lt=e.timeStamp; drag.dx=dx;
-    drag.top.style.transform="translateX("+dx.toFixed(1)+"px) rotate("+(dx*.035).toFixed(2)+"deg)"; });
-  function release(e){ if(!drag||e.pointerId!==drag.id) return; var d=drag; drag=null; if(!d.live) return;
-    hover=false; deck.classList.remove("td-drag"); var top=d.top, w=top.offsetWidth||320;
-    if(Math.abs(d.dx)>Math.min(90,w*.25)||(Math.abs(d.v)>.5&&Math.abs(d.dx)>24)){ fling(top,d.dx<0?-1:1); lastStep=Date.now(); return; }
-    var from=top.style.transform; top.style.transition=""; top.style.transform="";   // springs back with a soft overshoot
-    if(G&&!reduce) top.animate([{transform:from},{transform:DECK_FRONT}],{duration:460,easing:"cubic-bezier(.34,1.56,.64,1)"}); }
-  deck.addEventListener("pointerup",release); deck.addEventListener("pointercancel",release);
-  box.addEventListener("keydown",function(e){ if((e.key!=="ArrowLeft"&&e.key!=="ArrowRight")||(e.target&&e.target.closest&&e.target.closest(".tb-tabs"))) return;
-    e.preventDefault(); step(e.key==="ArrowRight"?1:-1); });
-  function show(kind){
-    if(kind===cur) return; var my=++gen; cur=kind;
-    [].forEach.call(box.querySelectorAll(".tb-tab"),function(t){ var on=t.getAttribute("data-k")===kind; t.classList.toggle("on",on); t.setAttribute("aria-selected",String(on)); });
-    deck.setAttribute("aria-label",(kind==="rising"?"Rising repos this month":kind==="stars"?"Most-starred repos":"Most-forked repos"));
-    deck.setAttribute("aria-busy","true");
-    if(deck.firstChild && !reduce) deck.classList.add("td-out");
-    return fetchTrending(kind).then(function(got){ if(my!==gen) return;
-      var rows=trendRows(got.items,kind).rows.filter(hasDesc).slice(0,DECK_N); if(rows.length<3) throw new Error("few");   // RS45: a card must say what the repo does
-      deck.classList.remove("td-out","td-in"); deck.innerHTML=rows.map(function(r,k){ return deckCardHtml(r,k,rows.length,kind); }).join("");
-      order=[].slice.call(deck.children); order.forEach(function(c,k){ c.setAttribute("data-k",String(k)); });
-      if(dots) dots.innerHTML=rows.map(function(r,k){ return '<button type="button" class="tc-dot" data-k="'+k+'" aria-label="Show '+esc(r.name)+'"></button>'; }).join("");
-      if(note) note.textContent=TREND_NOTE[kind]||"";
-      layout(); fit(); void deck.offsetWidth;
-      if(!reduce){ deck.classList.add("td-in"); if(G){ var n=deck.querySelector(".td-n"); if(n) odometer(n, n.textContent, G, .2); } }
-      deck.setAttribute("aria-busy","false"); box.hidden=false;
-      if(!ticking&&!reduce){ var beat=0; ticking=setInterval(function(){ if(!canRun()||Date.now()-lastStep<=DECK_MS-200) return;   // never right after a swipe
-        if(beat%4===0) fanOut(); else step(1); beat++; }, DECK_MS); }   // fan, then three tucks, again and again
-    }).catch(function(){ if(my!==gen) return; deck.classList.remove("td-out"); deck.setAttribute("aria-busy","false");
-      order=[]; cur=""; box.hidden=false;
-      deck.innerHTML='<p class="trend-unavailable" role="status">Trending is unavailable right now. GitHub may be rate-limited. Choose a list above to retry, or search for your project.</p>';
-      if(note) note.textContent=TREND_NOTE[kind]||"";
-      if(dots) dots.innerHTML="";
-      if(cnt) cnt.textContent="";
+    if(dots&&dots.children) [].forEach.call(dots.children,function(d,j){var on=j===k;d.classList.toggle("on",on);if(on)d.setAttribute("aria-current","true");else d.removeAttribute("aria-current");});
+    [["prev",order.length>1?order[order.length-1]:null],["next",order[1]]].forEach(function(pair){
+      var b=deck.querySelector('[data-side="'+pair[0]+'"]'), card=pair[1];
+      if(b){
+        b.hidden=!card;
+        var name=card?card.querySelector(".td-name").textContent.trim():"repository";
+        b.setAttribute("aria-label",(pair[0]==="prev"?"Previous: ":"Next: ")+name);
+        b.querySelector(".side-repo").textContent=name;
+        b.querySelector(".side-description").textContent=card?card.querySelector(".td-desc").textContent:"";
+      }
     });
   }
-  if(dots) dots.addEventListener("click",function(e){ var d=e.target&&e.target.closest&&e.target.closest(".tc-dot"); if(d) front(+d.getAttribute("data-k")); });
-  [].forEach.call(box.querySelectorAll(".tb-tab"),function(t){ t.addEventListener("click",function(){ show(t.getAttribute("data-k")); }); });
-  box.querySelector(".tb-tabs").addEventListener("keydown",function(e){ if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight") return;
-    var ts=[].slice.call(box.querySelectorAll(".tb-tab")), i=ts.indexOf(document.activeElement); if(i<0) return; e.preventDefault();
-    var n=ts[(i+(e.key==="ArrowRight"?1:ts.length-1))%ts.length]; n.focus(); n.click(); });
-  show("rising");
+  function move(dir){
+    if(order.length<2) return;
+    // Do not leave keyboard focus in a card that is becoming inert.
+    if(order[0].contains(document.activeElement)) deck.focus({preventScroll:true});
+    if(dir>0) order.push(order.shift());else order.unshift(order.pop());
+    layout();
+  }
+  function front(k){
+    var i=order.findIndex(function(c){return +c.getAttribute("data-k")===k;});
+    if(i<1) return;
+    if(order[0].contains(document.activeElement)) deck.focus({preventScroll:true});
+    order=order.slice(i).concat(order.slice(0,i));layout();
+  }
+  function shuffle(){
+    if(order.length<2) return;
+    var first=order[0];
+    for(var i=order.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=order[i];order[i]=order[j];order[j]=t;}
+    if(order[0]===first) order.push(order.shift());layout();
+  }
+  function canRun(){reduce=!!(motion&&motion.matches);return !reduce&&!paused&&!hover&&!focus&&visible&&!document.hidden&&!box.hidden&&!drag&&order.length>1;}
+  box.addEventListener("pointerenter",function(e){if(e.pointerType==="mouse")hover=true;});
+  box.addEventListener("pointerleave",function(){hover=false;});
+  box.addEventListener("focusin",function(){focus=true;});
+  box.addEventListener("focusout",function(e){if(!box.contains(e.relatedTarget))focus=false;});
+  if(window.IntersectionObserver) new IntersectionObserver(function(es){visible=es[0].isIntersecting&&es[0].intersectionRatio>=.5;},{threshold:[0,.5]}).observe(deck);
+  // Measure every loaded card at the same width once per resize; navigation never changes height or data.
+  function fit(){
+    if(!order.length) return;
+    deck.classList.add("td-measure");var h=0;
+    order.forEach(function(c){h=Math.max(h,c.offsetHeight||0);});
+    deck.classList.remove("td-measure");
+    if(h) deck.style.setProperty("--deck-h",Math.ceil(h)+"px");
+  }
+  var fitW=0;
+  if(window.ResizeObserver) new ResizeObserver(function(es){var w=Math.round(es[0].contentRect.width);if(w!==fitW){fitW=w;fit();}}).observe(deck);
+  if(document.fonts&&document.fonts.ready) document.fonts.ready.then(fit,function(){});
+  if(motion&&motion.addEventListener) motion.addEventListener("change",function(e){reduce=e.matches;if(reduce)paused=true;paintPlay();});
+  if(play) play.addEventListener("click",function(){paused=!paused;paintPlay();});
+  function on(id,f){var b=document.getElementById(id);if(b){b.setAttribute("aria-controls","tcarTrack");b.addEventListener("click",function(){interact();f();});}}
+  on("tcPrev",function(){move(-1);});on("tcNext",function(){move(1);});on("tcShuffle",shuffle);
+  if(dots) dots.addEventListener("click",function(e){var d=e.target.closest&&e.target.closest(".tc-dot");if(d){interact();front(+d.getAttribute("data-k"));}});
+  deck.addEventListener("click",function(e){
+    if(suppressClick){e.preventDefault();e.stopPropagation();return;}
+    var side=e.target.closest&&e.target.closest("[data-side]");
+    if(side){interact();move(side.getAttribute("data-side")==="prev"?-1:1);}
+    else if(e.target.closest&&e.target.closest("[data-explore]")){
+      interact();var repo=e.target.closest("[data-explore]").getAttribute("data-explore");
+      if(!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo)||window.__busy)return;
+      var q=document.getElementById("q");document.getElementById("like").value="";q.value=repo;
+      q.dispatchEvent(new Event("input",{bubbles:true}));if(window.__growQ)window.__growQ();run();
+    }
+    else if(e.target.closest&&e.target.closest("a")) interact();
+  },true);
+  deck.addEventListener("pointerdown",function(e){
+    if(order.length<2||e.button>0||(e.target.closest&&e.target.closest("a,button:not(.coverflow-side)"))) return;
+    interact();clearTimeout(dragReset);suppressClick=false;
+    drag={x:e.clientX,y:e.clientY,dx:0,id:e.pointerId,live:false};
+  });
+  deck.addEventListener("pointermove",function(e){
+    if(!drag||e.pointerId!==drag.id) return;
+    var dx=e.clientX-drag.x,dy=e.clientY-drag.y;
+    if(!drag.live){
+      if(Math.abs(dx)<8&&Math.abs(dy)<8)return;
+      if(Math.abs(dy)>Math.abs(dx)){drag=null;return;}
+      drag.live=true;try{deck.setPointerCapture(e.pointerId);}catch(_){}
+      deck.classList.add("td-drag");
+    }
+    drag.dx=dx;
+    // Modest drag feedback on all three cards without moving the document layout.
+    deck.style.setProperty("--drag-x",Math.max(-100,Math.min(100,dx))*.35+"px");
+  });
+  function release(e){
+    // Touch starts with implicit capture on the tapped child. Moving capture to the track
+    // emits a bubbling child lostpointercapture; that does not end the current gesture.
+    if(e.type==="lostpointercapture"&&e.target!==deck)return;
+    if(!drag||e.pointerId!==drag.id)return;
+    var d=drag;drag=null;deck.classList.remove("td-drag");deck.style.removeProperty("--drag-x");
+    if(d.live){
+      suppressClick=true;dragReset=setTimeout(function(){suppressClick=false;},350);
+      if(e.type==="pointerup"&&Math.abs(d.dx)>Math.min(60,deck.clientWidth*.12))move(d.dx<0?1:-1);
+    }
+  }
+  deck.addEventListener("pointerup",release);deck.addEventListener("pointercancel",release);deck.addEventListener("lostpointercapture",release);
+  box.addEventListener("keydown",function(e){
+    if(e.target.closest&&e.target.closest(".tb-tabs"))return;
+    if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight"&&e.key!=="Home"&&e.key!=="End")return;
+    e.preventDefault();interact();
+    if(e.key==="Home"||e.key==="End")front(e.key==="Home"?0:order.length-1);else move(e.key==="ArrowRight"?1:-1);
+  });
+  function show(kind){
+    if(kind===cur)return;var my=++gen;cur=kind;
+    [].forEach.call(box.querySelectorAll(".tb-tab"),function(t){var active=t.getAttribute("data-k")===kind;t.classList.toggle("on",active);t.setAttribute("aria-selected",String(active));t.tabIndex=active?0:-1;});
+    deck.setAttribute("aria-label",kind==="rising"?"Rising repos this month":kind==="stars"?"Most-starred repos":"Most-forked repos");
+    deck.setAttribute("aria-busy","true");
+    if(note)note.textContent="Loading repositories from GitHub...";
+    if(!order.length){box.hidden=false;deck.innerHTML='<p class="trend-loading" role="status">Loading GitHub repositories...</p>';}
+    return fetchTrending(kind).then(function(got){
+      if(my!==gen)return;
+      var rows=trendRows(got.items,kind).rows.filter(hasDesc).slice(0,DECK_N);
+      if(!rows.length)throw new Error("empty");
+      deck.innerHTML=rows.map(function(r,k){return deckCardHtml(r,k,rows.length,kind);}).join("")+
+        ['prev','next'].map(function(side){return '<button type="button" class="coverflow-side coverflow-'+side+'" data-side="'+side+'" tabindex="-1"><span class="side-repo" aria-hidden="true"></span><span class="side-description" aria-hidden="true"></span><span class="side-hint" aria-hidden="true">'+(side==='prev'?'Previous':'Next')+' repo</span></button>';}).join("");
+      order=[].slice.call(deck.querySelectorAll(".td-card"));order.forEach(function(c,k){c.setAttribute("data-k",String(k));});
+      if(dots)dots.innerHTML=rows.map(function(r,k){return '<button type="button" class="tc-dot" data-k="'+k+'" aria-label="Show '+esc(r.name)+'"></button>';}).join("");
+      if(note)note.textContent=TREND_NOTE[kind]||"";
+      box.hidden=false;layout();fit();paintPlay();deck.setAttribute("aria-busy","false");
+      if(!ticking)ticking=setInterval(function(){if(canRun())move(1);},6000);
+    }).catch(function(error){
+      if(my!==gen)return;order=[];cur="";box.hidden=false;deck.setAttribute("aria-busy","false");
+      deck.innerHTML='<p class="trend-unavailable" role="status">'+(error&&error.message==="empty"?'No repositories matched this list. Choose another list or search for your project.':'Trending is unavailable right now. GitHub may be rate-limited. Choose a list above to retry, or search for your project.')+'</p>';
+      if(note)note.textContent=TREND_NOTE[kind]||"";if(dots)dots.innerHTML="";if(cnt)cnt.textContent="";
+      layout();
+    });
+  }
+  [].forEach.call(box.querySelectorAll(".tb-tab"),function(t){t.addEventListener("click",function(){interact();show(t.getAttribute("data-k"));});});
+  box.querySelector(".tb-tabs").addEventListener("keydown",function(e){
+    if(!["ArrowLeft","ArrowRight","Home","End"].includes(e.key))return;
+    var ts=[].slice.call(box.querySelectorAll(".tb-tab")),i=ts.indexOf(document.activeElement);if(i<0)return;e.preventDefault();
+    var n=ts[e.key==="Home"?0:e.key==="End"?ts.length-1:(i+(e.key==="ArrowRight"?1:ts.length-1))%ts.length];n.focus();n.click();
+  });
+  paintPlay();show("rising");
 }
+
 (function(){ var go=function(){ buildTrendCarousel(); };
   if(window.requestIdleCallback) requestIdleCallback(go,{timeout:2500}); else setTimeout(go,800); })();
 // RS24 mobile order: what it does (demo) → search → trending. Below 1000px the home demo moves above the search box;
@@ -2149,7 +2189,7 @@ function syncClearQ(){ var x=document.getElementById("clearQ"); if(!x) return;
 })();
 document.getElementById("tourBtn").addEventListener("click",function(){ openModal("howModal"); });
 // RS92 (owner 2026-10-24): the hero backdrop is one layer under everything in the band (the CSS grid and colour fields
-// are .hero::after). This canvas adds the data particles (1-2px, mostly cyan, some violet; dense on Leo's side, thinning
+// are .hero::after). This canvas adds the data particles (1-2px, mostly cyan, some neon; dense on Leo's side, thinning
 // toward the console so text stays readable) and faint code-rain columns at the far edges only. DPR-aware, resizes with
 // the hero, redraws at most ~30 fps, pauses off screen or in a hidden tab, and draws one still frame under reduced motion.
 var HERO_RAIN=["{ }","</>","=>","import","git push","npm i","stars","MIT","fork","pull","diff","const","README","async","fetch","main","clone","v1.2"];
@@ -2168,7 +2208,7 @@ function startHeroFx(canvas){
   function fade(x){ if(W<1000) return .55; var t=(x/W-.42)/.3; t=t<0?0:t>1?1:t; return 1-.8*t*t*(3-2*t); }   // thin toward the console
   function draw(){ if(!W||!H) return; var d=dark(); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,W,H);
     for(var i=0;i<pts.length;i++){ var p=pts[i], a=p.a*fade(p.x)*(d?1:.12);
-      g.globalAlpha=a; g.fillStyle=d?(p.v?"#8b5cf6":"#00f0ff"):"#475569"; g.fillRect(p.x,p.y,p.r,p.r); }
+      g.globalAlpha=a; g.fillStyle=d?(p.v?"#00f0ff":"#00f0ff"):"#475569"; g.fillRect(p.x,p.y,p.r,p.r); }
     if(cols.length){ g.font="500 12px "+(getComputedStyle(document.documentElement).getPropertyValue("--f-mono")||"monospace"); 
       g.fillStyle=d?"#00f0ff":"#475569"; g.globalAlpha=d?.05:.045;
       cols.forEach(function(c){ g.textAlign=c.al; var step=26, start=((rainY*c.sp+c.off)%step)-step;
