@@ -253,7 +253,7 @@ function licenseVerdict(spdx){
   return {c:"t-warn", i:"ban", t:"No licence, can't reuse"};
 }
 // RS24 result card helpers: owner initial tile (colour from the name, no image fetch) and "updated N ago"
-function ownerHue(o){ var h=0; for(var k=0;k<o.length;k++) h=(h*31+o.charCodeAt(k))>>>0; return [14,24,32,198,152,268,340][h%7]; }
+function ownerHue(o){ var h=0; for(var k=0;k<o.length;k++) h=(h*31+o.charCodeAt(k))>>>0; return [14,24,32,198,152,185,165][h%7]; }
 function agoText(d){ var t=Date.parse(d); if(!t) return ""; var days=Math.floor((Date.now()-t)/864e5);
   return days<1?"today":days<2?"yesterday":days<31?days+" days ago":days<365?Math.round(days/30)+" mo ago":Math.round(days/365)+" yr ago"; }
 // RS51: "Explore" links: each tool takes the same owner/repo path as github.com; only a well-formed name gets links
@@ -1780,7 +1780,7 @@ function think(st, text){
 // still scroll the page. Reduced motion: no auto-shuffle, and the buttons and swipes swap the top card at once.
 // Only the top card is exposed; the others are aria-hidden and inert. Each list is fetched only when its tab is first
 // opened (cached 30 min, RS35).
-var DECK_N=6, DECK_MS=4000, DECK_TINT=["cyan","violet","mint"];
+var DECK_N=6, DECK_MS=4000, DECK_TINT=["cyan","neon","mint"];
 // RS92 card shuffle, full sequence (owner 2026-10-25, the frontend-stack pattern: "a deck fans out, closes, then the top
 // card slides off and tucks under the deck, again and again"): every 4th beat the top cards fan around a pivot below the
 // deck (700 ms), hold (900 ms) and close (550 ms); the other beats are the tuck. The rest poses mirror the CSS data-pos.
@@ -2149,7 +2149,7 @@ function syncClearQ(){ var x=document.getElementById("clearQ"); if(!x) return;
 })();
 document.getElementById("tourBtn").addEventListener("click",function(){ openModal("howModal"); });
 // RS92 (owner 2026-10-24): the hero backdrop is one layer under everything in the band (the CSS grid and colour fields
-// are .hero::after). This canvas adds the data particles (1-2px, mostly cyan, some violet; dense on Leo's side, thinning
+// are .hero::after). This canvas adds the data particles (1-2px, mostly cyan, some neon; dense on Leo's side, thinning
 // toward the console so text stays readable) and faint code-rain columns at the far edges only. DPR-aware, resizes with
 // the hero, redraws at most ~30 fps, pauses off screen or in a hidden tab, and draws one still frame under reduced motion.
 var HERO_RAIN=["{ }","</>","=>","import","git push","npm i","stars","MIT","fork","pull","diff","const","README","async","fetch","main","clone","v1.2"];
@@ -2168,7 +2168,7 @@ function startHeroFx(canvas){
   function fade(x){ if(W<1000) return .55; var t=(x/W-.42)/.3; t=t<0?0:t>1?1:t; return 1-.8*t*t*(3-2*t); }   // thin toward the console
   function draw(){ if(!W||!H) return; var d=dark(); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,W,H);
     for(var i=0;i<pts.length;i++){ var p=pts[i], a=p.a*fade(p.x)*(d?1:.12);
-      g.globalAlpha=a; g.fillStyle=d?(p.v?"#8b5cf6":"#00f0ff"):"#475569"; g.fillRect(p.x,p.y,p.r,p.r); }
+      g.globalAlpha=a; g.fillStyle=d?(p.v?"#00f0ff":"#00f0ff"):"#475569"; g.fillRect(p.x,p.y,p.r,p.r); }
     if(cols.length){ g.font="500 12px "+(getComputedStyle(document.documentElement).getPropertyValue("--f-mono")||"monospace"); 
       g.fillStyle=d?"#00f0ff":"#475569"; g.globalAlpha=d?.05:.045;
       cols.forEach(function(c){ g.textAlign=c.al; var step=26, start=((rainY*c.sp+c.off)%step)-step;
