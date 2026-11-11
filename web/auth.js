@@ -83,12 +83,13 @@ async function authPost(path, body){
     return {status:r.status, body:j||{}}; }catch(_){ return {status:0, body:{}}; } }
 // after any sign-in change: the hint, the daily Pro recheck (server decides if it is due), the claims, the boxes
 async function authSync(){
-  if(!AUTH.user){ AUTH.pro=false; authHintSet(false); authRender(); return; }
+  if(!AUTH.user){ AUTH.pro=false; authHintSet(false); authRender(); authNotify(); return; }
   authHintSet(true);
   try{ var r=await authPost("/api/auth/refresh",{}); if(r.status===200 && r.body.changed) await AUTH.user.getIdToken(true);
     var res=await AUTH.user.getIdTokenResult(); AUTH.pro=authProFromClaims(res&&res.claims, Math.floor(Date.now()/1000)); }
   catch(_){ AUTH.pro=false; }
-  authRender(); }
+  authRender(); authNotify(); }
+function authNotify(){try{document.dispatchEvent(new Event("replore-auth"));}catch(_){} }
 // RS94 on the web: a signed-in Pro user's relevance checks carry the ID token (same origin only); called by app.js
 async function authHeader(h){ h=h||{};
   try{ if(!authHintGet() && !AUTH.user) return h;

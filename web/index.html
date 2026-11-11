@@ -1860,6 +1860,7 @@ body:not(.has-results) .hero > .hero-fx{display:none}
     body:not(.has-results) #quickpicks{-webkit-mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 56px),transparent);mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 56px),transparent)} }
 </style>
 <link rel="stylesheet" href="redesign.css?v=5691494973">
+<link rel="stylesheet" href="pro.css?v=fdbdec7388">
 </head>
 <body>
 <header class="topbar">
@@ -1977,7 +1978,7 @@ body:not(.has-results) .hero > .hero-fx{display:none}
         <a class="home-action" id="journey-action" href="#q">Describe my idea &rarr;</a>
       </div>
     </section>
-    <section class="home-section compact-agents" aria-labelledby="agents-title">
+    <section class="home-section compact-agents" id="integrations" aria-labelledby="agents-title">
       <div><p class="home-eyebrow">YOUR TOOLS, YOUR WORKFLOW</p><h2 id="agents-title">Take the shortlist into your coding agent.</h2><p>Claude Code plugin · Codex · Cursor · Other MCP clients</p></div>
       <button type="button" class="home-action" data-home-open="pluginBtn">Connect your agent &rarr;</button>
       <details class="agent-commands"><summary>Claude Code install commands</summary><pre><code>/plugin marketplace add chittychat-studio/replore
@@ -2116,30 +2117,39 @@ body:not(.has-results) .hero > .hero-fx{display:none}
     by feature, use the plugin (Claude Code, Codex, Cursor or any AI agent).</p>
 </div></div>
 
-<div class="modal pro-el" id="proModal" hidden><div class="sheet pro-sheet">   <!-- RS89: Leo, Pro (owner pick 2026-10-23); hidden until PRO_URL is set -->
-  <div class="pro-head"><div><p class="kicker">Replore Pro</p><h2>Leo, <em>Pro</em></h2></div>
+<div class="modal pro-el" id="proModal" hidden><div class="sheet pro-sheet pro-updated">   <!-- RS89: Leo, Pro (owner pick 2026-10-23); hidden until PRO_URL is set -->
+  <div class="pro-head"><div><p class="kicker">Replore Pro</p><h2>Replore Pro</h2><h3 class="pro-tagline">Find the code. Ship the project.</h3></div>
     <button type="button" class="x" data-close aria-label="Close"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>
-  <div class="pro-split"><div class="pro-l">    <p class="pro-say">Get your idea live faster: the boring setup and admin, packaged for you.</p>   <!-- owner 2026-10-25 -->
+<p class="pro-say">More AI searches, guided launch setup, and support when you get stuck.</p>
+  <div class="pro-split"><div class="pro-l">
     <p class="pro-sub">What Pro adds</p>
-    <ul class="pro-bens"><li><span class="pb-n">01</span><b>Skip the queue</b><span>AI ranking never makes you wait.</span></li><li><span class="pb-n">02</span><b>No daily limit</b><span>Free use gets 5 AI searches a day (20 signed in). Pro has no cap.</span></li><li><span class="pb-n">03</span><b>Step-by-step playbooks</b><span>Guided setup cards you tick off: your domain, payments, email, Google sign-in and launch admin.</span></li><li><span class="pb-n">04</span><b>Everywhere you build</b><span>The web app, the Claude Code plugin and any MCP agent.</span></li><li><span class="pb-n">05</span><b>Sign in with Google</b><span>Pro on every device, no key to paste.</span></li><li><span class="pb-n">06</span><b>Help from a person</b><span>Write to <a href="mailto:hello@cardzo.co.in">hello@cardzo.co.in</a> and get hands-on help with your setup.</span></li></ul>   <!-- RS99: the six Pro benefits (owner 2026-10-25, Stitch "Leo, Pro Modal Redesign") -->
+    <ul class="pro-bens pro-benefits-three">
+      <li><span class="pb-n">01</span><b>Search without the daily cap</b><span>AI-ranked GitHub discovery without the Free daily allowance. Provider capacity, rate limits and fair-use safeguards still apply.</span></li>
+      <li><span class="pb-n">02</span><b>Get launch-ready, step by step</b><span>Guided playbooks for domains, payments, email, Google sign-in and launch setup. Paid playbooks load after server verification.</span><button type="button" class="link-btn pro-preview-link" data-home-open="launchBtn">Try Leo's free launch checklist &rarr;</button></li>
+      <li><span class="pb-n">03</span><b>Use Replore where you code</b><span>On the web, in Claude Code and in supported MCP clients. Use your Pro key in your agent.</span><button type="button" class="link-btn pro-preview-link" data-home-open="pluginBtn">Agent setup instructions &rarr;</button></li>
+    </ul>
+    <p class="pro-secondary">Priority AI routing, subject to availability. Account access across devices when Google sign-in is enabled. <a href="mailto:hello@cardzo.co.in">Email support</a> for Replore and setup questions; no guaranteed response time.</p>
+    <p class="pro-fair-use">Free AI allowance is configured for 5 searches a day, or 20 when signed in. Keyword search remains available when AI ranking is limited.</p>
     </div><div class="pro-r"><div class="pro-plans"><a class="pro-plan" id="proCardM" href="#" target="_blank" rel="noopener noreferrer" hidden><p class="pro-plan-k">Monthly</p><p class="pro-plan-p" id="proPlanM"></p><p class="pro-plan-s">Billed monthly, cancel any time</p><span class="pro-plan-go">Get Pro monthly</span></a>
       <a class="pro-plan pro-plan-on" id="proCardY" href="#" target="_blank" rel="noopener noreferrer" hidden><span class="pro-plan-tag">Launch offer</span><p class="pro-plan-k">Yearly</p><p class="pro-plan-p" id="proPlanY"></p><p class="pro-plan-s" id="proPlanYWas"></p><span class="pro-plan-go">Get Pro yearly</span></a></div>
-    <p class="pro-after">After paying, Stripe brings you back here and Pro turns on in this browser.</p>   <!-- RS99: the cards are the buy buttons (owner 2026-10-25) -->
+    <p id="proYearWarning" class="pro-year-warning" role="status" tabindex="-1">Yearly checkout is paused: the advertised first-year discount could not be verified. The configured offer is 36 USD for year one, then 72 USD a year. Please contact support before purchasing yearly.</p>
+    <p class="pro-after">After checkout, Replore verifies your payment and subscription before granting Pro access.</p>   <!-- RS99: the cards are the buy buttons (owner 2026-10-25) -->
   <p id="proOffer" class="pro-offer" hidden></p>
-  <p class="pro-stripe">Sold by Stripe. Cancel any time.</p>
+  <p class="pro-stripe">Payments processed by Stripe. Cancel any time.</p>
+<p class="pro-billing-note">USD. Subscriptions renew until canceled. Review any taxes and the final total at checkout. <a href="/pro#subscription-details">Billing, cancellation and privacy details</a>.</p>
   <div id="proAuth" class="auth-box" aria-live="polite" hidden></div>   <!-- RS94: optional Google sign-in (auth.js); stays hidden until sign-in is configured -->
   <details class="pro-keybox" id="proKeyBox"><summary>Using the Claude Code plugin or an MCP agent? Add your Pro key</summary>
   <form id="proForm" class="pro-form" autocomplete="off" novalidate>
     <div id="proEdit"><label for="proKey">Your key</label>
       <div class="pro-in"><input id="proKey" type="text" placeholder="Paste it here" autocomplete="off" spellcheck="false" autocapitalize="off">
         <button type="submit" class="pro-save">Save</button></div></div>
-    <div id="proOn" hidden><p class="pro-on">Pro is on for this browser <button type="button" id="proRemove" class="link-btn">Remove key</button></p>
+    <div id="proOn" hidden><p class="pro-on">Pro key saved for this browser. Access is verified by the server. <button type="button" id="proRemove" class="link-btn">Remove key</button></p>
       <div class="pro-in pro-reveal"><input id="proShow" type="text" readonly aria-label="Your saved key" spellcheck="false">
         <button type="button" id="proCopy" class="pro-copy">Copy</button></div>
       <div class="pro-in pro-reveal"><input id="proEnv" type="text" readonly aria-label="Setting for the plugin" spellcheck="false">
         <button type="button" id="proEnvCopy" class="pro-copy">Copy</button></div>
       <p class="pro-hint">For the plugin: in Claude Code, set it in your shell before you start <code>claude</code>; in an MCP config, add it as an <code>env</code> entry.</p></div>
-    <p class="pro-note">Stays in this browser. I check it with Stripe, who sold it to you, and never keep it.</p>
+    <p class="pro-note">Your key stays in this browser. Replore checks subscription access with Stripe.</p>
   </form></details></div></div>
 </div></div>
 <div class="modal" id="pluginModal"><div class="sheet ag-sheet">
@@ -2308,11 +2318,11 @@ body:not(.has-results) .hero > .hero-fx{display:none}
   <p class="mut rag-only" style="margin-top:12px" hidden><b>Hybrid search:</b> repos are ranked by your words and by what you mean, so "voice notes" also finds "speech-to-text". Repos our index finds that the word search missed are checked on GitHub before you see them.</p>
 </div></div>
 
-<script src="pro-core.js?v=e07c58fdf5" defer></script>
-<script src="auth.js?v=f43383d4f7" defer></script>
+<script src="pro-core.js?v=9f4a207f01" defer></script>
+<script src="auth.js?v=3492207c2a" defer></script>
 <script src="vendor/lenis-1.3.26/lenis.min.js" defer></script>   <!-- RS101: smooth wheel scrolling (MIT) -->
 <script src="vendor/motion-14.1.0/motion.js" defer></script>   <!-- RS101: spring reveals (MIT) -->
 <script src="app.js?v=61030976a7" defer></script>
-<script src="homepage.js?v=456c877350" defer></script>
+<script src="homepage.js?v=3c933f7a60" defer></script>
 </body>
 </html>

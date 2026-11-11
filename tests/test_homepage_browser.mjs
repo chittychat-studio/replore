@@ -182,7 +182,7 @@ try{
   await page.locator('#pluginModal').waitFor({state:'visible'});
   assert.equal(await page.locator('#pluginModal').evaluate(e=>e.parentElement.tagName),'BODY','dialogs must not nest inside Pro');
   await page.keyboard.press('Escape');
-  await page.locator('[data-home-open="launchBtn"]').click();
+  await page.locator('.compact-launch [data-home-open="launchBtn"]').click();
   await page.locator('#launchModal').waitFor({state:'visible'});
   await page.keyboard.press('Escape');
   await page.locator('#optsBtn').click();

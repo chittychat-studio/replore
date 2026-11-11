@@ -53,6 +53,10 @@ def main():
                      'href="redesign.css?v=%s"' % asset_hash("redesign.css"), html)
     if n != 1:
         raise SystemExit("expected one redesign.css stylesheet in index.html")
+    html, n = re.subn(r'href="pro\.css(?:\?v=[0-9a-f]+)?"',
+                     'href="pro.css?v=%s"' % asset_hash("pro.css"), html)
+    if n != 1:
+        raise SystemExit("expected one pro.css stylesheet in index.html")
     page.write_text(html, encoding="utf-8", newline="")
     for name, scripts in SECONDARY.items():
         p = WEB / name
@@ -61,6 +65,11 @@ def main():
             text, n = re.subn(r'src="/' + re.escape(s) + r'(\?v=[0-9a-f]+)?"', 'src="/%s?v=%s"' % (s, asset_hash(s)), text)
             if n != 1:
                 raise SystemExit("expected one <script src=\"/%s\"> in %s, found %d" % (s, name, n))
+        if name == "pro.html":
+            text, n = re.subn(r'href="/pro\.css(?:\?v=[0-9a-f]+)?"',
+                             'href="/pro.css?v=%s"' % asset_hash("pro.css"), text)
+            if n != 1:
+                raise SystemExit("expected one pro.css stylesheet in pro.html")
         p.write_text(text, encoding="utf-8", newline="")
     print("stamped " + ", ".join("%s?v=%s" % (a, asset_hash(a)) for a in ASSETS))
 

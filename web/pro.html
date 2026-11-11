@@ -4,19 +4,20 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Replore Pro: get your project live faster</title>
-<meta name="description" content="Replore Pro: no waiting and no daily cap on AI ranking, step-by-step setup playbooks, Google sign-in on every device and hands-on help from a person. Monthly or yearly, sold by Stripe.">
+<meta name="description" content="Replore Pro: more AI searches, guided launch setup and email support. USD 8 monthly. Yearly offer pending verification; fair-use limits apply.">
 <link rel="canonical" href="https://replore.cardzo.co.in/pro">
 <!-- SPEC RS90: the Leo, Pro window (RS89) as a page, plus the claim state after a Stripe checkout. Switches and key rules
      are in pro-core.js (shared with the window); the page logic is pro.js. No inline script (RS49), no emoji (RS55),
      no em dash (RS66), 44px targets. -->
 <script src="/theme.js?v=6d53c2f925"></script>
-<script src="/pro-core.js?v=e07c58fdf5" defer></script>
+<script src="/pro-core.js?v=9f4a207f01" defer></script>
 <script src="/pro.js?v=bc69301b2f" defer></script>
-<script src="/auth.js?v=f43383d4f7" defer></script>
-<script src="/playbooks.js?v=040170947f" defer></script>
+<script src="/auth.js?v=3492207c2a" defer></script>
+<script src="/playbooks.js?v=e9cc929ac7" defer></script>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/fonts.css">
 <link rel="stylesheet" href="/page.css">
+<link rel="stylesheet" href="/pro.css?v=fdbdec7388">
 </head>
 <body>
 <header class="sp-top"><a class="sp-brand" href="/"><span class="sp-logo"><svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true">
@@ -44,34 +45,46 @@
     <p><a id="ppRetry" class="sp-btn" href="/pro" hidden>Try again</a></p>
   </section>
 
-  <section class="pp-card">
-    <div class="pro-split"><div class="pro-l"><div class="pro-head"><p class="sp-kicker">Replore Pro</p><h1>Leo, <em>Pro</em></h1></div>
-    <p class="pro-say">Get your idea live faster: the boring setup and admin, packaged for you.</p>   <!-- owner 2026-10-25 -->
+  <section class="pp-card pro-updated">
+    <div class="pro-head"><p class="sp-kicker">Replore Pro</p><h1>Replore Pro</h1><h2 class="pro-tagline">Find the code. Ship the project.</h2></div>
+    <p class="pro-say">More AI searches, guided launch setup, and support when you get stuck.</p>
+    <div class="pro-split"><div class="pro-l">
     <p class="pro-sub">What Pro adds</p>
-    <ul class="pro-bens"><li><span class="pb-n">01</span><b>Skip the queue</b><span>AI ranking never makes you wait.</span></li><li><span class="pb-n">02</span><b>No daily limit</b><span>Free use gets 5 AI searches a day (20 signed in). Pro has no cap.</span></li><li><span class="pb-n">03</span><b>Step-by-step playbooks</b><span>Guided setup cards you tick off: your domain, payments, email, Google sign-in and launch admin.</span></li><li><span class="pb-n">04</span><b>Everywhere you build</b><span>The web app, the Claude Code plugin and any MCP agent.</span></li><li><span class="pb-n">05</span><b>Sign in with Google</b><span>Pro on every device, no key to paste.</span></li><li><span class="pb-n">06</span><b>Help from a person</b><span>Write to <a href="mailto:hello@cardzo.co.in">hello@cardzo.co.in</a> and get hands-on help with your setup.</span></li></ul>   <!-- RS99: the six Pro benefits (owner 2026-10-25, Stitch "Leo, Pro Modal Redesign") -->
+    <ul class="pro-bens pro-benefits-three">
+      <li><span class="pb-n">01</span><b>Search without the daily cap</b><span>AI-ranked GitHub discovery without the Free daily allowance. Provider capacity, rate limits and fair-use safeguards still apply.</span></li>
+      <li><span class="pb-n">02</span><b>Get launch-ready, step by step</b><span>Guided playbooks for domains, payments, email, Google sign-in and launch setup. Paid playbooks load after server verification.</span><a class="pro-preview-link" href="/#launch">Try Leo's free launch checklist &rarr;</a></li>
+      <li><span class="pb-n">03</span><b>Use Replore where you code</b><span>On the web, in Claude Code and in supported MCP clients. Use your Pro key in your agent.</span><a class="pro-preview-link" href="/#integrations">Agent setup instructions &rarr;</a></li>
+    </ul>
+    <p class="pro-secondary">Priority AI routing, subject to availability. Account access across devices when Google sign-in is enabled. <a href="mailto:hello@cardzo.co.in">Email support</a> for Replore and setup questions; no guaranteed response time.</p>
+    <p class="pro-fair-use">Free AI allowance is configured for 5 searches a day, or 20 when signed in. Keyword search remains available when AI ranking is limited.</p>
     </div><div class="pro-r"><div class="pro-plans"><a class="pro-plan" id="ppCardM" href="#" target="_blank" rel="noopener noreferrer" hidden><p class="pro-plan-k">Monthly</p><p class="pro-plan-p" id="ppPlanM"></p><p class="pro-plan-s">Billed monthly, cancel any time</p><span class="pro-plan-go">Get Pro monthly</span></a>
       <a class="pro-plan pro-plan-on" id="ppCardY" href="#" target="_blank" rel="noopener noreferrer" hidden><span class="pro-plan-tag">Launch offer</span><p class="pro-plan-k">Yearly</p><p class="pro-plan-p" id="ppPlanY"></p><p class="pro-plan-s" id="ppPlanYWas"></p><span class="pro-plan-go">Get Pro yearly</span></a></div>
-    <p class="pro-after">After paying, Stripe brings you back here and Pro turns on in this browser.</p>   <!-- RS99: the cards are the buy buttons (owner 2026-10-25) -->
+    <p id="ppYearWarning" class="pro-year-warning" role="status" tabindex="-1">Yearly checkout is paused: the advertised first-year discount could not be verified. The configured offer is 36 USD for year one, then 72 USD a year. Please contact support before purchasing yearly.</p>
+    <p class="pro-after">After checkout, Replore verifies your payment and subscription before granting Pro access.</p>   <!-- RS99: the cards are the buy buttons (owner 2026-10-25) -->
     <p id="ppNotSale" class="pp-notsale">Pro is not on sale yet.</p>
     <p id="ppOffer" class="pro-offer" hidden></p>
-    <p class="pro-stripe">Sold by Stripe. Cancel any time.</p>
+    <p class="pro-stripe">Payments processed by Stripe. Cancel any time.</p>
+<p class="pro-billing-note">USD. Subscriptions renew until canceled. Review any taxes and the final total at checkout. <a href="/pro#subscription-details">Billing, cancellation and privacy details</a>.</p>
     <div id="ppAuth" class="auth-box" aria-live="polite" hidden></div>   <!-- RS94: optional Google sign-in (auth.js); stays hidden until sign-in is configured -->
     <details class="pro-keybox" id="ppKeyBox"><summary>Using the Claude Code plugin or an MCP agent? Add your Pro key</summary>
     <form id="ppForm" class="pro-form" autocomplete="off" novalidate>
       <div id="ppEdit"><label for="ppKey">Your key</label>
         <div class="pro-in"><input id="ppKey" type="text" placeholder="Paste it here" autocomplete="off" spellcheck="false" autocapitalize="off">
           <button type="submit" class="pro-save">Save</button></div></div>
-      <div id="ppOn" hidden><p class="pro-on">Pro is on for this browser <button type="button" id="ppRemove" class="link-btn">Remove key</button></p>
+      <div id="ppOn" hidden><p class="pro-on">Pro key saved for this browser. Access is verified by the server. <button type="button" id="ppRemove" class="link-btn">Remove key</button></p>
         <div class="pro-in pro-reveal"><input id="ppShow" type="text" readonly aria-label="Your saved key" spellcheck="false">
           <button type="button" id="ppCopy" class="pro-copy">Copy</button></div>
         <div class="pro-in pro-reveal"><input id="ppEnv" type="text" readonly aria-label="Setting for the plugin" spellcheck="false">
           <button type="button" id="ppEnvCopy" class="pro-copy">Copy</button></div>
         <p class="pro-hint">For the plugin: in Claude Code, set it in your shell before you start <code>claude</code>; in an MCP config, add it as an <code>env</code> entry.</p></div>
-      <p class="pro-note">Stays in this browser. I check it with Stripe, who sold it to you, and never keep it.</p>
+      <p class="pro-note">Your key stays in this browser. Replore checks subscription access with Stripe.</p>
     </form></details></div></div>
   </section>
+  <section class="pp-card pro-subscription-details" id="subscription-details"><h2>Subscription details</h2><p>Monthly billing renews each month. The yearly launch offer is for the first year only, then the standard yearly price applies. Review the total and any taxes at checkout before paying.</p><p>Cancel using the subscription-management link in your Stripe receipt, or contact <a href="mailto:hello@cardzo.co.in">hello@cardzo.co.in</a> for billing, cancellation or refund requests. Check your checkout terms for the applicable policy. Deleting your Replore account does not cancel your subscription.</p><p>Your Pro key is checked against Stripe on the server. Browser-key checks may be cached for up to 10 minutes. Linked Google-account subscriptions are rechecked on sign-in and at most once a day.</p><p><a href="https://github.com/chittychat-studio/replore/blob/main/PRIVACY.md" target="_blank" rel="noopener noreferrer">Privacy policy</a> &middot; <a href="mailto:hello@cardzo.co.in">Contact support</a></p></section>
   <noscript><p class="sp-lead">This page needs JavaScript to save or show a key.</p></noscript>
   <p class="sp-acts"><a class="sp-btn" href="/">Find repos for your idea</a></p>
+  <p id="pbStatus" class="pro-playbook-status" role="status" aria-live="polite"></p>
+  <button type="button" id="pbRetry" class="pro-playbook-retry" hidden>Retry loading playbooks</button>
   <section id="ppBooks" class="pp-card pb" aria-labelledby="pbH" hidden>   <!-- RS97: Pro playbooks, shown only when /api/pro/playbook answers 200 -->
     <p class="sp-kicker">Pro playbooks</p><h2 id="pbH" class="pb-h">Step by step, with you</h2>
     <div class="pb-list" role="group" aria-label="Playbooks"></div>

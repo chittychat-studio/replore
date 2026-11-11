@@ -6,6 +6,13 @@ const appCode = fs.readFileSync(path.join(__dirname, "..", "web", "app.js"), "ut
 // RS89: pro-core.js (Pro switches and key rules) loads before app.js on the page; same order here
 const coreCode = fs.readFileSync(path.join(__dirname, "..", "web", "pro-core.js"), "utf8").replace('"use strict";', "");
 const code = coreCode + "\n" + appCode;
+// Section 12: renewal disclosure is independent of the crossed-out comparison price.
+const annualTerms = new Function(coreCode + "; return proAnnualTerms;")();
+assert.strictEqual(annualTerms({renewalYear:"72 USD a year",wasYear:"999 USD"}),"Then 72 USD a year. Renews until canceled.");
+const proReleaseConfig = new Function(coreCode + "; return proConfig();")();
+assert.strictEqual(proReleaseConfig.yearCheckoutReady,false,"invalid YEAR50 offer must remain blocked pending verification");
+assert.strictEqual(proReleaseConfig.price,"8 USD a month");
+assert.strictEqual(proReleaseConfig.priceYear,"36 USD for your first year");
 assert.ok(!/<script(?![^>]*\bsrc=)[^>]*>/i.test(html), "index.html must have no inline <script>");
 assert.ok(!/\son[a-z]+\s*=/i.test(html) && !/javascript:/i.test(html), "no inline event handlers or javascript: URLs in index.html");
 assert.ok(!/\son(click|load|error|input|change|submit)\s*=\s*\\?["']/i.test(code), "no inline handlers in markup built by app.js");
