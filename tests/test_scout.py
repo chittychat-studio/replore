@@ -987,7 +987,7 @@ def test_rs47_look_and_motion_kit():
     # of theme tokens, with --btn-grad the fill every accent button uses
     assert "--accent:#0091a8" in html and "--accent:#00f0ff" in html and "--btn-grad:" in html and "192,83,44" not in html
     assert "--accent:#3f6f8e" not in html and "Plus Jakarta Sans" in html
-    assert 'class="ln" aria-hidden="true"' in html and 'aria-label="Your next build probably already has a head start."' in html and "var segs=" not in html
+    assert 'class="ln" aria-hidden="true"' in html and 'aria-label="Your next build has a head start."' in html and "var segs=" not in html
     assert "data-magnet" in html and "el.style.translate=" in html and "(hover:hover) and (pointer:fine)" in html   # RS91: no GSAP quickTo
     assert "function odometer(" in html and "function snapHtml(" in html and "html:out.innerHTML" not in html
     assert 'class="tring"' not in html and 'class="ttape"' not in html and "TAPE_ICON" not in html and "✦</b>" not in html   # RS62
