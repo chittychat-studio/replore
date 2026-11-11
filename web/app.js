@@ -348,7 +348,7 @@ function cardHtml(r,i,qtokens){
     '<div class="rc-in">'+
       '<div class="rc-top"><div class="rc-who"><span class="avatar" aria-hidden="true" style="--h:'+ownerHue(owner||repo)+'">'+esc((owner||repo).charAt(0).toUpperCase())+'</span>'+
         '<span class="owner">'+esc(owner)+'</span></div>'+   // RS71: the owner and the Updated pill share one row
-        '<span class="rc-date" title="Last code change '+esc(r.pushed)+'">Updated '+esc(agoText(r.pushed)||r.pushed)+'</span>'+
+        '<span class="rc-date" title="'+esc(r.pushed?'Last code push '+r.pushed:'GitHub code activity unavailable')+'">'+(r.pushed?'Updated '+esc(agoText(r.pushed)||r.pushed):'Activity unknown')+'</span>'+
         '<label class="pick rc-bm" title="Add to plan"><input type="checkbox" class="pick-cb" data-name="'+esc(r.name)+'" data-url="'+esc(r.url)+
         '" data-desc="'+esc(r.desc||"")+'" data-spdx="'+esc(r.spdx||"")+'"><span class="pk-add">'+ico("bookmark")+'<span class="sr-only">Add '+esc(r.name)+' to plan</span></span>'+
         '<span class="pk-in">'+ico("bookmarked")+'<span class="sr-only">In plan</span></span></label></div>'+
@@ -358,10 +358,12 @@ function cardHtml(r,i,qtokens){
       '<div class="rc-tags"><span class="tag '+v.c+'" title="License: '+esc(r.spdx)+' · '+esc(paid)+' · Completely free? '+esc(free)+'">'+esc(v.t)+'</span>'+
         (r.starter?'<span class="tag t-star" title="A ready-made template to start your project from">Starter</span>':'')+
         (lang?'<span class="tag t-lang">'+esc(lang)+'</span>':'')+'</div>'+
+      (function(w){ return w?'<p class="rc-match">'+esc(r.whyText?'Listing context: ':'Keyword fit: ')+esc(w)+'</p>':''; })(whyRelevant(r,qtokens))+
       (sellConflict(r.spdx)?'<p class="rc-conflict">'+esc(sellConflict(r.spdx))+'</p>':'')+   // RS83: shown only with "I'll sell it"
     '</div>'+
     '<div class="rc-bot"><span class="rc-stats"><span class="stars">'+ico("star")+'<span class="cnt" data-v="'+(+r.stars||0)+'">'+kstars(r.stars)+'</span> stars</span>'+
       '<span class="rc-lic">'+esc(lic)+'</span></span>'+
+      '<a class="rc-gh-direct" href="'+esc(r.url)+'" target="_blank" rel="noopener noreferrer">View on GitHub</a>'+
       '<button type="button" class="rc-det" aria-haspopup="dialog">Details</button></div>'+
     '<div class="rc-more" hidden>'+
       (function(w){ return w?'<div class="why">'+esc(w)+'</div>':''; })(whyRelevant(r,qtokens))+
@@ -753,6 +755,13 @@ async function relevanceGate(query, repos){
   }catch(e){ return {fail:true,error:e&&e.name==="AbortError"?"page_timeout":"network"}; } finally{ if(timer) clearTimeout(timer); if(window.__gateCtl===ctl) window.__gateCtl=null; } }
 
 // RS21: ready-made prompts the user can click to fill the box.
+var HOME_EXAMPLES=[
+  {label:"AI SaaS", text:"Build an AI SaaS with auth, payments and a dashboard", platform:"web", starters:"yes"},
+  {label:"React admin dashboard", text:"Find a React admin dashboard starter", platform:"web", starters:"yes"},
+  {label:"RAG chatbot", text:"Open-source RAG chatbot with citations", platform:"", starters:"no"},
+  {label:"Self-hosted analytics", text:"Self-hosted analytics for a SaaS", platform:"web", starters:"no"},
+  {label:"FastAPI backend", text:"Python FastAPI backend with authentication", platform:"", starters:"yes"},
+];
 var EXAMPLES=[
   {label:"Portfolio website with animations", text:"a portfolio website with smooth scroll animations", platform:"web", starters:"yes"},
   {label:"SaaS landing page (Next.js)", text:"landing page for my SaaS in Next.js, I'll sell it", platform:"web", starters:"yes"},
@@ -765,14 +774,16 @@ var EXAMPLES=[
   {label:"Learn security safely", text:"learn web security by hacking a practice app", platform:"", starters:"no"},
   {label:"PowerPoint from notes", text:"generate PowerPoint decks from my notes", platform:"", starters:"no"}
 ];
-// click an example → fill the form on the left, then search straight away (RS21)
+// Examples fill the input only. The visitor explicitly submits any search or AI check.
 function pickExample(ex){
   if(window.__busy) return;   // RS41: don't change the box under a search that's still running
   document.getElementById("q").value=ex.text;
   document.getElementById("platform").value=ex.platform;
   document.getElementById("starters").value=ex.starters;
   if(window.__growQ) window.__growQ();
-  run();
+  var q=document.getElementById("q");
+  q.dispatchEvent(new Event("input",{bubbles:true}));
+  q.focus();
 }
 function buildExamples(box){
   if(!box || box.dataset.built) return; box.dataset.built="1";
@@ -781,11 +792,11 @@ function buildExamples(box){
     b.addEventListener("click",function(){ pickExample(ex); });
     box.appendChild(b); });
 }
-// quick-pick chips under the bar: click one to fill the box and search straight away (RS21)
-var PILL_IDX=[0,1,2,4,5,6];   // portfolio, SaaS, iPhone, PDF chatbot, spreadsheet dashboard, 2D game
+// Homepage examples require an explicit search. Legacy cached examples remain unchanged.
+var PILL_IDX=[0,1,2,3,4];
 function buildQuickpicks(box){
   if(!box || box.dataset.built) return; box.dataset.built="1";
-  EXAMPLES.forEach(function(ex,i){ if(PILL_IDX.indexOf(i)<0) return;   // RS37: six pills, not ten
+  HOME_EXAMPLES.forEach(function(ex,i){ if(PILL_IDX.indexOf(i)<0) return;
     var b=document.createElement("button"); b.type="button"; b.className="chip";
     b.textContent=ex.label; b.style.animationDelay=(i*30)+"ms";
     b.addEventListener("click",function(){ pickExample(ex); });
@@ -1892,8 +1903,12 @@ function buildTrendCarousel(){
       if(!ticking&&!reduce){ var beat=0; ticking=setInterval(function(){ if(!canRun()||Date.now()-lastStep<=DECK_MS-200) return;   // never right after a swipe
         if(beat%4===0) fanOut(); else step(1); beat++; }, DECK_MS); }   // fan, then three tucks, again and again
     }).catch(function(){ if(my!==gen) return; deck.classList.remove("td-out"); deck.setAttribute("aria-busy","false");
-      if(kind==="rising") return;   // GitHub unreachable or rate-limited on first load: no section, nothing else changes
-      cur=""; show("rising"); });
+      order=[]; cur=""; box.hidden=false;
+      deck.innerHTML='<p class="trend-unavailable" role="status">Trending is unavailable right now. GitHub may be rate-limited. Choose a list above to retry, or search for your project.</p>';
+      if(note) note.textContent=TREND_NOTE[kind]||"";
+      if(dots) dots.innerHTML="";
+      if(cnt) cnt.textContent="";
+    });
   }
   if(dots) dots.addEventListener("click",function(e){ var d=e.target&&e.target.closest&&e.target.closest(".tc-dot"); if(d) front(+d.getAttribute("data-k")); });
   [].forEach.call(box.querySelectorAll(".tb-tab"),function(t){ t.addEventListener("click",function(){ show(t.getAttribute("data-k")); }); });
@@ -1932,11 +1947,9 @@ function showHome(){
   var oldSlot=document.getElementById("demoSlot"); if(oldSlot&&oldSlot.firstChild){ stopDemo("heroDemo"); oldSlot.innerHTML=""; }
   var out=document.getElementById("out");
   stopDemo("heroDemo");   // clear any previous carousel before replacing it
-  out.innerHTML='<div class="explain">'+
-    '<div id="heroDemo" class="demo"></div>'+
-    '</div>';
-  var hd=document.getElementById("heroDemo"); buildLiveDemo(hd);   // RS61: the real product, live
-  placeDemo();
+  // The walkthrough below the results is user-controlled; no autoplay typing or hero video.
+  out.innerHTML="";
+  placeSearch();
   if(window.__resetPicks) window.__resetPicks();
 }
 // ---- RS61: home demo = the real product, live. A quick-pick search types itself, then Replore's real top results for
@@ -2172,7 +2185,7 @@ function startHeroFx(canvas){
   if(window.IntersectionObserver) new IntersectionObserver(function(es){ visible=es[0].isIntersecting; }).observe(canvas);
   raf=requestAnimationFrame(tick);
 }
-(function(){ var c=document.getElementById("heroFx"); if(c&&c.getContext&&window.requestAnimationFrame) startHeroFx(c); })();
+(function(){ var c=document.getElementById("heroFx"); if(c&&c.offsetParent&&c.getContext&&window.requestAnimationFrame) startHeroFx(c); })();
 // RS92: the search shortcut (Ctrl/Cmd+K; the header button is gone, owner 2026-10-25), the console's Match a PRD and Find similar chips (the same
 // actions as in Filters), the Tour frame's real duration, and the status bar, which shows only the real search stage
 (function(){
@@ -2234,7 +2247,7 @@ function startHeroFx(canvas){
   [].forEach.call(lines,function(ln){ var parts=ln.textContent.split(" ");
     ln.textContent=""; parts.forEach(function(w,i){ var sp=document.createElement("span"); sp.className="hw"; sp.textContent=w;
       ln.appendChild(sp); words.push(sp); if(i<parts.length-1) ln.appendChild(document.createTextNode(" ")); }); });
-  enterFrom(words,{opacity:0,transform:"translateY(18px)"},{duration:.9,easing:EASE_EXPO,stagger:.11,delay:.15});   // RS92: transform and opacity only
+  enterFrom(words,{opacity:0,transform:"translateY(8px)"},{duration:.2,easing:EASE_P2O,stagger:.015,delay:0});
   if(!fine) return;
   // RS91: the magnet moves the CSS `translate` property (separate from `transform`, which hover styles own) through a
   // short transition with a springy overshoot curve; each pointermove simply retargets it.

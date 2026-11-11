@@ -10,7 +10,7 @@ import pathlib
 import re
 
 WEB = pathlib.Path(__file__).resolve().parent.parent / "web"
-ASSETS = ("theme.js", "pro-core.js", "auth.js", "app.js")  # RS94: auth.js is the optional sign-in  # RS89: pro-core.js holds the Pro switches and key rules
+ASSETS = ("theme.js", "pro-core.js", "auth.js", "app.js", "homepage.js")
 MEDIA_IN_JS = ("leo-idle.webm", "leo-hero.webp")  # owner 2026-10-25: the intro clip is no longer played  # RS92: the old peek clip is retired                    # referenced as "leo-peek.webm" in app.js
 MEDIA_IN_HTML = ("tour.mp4", "tour-poster.jpg")       # src="..." / poster="..." in index.html
 SECONDARY = {"evals.html": ("theme.js", "evals.js"), "404.html": ("theme.js",),
@@ -49,6 +49,10 @@ def main():
                           'src="%s?v=%s"' % (name, asset_hash(name)), html)
         if n != 1:
             raise SystemExit("expected one <script src=\"%s\"> in index.html, found %d" % (name, n))
+    html, n = re.subn(r'href="redesign\.css(?:\?v=[0-9a-f]+)?"',
+                     'href="redesign.css?v=%s"' % asset_hash("redesign.css"), html)
+    if n != 1:
+        raise SystemExit("expected one redesign.css stylesheet in index.html")
     page.write_text(html, encoding="utf-8", newline="")
     for name, scripts in SECONDARY.items():
         p = WEB / name

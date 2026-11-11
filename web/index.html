@@ -1859,6 +1859,7 @@ body:not(.has-results) .hero > .hero-fx{display:none}
     body:not(.has-results) .qp-more{display:inline}
     body:not(.has-results) #quickpicks{-webkit-mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 56px),transparent);mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 56px),transparent)} }
 </style>
+<link rel="stylesheet" href="redesign.css?v=e3b2afcd1f">
 </head>
 <body>
 <header class="topbar">
@@ -1870,8 +1871,9 @@ body:not(.has-results) .hero > .hero-fx{display:none}
       <circle cx="16" cy="16" r="1.8" fill="var(--s-high)" stroke="url(#lg)" stroke-width="1.4"/>
     </svg><i class="logo-dot"></i></span><span class="brand-txt"><h1>Replore</h1><span class="brand-tag"><span class="rag-off">The repo scout for vibe coders</span><span class="rag-only" hidden>Search by words and meaning</span></span></span></div>   <!-- RS54 tagline; RS68: under the logo -->
   <nav class="nav" id="nav">
+    <a class="nav-btn" href="#q">Explore</a>
     <button id="trendBtn" class="nav-btn" title="Popular open-source repos right now">Trending</button>
-    <button id="tourBtn" class="nav-btn" title="Watch how Replore works">Tour</button>   <!-- RS79: Tour in the top menu -->
+    <button id="tourBtn" class="nav-btn" title="Watch how Replore works">How it works</button>   <!-- RS79: Tour in the top menu -->
     <button id="launchBtn" class="nav-btn" title="Plan where to host your app and what to do after you go live">Launch</button>   <!-- RS79 -->
     <button id="pluginBtn" class="nav-btn" title="Use the plugin in Claude Code, Codex, Cursor or any AI agent">Plugin</button>
     <button id="proBtn" class="nav-btn pro-el" title="Replore Pro: get your project live faster" hidden>Pro</button>   <!-- RS89: shows only when PRO_URL is set -->
@@ -1888,8 +1890,9 @@ body:not(.has-results) .hero > .hero-fx{display:none}
     <div class="hero-status"><span class="hs-pill"><i class="hs-dot" aria-hidden="true"></i><span class="hs-txt" data-hstat>Ready</span></span>   <!-- RS92: the real search stage (heroStage() in app.js) -->
       <span class="hs-note">Live GitHub search <span aria-hidden="true">&middot;</span> nothing you type is stored</span></div>
     <p class="hero-kicker"><span class="rag-off">The repo scout for vibe coders</span><span class="rag-only" hidden>Search by words and meaning</span></p>
-    <h2 class="hero-title" id="heroTitle" aria-label="Find it before you build it."><span class="ln" aria-hidden="true"><span class="in">Find it before</span></span><span class="ln" aria-hidden="true"><em class="in">you build it.</em></span></h2>   <!-- RS65 -->
-    <p class="sub">Describe what you’re building. Get popular, free-to-use, maintained repos that fit.</p>
+    <h2 class="hero-title" id="heroTitle" aria-label="Your next build probably already has a head start."><span class="ln" aria-hidden="true"><span class="in">Your next build probably</span></span> <span class="ln" aria-hidden="true"><em class="in">already has a head start.</em></span></h2>
+    <p class="sub">Describe your idea. Find GitHub repos that fit, understand the trade-offs, and build with your AI.</p>
+    <a class="hero-secondary" href="#how-it-works">See how it works <span aria-hidden="true">&darr;</span></a>
     <div id="demoSlot" class="demo-slot"></div>   <!-- RS24: on phones the demo sits here, before the search -->
     <div id="stageSlot" class="stage-slot"></div>   <!-- RS65: Leo greets first, above the search (RS92: no globe) -->
 
@@ -1897,7 +1900,7 @@ body:not(.has-results) .hero > .hero-fx{display:none}
       <div class="vibebar">   <!-- RS92: the framed search console: input row, then the search options and Find -->
         <div class="vb-row">
           <span class="vb-ico" aria-hidden="true"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5l3 3-3 3M7.5 11.5h5"/></svg></span>
-          <textarea id="q" rows="1" placeholder="What are you building?" aria-label="What are you building?"></textarea>
+          <textarea id="q" rows="1" placeholder="An AI-powered SaaS with login, payments and a dashboard..." aria-label="What are you building?"></textarea>
           <kbd class="vb-kbd kbd-k" aria-hidden="true">Ctrl K</kbd>
           <button id="clearQ" class="vb-x" type="button" title="Clear search" aria-label="Clear search" hidden><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
         </div>
@@ -1906,14 +1909,14 @@ body:not(.has-results) .hero > .hero-fx{display:none}
           <button id="vbLaunch" class="vb-chip vc-violet" type="button" aria-haspopup="dialog" title="Where it will run: host, database, sign-in, payments"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.5h11v3h-11zM2.5 9.5h11v3h-11z"/><path d="M5 6h.01M5 11h.01"/></svg><span class="vc-l">Launch stack</span></button>
           <button id="vbPre" class="vb-chip vc-mint" type="button" aria-haspopup="dialog" title="What to check before you launch"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.5l1.2 1.2L6.5 3.4M3 10.5l1.2 1.2 2.3-2.3M8.5 4.5h5M8.5 10.5h5"/></svg><span class="vc-l">Pre-launch</span></button>
           <button id="vbPost" class="vb-chip vc-amber" type="button" aria-haspopup="dialog" title="What to do after you go live"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9h2.5l1.5-4 2.5 7 1.5-3H14"/></svg><span class="vc-l">Post go-live</span></button>   <!-- RS102: all four feed the build plan -->
-          <button id="go" class="go-btn" title="Find repos" data-magnet><span class="roll"><span>Find repos</span><span aria-hidden="true">Find repos</span></span> <span class="arr">&rarr;</span></button>
+          <button id="go" class="go-btn" title="Find my stack"><span class="roll"><span>Find my stack</span><span aria-hidden="true">Find my stack</span></span> <span class="arr">&rarr;</span></button>
         </div>
       </div>
 
       <!-- RS24: "similar repos" and "match a plan" live in Filters only (owner: the line under the bar duplicated it) -->
       <input id="prd" type="file" accept=".md,.markdown,.txt,.text,text/plain,text/markdown" hidden>
 
-      <p class="qp-label" aria-hidden="true">Quick prompts<span class="qp-more"> · swipe for more →</span></p>   <!-- owner 2026-10-25: say there are more to the side -->
+      <p class="qp-label">Start with an idea. Edit it, then search.</p>
       <div id="quickpicks" class="quickpicks" aria-label="Quick examples to try"></div>
 
       <div id="status" class="status" role="status" aria-live="polite"></div>
@@ -1958,6 +1961,60 @@ body:not(.has-results) .hero > .hero-fx{display:none}
       <a class="link-btn" href="https://www.google.com/preferences/source?q=replore.cardzo.co.in" target="_blank" rel="noopener noreferrer" title="Make Replore a preferred source in your Google results">Add Replore on Google</a>   <!-- RS93 -->
       <span class="brand-by">· A <a href="https://cardzo.co.in" target="_blank" rel="noopener noreferrer">Cardzo</a> product</span></p>
   </section>
+  <div class="discovery-home">
+    <section class="home-section" id="why-replore" aria-labelledby="why-title">
+      <p class="home-eyebrow">LESS SEARCHING. MORE SHIPPING.</p>
+      <h2 id="why-title">GitHub helps you find code.<br>Replore helps you decide what to build with.</h2>
+      <p class="home-intro">Start with your project, inspect the building blocks, and take your picks into your own coding agent.</p>
+      <div class="comparison-scroll" tabindex="0" role="region" aria-label="GitHub and Replore workflow comparison">
+        <table class="workflow-table"><caption>Two complementary workflows</caption><thead><tr><th scope="col">Builder task</th><th scope="col">GitHub search</th><th scope="col">With Replore</th></tr></thead><tbody>
+          <tr><th scope="row">Find a starting point</th><td>Search repositories with keywords and qualifiers</td><td>Describe your project; refine with stack and platform filters</td></tr>
+          <tr><th scope="row">Understand the fit</th><td>Inspect descriptions, code and documentation</td><td>Fit ranking and matching terms, with links to inspect the source</td></tr>
+          <tr><th scope="row">Check the trade-offs</th><td>Read license and activity information</td><td>License summaries and latest code activity alongside each result</td></tr>
+          <tr><th scope="row">Move toward a build</th><td>Use GitHub and your existing development tools</td><td>Select repos and copy a build-plan prompt to your own AI</td></tr>
+        </tbody></table>
+      </div>
+      <p class="home-note">A workflow comparison, not a coverage or performance benchmark. Stars indicate popularity, not quality. License summaries are not legal advice.</p>
+    </section>
+    <section class="home-section" id="how-it-works" aria-labelledby="journey-title">
+      <p class="home-eyebrow">FROM IDEA TO A STARTING STACK</p>
+      <h2 id="journey-title">Three steps closer to your build.</h2>
+      <p class="home-intro">Explore each step. Nothing runs until you choose to search.</p>
+      <div class="journey-tabs" role="tablist" aria-label="Discovery to build workflow">
+        <button type="button" role="tab" id="journey-idea" aria-controls="journey-panel" aria-selected="true" data-journey="idea">01 <span>Your idea</span></button>
+        <button type="button" role="tab" id="journey-repos" aria-controls="journey-panel" aria-selected="false" tabindex="-1" data-journey="repos">02 <span>Your repos</span></button>
+        <button type="button" role="tab" id="journey-plan" aria-controls="journey-panel" aria-selected="false" tabindex="-1" data-journey="plan">03 <span>Your build plan</span></button>
+      </div>
+      <div class="journey-panel" id="journey-panel" role="tabpanel" aria-labelledby="journey-idea" tabindex="0">
+        <p class="home-eyebrow" id="journey-label">START WITH THE PROBLEM</p>
+        <h3 id="journey-heading">What do you want to build?</h3>
+        <p id="journey-description">Describe the app and the features you need. Choose a prompt above or write your own, then narrow by tech stack or platform.</p>
+        <a class="home-action" id="journey-action" href="#q">Describe my idea &rarr;</a>
+      </div>
+    </section>
+    <section class="home-section home-integrations" aria-labelledby="agents-title">
+      <div><p class="home-eyebrow">BRING YOUR OWN AI</p><h2 id="agents-title">Your coding agent.<br>A better starting point.</h2>
+      <p class="home-intro">Use the Claude Code plugin, connect the MCP server, or open the cloned repository in an agent that reads AGENTS.md. Your AI writes the queries and reviews the fit.</p>
+      <button type="button" class="home-action" data-home-open="pluginBtn">Choose your agent &rarr;</button></div>
+      <div class="integration-terminal"><span class="terminal-label">CLAUDE CODE PLUGIN</span><pre><code>/plugin marketplace add chittychat-studio/replore
+/plugin install replore@replore
+/replore:find a React admin dashboard starter</code></pre><button type="button" class="home-action" id="copy-agent-setup">Copy install commands</button><span id="agent-copy-status" role="status" aria-live="polite"></span><p class="home-note">For Codex, Cursor and other MCP clients, open the agent-specific setup instructions.</p></div>
+    </section>
+    <section class="home-section launch-overview" aria-labelledby="launch-overview-title"><p class="home-eyebrow">AFTER YOU FIND YOUR REPOS</p><h2 id="launch-overview-title">Make room for the launch details.</h2><p class="home-intro">Leo helps you work through hosting, domains, databases, sign-in and payments. Include launch decisions and checklists in your build-plan prompt.</p><button type="button" class="home-action" data-home-open="launchBtn">Plan with Leo &rarr;</button></section>
+    <section class="home-section" aria-labelledby="pricing-title"><p class="home-eyebrow">START FREE. GO FURTHER WHEN YOU NEED TO.</p><h2 id="pricing-title">Discovery first. Your next step, your choice.</h2><div class="home-price-grid">
+      <article class="home-price"><h3>Free</h3><p class="home-price-amount">No subscription</p><p>Repository discovery, filters, license summaries and build-plan prompts. AI ranking has usage limits; keyword search remains available.</p><a class="home-action" href="#q">Start exploring &rarr;</a></article>
+      <article class="home-price" id="home-pro-offer" hidden><h3>Replore Pro</h3><p class="home-price-amount" id="home-pro-price"></p><p id="home-pro-year"></p><p>Priority AI ranking, no daily AI search cap, and guided setup playbooks. Use Pro on the web, in the plugin and with MCP agents.</p><a class="home-action" href="/pro">See Pro and sign in &rarr;</a><p class="home-note">Current offer and checkout details are on the Pro page.</p></article>
+    </div></section>
+    <section class="home-section" aria-labelledby="faq-title"><p class="home-eyebrow">GOOD QUESTIONS</p><h2 id="faq-title">Before you build.</h2><div class="home-faq">
+      <details><summary>Where do the repositories come from?</summary><p>Search and trending use GitHub repository metadata. Search ranks results by relevance, popularity and license. Optional AI relevance checking can refine the results; service availability and usage limits apply.</p></details>
+      <details><summary>Can I use a result in a paid product?</summary><p>Read the repository's actual license and requirements before using it. Replore summarizes license information; unknown or missing licenses do not grant permission. A summary is not legal advice.</p></details>
+      <details><summary>What does the activity date mean?</summary><p>Cards label the latest code push reported by GitHub. Cached results may be older. Activity and stars are signals to investigate, not guarantees of maintenance or quality.</p></details>
+      <details><summary>Does Replore generate my application?</summary><p>No. Select repositories to assemble a build-plan prompt, then send it to your own AI. You review the resulting plan and build with your coding tools.</p></details>
+      <details><summary>What is included in Free and Pro?</summary><p>Repository discovery, license summaries and build-plan prompts are available without a paid subscription. Pro adds priority AI ranking and guided setup playbooks. See the current offer and entitlements on the <a href="/pro">Pro page</a>.</p></details>
+      <details><summary>Can I use my coding agent?</summary><p>Claude Code has a plugin. MCP clients have setup instructions, and agents supporting AGENTS.md can run the included search script. <button type="button" class="link-btn" data-home-open="pluginBtn">See your agent's setup</button>.</p></details>
+    </div></section>
+    <section class="home-section home-final" aria-labelledby="final-title"><p class="home-eyebrow">DON'T START FROM ZERO</p><h2 id="final-title">Find your head start.</h2><p>Bring the idea. Explore the code. Decide what belongs in your build.</p><a class="home-action" href="#q">Find my stack &rarr;</a><a class="home-pro-link" href="/pro">Explore Replore Pro</a></section>
+  </div>
 </main>
 
 <!-- selection action bar: appears when repos are ticked for a PRD -->
@@ -2064,7 +2121,7 @@ body:not(.has-results) .hero > .hero-fx{display:none}
   <div class="pro-head"><div><p class="kicker">Replore Pro</p><h2>Leo, <em>Pro</em></h2></div>
     <button type="button" class="x" data-close aria-label="Close"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>
   <div class="pro-split"><div class="pro-l">    <p class="pro-say">Get your idea live faster: the boring setup and admin, packaged for you.</p>   <!-- owner 2026-10-25 -->
-  <div class="pro-split"><div class="pro-l">    <p class="pro-sub">What Pro adds</p>
+    <p class="pro-sub">What Pro adds</p>
     <ul class="pro-bens"><li><span class="pb-n">01</span><b>Skip the queue</b><span>AI ranking never makes you wait.</span></li><li><span class="pb-n">02</span><b>No daily limit</b><span>Free use gets 5 AI searches a day (20 signed in). Pro has no cap.</span></li><li><span class="pb-n">03</span><b>Step-by-step playbooks</b><span>Guided setup cards you tick off: your domain, payments, email, Google sign-in and launch admin.</span></li><li><span class="pb-n">04</span><b>Everywhere you build</b><span>The web app, the Claude Code plugin and any MCP agent.</span></li><li><span class="pb-n">05</span><b>Sign in with Google</b><span>Pro on every device, no key to paste.</span></li><li><span class="pb-n">06</span><b>Help from a person</b><span>Write to <a href="mailto:hello@cardzo.co.in">hello@cardzo.co.in</a> and get hands-on help with your setup.</span></li></ul>   <!-- RS99: the six Pro benefits (owner 2026-10-25, Stitch "Leo, Pro Modal Redesign") -->
     </div><div class="pro-r"><div class="pro-plans"><a class="pro-plan" id="proCardM" href="#" target="_blank" rel="noopener noreferrer" hidden><p class="pro-plan-k">Monthly</p><p class="pro-plan-p" id="proPlanM"></p><p class="pro-plan-s">Billed monthly, cancel any time</p><span class="pro-plan-go">Get Pro monthly</span></a>
       <a class="pro-plan pro-plan-on" id="proCardY" href="#" target="_blank" rel="noopener noreferrer" hidden><span class="pro-plan-tag">Launch offer</span><p class="pro-plan-k">Yearly</p><p class="pro-plan-p" id="proPlanY"></p><p class="pro-plan-s" id="proPlanYWas"></p><span class="pro-plan-go">Get Pro yearly</span></a></div>
@@ -2256,6 +2313,7 @@ body:not(.has-results) .hero > .hero-fx{display:none}
 <script src="auth.js?v=f43383d4f7" defer></script>
 <script src="vendor/lenis-1.3.26/lenis.min.js" defer></script>   <!-- RS101: smooth wheel scrolling (MIT) -->
 <script src="vendor/motion-14.1.0/motion.js" defer></script>   <!-- RS101: spring reveals (MIT) -->
-<script src="app.js?v=d9dbb24750" defer></script>
+<script src="app.js?v=4adbdee460" defer></script>
+<script src="homepage.js?v=7acb101d4b" defer></script>
 </body>
 </html>
